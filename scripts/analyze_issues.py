@@ -19,7 +19,7 @@ import json
 import os
 from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Dict, Any
+from typing import Any
 
 
 @dataclass
@@ -38,9 +38,9 @@ class ProjectAnalyzer:
 
     def __init__(self, project_root: str = "."):
         self.project_root = Path(project_root)
-        self.results: List[CheckResult] = []
+        self.results: list[CheckResult] = []
 
-    def run_command(self, cmd: List[str], description: str, expected_exit_codes: List[int] = None) -> CheckResult:
+    def run_command(self, cmd: list[str], description: str, expected_exit_codes: list[int] = None) -> CheckResult:
         """
         コマンドを実行し、結果を記録する
 
@@ -191,7 +191,7 @@ class ProjectAnalyzer:
             "依存関係整合性チェック"
         )
 
-    def run_all_checks(self) -> Dict[str, Any]:
+    def run_all_checks(self) -> dict[str, Any]:
         """
         すべてのチェックを実行し、結果をまとめる
 
@@ -232,7 +232,7 @@ class ProjectAnalyzer:
 
         return summary
 
-    def print_summary(self, summary: Dict[str, Any]):
+    def print_summary(self, summary: dict[str, Any]):
         """分析結果のサマリーを表示"""
         print("\n" + "=" * 60)
         print("📊 分析結果サマリー")
@@ -259,7 +259,7 @@ class ProjectAnalyzer:
         else:
             print("  - 問題を修正した後、再度実行することを推奨します")
 
-    def save_report(self, summary: Dict[str, Any], filepath: str = "analysis_report.json"):
+    def save_report(self, summary: dict[str, Any], filepath: str = "analysis_report.json"):
         """分析レポートをJSONファイルに保存"""
         report = {
             "timestamp": subprocess.run(

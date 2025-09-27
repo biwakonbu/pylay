@@ -5,7 +5,7 @@ Python ASTを解析し、型依存グラフを構築するためのコンポー�
 
 import ast
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Optional
 from datetime import datetime
 
 from src.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph, RelationType
@@ -20,11 +20,11 @@ class ASTDependencyExtractor:
 
     def __init__(self) -> None:
         """抽出器を初期化"""
-        self.nodes: Dict[str, GraphNode] = {}
-        self.edges: Dict[str, GraphEdge] = {}
-        self.visited_nodes: Set[str] = set()
-        self._node_cache: Dict[str, GraphNode] = {}
-        self._processing_stack: Set[str] = set()  # 循環参照防止
+        self.nodes: dict[str, GraphNode] = {}
+        self.edges: dict[str, GraphEdge] = {}
+        self.visited_nodes: set[str] = set()
+        self._node_cache: dict[str, GraphNode] = {}
+        self._processing_stack: set[str] = set()  # 循環参照防止
 
     def _reset_state(self) -> None:
         """抽出状態をリセット"""

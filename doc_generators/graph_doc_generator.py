@@ -5,7 +5,7 @@ TypeDependencyGraphからMarkdownドキュメントを生成。
 """
 
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from .base import DocumentGenerator
 from .markdown_builder import MarkdownBuilder
@@ -95,7 +95,7 @@ class GraphDocGenerator(DocumentGenerator):
             external_names = [node.name for node in external_nodes]
             self.md.paragraph(f"外部型: {', '.join(external_names)}")
 
-    def _generate_node_table(self, nodes: List[GraphNode]) -> None:
+    def _generate_node_table(self, nodes: list[GraphNode]) -> None:
         """ノード一覧テーブルを生成"""
         if not nodes:
             self.md.paragraph("ノードはありません。")
@@ -110,7 +110,7 @@ class GraphDocGenerator(DocumentGenerator):
             is_external = "✓" if node.is_external() else ""
             self.md.paragraph(f"| {node.get_display_name()} | {node.node_type} | {location} | {is_external} |")
 
-    def _generate_edge_table(self, edges: List[GraphEdge]) -> None:
+    def _generate_edge_table(self, edges: list[GraphEdge]) -> None:
         """エッジ一覧テーブルを生成"""
         if not edges:
             self.md.paragraph("エッジはありません。")

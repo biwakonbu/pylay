@@ -4,9 +4,9 @@ pylayの依存関係抽出機能で使用。NetworkXのDiGraphを基盤とし、
 最適化版：Literal型と厳密な型定義を使用。
 """
 
-from typing import Any, Dict, List, Literal, Optional, Union
-from pydantic import BaseModel, Field
+from typing import Any, Literal, Optional
 from collections.abc import Sequence
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 
@@ -17,7 +17,7 @@ NodeType = Literal['class', 'function', 'variable', 'module', 'type_alias', 'met
 RelationType = Literal['inherits', 'calls', 'references', 'imports', 'depends_on', 'returns', 'implements', 'belongs_to']
 
 # 属性の定義（より具体的に）
-NodeAttributes = Dict[str, Union[str, int, bool, List[str], Dict[str, str]]]
+NodeAttributes = dict[str, str | int | bool | list[str] | dict[str, str]]
 
 
 class GraphNode(BaseModel):
@@ -52,7 +52,7 @@ class GraphNode(BaseModel):
     @property
     def source_file(self) -> Optional[str]:
         """ソースファイルパスを取得"""
-        if self.attributes and isinstance(self.attributes, dict):
+        if self.attributes:
             file_path = self.attributes.get('source_file')
             return str(file_path) if file_path is not None else None
         return None
@@ -60,7 +60,7 @@ class GraphNode(BaseModel):
     @property
     def line_number(self) -> Optional[int]:
         """行番号を取得"""
-        if self.attributes and isinstance(self.attributes, dict):
+        if self.attributes:
             line = self.attributes.get('line')
             if line is not None and isinstance(line, (int, str)):
                 try:
@@ -90,7 +90,7 @@ class GraphEdge(BaseModel):
         le=1.0,
         description="エッジの重み（0.0-1.0、依存の強さを示す）"
     )
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: Optional[dict[str, str | int | bool | datetime]] = Field(
         default=None,
         description="エッジの追加メタデータ"
     )
@@ -110,7 +110,7 @@ class GraphEdge(BaseModel):
 
 
 # メタデータの定義
-GraphMetadata = Dict[str, Union[str, int, float, bool, datetime]]
+GraphMetadata = dict[str, str | int | float | bool | datetime]
 
 
 class TypeDependencyGraph(BaseModel):
@@ -144,7 +144,7 @@ class TypeDependencyGraph(BaseModel):
         """エッジ数を取得"""
         return len(self.edges)
 
-    def get_strong_dependencies(self) -> List[GraphEdge]:
+    def get_strong_dependencies(self) -> list[GraphEdge]:
         """強い依存関係のエッジを取得"""
         return [edge for edge in self.edges if edge.is_strong_dependency()]
 
@@ -155,18 +155,18 @@ class TypeDependencyGraph(BaseModel):
                 return node
         return None
 
-    def get_edges_by_source(self, source_name: str) -> List[GraphEdge]:
+    def get_edges_by_source(self, source_name: str) -> list[GraphEdge]:
         """起点ノードのエッジを取得"""
         return [edge for edge in self.edges if edge.source == source_name]
 
-    def get_edges_by_target(self, target_name: str) -> List[GraphEdge]:
+    def get_edges_by_target(self, target_name: str) -> list[GraphEdge]:
         """終点ノードのエッジを取得"""
         return [edge for edge in self.edges if edge.target == target_name]
 
-    def get_dependency_summary(self) -> Dict[str, Any]:
+    def get_dependency_summary(self) -> dict[str, str | int | dict[str, int]]:
         """依存関係の統計を取得"""
-        node_types: Dict[str, int] = {}
-        relations: Dict[str, int] = {}
+        node_types: dict[str, int] = {}
+        relations: dict[str, int] = {}
 
         for node in self.nodes:
             node_types[node.node_type] = node_types.get(node.node_type, 0) + 1

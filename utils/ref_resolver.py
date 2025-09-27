@@ -5,7 +5,7 @@
 yaml_to_type.py から抽出・モジュール化されたものです。
 """
 
-from typing import Any, Dict, List
+from typing import Any
 from schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeContext
 
 
@@ -17,7 +17,7 @@ class RefResolver:
     """
 
     @staticmethod
-    def detect_cycles_from_data(types_data: Dict[str, Any]) -> None:
+    def detect_cycles_from_data(types_data: dict[str, Any]) -> None:
         """
         生のデータから循環参照を検出します。
 
@@ -35,7 +35,7 @@ class RefResolver:
         RefResolver._dfs_cycle_detect(ref_graph)
 
     @staticmethod
-    def detect_cycles(types: Dict[str, TypeSpec]) -> None:
+    def detect_cycles(types: dict[str, TypeSpec]) -> None:
         """
         TypeSpec辞書から循環参照を検出します。
 
@@ -53,7 +53,7 @@ class RefResolver:
         RefResolver._dfs_cycle_detect(ref_graph)
 
     @staticmethod
-    def resolve_all(types: Dict[str, TypeSpec]) -> Dict[str, TypeSpec]:
+    def resolve_all(types: dict[str, TypeSpec]) -> dict[str, TypeSpec]:
         """
         すべての参照を解決します。
 
@@ -80,7 +80,7 @@ class RefResolver:
         return resolved_types
 
     @staticmethod
-    def _dfs_cycle_detect(ref_graph: Dict[str, List[str]]) -> None:
+    def _dfs_cycle_detect(ref_graph: dict[str, list[str]]) -> None:
         """
         DFSアルゴリズムで循環参照を検出します。
 
@@ -113,7 +113,7 @@ class RefResolver:
                     raise ValueError(f"Circular reference detected involving: {node}")
 
     @staticmethod
-    def _collect_refs_from_data(spec_data: Any) -> List[str]:
+    def _collect_refs_from_data(spec_data: Any) -> list[str]:
         """
         生のデータから参照文字列を収集します。
 
@@ -156,7 +156,7 @@ class RefResolver:
         return refs
 
     @staticmethod
-    def _collect_refs_from_spec(spec: TypeSpec) -> List[str]:
+    def _collect_refs_from_spec(spec: TypeSpec) -> list[str]:
         """
         TypeSpecから参照文字列を収集します。
 

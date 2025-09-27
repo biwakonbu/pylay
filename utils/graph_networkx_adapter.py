@@ -4,7 +4,7 @@ TypeDependencyGraphをNetworkX DiGraphに変換し、視覚化やアルゴリズ
 """
 
 import networkx as nx
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 from pathlib import Path
 
 from src.schemas.graph_types import TypeDependencyGraph
@@ -54,7 +54,7 @@ class NetworkXGraphAdapter:
         assert self.nx_graph is not None  # 型チェッカーのため
         return self.nx_graph
 
-    def detect_cycles(self) -> List[List[str]]:
+    def detect_cycles(self) -> list[list[str]]:
         """循環参照を検出"""
         assert self.nx_graph is not None
         try:
@@ -62,7 +62,7 @@ class NetworkXGraphAdapter:
         except nx.NetworkXNoCycle:
             return []
 
-    def get_topological_sort(self) -> List[str]:
+    def get_topological_sort(self) -> list[str]:
         """トポロジカルソートを取得（依存関係の解決順序）"""
         assert self.nx_graph is not None
         try:
@@ -71,12 +71,12 @@ class NetworkXGraphAdapter:
             # 循環がある場合はエラー
             return []
 
-    def get_strongly_connected_components(self) -> List[Set[str]]:
+    def get_strongly_connected_components(self) -> list[set[str]]:
         """強連結成分を取得（循環のグループ化）"""
         assert self.nx_graph is not None
         return list(nx.strongly_connected_components(self.nx_graph))
 
-    def calculate_centrality(self) -> Dict[str, float]:
+    def calculate_centrality(self) -> dict[str, float]:
         """中心性（重要度）を計算"""
         assert self.nx_graph is not None
         if len(self.nx_graph.nodes) == 0:
@@ -85,7 +85,7 @@ class NetworkXGraphAdapter:
         # 次数中心性
         return dict(nx.degree_centrality(self.nx_graph))
 
-    def calculate_betweenness_centrality(self) -> Dict[str, float]:
+    def calculate_betweenness_centrality(self) -> dict[str, float]:
         """媒介中心性を計算"""
         assert self.nx_graph is not None
         if len(self.nx_graph.nodes) == 0:
@@ -93,7 +93,7 @@ class NetworkXGraphAdapter:
 
         return dict(nx.betweenness_centrality(self.nx_graph))
 
-    def get_dependency_paths(self, source: str, target: str) -> List[List[str]]:
+    def get_dependency_paths(self, source: str, target: str) -> list[list[str]]:
         """2つのノード間の依存パスを取得"""
         assert self.nx_graph is not None
         try:
@@ -214,7 +214,7 @@ class NetworkXGraphAdapter:
         if svg_path:
             self.generate_svg_from_dot(dot_path, svg_path)
 
-    def get_graph_statistics(self) -> Dict[str, Any]:
+    def get_graph_statistics(self) -> dict[str, Any]:
         """グラフの統計情報を取得"""
         assert self.nx_graph is not None
         if self.nx_graph is None:
@@ -230,7 +230,7 @@ class NetworkXGraphAdapter:
             'average_degree': sum(dict(self.nx_graph.degree()).values()) / max(1, self.nx_graph.number_of_nodes())
         }
 
-    def get_node_statistics(self) -> Dict[str, Dict[str, Any]]:
+    def get_node_statistics(self) -> dict[str, dict[str, Any]]:
         """各ノードの統計情報を取得"""
         assert self.nx_graph is not None
         stats = {}
@@ -251,7 +251,7 @@ class NetworkXGraphAdapter:
 
         return stats
 
-    def get_edge_statistics(self) -> Dict[str, Dict[str, Any]]:
+    def get_edge_statistics(self) -> dict[str, dict[str, Any]]:
         """各エッジの統計情報を取得"""
         assert self.nx_graph is not None
         stats = {}

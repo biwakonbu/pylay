@@ -8,7 +8,7 @@ import json
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from src.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph
 
@@ -21,9 +21,9 @@ class MypyTypeExtractor:
 
     def __init__(self) -> None:
         """抽出器を初期化"""
-        self._mypy_cache: Dict[str, Dict[str, Any]] = {}
+        self._mypy_cache: dict[str, dict[str, Any]] = {}
 
-    def extract_types_with_mypy(self, file_path: str) -> Dict[str, Any]:
+    def extract_types_with_mypy(self, file_path: str) -> dict[str, Any]:
         """
         mypy --inferを実行し、型推論結果を抽出。
 
@@ -57,7 +57,7 @@ class MypyTypeExtractor:
                 if result.returncode != 0:
                     # mypyエラー時は空の結果を返す（AST抽出にフォールバック）
                     print(f"⚠️  mypy型推論エラー: {file_path} - {result.stderr}")
-                    inferred_types: Dict[str, Dict[str, str]] = {}
+                    inferred_types: dict[str, dict[str, str]] = {}
                 else:
                     try:
                         inferred_types = json.loads(result.stdout) if result.stdout else {}
@@ -82,7 +82,7 @@ class MypyTypeExtractor:
                 Path(temp_file.name).unlink(missing_ok=True)
 
     def merge_mypy_results(self, ast_graph: TypeDependencyGraph,
-                          mypy_results: Dict[str, Any]) -> TypeDependencyGraph:
+                          mypy_results: dict[str, Any]) -> TypeDependencyGraph:
         """
         AST抽出結果にmypy型推論結果をマージ。
 
@@ -127,10 +127,10 @@ class MypyTypeExtractor:
             metadata=merged_metadata
         )
 
-    def _extract_mypy_nodes_and_edges(self, mypy_results: Dict[str, Any]) -> tuple[List[GraphNode], List[GraphEdge]]:
+    def _extract_mypy_nodes_and_edges(self, mypy_results: dict[str, Any]) -> tuple[list[GraphNode], list[GraphEdge]]:
         """mypy結果からノードとエッジを抽出"""
-        nodes: List[GraphNode] = []
-        edges: List[GraphEdge] = []
+        nodes: list[GraphNode] = []
+        edges: list[GraphEdge] = []
 
         if not isinstance(mypy_results, dict) or 'types' not in mypy_results:
             return nodes, edges

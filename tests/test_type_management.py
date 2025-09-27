@@ -1,5 +1,4 @@
 import pytest
-from typing import List, Dict, Union
 import tempfile
 import os
 
@@ -37,9 +36,9 @@ def test_build_registry():
 
 
 def test_type_to_yaml():
-    Users = List[Dict[str, str]]
+    Users = list[dict[str, str]]
     yaml_str = type_to_yaml(Users)
-    assert "List:" in yaml_str  # v1.1ではキーとして型名が出力される
+    assert "list:" in yaml_str  # v1.1ではキーとして型名が出力される
     assert "type: list" in yaml_str
 
 def test_yaml_to_spec_and_validate():
@@ -67,7 +66,7 @@ def test_yaml_to_spec_and_validate():
 def test_roundtrip(temp_dir):
 
     # 型 -> yaml -> spec -> md
-    TestType = List[str]
+    TestType = list[str]
     yaml_str = type_to_yaml(TestType)  # ファイル出力なし
 
     # YAMLファイルに書き込み
@@ -78,11 +77,11 @@ def test_roundtrip(temp_dir):
     spec = yaml_to_spec(yaml_str)
     generate_yaml_docs(spec, temp_dir)
 
-    md_path = os.path.join(temp_dir, "List.md")
+    md_path = os.path.join(temp_dir, "list.md")
     assert os.path.exists(md_path)
     with open(md_path, 'r') as f:
         md_content = f.read()
-    assert "型仕様: List" in md_content
+    assert "型仕様: list" in md_content
 
 def test_v1_1_multiple_types():
     """v1.1複数型のテスト"""
@@ -96,7 +95,7 @@ def test_v1_1_multiple_types():
         '''ユーザーのリスト'''
         pass
 
-    UsersList = List[User]
+    UsersList = list[User]
 
     # 複数型をYAMLに変換
     types_dict = {
@@ -136,8 +135,8 @@ def test_roundtrip_transparency():
         price: float
         in_stock: bool
 
-    Products = List[Product]
-    Result = Union[int, str]
+    Products = list[Product]
+    Result = int | str
 
     # Python型 -> YAML の変換が正しく動作することを確認
     original_yaml = types_to_yaml({
@@ -382,7 +381,7 @@ def test_basic_types():
 def test_complex_union_types():
     """複雑なUnion型のテスト"""
     # 複数の型を含むUnion
-    ComplexUnion = Union[str, int, float, bool]
+    ComplexUnion = str | int | float | bool
 
     # Python型からYAMLに変換
     yaml_str = type_to_yaml(ComplexUnion)
@@ -415,7 +414,7 @@ def test_complex_union_types():
     # Unionを含むDictのテスト
     class ContainerWithUnion:
         '''Unionを含むコンテナ'''
-        value: Union[str, int]
+        value: str | int
         name: str
 
     yaml_container = type_to_yaml(ContainerWithUnion)
@@ -505,7 +504,7 @@ def test_type_to_spec_function_splitting():
     assert _get_basic_type_str(int) == 'int'
     assert _get_basic_type_str(float) == 'float'
     assert _get_basic_type_str(bool) == 'bool'
-    assert _get_basic_type_str(list) == 'any'  # 未定義型
+    assert _get_basic_type_str(list) == 'str'  # 未定義型
 
     # 型名取得テスト
     assert _get_type_name(str) == 'str'

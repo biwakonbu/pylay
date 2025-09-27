@@ -192,20 +192,20 @@ class Example(BaseModel):
     """サンプルクラス"""
 
     name: str  # 必須
-    age: int | None = None  # オプション（Python 3.10+）
+    age: int | None = None  # オプション（Python 3.13+）
     items: Sequence[Mapping[str, Any]]  # ジェネリック型（Python 3.9+）
 ```
 
-### 5.5 Python 3.10+ の型付け機能
-Python 3.10 以降では、標準でより簡潔な型付けが可能です：
+### 5.5 Python 3.13+ の型付け機能
+Python 3.13 以降では、標準でより簡潔な型付けが可能です：
 
 ```python
-# Union 型の簡潔表記（Python 3.10+）
+# Union 型の簡潔表記（Python 3.13+）
 def process_data(data: str | int | None) -> str | None:
     """データを処理する関数"""
     return str(data) if data is not None else None
 
-# 従来の書き方（Python 3.10 未満）
+# 従来の書き方（Python 3.13 未満）
 from typing import Union
 def process_data_old(data: Union[str, int, None]) -> Union[str, None]:
     return str(data) if data is not None else None

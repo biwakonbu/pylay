@@ -109,7 +109,6 @@ class TestYAMLIntegration:
 
     def test_type_to_yaml_with_dependencies(self):
         """依存情報を含むYAML出力をテスト"""
-        from typing import List
 
         # サンプル依存グラフ
         nodes = [GraphNode(name='User', node_type='class')]
@@ -117,7 +116,7 @@ class TestYAMLIntegration:
         graph = TypeDependencyGraph(nodes=nodes, edges=edges)
 
         # 依存付きYAML出力
-        yaml_output = type_to_yaml(List, dependencies=graph, as_root=True)
+        yaml_output = type_to_yaml(list, dependencies=graph, as_root=True)
 
         # 依存情報が含まれていることを確認
         assert 'dependencies' in yaml_output
@@ -128,11 +127,10 @@ class TestYAMLIntegration:
 def test_end_to_end_dependency_extraction():
     """エンドツーエンドの依存抽出テスト"""
     code = '''
-from typing import List
 
 class User:
     name: str
-    addresses: List[str]
+    addresses: list[str]
 
 class Address:
     pass
@@ -155,10 +153,9 @@ def get_user() -> User:
             generator.generate(Path(md_file.name), graph=graph)
 
         # 3. YAML統合テスト
-        from typing import List
         class User:
             name: str
-            addresses: List[str]
+            addresses: list[str]
 
         yaml_output = type_to_yaml(User, dependencies=graph)
 

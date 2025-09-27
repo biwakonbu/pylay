@@ -10,6 +10,7 @@ dependencies = [
     "pydantic>=2.8.2",
     "pydot>=4.0.1",
     "pyyaml>=6.0.2",
+    "types-pyyaml>=6.0.12.20250915",
 ]
 
 [project.optional-dependencies]
@@ -60,6 +61,14 @@ pytest-xdist = ">=3.0.0"
 [tool.ruff]
 line-length = 88
 target-version = "py313"
+
+[tool.ruff.lint]
+# Python 3.13+ の新しい型構文を有効化
+select = [
+    "UP007",  # Use X | Y for type unions (Python 3.13+)
+    "UP006",  # Use PEP 585 imports (Python 3.9+)
+    "UP035",  # Use PEP 585 generic types (Python 3.9+)
+]
 
 [build-system]
 requires = ["poetry-core"]

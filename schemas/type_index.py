@@ -5,12 +5,12 @@
 Pythonの組み込み型やプロジェクト固有の型をレイヤー別に分類・管理する
 """
 
-from typing import Any, Dict, List, Type, get_origin
+from typing import Any, get_origin
 from collections import defaultdict
 
 
 # 型レジストリ - レイヤー別の型を管理
-TYPE_REGISTRY: Dict[str, Dict[str, Type[Any]]] = defaultdict(dict)
+TYPE_REGISTRY: dict[str, dict[str, type[Any]]] = defaultdict(dict)
 
 # レイヤー定義
 LAYERS: dict[str, list[type[Any]]] = {
@@ -43,7 +43,7 @@ def build_registry() -> None:
     # 例: pydanticモデル、dataclassesなど
 
 
-def get_type_layer(type_obj: Type[Any]) -> str:
+def get_type_layer(type_obj: type[Any]) -> str:
     """
     指定された型の適切なレイヤーを返す
 
@@ -67,7 +67,7 @@ def get_type_layer(type_obj: Type[Any]) -> str:
     return "typing"
 
 
-def register_type(type_obj: Type[Any], layer: str) -> None:
+def register_type(type_obj: type[Any], layer: str) -> None:
     """
     型を指定されたレイヤーに登録
 
@@ -79,7 +79,7 @@ def register_type(type_obj: Type[Any], layer: str) -> None:
         TYPE_REGISTRY[layer][type_obj.__name__] = type_obj
 
 
-def get_layer_types(layer: str) -> Dict[str, Type[Any]]:
+def get_layer_types(layer: str) -> dict[str, type[Any]]:
     """
     指定されたレイヤーの型辞書を取得
 
@@ -92,19 +92,19 @@ def get_layer_types(layer: str) -> Dict[str, Type[Any]]:
     return TYPE_REGISTRY.get(layer, {}).copy()
 
 
-def get_all_layers() -> List[str]:
+def get_all_layers() -> list[str]:
     """利用可能なすべてのレイヤー名を取得"""
     return list(TYPE_REGISTRY.keys())
 
 
-def get_registry_stats() -> Dict[str, int]:
+def get_registry_stats() -> dict[str, int]:
     """レジストリの統計情報を取得"""
     return {layer: len(types) for layer, types in TYPE_REGISTRY.items()}
 
 
-def get_available_types_all() -> List[str]:
+def get_available_types_all() -> list[str]:
     """すべての利用可能な型名を取得"""
-    all_types = []
+    all_types: list[str] = []
     for layer_types in TYPE_REGISTRY.values():
         all_types.extend(layer_types.keys())
     return sorted(all_types)

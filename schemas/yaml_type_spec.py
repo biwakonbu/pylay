@@ -1,8 +1,5 @@
-from typing import Any, Dict, List, Union, Literal, Optional
+from typing import Any, Union, Literal, Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
-
-# 参照解決のための型エイリアス
-TypeSpecOrRef = Union["TypeSpec", str]
 
 class RefPlaceholder:
     """参照文字列を保持するためのプレースホルダー"""
@@ -33,15 +30,18 @@ class TypeSpec(BaseModel):
     description: Optional[str] = Field(None, description="型の説明")
     required: bool = Field(True, description="必須かどうか")
 
+# 参照解決のための型エイリアス（前方参照用）
+TypeSpecOrRef = Union["TypeSpec", str]
+
 class ListTypeSpec(TypeSpec):
     """リスト型の仕様"""
     type: Literal["list"] = "list"
-    items: Union[TypeSpec, str] = Field(..., description="リストの要素型 (参照文字列またはTypeSpec)")
+    items: TypeSpecOrRef = Field(..., description="リストの要素型 (参照文字列またはTypeSpec)")
 
 class DictTypeSpec(TypeSpec):
     """辞書型の仕様"""
     type: Literal["dict"] = "dict"
-    properties: Dict[str, Any] = Field(default_factory=dict, description="辞書のプロパティ (参照文字列またはTypeSpec)")
+    properties: dict[str, Any] = Field(default_factory=dict, description="辞書のプロパティ (参照文字列またはTypeSpec)")
     additional_properties: bool = Field(False, description="追加プロパティ許可")
 
     @field_validator('properties', mode='before')
@@ -65,12 +65,12 @@ class DictTypeSpec(TypeSpec):
 class UnionTypeSpec(TypeSpec):
     """Union型の仕様"""
     type: Literal["union"] = "union"
-    variants: List[Union[TypeSpec, str]] = Field(..., description="Unionのバリアント (参照文字列またはTypeSpec)")
+    variants: list[TypeSpecOrRef] = Field(..., description="Unionのバリアント (参照文字列またはTypeSpec)")
 
 # v1.1用: ルートモデル (複数型をキー=型名で管理)
 class TypeRoot(BaseModel):
     """YAML型仕様のルートモデル (v1.1構造)"""
-    types: Dict[str, TypeSpec] = Field(default_factory=dict, description="型仕様のルート辞書。キー=型名、値=TypeSpec")
+    types: dict[str, TypeSpec] = Field(default_factory=dict, description="型仕様のルート辞書。キー=型名、値=TypeSpec")
 
     @model_validator(mode='before')
     @classmethod
@@ -229,14 +229,14 @@ def _create_spec_from_data_preserve_refs(data: dict, root_key: str | None = None
 class TypeContext:
     """型参照解決のためのコンテキスト"""
     def __init__(self) -> None:
-        self.type_map: Dict[str, TypeSpec] = {}
+        self.type_map: dict[str, TypeSpec] = {}
         self.resolving: set[str] = set()  # 循環参照検出用
 
     def add_type(self, name: str, spec: TypeSpec) -> None:
         """型をコンテキストに追加"""
         self.type_map[name] = spec
 
-    def resolve_ref(self, ref: str | TypeSpec) -> TypeSpec:
+    def resolve_ref(self, ref: TypeSpecOrRef) -> TypeSpec:
         """参照を解決してTypeSpecを返す"""
         if isinstance(ref, RefPlaceholder):
             ref_name = ref.ref_name

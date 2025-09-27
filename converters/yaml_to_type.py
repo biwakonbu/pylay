@@ -1,8 +1,8 @@
 import yaml
-from typing import Any, Dict, List
+from typing import Any
 
 from schemas.yaml_type_spec import (
-    TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeRoot, TypeContext, _create_spec_from_data
+    TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeRoot, TypeContext, _create_spec_from_data, TypeSpecOrRef
 )
 from utils.ref_resolver import RefResolver
 
@@ -53,7 +53,7 @@ def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeR
 
     raise ValueError("Invalid YAML structure for TypeSpec or TypeRoot")
 
-def _detect_circular_references_from_data(types_data: Dict[str, Any]) -> None:
+def _detect_circular_references_from_data(types_data: dict[str, Any]) -> None:
     """生のデータから循環参照を検出"""
     # 参照グラフを構築
     ref_graph = {}
@@ -118,7 +118,7 @@ def _collect_refs_from_data(spec_data: Any) -> list[str]:
 
     return refs
 
-def _resolve_all_refs(types: Dict[str, TypeSpec]) -> Dict[str, TypeSpec]:
+def _resolve_all_refs(types: dict[str, TypeSpec]) -> dict[str, TypeSpec]:
     """すべての参照を解決"""
     # まず循環参照を検出
     _detect_circular_references(types)
@@ -136,7 +136,7 @@ def _resolve_all_refs(types: Dict[str, TypeSpec]) -> Dict[str, TypeSpec]:
 
     return resolved_types
 
-def _detect_circular_references(types: Dict[str, TypeSpec]) -> None:
+def _detect_circular_references(types: dict[str, TypeSpec]) -> None:
     """循環参照を検出"""
     # 参照グラフを構築
     ref_graph = {}
@@ -216,7 +216,7 @@ def validate_with_spec(spec: TypeSpec | str, data: Any, max_depth: int = 10) -> 
     if isinstance(spec, str):
         return True  # 参照の場合、実際の解決は別途
 
-    stack: List[tuple[TypeSpec, Any, int]] = [(spec, data, 0)]
+    stack: list[tuple[TypeSpec, Any, int]] = [(spec, data, 0)]
 
     while stack:
         current_spec, current_data, depth = stack.pop()
@@ -236,7 +236,7 @@ def validate_with_spec(spec: TypeSpec | str, data: Any, max_depth: int = 10) -> 
                 if not isinstance(current_data, list):
                     return False
                 for item in current_data:
-                    stack.append((current_spec.items, item, depth + 1))
+                    stack.append((current_spec.items, item, depth + 1))  # type: ignore
             elif isinstance(current_spec, UnionTypeSpec):
                 # Unionの各variantをチェック
                 for variant in current_spec.variants:
@@ -266,8 +266,6 @@ def validate_with_spec(spec: TypeSpec | str, data: Any, max_depth: int = 10) -> 
                     return True
                 else:
                     return False
-            else:
-                return False
         except Exception:
             return False
 

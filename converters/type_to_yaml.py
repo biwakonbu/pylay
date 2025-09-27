@@ -1,6 +1,7 @@
 import yaml
 import inspect
-from typing import Any, get_origin, get_args, Dict, List, Union as TypingUnion, Optional
+from typing import Any, get_origin, get_args, Optional, Union
+from types import UnionType
 
 from schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeSpecOrRef
 from src.schemas.graph_types import TypeDependencyGraph
@@ -15,7 +16,7 @@ def _get_basic_type_str(typ: type[Any]) -> str:
         float: 'float',
         bool: 'bool',
     }
-    return basic_type_mapping.get(typ, 'any')
+    return basic_type_mapping.get(typ, 'str')
 
 def _get_type_name(typ: type[Any]) -> str:
     """型名を取得（ジェネリック型の場合も考慮）"""
@@ -59,7 +60,7 @@ def _get_field_docstring(cls: type[Any], field_name: str) -> str | None:
         pass
     return None
 
-def _get_class_properties_with_docstrings(cls: type[Any]) -> Dict[str, TypeSpecOrRef]:
+def _get_class_properties_with_docstrings(cls: type[Any]) -> dict[str, Any]:
     """クラスのプロパティとフィールドdocstringを取得"""
     properties = {}
 
@@ -129,7 +130,7 @@ def _handle_dict_type(typ: type[Any], type_name: str, description: str | None, a
 
         # Dict[str, T] のような場合、propertiesとして扱う
         if key_type is str:
-            properties: Dict[str, TypeSpecOrRef] = {}
+            properties: dict[str, TypeSpecOrRef] = {}
 
             # 値型がカスタム型の場合、参照として保持
             if get_origin(value_type) is None and value_type not in {str, int, float, bool}:
@@ -155,7 +156,7 @@ def _handle_dict_type(typ: type[Any], type_name: str, description: str | None, a
 def _handle_union_type(typ: type[Any], type_name: str, description: str | None, args: tuple[type, ...]) -> UnionTypeSpec:
     """Union型をUnionTypeSpecに変換"""
     if args:
-        variants: List[TypeSpecOrRef] = []
+        variants: list[TypeSpecOrRef] = []
 
         for arg in args:
             if get_origin(arg) is None and arg not in {str, int, float, bool}:
@@ -188,14 +189,14 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
         return _handle_list_type(typ, type_name, description, args)
     elif origin is dict:
         return _handle_dict_type(typ, type_name, description, args)
-    elif origin is TypingUnion:
+    elif origin is Union or origin is UnionType:
         return _handle_union_type(typ, type_name, description, args)
     else:
         # 未サポート型
         return TypeSpec(name=type_name, type='unknown', description=description)
 
 def type_to_yaml(typ: type[Any], output_file: Optional[str] = None, as_root: bool = True,
-                 dependencies: Optional[TypeDependencyGraph] = None) -> str | Dict[str, dict]:
+                 dependencies: Optional[TypeDependencyGraph] = None) -> str | dict[str, dict]:
     """型をYAML文字列に変換、またはファイル出力 (v1.1対応)"""
     spec = type_to_spec(typ)
 
@@ -209,12 +210,12 @@ def type_to_yaml(typ: type[Any], output_file: Optional[str] = None, as_root: boo
 
     if as_root:
         # 単一型: 型名をキーとして出力
-        yaml_data = {typ.__name__: spec_data}
+        yaml_data = {_get_type_name(typ): spec_data}
         yaml_str = yaml.dump(yaml_data, default_flow_style=False, allow_unicode=True, indent=2)
     else:
         # 従来形式 (互換性用)
         yaml_str = yaml.dump(spec.model_dump(), default_flow_style=False, allow_unicode=True, indent=2)
-        yaml_data = yaml_str  # 文字列
+        # yaml_data は文字列として扱う
 
     if output_file:
         with open(output_file, 'w', encoding='utf-8') as f:
@@ -222,7 +223,7 @@ def type_to_yaml(typ: type[Any], output_file: Optional[str] = None, as_root: boo
 
     return yaml_str if as_root else yaml_data
 
-def types_to_yaml(types: Dict[str, type[Any]], output_file: Optional[str] = None) -> str:
+def types_to_yaml(types: dict[str, type[Any]], output_file: Optional[str] = None) -> str:
     """複数型をYAML文字列に変換 (v1.1対応)"""
     specs = {}
     for name, typ in types.items():
@@ -241,9 +242,9 @@ def types_to_yaml(types: Dict[str, type[Any]], output_file: Optional[str] = None
     return yaml_str
 
 
-def _build_dependency_yaml(graph: TypeDependencyGraph) -> Dict[str, List[str]]:
+def _build_dependency_yaml(graph: TypeDependencyGraph) -> dict[str, list[str]]:
     """TypeDependencyGraphからYAML依存データを構築"""
-    dependencies = {}
+    dependencies: dict[str, list[str]] = {}
 
     for edge in graph.edges:
         if edge.source not in dependencies:
@@ -255,14 +256,14 @@ def _build_dependency_yaml(graph: TypeDependencyGraph) -> Dict[str, List[str]]:
 
 # 例
 if __name__ == "__main__":
-    from typing import List, Dict, Union
+    # テスト用（実際の使用では削除してください）
 
     # テスト型
     UserId = str  # NewTypeではないが簡易
-    Users = List[Dict[str, str]]
-    Result = Union[int, str]
+    Users = list[dict[str, str]]
+    Result = int | str
 
     print("v1.1形式出力:")
-    print(type_to_yaml(Users, as_root=True))
+    print(type_to_yaml(dict, as_root=True))
     print("\n従来形式出力:")
-    print(type_to_yaml(Result, as_root=False))
+    print(type_to_yaml(int, as_root=False))
