@@ -1,0 +1,503 @@
+---
+description: Pythonファイルの型解析、型修正、型アノテーションの追加/修正時に自動適用。Pydantic型システムのベストプラクティスを提供。samidare-genプロジェクト固有のLP生成・Temporalワークフロー型システムを考慮。
+alwaysApply: false
+---
+# Python型アノテーションの近代的ルールと型安全性ガイドライン
+
+## 基本原則
+
+- **型安全性を最優先**: `Any`型や構造化されていない辞書の使用を避ける
+- **近代的な型アノテーション**: Python 3.10+の`X | Y`構文を使用（`Union[X, Y]`禁止）
+- **ドメイン境界の明確化**: プリミティブ型をそのまま使用せず、NewTypeでドメイン境界を明確化
+- **samidare-genプロジェクト固有指針**:
+  - **TypedDict最小化**: パフォーマンスボトルネックや過度な複雑化が発生する場合のみ使用。原則としてPydantic BaseModelを優先
+  - **積極的な独自型定義**: NewTypeやPydanticでLP生成・ワークフロー固有の値の特性を表現する型を積極的に作成
+  - **詳細なdocstring**: 型からドキュメントを自動生成するため、型定義には詳細な説明をdocstringで記述
+
+## Pydantic型システムの活用
+
+### BaseModel - 主要なデータモデル基底クラス
+
+Pydantic v2の`BaseModel`は、データ検証・変換・シリアライズを自動的に行う強力な基底クラスです：
+
+```python
+from pydantic import BaseModel, Field
+from typing import Literal
+
+class UserProfile(BaseModel):
+    """ユーザー情報モデル"""
+    id: int = Field(..., description="ユーザーID")
+    name: str = Field(..., min_length=1, max_length=100)
+    email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$")
+    role: Literal["admin", "user", "moderator"] = "user"
+
+# 使用例
+user = UserProfile(id=123, name="田中太郎", email="tanaka@example.com")
+print(user.model_dump())  # 検証済みデータを辞書に変換
+```
+
+### RootModel - カスタムルートタイプ
+
+単一の値やコレクションをルートとするモデル：
+
+```python
+from pydantic import RootModel
+
+class StringList(RootModel[list[str]]):
+    """文字列リストのRootModel"""
+    root: list[str]
+```
+
+### PrivateAttr - プライベート属性
+
+検証されないプライベート属性：
+
+```python
+from pydantic import BaseModel, PrivateAttr
+
+class UserWithCache(BaseModel):
+    id: int
+    name: str
+    _cache_hit_count: int = PrivateAttr(default=0)
+```
+
+### Field - フィールド設定
+
+詳細なフィールド制約：
+
+```python
+from pydantic import BaseModel, Field
+
+class Product(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100, description="商品名")
+    price: float = Field(..., gt=0, description="価格")
+    tags: list[str] = Field(default_factory=list, description="タグ")
+```
+
+### Pydantic設定管理
+
+環境変数からの設定読み込み：
+
+```python
+from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings
+
+class DatabaseConfig(BaseModel):
+    host: str = Field(default="localhost")
+    port: int = Field(default=5432, ge=1, le=65535)
+    database: str = Field(..., min_length=1)
+    user: str = Field(..., min_length=1)
+
+class AppSettings(BaseSettings):
+    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
+    debug: bool = Field(default=False)
+
+    class Config:
+        env_nested_delimiter = "__"
+        env_prefix = "APP_"
+```
+
+### Pydantic Types - 組み込み型と変換
+
+Pydantic v2の組み込み型で自動検証・変換：
+
+```python
+from pydantic import BaseModel
+from pydantic.types import EmailStr, HttpUrl
+from uuid import UUID
+
+class Contact(BaseModel):
+    """連絡先モデル - Pydantic Types使用例"""
+    id: UUID  # UUID変換
+    email: EmailStr  # メール検証
+    website: HttpUrl  # URL検証
+```
+
+### Unions & Validators - 複数型とカスタム検証
+
+Unionで複数型を許可し、@field_validatorでカスタムルール：
+
+```python
+from pydantic import BaseModel, Field, field_validator
+from typing import Union
+
+class FlexibleData(BaseModel):
+    """柔軟なデータモデル - UnionとValidator"""
+    value: Union[str, int, float]  # 複数型
+    mode: str = "auto"
+
+    @field_validator('value')
+    @classmethod
+    def validate_value(cls, v):
+        if isinstance(v, str) and len(v) > 10:
+            raise ValueError("String too long")
+        return v
+```
+
+### Strict Mode - 厳格検証
+
+型変換を無効化し、厳格に検証：
+
+```python
+from pydantic import BaseModel, ConfigDict
+
+class StrictModel(BaseModel):
+    model_config = ConfigDict(strict=True)
+    value: int  # str → int 変換を無効化
+```
+
+### Generic Models & Type Adapter - ジェネリックと軽量検証
+
+Genericで再利用可能なモデル、TypeAdapterで軽量検証：
+
+```python
+from pydantic import BaseModel, TypeAdapter
+from typing import Generic, TypeVar
+
+T = TypeVar('T')
+
+class Response(BaseModel, Generic[T]):
+    data: T
+    status: str
+```
+
+### Serialization & JSON Schema - 出力とスキーマ生成
+
+model_dump()で出力制御、model_json_schema()でスキーマ生成：
+
+```python
+from pydantic import BaseModel, Field
+
+class User(BaseModel):
+    name: str
+    age: int = Field(alias="user_age")
+
+user = User(name="太郎", user_age=30)
+print(user.model_dump(by_alias=True))
+```
+
+### Error Handling - エラー処理
+
+ValidationErrorの詳細ハンドリング：
+
+```python
+from pydantic import BaseModel, ValidationError, Field
+
+class Product(BaseModel):
+    name: str
+    price: float = Field(gt=0)
+```
+
+### Dataclasses & Forward Refs - Dataclass統合と循環参照
+
+@dataclass + Pydantic、Forward Refsで循環参照解決：
+
+```python
+from pydantic.dataclasses import dataclass
+
+@dataclass
+class ProductDataclass:
+    name: str
+    price: float
+```
+
+## ドメイン型システム
+
+### 1. samidare-gen基本ドメイン型（NewType + Pydanticベース）
+
+samidare-genプロジェクトでは、LP生成・Temporalワークフロー固有の型を積極的に定義し、値の特性を明確に表現します：
+
+```python
+from typing import NewType, Literal
+from pydantic import BaseModel, Field
+
+# ===============================
+# 識別子型（NewTypeベース）
+# ===============================
+
+UserId = NewType("UserId", str)
+"""ユーザーID: ユーザーを一意に識別する文字列"""
+ConversionId = NewType("ConversionId", str)
+"""コンバージョンID: LP生成ワークフローの実行を一意に識別する文字列"""
+TemplateId = NewType("TemplateId", str)
+"""テンプレートID: 使用するLPテンプレートを識別する文字列"""
+
+# ===============================
+# コンテンツ型（NewTypeベース）
+# ===============================
+
+HTMLContent = NewType("HTMLContent", str)
+"""HTMLコンテンツ: 生成されたHTML文字列"""
+CSSContent = NewType("CSSContent", str)
+"""CSSコンテンツ: 生成されたCSS文字列"""
+
+# ===============================
+# LP生成固有型（NewTypeベース）
+# ===============================
+
+LPTitle = NewType("LPTitle", str)
+"""LPタイトル: ランディングページのメインタイトル"""
+SectionType = NewType("SectionType", str)
+"""セクションタイプ: LPのセクション種類"""
+TemplateVariable = NewType("TemplateVariable", str)
+"""テンプレート変数: Jinja2形式の変数"""
+
+# ===============================
+# 列挙・設定型
+# ===============================
+
+LanguageCode = Literal["ja", "en", "zh", "ko"]
+"""言語コード: ISO言語コードの厳密な定義"""
+```
+
+### 2. Pydanticベースのドメイン型
+
+NewTypeの代わりにPydanticモデルを使用したより強力な型システム：
+
+```python
+from pydantic import BaseModel, Field
+
+# 識別子型
+class UserId(BaseModel):
+    """ユーザーID"""
+    value: str = Field(..., pattern=r"^[a-zA-Z0-9_-]{1,50}$")
+
+class ConversionId(BaseModel):
+    """変換ID"""
+    value: str = Field(..., pattern=r"^[a-zA-Z0-9_-]{1,50}$")
+
+# コンテンツ型
+class HTMLContent(BaseModel):
+    """HTMLコンテンツ"""
+    content: str = Field(..., min_length=1)
+
+    def __str__(self) -> str:
+        return self.content
+```
+
+### 3. 応用ドメイン型
+
+基本型を組み合わせた複雑なドメイン型：
+
+```python
+from pydantic import BaseModel, Field
+from typing import Literal
+
+class LPGenerationRequest(BaseModel):
+    """LP生成リクエスト"""
+    user_id: UserId
+    template_id: TemplateId
+    target_audience: Literal["general", "business", "creative"]
+
+class GenerationResult(BaseModel):
+    """生成結果"""
+    conversion_id: ConversionId
+    status: Literal["pending", "processing", "completed", "failed"]
+    progress: int = Field(..., ge=0, le=100)
+```
+
+### 4. ワークフロー関連型
+
+Temporalワークフローで使用する型：
+
+```python
+from pydantic import BaseModel, Field
+from typing import Literal
+from enum import Enum
+
+class WorkflowStatus(str, Enum):
+    """ワークフローステータス"""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+class LPGenerationWorkflowInput(BaseModel):
+    """LP生成ワークフローの入力"""
+    conversion_id: ConversionId
+    user_id: UserId
+    priority: int = Field(default=1, ge=1, le=10)
+
+class WorkflowProgress(BaseModel):
+    """ワークフロー進捗"""
+    workflow_id: str
+    status: WorkflowStatus
+    progress_percentage: int = Field(..., ge=0, le=100)
+```
+
+### 5. エラーハンドリング型
+
+型安全なエラーハンドリング：
+
+```python
+from pydantic import BaseModel, Field
+from typing import Generic, TypeVar, Literal
+
+T = TypeVar('T')
+
+class Result(Generic[T]):
+    """成功/失敗を表すResult型"""
+    def __init__(self, success: T | None = None, error: str | None = None):
+        self.success = success
+        self.error = error
+
+class BaseGenerationError(BaseModel):
+    """LP生成関連エラーの基底クラス"""
+    message: str
+    context: dict[str, str | int | float | bool | None] = Field(default_factory=dict)
+
+class WorkflowError(BaseGenerationError):
+    """ワークフローエラー"""
+    error_type: Literal["workflow"] = "workflow"
+    activity_name: str | None = None
+```
+
+## 型アノテーションの近代化
+
+### ✅ 使用推奨
+```python
+# 近代的なUnion表記
+def process_data(data: str | int | None) -> dict[str, str]:
+    pass
+
+# ジェネリック型の近代表記
+from collections.abc import Sequence
+def get_items() -> list[str]:
+    pass
+
+# リテラル型
+from typing import Literal
+def set_mode(mode: Literal["auto", "manual"]) -> None:
+    pass
+```
+
+### ❌ 使用禁止
+```python
+# 古いUnion表記（禁止）
+from typing import Union
+def process_data(data: Union[str, int, None]) -> Dict[str, str]:
+    pass
+
+# 古いジェネリック型（禁止）
+from typing import List, Dict
+def get_items() -> List[str]:
+    pass
+```
+
+## Any型使用ガイドライン
+
+### ❌ 原則禁止
+```python
+# 型チェックを無効化するため使用禁止
+def unsafe_function(data: Any) -> Any:
+    return data["key"]  # ランタイムエラー発生の可能性
+```
+
+### ✅ 例外的に許可される場合
+```python
+# 外部ライブラリの型不備の場合のみ
+# TODO: 型安全化 - 外部ライブラリの型定義が不完全
+def handle_external_api(response: dict[str, Any]) -> None:
+    pass
+
+# レガシーコードの互換性維持の場合
+# TODO: 型安全化 - レガシーAPI対応のため
+def legacy_adapter(data: Any) -> str:
+    return str(data)
+```
+
+### Any型使用時のベストプラクティス
+
+1. **影響範囲の局所化**: Any型は関数/メソッドの境界で型安全な構造に変換する
+2. **Pydantic活用**: 外部データの場合はPydanticで段階的にバリデーション
+3. **TODOコメント**: Any型使用時は必ず改善計画を明記
+
+```python
+# TODO: Any型影響範囲最小化 - アダプタークラス導入予定
+def legacy_function(data: dict[str, Any]) -> dict[str, str]:
+    return {"result": str(data.get("value", ""))}
+```
+
+## 型エイリアスの設計
+
+### 共通型定義の場所
+- `src/schemas/common_types.py`: 全サービス共通のNewType定義
+- `src/schemas/domain_types.py`: ドメイン固有の型定義
+- `src/schemas/activity_schemas.py`: アクティビティ間契約定義
+
+### ✅ 適切な型エイリアス
+```python
+# 基本型エイリアス
+type JSONValue = str | int | float | bool | None | list["JSONValue"] | dict[str, "JSONValue"]
+type ErrorContext = dict[str, str | int | float | bool | None]
+
+# ドメイン型エイリアス
+type SEOSettings = dict[str, str | int | bool]
+type TemplateConfig = dict[str, JSONValue]
+```
+
+## Pydantic vs TypedDict の使い分け
+
+### Pydanticを優先的に使用する場合（samidare-gen推奨）
+- **外部API接続**: ランタイム検証、複雑なバリデーションが必要
+- **設定管理**: 環境変数からの自動読み込み
+- **データ変換**: 自動的な型変換・シリアライズ
+- **ドメインモデル**: ビジネスロジックを含む複雑なモデル
+- **LP生成ワークフロー**: コンテンツ生成、SEO最適化、画像処理などの複雑なデータ構造
+- **Temporalアクティビティ間通信**: 構造化されたデータ交換が必要な場合
+- **JSONシリアライズ**: APIレスポンスや永続化が必要な場合
+
+### TypedDictを限定的に使用する場合
+- **軽量な内部データ構造**: パフォーマンスが極めて重要な単純な辞書ベースの構造
+- **既存の辞書互換API**: 既存システムとの互換性維持が必要な場合
+- **プロトタイピング**: 高速な開発が必要な初期段階での構造定義
+
+```python
+# Pydantic - 外部APIからのデータ検証
+class APIUser(BaseModel):
+    id: int
+    name: str = Field(..., min_length=1)
+
+# TypedDict - 内部データ交換
+class InternalUserProfile(TypedDict, total=False):
+    user_id: int
+    display_name: str
+```
+
+## コレクション型の使用
+
+### ✅ 推奨されるコレクション型
+```python
+from collections.abc import Sequence, Mapping
+
+def process_items(items: Sequence[str]) -> list[str]:
+    """不変シーケンス - 読み取り専用"""
+    return [item.upper() for item in items]
+```
+
+## 型チェックの実行
+
+### ローカル開発での型チェック
+```bash
+# バックエンドの型チェック
+cd backend && make type-check
+
+# 特定のファイルの型チェック
+uv run mypy src/repositories/intention_repository.py
+```
+
+### CI/CDでの型チェック
+- プルリクエスト時に自動実行
+- `disallow_any_explicit = true` で厳格チェック
+
+## 型改善の優先順位
+
+1. **高優先度**: APIインターフェース、公開関数、データモデル
+2. **中優先度**: ビジネスロジック、内部関数
+3. **低優先度**: ユーティリティ関数、テストヘルパー（ただしAny禁止）
+
+## 参考資料
+
+- [Pydantic Models Documentation](https://docs.pydantic.dev/latest/concepts/models/)
+- [Python Typing Documentation](https://docs.python.org/3/library/typing.html)
+- [mypy Documentation](https://mypy.readthedocs.io/)

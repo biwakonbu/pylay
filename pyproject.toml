@@ -1,0 +1,43 @@
+[tool]
+rye = { dev-dependencies = [
+    "mypy>=1.18.2",
+] }
+[tool.poetry]
+name = "pylay"
+version = "0.1.0"
+description = "Python の type hint と docstrings を利用した types <-> docs 間の透過的なジェネレータ"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+ruff = "^0.6.0"
+
+# 本番依存
+pydantic = "^2.8.2"
+pyyaml = "^6.0.2"
+ruamel.yaml = "^0.18.6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "Q", "T20", "C4", "W", "ARG", "P", "PT", "RSE", "SIM", "TID", "A001", "A002", "A003", "C90", "D", "DJ", "DTZ", "ERA", "FA", "FA100", "FA101", "FA102", "FA103", "FBT", "G", "ICN", "ISC", "INP", "ISMS", "LOG", "M", "N", "PD", "PGH", "PIE", "PL", "PLC", "PLE", "PR", "PS", "PT", "PU", "PYI", "RET", "RSE", "RUF", "S", "SQL", "T10", "T20", "TCH", "TID", "TRY", "SLF", "SLOT", "TCH", "ARG", "PTH", "COM", "RSE", "MAI"]
+ignore = []
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
