@@ -9,19 +9,19 @@ class RefPlaceholder:
     def __init__(self, ref_name: str):
         self.ref_name = ref_name
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.ref_name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"RefPlaceholder({self.ref_name})"
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, RefPlaceholder):
             return self.ref_name == other.ref_name
         return self.ref_name == other
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source_type, handler):
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> Any:
         """Pydanticのスキーマ生成"""
         from pydantic_core import core_schema
         return core_schema.str_schema()
@@ -46,10 +46,10 @@ class DictTypeSpec(TypeSpec):
 
     @field_validator('properties', mode='before')
     @classmethod
-    def validate_properties_before(cls, v):
+    def validate_properties_before(cls, v: Any) -> Any:
         """propertiesフィールドの前処理バリデーション（参照文字列を保持）"""
         if isinstance(v, dict):
-            result = {}
+            result: dict[str, Any] = {}
             for key, value in v.items():
                 if isinstance(value, str):
                     # 参照文字列の場合はそのまま保持
@@ -74,7 +74,7 @@ class TypeRoot(BaseModel):
 
     @model_validator(mode='before')
     @classmethod
-    def preprocess_types(cls, data):
+    def preprocess_types(cls, data: Any) -> Any:
         """TypeRoot構築前の参照文字列処理"""
         if isinstance(data, dict) and 'types' in data:
             processed_types = {}
@@ -89,7 +89,7 @@ class TypeRoot(BaseModel):
 
     @field_validator('types', mode='before')
     @classmethod
-    def validate_types(cls, v):
+    def validate_types(cls, v: Any) -> Any:
         """typesフィールドのバリデーション（参照文字列を保持）"""
         if isinstance(v, dict):
             result = {}
@@ -106,14 +106,14 @@ class TypeRoot(BaseModel):
 
 def _preprocess_refs_for_yaml_parsing(data: dict) -> dict:
     """YAML解析後の参照文字列をRefPlaceholderに変換"""
-    result = {}
+    result: dict[str, Any] = {}
     for key, value in data.items():
         if key == 'items' and isinstance(value, str):
             # itemsが参照文字列の場合はRefPlaceholderに変換
             result[key] = RefPlaceholder(value)
         elif key == 'properties' and isinstance(value, dict):
             # properties内の参照文字列をRefPlaceholderに変換
-            processed_props = {}
+            processed_props: dict[str, Any] = {}
             for prop_key, prop_value in value.items():
                 if isinstance(prop_value, str):
                     # 参照文字列の場合はRefPlaceholderに変換
@@ -124,7 +124,7 @@ def _preprocess_refs_for_yaml_parsing(data: dict) -> dict:
             result[key] = processed_props
         elif key == 'variants' and isinstance(value, list):
             # variants内の参照文字列をRefPlaceholderに変換
-            processed_variants = []
+            processed_variants: list[Any] = []
             for variant in value:
                 if isinstance(variant, str):
                     # 参照文字列の場合はRefPlaceholderに変換
@@ -137,7 +137,7 @@ def _preprocess_refs_for_yaml_parsing(data: dict) -> dict:
             result[key] = value
     return result
 
-def _create_spec_from_data(data: dict, root_key: str = None) -> TypeSpec:
+def _create_spec_from_data(data: dict, root_key: str | None = None) -> TypeSpec:
     """dictからTypeSpecサブクラスを作成 (内部関数)"""
     # 参照文字列を保持するための前処理
     processed_data = _preprocess_refs_for_spec_creation(data)
@@ -167,16 +167,16 @@ def _create_spec_from_data(data: dict, root_key: str = None) -> TypeSpec:
             processed_data['name'] = root_key
         return TypeSpec(**processed_data)
 
-def _preprocess_refs_for_spec_creation(data: dict) -> dict:
+def _preprocess_refs_for_spec_creation(data: dict) -> dict[str, Any]:
     """参照文字列を保持するための前処理"""
-    result = {}
+    result: dict[str, Any] = {}
     for key, value in data.items():
         if key == 'items' and isinstance(value, str):
             # itemsが参照文字列の場合はそのまま保持
             result[key] = value
         elif key == 'properties' and isinstance(value, dict):
             # properties内の参照文字列を保持
-            processed_props = {}
+            processed_props: dict[str, Any] = {}
             for prop_key, prop_value in value.items():
                 if isinstance(prop_value, str):
                     # 参照文字列の場合はそのまま保持
@@ -187,7 +187,7 @@ def _preprocess_refs_for_spec_creation(data: dict) -> dict:
             result[key] = processed_props
         elif key == 'variants' and isinstance(value, list):
             # variants内の参照文字列を保持
-            processed_variants = []
+            processed_variants: list[Any] = []
             for variant in value:
                 if isinstance(variant, str):
                     # 参照文字列の場合はそのまま保持
@@ -200,7 +200,7 @@ def _preprocess_refs_for_spec_creation(data: dict) -> dict:
             result[key] = value
     return result
 
-def _create_spec_from_data_preserve_refs(data: dict, root_key: str = None) -> TypeSpec:
+def _create_spec_from_data_preserve_refs(data: dict, root_key: str | None = None) -> TypeSpec:
     """参照文字列を保持したままTypeSpecを作成 (内部関数)"""
     # 参照文字列を明示的に保持するための特別な処理
     type_key = data.get('type')
@@ -228,7 +228,7 @@ def _create_spec_from_data_preserve_refs(data: dict, root_key: str = None) -> Ty
 # 参照解決のためのコンテキスト
 class TypeContext:
     """型参照解決のためのコンテキスト"""
-    def __init__(self):
+    def __init__(self) -> None:
         self.type_map: Dict[str, TypeSpec] = {}
         self.resolving: set[str] = set()  # 循環参照検出用
 
@@ -236,7 +236,7 @@ class TypeContext:
         """型をコンテキストに追加"""
         self.type_map[name] = spec
 
-    def resolve_ref(self, ref) -> TypeSpec:
+    def resolve_ref(self, ref: str) -> TypeSpec:
         """参照を解決してTypeSpecを返す"""
         if isinstance(ref, RefPlaceholder):
             ref_name = ref.ref_name
@@ -265,8 +265,6 @@ class TypeContext:
                 return self._resolve_nested_refs(resolved)
             finally:
                 self.resolving.remove(ref)
-        else:
-            return ref
 
 
     def _resolve_nested_refs(self, spec: TypeSpec) -> TypeSpec:

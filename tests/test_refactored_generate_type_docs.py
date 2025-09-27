@@ -20,6 +20,8 @@ from doc_generators.type_doc_generator import (
 from doc_generators.type_inspector import TypeInspector
 
 
+from typing import Callable
+
 # Test fixtures
 class MockPydanticModel(BaseModel):
     """Mock Pydantic model for testing."""
@@ -38,21 +40,21 @@ def MockNewType():
 class TestTypeInspector:
     """Test the TypeInspector utility class."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test fixtures."""
         self.inspector = TypeInspector()
 
-    def test_initialization_with_default_skip_types(self):
+    def test_initialization_with_default_skip_types(self) -> None:
         """Test that TypeInspector initializes with default skip types."""
         assert "NewType" in self.inspector.skip_types
 
-    def test_initialization_with_custom_skip_types(self):
+    def test_initialization_with_custom_skip_types(self) -> None:
         """Test initialization with custom skip types."""
         custom_skip = {"CustomType", "IgnoreMe"}
         inspector = TypeInspector(skip_types=custom_skip)
         assert inspector.skip_types == custom_skip
 
-    def test_get_docstring_from_class(self):
+    def test_get_docstring_from_class(self) -> None:
         """Test extracting docstring from a class."""
         class TestClass:
             """This is a test docstring."""
@@ -61,7 +63,7 @@ class TestTypeInspector:
         docstring = self.inspector.get_docstring(TestClass)
         assert docstring == "This is a test docstring."
 
-    def test_get_docstring_from_class_without_docstring(self):
+    def test_get_docstring_from_class_without_docstring(self) -> None:
         """Test extracting docstring from class without docstring."""
         class TestClass:
             pass
@@ -69,7 +71,7 @@ class TestTypeInspector:
         docstring = self.inspector.get_docstring(TestClass)
         assert docstring is None
 
-    def test_extract_code_blocks_with_markdown(self):
+    def test_extract_code_blocks_with_markdown(self) -> None:
         """Test extracting code blocks from docstring with markdown."""
         docstring = """
         This is a description.

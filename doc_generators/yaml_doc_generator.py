@@ -9,7 +9,12 @@ from schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTy
 class YamlDocGenerator(DocumentGenerator):
     """YAML型仕様からドキュメントを生成"""
 
-    def generate(self, spec: TypeSpec, output_path: Path) -> None:
+    def generate(self, output_path: Path, **kwargs: object) -> None:
+        spec = kwargs.get('spec')
+        if spec is None:
+            raise ValueError("spec parameter is required")
+        if not isinstance(spec, TypeSpec):
+            raise ValueError("spec must be a TypeSpec instance")
         self.md.clear()  # 既存のコンテンツをクリア
         self.md = MarkdownBuilder()
 
@@ -25,9 +30,12 @@ class YamlDocGenerator(DocumentGenerator):
         if spec.description:
             self.md.paragraph(spec.description)
 
-    def _generate_body(self, spec: TypeSpec) -> None:
+    def _generate_body(self, spec: TypeSpec | str) -> None:
         self.md.heading(2, "型情報")
-        self.md.code_block("yaml", self._spec_to_yaml(spec))
+        if isinstance(spec, str):
+            self.md.paragraph(f"参照: {spec}")
+        else:
+            self.md.code_block("yaml", self._spec_to_yaml(spec))
 
         if isinstance(spec, ListTypeSpec):
             self.md.heading(2, "要素型")
@@ -46,9 +54,11 @@ class YamlDocGenerator(DocumentGenerator):
         self.md.horizontal_rule()
         self.md.paragraph("このドキュメントは自動生成されました。")
 
-    def _spec_to_yaml(self, spec: TypeSpec) -> str:
+    def _spec_to_yaml(self, spec: TypeSpec | str) -> str:
+        if isinstance(spec, str):
+            return f'"{spec}"'  # 参照文字列の場合は引用符で囲む
         import yaml
-        return yaml.dump(spec.model_dump(), default_flow_style=False, allow_unicode=True, indent=2)
+        return yaml.dump(spec.model_dump(), default_flow_style=False, allow_unicode=True, indent=2)  # type: ignore[no-any-return]
 
 # 統合関数
 def generate_yaml_docs(spec: TypeSpec, output_dir: str = "docs/yaml_types") -> None:
@@ -56,4 +66,4 @@ def generate_yaml_docs(spec: TypeSpec, output_dir: str = "docs/yaml_types") -> N
     config = TypeDocConfig(output_directory=Path(output_dir))
     generator = YamlDocGenerator(filesystem=config.filesystem)  # 依存注入
     output_path = Path(output_dir) / f"{spec.name}.md"
-    generator.generate(spec, output_path)
+    generator.generate(output_path, spec=spec)

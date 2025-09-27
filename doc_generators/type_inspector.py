@@ -18,7 +18,7 @@ class TypeInspector:
         """
         self.skip_types = skip_types or {"NewType"}
 
-    def get_docstring(self, type_cls: type[Any]) -> str | None:  # type: ignore[misc]
+    def get_docstring(self, type_cls: type[Any]) -> str | None:
         """Get docstring from a type class.
 
         Args:
@@ -65,7 +65,7 @@ class TypeInspector:
 
         return description_lines, code_blocks
 
-    def get_type_origin(self, type_cls: type[Any]) -> tuple[Any, tuple[Any, ...]]:  # type: ignore[misc] # TODO: 型安全化 - 動的型解析のため
+    def get_type_origin(self, type_cls: type[Any]) -> tuple[Any, tuple[Any, ...]]:
         """Get type origin and args.
 
         Args:
@@ -76,7 +76,7 @@ class TypeInspector:
         """
         return get_origin(type_cls), get_args(type_cls)
 
-    def is_pydantic_model(self, type_cls: type[Any]) -> bool:  # type: ignore[misc]
+    def is_pydantic_model(self, type_cls: type[Any]) -> bool:
         """Check if type is a Pydantic model.
 
         Args:
@@ -91,7 +91,7 @@ class TypeInspector:
             and issubclass(type_cls, BaseModel)
         )
 
-    def is_newtype(self, type_cls: type[Any]) -> bool:  # type: ignore[misc]
+    def is_newtype(self, type_cls: type[Any]) -> bool:
         """Check if type is a NewType.
 
         Args:
@@ -102,7 +102,7 @@ class TypeInspector:
         """
         return hasattr(type_cls, "__supertype__")
 
-    def get_newtype_supertype(self, type_cls: type[Any]) -> type[Any] | None:  # type: ignore[misc]
+    def get_newtype_supertype(self, type_cls: type[Any]) -> type[Any] | None:
         """Get NewType supertype.
 
         Args:
@@ -113,7 +113,7 @@ class TypeInspector:
         """
         return getattr(type_cls, "__supertype__", None)
 
-    def get_pydantic_schema(self, type_cls: type[Any]) -> dict[str, Any] | None:  # type: ignore[misc] # TODO: 型安全化 - JSONスキーマ型定義
+    def get_pydantic_schema(self, type_cls: type[Any]) -> dict[str, Any] | None:
         """Get Pydantic JSON schema.
 
         Args:
@@ -126,7 +126,7 @@ class TypeInspector:
             return None
 
         try:
-            return type_cls.model_json_schema()
+            return type_cls.model_json_schema()  # type: ignore[no-any-return]
         except Exception:
             # Handle any schema generation errors
             return None
@@ -156,7 +156,7 @@ class TypeInspector:
         """
         return type_name in self.skip_types
 
-    def format_type_definition(self, name: str, type_cls: type[Any]) -> str:  # type: ignore[misc]
+    def format_type_definition(self, name: str, type_cls: type[Any]) -> str:
         """Format type definition for documentation.
 
         Args:

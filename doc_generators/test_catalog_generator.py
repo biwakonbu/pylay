@@ -152,7 +152,7 @@ class CatalogGenerator(DocumentGenerator):
 
     def _extract_test_functions(
         self, module: object
-    ) -> list[tuple[str, Callable[..., Any]]]:  # type: ignore[misc] # TODO: 型安全化 - 動的モジュール検査のため
+    ) -> list[tuple[str, Callable[..., Any]]]:
         """Extract test functions and methods from a module.
 
         Args:
@@ -161,7 +161,7 @@ class CatalogGenerator(DocumentGenerator):
         Returns:
             List of (function_name, function) tuples
         """
-        test_functions = []
+        test_functions: list[tuple[str, Callable[..., Any]]] = []
         members: list[tuple[str, Any]] = inspect.getmembers(module)
 
         for member_name, member in members:
@@ -171,8 +171,7 @@ class CatalogGenerator(DocumentGenerator):
 
             # Test methods in test classes
             elif inspect.isclass(member) and member_name.startswith("Test"):
-                # Add the test class itself
-                test_functions.append((member_name, member))
+                # Skip test classes - only extract test methods
 
                 class_methods = inspect.getmembers(member, inspect.isfunction)
                 for method_name, method in class_methods:

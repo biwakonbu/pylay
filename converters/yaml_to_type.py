@@ -5,7 +5,7 @@ from schemas.yaml_type_spec import (
     TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeRoot, TypeContext, _create_spec_from_data
 )
 
-def yaml_to_spec(yaml_str: str, root_key: str = None) -> TypeSpec | TypeRoot:
+def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeRoot:  # type: ignore[import-untyped]
     """YAML文字列からTypeSpecまたはTypeRootを生成 (v1.1対応、参照解決付き)"""
     data = yaml.safe_load(yaml_str)
 

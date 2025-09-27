@@ -39,9 +39,7 @@ class LayerDocGenerator(DocumentGenerator):
 
     def generate(
         self,
-        layer: str,
-        types: dict[str, type[Any]],
-        output_path: Path | None = None,
+        output_path: Path,
         **kwargs: object,
     ) -> None:
         """Generate layer documentation.
@@ -52,9 +50,19 @@ class LayerDocGenerator(DocumentGenerator):
             output_path: Optional override for output path
             **kwargs: Additional configuration parameters
         """
+        layer = kwargs.get('layer')
+        types = kwargs.get('types')
+        if not isinstance(layer, str) or not isinstance(types, dict):
+            raise ValueError("layer must be str and types must be dict[str, type[Any]]")
+        if layer is None or types is None:
+            raise ValueError("layer and types parameters are required")
+
         if output_path is None:
             filename = self.config.layer_filename_template.format(layer=layer)
             output_path = self.config.output_directory / filename
+        else:
+            # output_path was provided as parameter
+            pass
 
         # Clear markdown builder
         self.md.clear()
@@ -295,8 +303,7 @@ class IndexDocGenerator(DocumentGenerator):
 
     def generate(
         self,
-        type_registry: dict[str, dict[str, type[Any]]],
-        output_path: Path | None = None,
+        output_path: Path,
         **kwargs: object,
     ) -> None:
         """Generate index documentation.
@@ -306,6 +313,12 @@ class IndexDocGenerator(DocumentGenerator):
             output_path: Optional override for output path
             **kwargs: Additional configuration parameters
         """
+        type_registry = kwargs.get('type_registry')
+        if not isinstance(type_registry, dict):
+            raise ValueError("type_registry must be dict[str, dict[str, type[Any]]]")
+        if type_registry is None:
+            raise ValueError("type_registry parameter is required")
+
         if output_path is None:
             output_path = self.config.output_directory / self.config.index_filename
 

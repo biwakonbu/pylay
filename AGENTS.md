@@ -2,6 +2,18 @@
 
 このドキュメントは、pylayプロジェクトの開発者向けガイドラインです。すべての開発者は、このガイドラインを遵守し、プロジェクトの一貫性と品質を維持してください。
 
+## 必須遵守事項
+
+- **言語ポリシー**: コメント、ドキュメント、コミットメッセージなど、自然言語で表現する必要がある箇所では日本語を使用してください
+- すべての実装/編集/生成タスクは、まず [AGENTS.md](mdc:AGENTS.md) のプロジェクト概要、アーキテクチャ、技術スタックを確認してください
+- 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](mdc:AGENTS.md) に記載された方法を使用してください
+- コーディング規約、命名規則、テスト指針は [AGENTS.md](mdc:AGENTS.md) に厳密に従ってください
+- セキュリティ考慮事項、環境変数設定は [AGENTS.md](mdc:AGENTS.md) に記載されたポリシーを遵守してください
+- プロジェクトステータス（実装済み/開発予定）を確認し、未実装の機能に対しては「未実装/計画中」と明記してください
+- シェルコマンド実行の制限事項（単一コマンドの実行、環境変数の設定制限）を厳守してください
+- ドキュメント整合ポリシーを遵守し、実装とドキュメントの乖離を防いでください
+- このプロジェクトは日本語で運用するため、コメント、ドキュメント、コミットメッセージは日本語で記述してください
+
 ## 1. プロジェクト概要
 
 ### 1.1 プロジェクト名と目的
@@ -77,16 +89,16 @@ pylay/
 - **typing/collections.abc**: 型抽出と操作（Python 3.9+のビルトイン型を活用）
 
 ### 3.2 主要ライブラリ
-- **PyYAML/ruamel.yaml**: YAMLハンドリング
-- **pytest**: テストフレームワーク
-- **mypy**: 型推論と静的型チェック
-- **ast/NetworkX**: 依存関係抽出とグラフ化
-- **Ruff**: 高速リンターとフォーマッター
-- **uv**: Pythonパッケージ管理（推奨）
+- **PyYAML/ruamel.yaml**: YAML形式データの処理
+- **pytest**: テスト実行フレームワーク
+- **mypy**: 型推論と静的型検査
+- **ast/NetworkX**: 依存関係の抽出とグラフ構造化
+- **Ruff**: 高速なリンターとコードフォーマッター
+- **uv**: Pythonパッケージ管理ツール（推奨）
 
 ### 3.3 開発ツール
-- **pre-commit**: コード品質自動チェック
-- **Makefile**: 統一された開発コマンド
+- **pre-commit**: コード品質の自動チェック
+- **Makefile**: 統一された開発用コマンド集
 - **VSCode**: 推奨エディタ（タスク設定済み）
 
 ### 3.4 外部サービス
@@ -137,7 +149,7 @@ mypy
 
 ### 4.5 VSCode設定
 VSCodeを使用する場合、以下の拡張機能が推奨されます：
-- Python (Microsoft)
+- Python（Microsoft社提供）
 - Pylint
 - MyPy Type Checker
 - Prettier
@@ -217,7 +229,7 @@ make test
 # 高速テスト（カバレッジなし）
 make test-fast
 
-# カバレッジレポート確認
+# カバレッジレポートの確認
 make coverage
 ```
 
@@ -226,7 +238,7 @@ make coverage
 tests/
 ├── test_*.py              # ユニットテスト
 ├── test_integration_*.py  # 統合テスト
-└── test_migrations.py     # マイグレーションテスト
+└── test_migrations.py     # 移行テスト
 ```
 
 ## 7. セキュリティ考慮事項
@@ -237,7 +249,7 @@ tests/
 - 深さ制限による無限再帰防止
 
 ### 7.2 依存関係管理
-- **safety**による脆弱性チェック（CIに統合）
+- **safety**による脆弱性のチェック（CIに統合）
 - 最小権限の原則（不要な依存関係を避ける）
 - 定期的なセキュリティ更新
 
@@ -253,7 +265,7 @@ tests/
 
 ### 8.2 オプション環境変数
 ```bash
-# ログレベル（DEBUG, INFO, WARNING, ERROR）
+# ログレベル（DEBUG、INFO、WARNING、ERROR）
 export LOG_LEVEL=INFO
 
 # 出力ディレクトリ
@@ -353,9 +365,9 @@ export MYPY_INFER_LEVEL=2
 
 ## 13. 参考資料
 
-- [Pydantic Documentation](https://docs.pydantic.dev/)
-- [Python Typing](https://docs.python.org/3/library/typing.html)
-- [mypy Documentation](https://mypy.readthedocs.io/en/stable/)
+- [Pydantic ドキュメント](https://docs.pydantic.dev/)
+- [Python 型付け](https://docs.python.org/3/library/typing.html)
+- [mypy ドキュメント](https://mypy.readthedocs.io/en/stable/)
 - [PRD.md](PRD.md): 詳細な製品要件
 - [README.md](README.md): ユーザー向け概要
 
