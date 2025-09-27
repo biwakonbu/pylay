@@ -1,9 +1,8 @@
 import yaml
 import inspect
 from typing import Any, get_origin, get_args, Dict, Union as TypingUnion
-from pydantic import ValidationError
 
-from src.schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeSpecOrRef
+from schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeSpecOrRef
 
 def _get_basic_type_str(typ: type[Any]) -> str:
     """基本型の型名を取得"""
@@ -57,6 +56,33 @@ def _get_field_docstring(cls: type[Any], field_name: str) -> str | None:
         pass
     return None
 
+def _get_class_properties_with_docstrings(cls: type[Any]) -> Dict[str, TypeSpecOrRef]:
+    """クラスのプロパティとフィールドdocstringを取得"""
+    properties = {}
+
+    # クラスアノテーションからフィールドを取得
+    annotations = getattr(cls, '__annotations__', {})
+
+    for field_name, field_type in annotations.items():
+        # フィールドの型をTypeSpecに変換
+        try:
+            field_spec = type_to_spec(field_type)
+            # フィールドのdocstringを取得
+            field_doc = _get_field_docstring(cls, field_name)
+            if field_doc:
+                # docstringがある場合はdescriptionに設定
+                field_spec.description = field_doc
+            properties[field_name] = field_spec
+        except Exception:
+            # 型変換に失敗した場合は基本的なTypeSpecを作成
+            properties[field_name] = TypeSpec(
+                name=field_name,
+                type='unknown',
+                description=_get_field_docstring(cls, field_name)
+            )
+
+    return properties
+
 def type_to_spec(typ: type[Any]) -> TypeSpec:
     """Python型をTypeSpecに変換（v1.1対応）"""
     origin = get_origin(typ)
@@ -74,8 +100,14 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
             type_str = _get_basic_type_str(typ)
             return TypeSpec(name=type_name, type=type_str, description=description)
         else:
-            # カスタムクラスはdict型として扱う（プロパティは後で追加）
-            return TypeSpec(name=type_name, type='dict', description=description)
+            # カスタムクラスはdict型として扱い、フィールドのdocstringを取得
+            properties = _get_class_properties_with_docstrings(typ)
+            return DictTypeSpec(
+                name=type_name,
+                type='dict',
+                description=description,
+                properties=properties
+            )
 
     elif origin is list:
         # List型は常にtype: "list" として処理
@@ -101,7 +133,7 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
             key_type, value_type = args[0], args[1]
 
             # Dict[str, T] のような場合、propertiesとして扱う
-            if key_type == str:
+            if key_type is str:
                 properties: Dict[str, TypeSpecOrRef] = {}
 
                 # 値型がカスタム型の場合、参照として保持
@@ -189,7 +221,6 @@ def types_to_yaml(types: Dict[str, type[Any]], output_file: str = None) -> str:
 # 例
 if __name__ == "__main__":
     from typing import List, Dict, Union
-    import datetime
 
     # テスト型
     UserId = str  # NewTypeではないが簡易

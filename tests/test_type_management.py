@@ -3,15 +3,38 @@ from typing import List, Dict, Union
 import tempfile
 import os
 
-from src.converters.type_to_yaml import type_to_yaml, type_to_spec, types_to_yaml
-from src.converters.yaml_to_type import yaml_to_spec, validate_with_spec
-from src.doc_generators.yaml_doc_generator import generate_yaml_docs
-from src.schemas.yaml_type_spec import TypeSpec, DictTypeSpec
+from converters.type_to_yaml import type_to_yaml, types_to_yaml
+from converters.yaml_to_type import yaml_to_spec, validate_with_spec
+from doc_generators.yaml_doc_generator import generate_yaml_docs
+from schemas.yaml_type_spec import TypeSpec, DictTypeSpec
 
 @pytest.fixture
 def temp_dir():
     with tempfile.TemporaryDirectory() as tmpdirname:
         yield tmpdirname
+
+def test_build_registry():
+    """型レジストリの構築をテスト"""
+    from schemas.type_index import TYPE_REGISTRY, build_registry
+
+    # レジストリを再構築
+    build_registry()
+
+    # 基本的な型が含まれていることを確認
+    assert "primitives" in TYPE_REGISTRY
+    assert "containers" in TYPE_REGISTRY
+
+    primitives = TYPE_REGISTRY["primitives"]
+    primitives_list = list(primitives.values())
+    assert str in primitives_list
+    assert int in primitives_list
+    assert float in primitives_list
+
+    containers = TYPE_REGISTRY["containers"]
+    containers_list = list(containers.values())
+    assert list in containers_list
+    assert dict in containers_list
+
 
 def test_type_to_yaml():
     Users = List[Dict[str, str]]
@@ -42,7 +65,6 @@ def test_yaml_to_spec_and_validate():
     assert validate_with_spec(test_dict_spec, invalid_data) is False
 
 def test_roundtrip(temp_dir):
-    from src.converters.yaml_to_type import generate_pydantic_model
 
     # 型 -> yaml -> spec -> md
     TestType = List[str]
@@ -250,8 +272,10 @@ def test_nested_structures():
     # list_of_simpleのitemsがSimple型に解決されていることを確認
     list_of_simple_spec = container_spec.properties['list_of_simple']
     assert list_of_simple_spec.type == 'list'
-    assert isinstance(list_of_simple_spec.items, DictTypeSpec)
-    assert list_of_simple_spec.items.type == 'str'  # Simpleはstr型
+    # 参照解決によりSimple(str型)がTypeSpecに解決されていることを確認
+    assert hasattr(list_of_simple_spec, 'items')
+    assert isinstance(list_of_simple_spec.items, TypeSpec)  # Simpleはstr型なのでTypeSpecに解決される
+    assert list_of_simple_spec.items.type == 'str'  # Simple型はstr型
 
     # さらに深いネストの確認
     nested_dict_spec = container_spec.properties['nested_dict']

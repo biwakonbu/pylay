@@ -1,5 +1,3 @@
-from pathlib import Path
-from typing import Any
 
 from converters.yaml_to_type import yaml_to_spec
 from doc_generators.yaml_doc_generator import generate_yaml_docs
@@ -8,7 +6,7 @@ def generate_yaml_docs_from_file(yaml_file: str, output_dir: str = "docs/yaml_ty
     """YAMLファイルから型仕様を読み込み、ドキュメント生成"""
     with open(yaml_file, 'r', encoding='utf-8') as f:
         yaml_str = f.read()
-    
+
     spec = yaml_to_spec(yaml_str)
     generate_yaml_docs(spec, output_dir)
 

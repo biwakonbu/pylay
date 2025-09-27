@@ -8,8 +8,8 @@ generate_type_docs, and their shared infrastructure.
 import tempfile
 from pathlib import Path
 
-from scripts.generate_test_docs import generate_test_docs
-from scripts.generate_type_docs import generate_docs, generate_layer_docs
+from generate_test_docs import generate_test_docs
+from generate_type_docs import generate_docs, generate_layer_docs
 
 
 class TestDocGeneratorsIntegration:
@@ -237,8 +237,8 @@ class TestBackwardCompatibility:
     def test_existing_import_paths_work(self):
         """Test that existing import paths continue to work."""
         # These imports should work as before refactoring
-        from scripts.generate_test_docs import generate_test_docs
-        from scripts.generate_type_docs import generate_docs, generate_layer_docs
+        from generate_test_docs import generate_test_docs
+        from generate_type_docs import generate_docs, generate_layer_docs
 
         # Functions should be callable
         assert callable(generate_test_docs)

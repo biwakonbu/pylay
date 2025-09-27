@@ -4,7 +4,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from scripts.generate_test_docs import generate_test_docs
+from generate_test_docs import generate_test_docs
 
 
 class TestGenerateTestDocs:
@@ -33,9 +33,9 @@ class TestGenerateTestDocs:
         # 実際のテストファイルが含まれていることを確認
         assert "test_type_management.py" in content
         assert "test_build_registry" in content
-        assert "test_get_type" in content
+        assert "test_type_to_yaml" in content
         assert "pytest" in content  # pytest実行コマンドが含まれている
-        assert "静的レジストリ構築テスト" in content  # 実際のdocstring
+        assert "型レジストリの構築をテスト" in content  # 実際のdocstring
 
     def test_generate_test_docs_with_no_docstring(self):
         """docstringなしのテスト関数での動作確認"""
@@ -146,7 +146,7 @@ def test_timestamp():
 
         content = self.output_file.read_text(encoding="utf-8")
         # 実際のコマンド形式を確認
-        assert "pytest tests/schemas/test_type_management.py::test_build_registry -v" in content
+        assert "pytest tests/test_type_management.py::test_build_registry -v" in content
 
     def test_module_count_calculation(self):
         """モジュール数の計算が正しいことを確認"""
@@ -156,5 +156,5 @@ def test_timestamp():
         # 実際のモジュール数（3以上）を確認
         assert "総テストモジュール数" in content
         assert "test_type_management.py" in content
-        assert "test_core_types.py" in content
-        assert "test_primitives.py" in content
+        assert "test_generate_test_docs.py" in content
+        assert "test_refactored_generate_test_docs.py" in content

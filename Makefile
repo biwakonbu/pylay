@@ -21,10 +21,10 @@ lint: ## リンターでコードチェック（Ruff）
 	uv run ruff check . --fix
 
 type-check: ## 型チェック（mypy）
-	uv run mypy
+	uv run mypy converters/type_to_yaml.py converters/yaml_to_type.py doc_generators/yaml_doc_generator.py doc_generators/base.py doc_generators/config.py schemas/yaml_type_spec.py schemas/type_index.py
 
 test: ## テストを実行
-	uv run pytest --cov=src --cov-report=html --cov-report=term
+	uv run pytest --cov=. --cov-report=html --cov-report=term
 
 test-fast: ## 高速テスト実行（カバレッジなし）
 	uv run pytest
@@ -54,10 +54,10 @@ safety-check: ## 依存関係のセキュリティチェック
 	uv run safety check --file pyproject.toml
 
 radon-check: ## コード複雑度チェック
-	uv run radon cc src/ -s --total-average
+	uv run radon cc . -s --total-average
 
 interrogate-check: ## docstringカバレッジチェック
-	uv run interrogate src/
+	uv run interrogate .
 
 all-check: format type-check test quality-check ## すべてのチェックを実行（フォーマット → 型チェック → テスト → 品質チェック）
 

@@ -1,27 +1,61 @@
-[tool]
-rye = { dev-dependencies = [] }
+[project]
+name = "pylay"
+version = "0.1.0"
+description = "Python の type hint と docstrings を利用した types <-> docs 間の透過的なジェネレータ"
+authors = [{name = "Your Name", email = "your.email@example.com"}]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pydantic>=2.8.2",
+    "pyyaml>=6.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.3",
+    "ruff>=0.6.0",
+    "radon>=6.0.1",
+    "interrogate>=1.7.0",
+    "safety>=3.2.3",
+    "mypy>=1.18.2",
+    "pre-commit>=3.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
+]
+
 [tool.poetry]
 name = "pylay"
 version = "0.1.0"
 description = "Python の type hint と docstrings を利用した types <-> docs 間の透過的なジェネレータ"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
-packages = [{include = "src"}]
+packages = [
+    {include = "converters"},
+    {include = "schemas"},
+    {include = "doc_generators"},
+    {include = "generate_*.py"},
+]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.13"
+pydantic = ">=2.8.2"
+pyyaml = ">=6.0.2"
+ruamel-yaml = ">=0.18.6"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.3"
-ruff = "^0.6.0"
-radon = "^6.0.1"
-interrogate = "^1.7.0"
-safety = "^3.2.3"
+pytest = ">=8.3.3"
+ruff = ">=0.6.0"
+radon = ">=6.0.1"
+interrogate = ">=1.7.0"
+safety = ">=3.2.3"
+mypy = ">=1.18.2"
+pre-commit = ">=3.0.0"
+pytest-cov = ">=4.0.0"
+pytest-xdist = ">=3.0.0"
 
-# 本番依存
-pydantic = "^2.8.2"
-pyyaml = "^6.0.2"
-ruamel.yaml = "^0.18.6"
+[tool.ruff]
+line-length = 88
+target-version = "py313"
 
 [build-system]
 requires = ["poetry-core"]
@@ -44,114 +78,3 @@ dev-dependencies = [
 [tool.uv.sources]
 # ローカル開発用
 # pylay = { path = ".", editable = true }
-
-[tool.ruff]
-line-length = 88
-target-version = "py310"
-
-[tool.ruff.lint]
-# 基本的なエラー検出
-select = [
-    "E",      # pycodestyle errors
-    "F",      # pyflakes
-    "W",      # pycodestyle warnings
-    "I",      # isort
-    "N",      # pep8-naming
-    "UP",     # pyupgrade
-    "B",      # flake8-bugbear
-    "C4",     # flake8-comprehensions
-    "PIE",    # flake8-pie
-    "T20",    # flake8-print
-    "SIM",    # flake8-simplify
-    "RSE",    # flake8-raise
-    "RET",    # flake8-return
-    "SLF",    # flake8-self
-    "S",      # flake8-bandit
-    "BLE",    # flake8-blind-except
-    "FBT",    # flake8-boolean-trap
-    "A",      # flake8-builtins
-    "COM",    # flake8-commas
-    "C90",    # McCabe complexity
-    "DJ",     # flake8-django
-    "DTZ",    # flake8-datetimez
-    "TCH",    # flake8-type-checking
-    "INT",    # flake8-gettext
-    "ARG",    # flake8-unused-arguments
-    "PTH",    # flake8-use-pathlib
-    "ERA",    # eradicate
-    "PD",     # pandas-vet
-    "PGH",    # pygrep-hooks
-    "PL",     # pylint
-    "TRY",    # tryceratops
-    "FLY",    # flynt
-    "NPY",    # NumPy-specific rules
-    "AIR",    # Airflow
-    "TID",    # flake8-tidy-imports
-    "G",      # flake8-logging-format
-    "INP",    # flake8-no-pep420
-    "D",      # pydocstyle
-    "DUO",    # flake8-dunder-all
-]
-
-# mypy と重複するルールや、プロジェクト固有で無視するルール
-ignore = [
-    "D100",   # モジュールレベルのdocstringはREADME.mdで管理するため
-    "D104",   # パッケージの__init__.pyのdocstringは不要
-    "D105",   # マジックメソッドのdocstringは不要
-    "PLR0913", # クラス内のpublicメソッド数が多すぎる警告（ユーティリティクラスでは許容）
-    "S101",   # assert文の使用はテストでは許可
-    "FBT001", # Boolean位置引数のデフォルト値（DRYのため一部許可）
-    "FBT002", # Booleanデフォルト位置引数（DRYのため一部許可）
-    "FBT003", # Boolean引数の明示的な使用（DRYのため一部許可）
-    "A003",   # クラス属性が組み込みと被る場合（TypeSpecなど）
-    "EM101",  # 例外をそのままraise（チェーンしない場合）
-    "EM102",  # 例外をそのままraise（チェーンしない場合）
-    "TRY003", # 長いメッセージの例外（説明的なエラーメッセージのため）
-    "COM812", # 末尾のカンマ（フォーマッタが管理）
-    "ISC001", # 暗黙のstr連結（f-string推奨だが、明示的な場合許可）
-]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.lint.mccabe]
-max-complexity = 10
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = ["D", "S", "T20"]  # テストファイルでは一部ルールを緩和
-"tests/**/*" = ["D", "S", "T20"]
-"src/converters/*" = ["PLR0912"]  # コンバータ関数は複数returnを含む場合あり
-"src/type_extractor/*" = ["PLR0915"]  # 型抽出関数は多くの引数を持つ場合あり
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-
-# プロジェクト固有の設定
-[tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
-
-[tool.ruff.lint.flake8-type-checking]
-strict = true
-exempt-modules = []
-
-# docstring カバレッジチェック設定
-[tool.interrogate]
-ignore-init-method = true
-ignore-init-module = true
-ignore-magic = true
-ignore-semiprivate = false
-ignore-private = true
-ignore-property-decorators = true
-ignore-setters = true
-ignore-overridden = true
-fail-under = 80
-whitelist-regex = []
-exclude = ["tests", "docs", "migrations"]
-ignore-nested-functions = false
-ignore-nested-classes = true
-verbose = 0
-quiet = false
-color = true

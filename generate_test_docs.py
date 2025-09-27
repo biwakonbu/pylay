@@ -8,8 +8,8 @@ modular architecture for better testability and maintainability.
 
 from pathlib import Path
 
-from scripts.doc_generators.config import CatalogConfig
-from scripts.doc_generators.test_catalog_generator import CatalogGenerator
+from doc_generators.config import CatalogConfig
+from doc_generators.test_catalog_generator import CatalogGenerator
 
 
 def generate_test_docs(output_path: str = "docs/types/test_catalog.md") -> None:

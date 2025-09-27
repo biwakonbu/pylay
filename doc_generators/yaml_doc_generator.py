@@ -1,11 +1,10 @@
-from typing import Any, Dict
 from pathlib import Path
 
 from .base import DocumentGenerator
 from .config import TypeDocConfig
 from .markdown_builder import MarkdownBuilder
 
-from src.schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec
+from schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec
 
 class YamlDocGenerator(DocumentGenerator):
     """YAML型仕様からドキュメントを生成"""

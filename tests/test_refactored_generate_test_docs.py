@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from scripts.doc_generators.config import CatalogConfig
-from scripts.doc_generators.filesystem import InMemoryFileSystem
-from scripts.doc_generators.markdown_builder import MarkdownBuilder
-from scripts.doc_generators.test_catalog_generator import CatalogGenerator
+from doc_generators.config import CatalogConfig
+from doc_generators.filesystem import InMemoryFileSystem
+from doc_generators.markdown_builder import MarkdownBuilder
+from doc_generators.test_catalog_generator import CatalogGenerator
 
 
 class TestCatalogGenerator:

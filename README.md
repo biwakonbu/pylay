@@ -5,7 +5,7 @@ Python の type hint と docstrings を利用した types <-> docs 間の透過�
 
 ### 必要なツール
 
-- Python 3.10+
+- Python 3.13+
 - [uv](https://github.com/astral-sh/uv) (推奨) または [Poetry](https://python-poetry.org/)
 - [pre-commit](https://pre-commit.com/)
 

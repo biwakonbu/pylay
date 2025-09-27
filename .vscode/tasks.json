@@ -19,7 +19,7 @@
             "label": "mypy: check",
             "type": "shell",
             "command": "uv",
-            "args": ["run", "mypy"],
+            "args": ["run", "mypy", "converters/type_to_yaml.py", "converters/yaml_to_type.py", "doc_generators/yaml_doc_generator.py", "doc_generators/base.py", "doc_generators/config.py", "schemas/yaml_type_spec.py", "schemas/type_index.py"],
             "group": {
                 "kind": "test",
                 "isDefault": false
@@ -174,7 +174,7 @@
             "label": "test: run",
             "type": "shell",
             "command": "uv",
-            "args": ["run", "pytest", "--cov=src", "--cov-report=html", "--cov-report=term"],
+            "args": ["run", "pytest", "--cov=.", "--cov-report=html", "--cov-report=term"],
             "group": {
                 "kind": "test",
                 "isDefault": true
@@ -206,6 +206,66 @@
                 "$mypy",
                 "$ruff"
             ]
+        },
+        {
+            "label": "comprehensive: quality-check",
+            "type": "shell",
+            "command": "make",
+            "args": ["all-check"],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": [
+                "$mypy",
+                "$ruff"
+            ]
+        },
+        {
+            "label": "comprehensive: full-analysis",
+            "type": "shell",
+            "command": "make",
+            "args": ["ci"],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": [
+                "$mypy",
+                "$ruff"
+            ]
+        },
+        {
+            "label": "analyze: issues",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "python", "scripts/analyze_issues.py"],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
         }
     ]
 }

@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from scripts.generate_type_docs import generate_docs, generate_layer_docs
+from generate_type_docs import generate_docs, generate_layer_docs
 
 
 class TestGenerateTypeDocs:
@@ -31,7 +31,7 @@ class TestGenerateTypeDocs:
         assert len(TYPE_REGISTRY["primitives"]) > 0
 
         # ドキュメント生成を実行
-        generate_layer_docs("primitives", TYPE_REGISTRY["primitives"], str(self.output_dir))
+        generate_layer_docs("primitives", list(TYPE_REGISTRY["primitives"].values()), str(self.output_dir))
 
         # 出力ファイルが作成されたことを確認
         output_file = self.output_dir / "primitives.md"
@@ -48,7 +48,7 @@ class TestGenerateTypeDocs:
         # 実際のレジストリを使用してテスト
         from schemas.type_index import TYPE_REGISTRY
 
-        generate_layer_docs("primitives", TYPE_REGISTRY["primitives"], str(self.output_dir))
+        generate_layer_docs("primitives", list(TYPE_REGISTRY["primitives"].values()), str(self.output_dir))
 
         content = (self.output_dir / "primitives.md").read_text(encoding="utf-8")
         assert "UserId" in content
@@ -81,8 +81,8 @@ class TestGenerateTypeDocs:
         """全ドキュメント生成でインデックスファイルが作成されることを確認"""
         # 実際のレジストリを使用してテスト
 
-        with patch("scripts.generate_type_docs.generate_layer_docs"), \
-             patch("scripts.generate_type_docs.generate_index_docs"):
+        with patch("generate_type_docs.generate_layer_docs"), \
+             patch("generate_type_docs.generate_index_docs"):
             generate_docs(str(self.output_dir))
 
             # インデックスファイルが作成されたことを確認（モックされているので実際には作成されない）
@@ -145,7 +145,7 @@ class TestGenerateTypeDocsPerformance:
         from schemas.type_index import TYPE_REGISTRY
         start_time = time.time()
 
-        generate_layer_docs("primitives", TYPE_REGISTRY["primitives"], str(self.output_dir))
+        generate_layer_docs("primitives", list(TYPE_REGISTRY["primitives"].values()), str(self.output_dir))
 
         end_time = time.time()
         execution_time = end_time - start_time

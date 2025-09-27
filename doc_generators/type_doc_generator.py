@@ -124,13 +124,20 @@ class LayerDocGenerator(DocumentGenerator):
 
         Args:
             layer: Layer name
-            types: Dictionary of types in the layer
+            types: Dictionary of types in the layer, or list of types
         """
-        for name, type_cls in types.items():
-            if self.inspector.should_skip_type(name):
-                continue
-
-            self._generate_single_type_section(name, type_cls, layer)
+        if isinstance(types, dict):
+            # Dictionary形式の場合
+            for name, type_cls in types.items():
+                if self.inspector.should_skip_type(name):
+                    continue
+                self._generate_single_type_section(name, type_cls, layer)
+        elif isinstance(types, list):
+            # List形式の場合
+            for type_cls in types:
+                if self.inspector.should_skip_type(type_cls.__name__):
+                    continue
+                self._generate_single_type_section(type_cls.__name__, type_cls, layer)
 
     def _generate_single_type_section(
         self, name: str, type_cls: type[Any], layer: str

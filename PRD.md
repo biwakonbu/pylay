@@ -6,8 +6,8 @@
 pylay
 
 ### 1.2 プロジェクトの目的
-Pythonのtype hintとdocstringsを活用した、types（型情報）とdocs（ドキュメント）間の透過的なジェネレータツールを開発する。  
-主に、Pythonで扱える型情報を全て利用し、型 <-> YAMLの相互コンパイルを実現する。これにより、型の仕様をYAMLとして表現し、Pydanticによる高速バリデーションを可能とする。  
+Pythonのtype hintとdocstringsを活用した、types（型情報）とdocs（ドキュメント）間の透過的なジェネレータツールを開発する。
+主に、Pythonで扱える型情報を全て利用し、型 <-> YAMLの相互コンパイルを実現する。これにより、型の仕様をYAMLとして表現し、Pydanticによる高速バリデーションを可能とする。
 最終目標として、YAMLからMarkdownファイルへの変換をサポートし、ドキュメントの自動生成を達成する。
 
 ### 1.3 対象ユーザー
@@ -75,7 +75,7 @@ Pythonのtype hintとdocstringsを活用した、types（型情報）とdocs（�
 - 型推論/抽出: 1モジュールあたり5秒以内（mypy + ast）。
 
 ### 3.2 互換性
-- Python 3.10+。
+- Python 3.13+。
 - mypy厳格モード対応（型アノテーション完全）。
 - 既存ツール（doc_generatorsパッケージ）と共存。
 
@@ -91,7 +91,7 @@ Pythonのtype hintとdocstringsを活用した、types（型情報）とdocs（�
 
 ## 4. 技術スタック
 
-- **言語/フレームワーク**: Python 3.12, Pydantic v2 (バリデーション/モデル), typing (型抽出)。
+- **言語/フレームワーク**: Python 3.13+, Pydantic v2 (バリデーション/モデル), typing/collections.abc (型抽出)。
 - **ライブラリ**: PyYAML/ruamel.yaml (YAMLハンドリング), pytest (テスト), mypy (型推論), ast/NetworkX (依存抽出)。
 - **ビルド/テスト**: Makefile統合（type-index, test, infer-deps）。
 - **ドキュメント**: Markdown自動生成, Sphinx対応予定。

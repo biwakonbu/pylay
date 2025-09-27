@@ -1,0 +1,60 @@
+{
+    "cursor.commands": [
+        {
+            "command": "workbench.action.tasks.runTask",
+            "args": "comprehensive: quality-check",
+            "title": "🔍 包括的品質チェック",
+            "description": "フォーマット → 型チェック → テスト → 品質チェックを順次実行",
+            "category": "pylay"
+        },
+        {
+            "command": "workbench.action.tasks.runTask",
+            "args": "comprehensive: full-analysis",
+            "title": "🔬 完全分析（CIモード）",
+            "description": "CIで実行されるすべてのチェック（セキュリティ、複雑度、docstring含む）",
+            "category": "pylay"
+        },
+        {
+            "command": "workbench.action.tasks.runTask",
+            "args": "analyze: issues",
+            "title": "📊 問題分析レポート",
+            "description": "全チェックを実行し、詳細な問題分析レポートを生成",
+            "category": "pylay"
+        },
+        {
+            "command": "workbench.action.tasks.runTask",
+            "args": "format: all",
+            "title": "✨ コードフォーマット",
+            "description": "Ruffによるコードフォーマット実行",
+            "category": "pylay"
+        },
+        {
+            "command": "workbench.action.tasks.runTask",
+            "args": "mypy: check",
+            "title": "🔧 型チェック",
+            "description": "mypyによる型チェック実行",
+            "category": "pylay"
+        },
+        {
+            "command": "workbench.action.tasks.runTask",
+            "args": "ruff: check",
+            "title": "🚨 リンター実行",
+            "description": "Ruffによるリンター実行",
+            "category": "pylay"
+        },
+        {
+            "command": "workbench.action.tasks.runTask",
+            "args": "test: run",
+            "title": "🧪 テスト実行",
+            "description": "pytestによるテスト実行（カバレッジ付き）",
+            "category": "pylay"
+        },
+        {
+            "command": "workbench.action.tasks.runTask",
+            "args": "quality: check",
+            "title": "🎯 品質チェック",
+            "description": "型チェック + リンター + pre-commit実行",
+            "category": "pylay"
+        }
+    ]
+}
