@@ -4,10 +4,10 @@ TypeDependencyGraphをNetworkX DiGraphに変換し、視覚化やアルゴリズ
 """
 
 import networkx as nx
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 from pathlib import Path
 
-from src.schemas.graph_types import TypeDependencyGraph, GraphNode, GraphEdge
+from src.schemas.graph_types import TypeDependencyGraph
 
 
 class NetworkXGraphAdapter:
@@ -56,6 +56,7 @@ class NetworkXGraphAdapter:
 
     def detect_cycles(self) -> List[List[str]]:
         """循環参照を検出"""
+        assert self.nx_graph is not None
         try:
             return list(nx.simple_cycles(self.nx_graph))
         except nx.NetworkXNoCycle:
@@ -126,14 +127,23 @@ class NetworkXGraphAdapter:
     def generate_svg_from_dot(self, dot_path: Path, svg_path: Path) -> None:
         """DOTファイルからSVGを生成"""
         try:
-            import pydot
-            # DOTファイルを読み込み
-            (graph,) = pydot.graph_from_dot_file(str(dot_path))
+            import subprocess
+            # dotコマンドでSVGを生成
+            result = subprocess.run(
+                ['dot', '-Tsvg', str(dot_path), '-o', str(svg_path)],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
 
-            # SVGとして出力
-            graph.write_svg(str(svg_path))
-        except ImportError:
-            print("⚠️  pydotがインストールされていません。pip install pydot を実行してください。")
+            if result.returncode != 0:
+                print(f"⚠️  SVG生成エラー: {result.stderr}")
+            else:
+                print(f"✅ SVGファイルを生成: {svg_path}")
+        except FileNotFoundError:
+            print("⚠️  Graphvizのdotコマンドが見つかりません。sudo apt install graphviz を実行してください。")
+        except subprocess.TimeoutExpired:
+            print("⚠️  SVG生成がタイムアウトしました。")
         except Exception as e:
             print(f"⚠️  SVG生成エラー: {e}")
 

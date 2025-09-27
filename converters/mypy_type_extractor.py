@@ -8,10 +8,9 @@ import json
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
-from collections.abc import Mapping
+from typing import Any, Dict, List
 
-from src.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph, NodeType, RelationType
+from src.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph
 
 
 class MypyTypeExtractor:
@@ -58,11 +57,14 @@ class MypyTypeExtractor:
                 if result.returncode != 0:
                     # mypyエラー時は空の結果を返す（AST抽出にフォールバック）
                     print(f"⚠️  mypy型推論エラー: {file_path} - {result.stderr}")
-                    inferred_types: Dict[str, Any] = {}
+                    inferred_types: Dict[str, Dict[str, str]] = {}
                 else:
                     try:
                         inferred_types = json.loads(result.stdout) if result.stdout else {}
                     except json.JSONDecodeError:
+                        inferred_types = {}
+                    # 型をより具体的にアノテーション
+                    if not isinstance(inferred_types, dict):
                         inferred_types = {}
 
                 self._mypy_cache[file_path] = inferred_types

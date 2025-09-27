@@ -5,8 +5,8 @@ pylayの依存関係抽出機能で使用。NetworkXのDiGraphを基盤とし、
 """
 
 from typing import Any, Dict, List, Literal, Optional, Union
-from pydantic import BaseModel, Field, field_validator
-from collections.abc import Mapping, Sequence
+from pydantic import BaseModel, Field
+from collections.abc import Sequence
 from datetime import datetime
 
 
@@ -14,7 +14,7 @@ from datetime import datetime
 NodeType = Literal['class', 'function', 'variable', 'module', 'type_alias', 'method', 'function_call', 'method_call', 'attribute_access', 'imported_symbol']
 
 # 関係タイプの定義
-RelationType = Literal['inherits', 'calls', 'references', 'imports', 'depends_on', 'returns', 'implements']
+RelationType = Literal['inherits', 'calls', 'references', 'imports', 'depends_on', 'returns', 'implements', 'belongs_to']
 
 # 属性の定義（より具体的に）
 NodeAttributes = Dict[str, Union[str, int, bool, List[str], Dict[str, str]]]

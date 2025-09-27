@@ -5,11 +5,10 @@ Python ASTを解析し、型依存グラフを構築するためのコンポー�
 
 import ast
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Union
-from collections.abc import Mapping, Sequence
+from typing import Dict, Optional, Set
 from datetime import datetime
 
-from src.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph, NodeType, RelationType
+from src.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph, RelationType
 
 
 class ASTDependencyExtractor:

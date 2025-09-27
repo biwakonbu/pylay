@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Optional
 
 from converters.ast_dependency_extractor import ASTDependencyExtractor
-from doc_generators.config import TypeDocConfig
 from doc_generators.graph_doc_generator import GraphDocGenerator
 
 
@@ -101,9 +100,9 @@ def generate_dependency_docs(
     print(f"   - ノード数: {metadata.get('node_count', 0)}")
     print(f"   - エッジ数: {metadata.get('edge_count', 0)}")
     if include_mypy:
-        print(f"   - mypy推論: 含む")
+        print("   - mypy推論: 含む")
     if analyze_graph:
-        print(f"   - NetworkX分析: 実行済み")
+        print("   - NetworkX分析: 実行済み")
 
 
 def main() -> None:

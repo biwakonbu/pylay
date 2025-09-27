@@ -5,10 +5,9 @@ TypeDependencyGraphからMarkdownドキュメントを生成。
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from .base import DocumentGenerator
-from .config import TypeDocConfig
 from .markdown_builder import MarkdownBuilder
 
 from src.schemas.graph_types import TypeDependencyGraph, GraphNode, GraphEdge
