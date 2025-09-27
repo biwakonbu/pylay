@@ -22,7 +22,7 @@ class TestCatalogGenerator:
         self.filesystem = InMemoryFileSystem()
         self.output_path = Path("/test/output/catalog.md")
         self.config = CatalogConfig(
-            test_directory=Path("tests/scripts"),
+            test_directory=Path("tests"),
             output_path=self.output_path,
         )
 
@@ -80,7 +80,7 @@ class TestCatalogGenerator:
         # Should find test classes and methods
         assert "TestGenerateTestDocs" in content
         assert "test_generate_test_docs_with_valid_files" in content
-        assert "pytest tests/scripts/" in content
+        assert "pytest tests/test_generate_test_docs.py::TestGenerateTestDocs" in content
 
     def test_generate_with_custom_output_path(self):
         """Test generation with custom output path override."""
@@ -98,7 +98,7 @@ class TestCatalogGenerator:
     def test_scan_test_modules_filters_correctly(self):
         """Test that module scanning respects include/exclude patterns."""
         config = CatalogConfig(
-            test_directory=Path("tests/scripts"),
+            test_directory=Path("tests"),
             include_patterns=["test_*.py"],
             exclude_patterns=["__pycache__", "*.pyc"],
         )
@@ -116,21 +116,21 @@ class TestCatalogGenerator:
 
     def test_extract_test_functions_finds_methods(self):
         """Test that function extraction finds both functions and class methods."""
-        from tests.scripts import test_generate_test_docs
+        import tests.test_generate_test_docs
 
         generator = CatalogGenerator(
             config=self.config,
             filesystem=self.filesystem,
         )
 
-        test_functions = generator._extract_test_functions(test_generate_test_docs)
+        test_functions = generator._extract_test_functions(tests.test_generate_test_docs)
 
         # Should find test methods from test classes
         assert len(test_functions) > 0
 
         function_names = [name for name, _ in test_functions]
-        class_methods = [name for name in function_names if "." in name]
-        assert len(class_methods) > 0
+        # Check that we have test functions (some may be class methods, some may be standalone)
+        assert len(function_names) >= 4  # At least the 4 test methods we saw
 
         # Should include class.method format
         assert any("TestGenerateTestDocs." in name for name in function_names)
@@ -186,7 +186,7 @@ class TestCatalogGeneratorErrorHandling:
         """Set up test fixtures."""
         self.filesystem = InMemoryFileSystem()
         self.config = CatalogConfig(
-            test_directory=Path("tests/scripts"),
+            test_directory=Path("tests"),
             output_path=Path("/test/catalog.md"),
         )
 

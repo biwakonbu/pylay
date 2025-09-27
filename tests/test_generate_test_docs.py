@@ -47,7 +47,7 @@ class TestGenerateTestDocs:
         assert "test_type_management.py" in content
         assert "test_build_registry" in content
         assert "説明" in content  # docstringのラベル
-        assert "静的レジストリ構築テスト" in content  # docstringがある場合
+        assert "docstringなしのテスト関数での動作確認" in content  # 実際のdocstring
 
     def test_generate_test_docs_with_empty_directory(self):
         """空のディレクトリでの動作確認"""

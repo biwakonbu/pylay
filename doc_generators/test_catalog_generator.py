@@ -95,14 +95,14 @@ class CatalogGenerator(DocumentGenerator):
     def _generate_test_function_entry(
         self,
         func_name: str,
-        func: Callable[..., Any],
+        func: Callable[..., Any] | type,
         test_file: Path,
     ) -> None:
-        """Generate entry for a single test function.
+        """Generate entry for a single test function or class.
 
         Args:
-            func_name: Name of the test function
-            func: The test function object
+            func_name: Name of the test function or class
+            func: The test function object or class
             test_file: Path to the test file containing the function
         """
         self.md.heading(3, func_name)
@@ -112,7 +112,12 @@ class CatalogGenerator(DocumentGenerator):
         self.md.paragraph(f"**説明**: {docstring}").line_break()
 
         # Add pytest command
-        pytest_cmd = f"pytest {test_file}::{func_name} -v"
+        if inspect.isclass(func):
+            # For test classes, run all methods in the class
+            pytest_cmd = f"pytest {test_file}::{func_name} -v"
+        else:
+            # For test functions
+            pytest_cmd = f"pytest {test_file}::{func_name} -v"
         self.md.paragraph(f"**実行**: `{pytest_cmd}`").line_break()
 
     def _generate_summary(self) -> None:
@@ -166,6 +171,9 @@ class CatalogGenerator(DocumentGenerator):
 
             # Test methods in test classes
             elif inspect.isclass(member) and member_name.startswith("Test"):
+                # Add the test class itself
+                test_functions.append((member_name, member))
+
                 class_methods = inspect.getmembers(member, inspect.isfunction)
                 for method_name, method in class_methods:
                     if method_name.startswith("test_"):

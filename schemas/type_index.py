@@ -13,7 +13,7 @@ from collections import defaultdict
 TYPE_REGISTRY: Dict[str, Dict[str, Type[Any]]] = defaultdict(dict)
 
 # レイヤー定義
-LAYERS = {
+LAYERS: dict[str, list[type[Any]]] = {
     "primitives": [
         str, int, float, bool, bytes, type(None)
     ],

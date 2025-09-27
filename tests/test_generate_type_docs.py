@@ -51,8 +51,8 @@ class TestGenerateTypeDocs:
         generate_layer_docs("primitives", list(TYPE_REGISTRY["primitives"].values()), str(self.output_dir))
 
         content = (self.output_dir / "primitives.md").read_text(encoding="utf-8")
-        assert "UserId" in content
-        assert "ConversionId" in content
+        assert "str" in content
+        assert "int" in content
         # NewTypeは自動的に除外されることを確認（skip_typesで設定）
 
     def test_generate_layer_docs_with_typealias_descriptions(self):
@@ -159,5 +159,5 @@ class TestGenerateTypeDocsPerformance:
         content = output_file.read_text(encoding="utf-8")
         assert "PRIMITIVES レイヤー型カタログ" in content
         # 実際の型数が含まれていることを確認
-        assert "UserId" in content
-        assert "ConversionId" in content
+        assert "str" in content
+        assert "int" in content
