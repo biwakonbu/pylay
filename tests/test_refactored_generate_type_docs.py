@@ -20,7 +20,6 @@ from doc_generators.type_doc_generator import (
 from doc_generators.type_inspector import TypeInspector
 
 
-from typing import Callable
 
 # Test fixtures
 class MockPydanticModel(BaseModel):

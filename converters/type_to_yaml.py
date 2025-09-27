@@ -3,6 +3,7 @@ import inspect
 from typing import Any, get_origin, get_args, Dict, List, Union as TypingUnion, Optional
 
 from schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeSpecOrRef
+from src.schemas.graph_types import TypeDependencyGraph
 
 
 
@@ -193,12 +194,18 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
         # 未サポート型
         return TypeSpec(name=type_name, type='unknown', description=description)
 
-def type_to_yaml(typ: type[Any], output_file: Optional[str] = None, as_root: bool = True) -> str | Dict[str, dict]:
+def type_to_yaml(typ: type[Any], output_file: Optional[str] = None, as_root: bool = True,
+                 dependencies: Optional[TypeDependencyGraph] = None) -> str | Dict[str, dict]:
     """型をYAML文字列に変換、またはファイル出力 (v1.1対応)"""
     spec = type_to_spec(typ)
 
     # v1.1構造: nameフィールドを除外して出力
     spec_data = spec.model_dump(exclude={'name'})
+
+    # 依存情報を統合（オプション）
+    if dependencies and as_root:
+        dependency_data = _build_dependency_yaml(dependencies)
+        spec_data = {**spec_data, 'dependencies': dependency_data}
 
     if as_root:
         # 単一型: 型名をキーとして出力
@@ -232,6 +239,19 @@ def types_to_yaml(types: Dict[str, type[Any]], output_file: Optional[str] = None
             f.write(yaml_str)
 
     return yaml_str
+
+
+def _build_dependency_yaml(graph: TypeDependencyGraph) -> Dict[str, List[str]]:
+    """TypeDependencyGraphからYAML依存データを構築"""
+    dependencies = {}
+
+    for edge in graph.edges:
+        if edge.source not in dependencies:
+            dependencies[edge.source] = []
+        dependencies[edge.source].append(f"{edge.target} ({edge.relation_type})")
+
+    return dependencies
+
 
 # 例
 if __name__ == "__main__":

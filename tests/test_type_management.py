@@ -497,8 +497,7 @@ def test_validate_with_spec_depth_limit():
 def test_type_to_spec_function_splitting():
     """type_to_specの関数分割テスト"""
     from converters.type_to_yaml import (
-        _handle_basic_type, _handle_list_type, _handle_dict_type, _handle_union_type,
-        _get_basic_type_str, _get_type_name, _get_docstring
+        _handle_basic_type, _handle_list_type, _get_basic_type_str, _get_type_name, _get_docstring
     )
 
     # 基本型テスト

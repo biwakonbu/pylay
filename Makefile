@@ -21,7 +21,7 @@ lint: ## リンターでコードチェック（Ruff）
 	uv run ruff check . --fix
 
 type-check: ## 型チェック（mypy）
-	uv run mypy converters/type_to_yaml.py converters/yaml_to_type.py doc_generators/yaml_doc_generator.py doc_generators/base.py doc_generators/config.py schemas/yaml_type_spec.py schemas/type_index.py
+	uv run mypy converters/type_to_yaml.py converters/yaml_to_type.py doc_generators/yaml_doc_generator.py doc_generators/base.py doc_generators/config.py schemas/yaml_type_spec.py schemas/type_index.py src/schemas/graph_types.py tests/test_graph_types.py
 
 test: ## テストを実行
 	uv run pytest --cov=. --cov-report=html --cov-report=term
@@ -40,7 +40,7 @@ coverage: test ## カバレッジレポートを開く
 	fi
 
 quality-check: ## 品質チェック（型チェック + リンター + pre-commit）
-	uv run mypy
+	uv run mypy converters/type_to_yaml.py converters/yaml_to_type.py doc_generators/yaml_doc_generator.py doc_generators/base.py doc_generators/config.py schemas/yaml_type_spec.py schemas/type_index.py src/schemas/graph_types.py tests/test_graph_types.py
 	uv run ruff check .
 	uv run pre-commit run --all-files
 
