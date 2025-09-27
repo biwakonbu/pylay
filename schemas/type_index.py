@@ -102,5 +102,13 @@ def get_registry_stats() -> Dict[str, int]:
     return {layer: len(types) for layer, types in TYPE_REGISTRY.items()}
 
 
+def get_available_types_all() -> List[str]:
+    """すべての利用可能な型名を取得"""
+    all_types = []
+    for layer_types in TYPE_REGISTRY.values():
+        all_types.extend(layer_types.keys())
+    return sorted(all_types)
+
+
 # 初期化時にレジストリを構築
 build_registry()

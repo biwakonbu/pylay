@@ -5,7 +5,7 @@ from schemas.yaml_type_spec import (
     TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeRoot, TypeContext, _create_spec_from_data
 )
 
-def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeRoot:  # type: ignore[import-untyped]
+def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeRoot:
     """YAML文字列からTypeSpecまたはTypeRootを生成 (v1.1対応、参照解決付き)"""
     data = yaml.safe_load(yaml_str)
 
@@ -64,7 +64,7 @@ def _detect_circular_references_from_data(types_data: Dict[str, Any]) -> None:
     visited = set()
     rec_stack = set()
 
-    def has_cycle(node):
+    def has_cycle(node: str) -> bool:
         visited.add(node)
         rec_stack.add(node)
 
@@ -83,7 +83,7 @@ def _detect_circular_references_from_data(types_data: Dict[str, Any]) -> None:
             if has_cycle(node):
                 raise ValueError(f"Circular reference detected involving: {node}")
 
-def _collect_refs_from_data(spec_data: Any):
+def _collect_refs_from_data(spec_data: Any) -> list[str]:
     """生のデータから参照文字列を収集"""
     refs = []
 
@@ -147,7 +147,7 @@ def _detect_circular_references(types: Dict[str, TypeSpec]) -> None:
     visited = set()
     rec_stack = set()
 
-    def has_cycle(node):
+    def has_cycle(node: str) -> bool:
         visited.add(node)
         rec_stack.add(node)
 
@@ -166,7 +166,7 @@ def _detect_circular_references(types: Dict[str, TypeSpec]) -> None:
             if has_cycle(node):
                 raise ValueError(f"Circular reference detected involving: {node}")
 
-def _collect_refs_from_spec(spec: TypeSpec):
+def _collect_refs_from_spec(spec: TypeSpec) -> list[str]:
     """TypeSpecから参照文字列を収集"""
     from schemas.yaml_type_spec import RefPlaceholder
     refs = []
@@ -199,7 +199,8 @@ def _collect_refs_from_spec(spec: TypeSpec):
 
 
 
-def validate_with_spec(spec: TypeSpec, data: Any) -> bool:
+def validate_with_spec(spec: TypeSpec | str, data: Any) -> bool:
+    """TypeSpecに基づいてデータをバリデーション"""
     """TypeSpecに基づいてデータをバリデーション"""
     try:
         if isinstance(spec, DictTypeSpec):
@@ -240,10 +241,7 @@ def validate_with_spec(spec: TypeSpec, data: Any) -> bool:
 def generate_pydantic_model(spec: TypeSpec, model_name: str = "DynamicModel") -> str:
     """TypeSpecからPydanticモデルコードを生成 (簡易版)"""
     # これはコード生成なので、文字列として返す
-    if isinstance(spec, TypeSpec):
-        return f"class {model_name}(BaseModel):\\n    value: {spec.type}"
-    # 他の型の場合、拡張可能
-    return f"class {model_name}(BaseModel):\\n    # Complex type\\n    pass"
+    return f"class {model_name}(BaseModel):\\n    value: {spec.type}"
 
 # 例
 if __name__ == "__main__":
@@ -262,7 +260,8 @@ if __name__ == "__main__":
     """
     spec = yaml_to_spec(yaml_example)
     print(type(spec))  # TypeRoot
-    print(spec.types['User'].description)  # ユーザー情報を表す型
+    if isinstance(spec, TypeRoot):
+        print(spec.types['User'].description)  # ユーザー情報を表す型
 
     # 単一型例
     single_yaml = """
@@ -273,4 +272,5 @@ if __name__ == "__main__":
     """
     single_spec = yaml_to_spec(single_yaml)
     print(type(single_spec))  # TypeSpec
-    print(single_spec.name)  # User (補完)
+    if isinstance(single_spec, TypeSpec):
+        print(single_spec.name)  # User (補完)

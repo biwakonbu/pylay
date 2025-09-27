@@ -1,5 +1,6 @@
 """Type documentation generators for automated type documentation."""
 
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -39,30 +40,49 @@ class LayerDocGenerator(DocumentGenerator):
 
     def generate(
         self,
-        output_path: Path,
+        *args: object,
         **kwargs: object,
     ) -> None:
         """Generate layer documentation.
 
         Args:
-            layer: Layer name
-            types: Dictionary of types in the layer
-            output_path: Optional override for output path
-            **kwargs: Additional configuration parameters
+            *args: Positional arguments (layer, types, output_path) or (output_path,)
+            **kwargs: Additional configuration parameters (layer, types)
         """
-        layer = kwargs.get('layer')
-        types = kwargs.get('types')
-        if not isinstance(layer, str) or not isinstance(types, dict):
-            raise ValueError("layer must be str and types must be dict[str, type[Any]]")
+        # 変数の初期化
+        layer: str
+        types: dict[str, type[Any]] | list[type[Any]]
+        actual_output_path: Path
+
+        if len(args) == 3:
+            # テストが期待するAPI: generate(layer, types, output_path)
+            layer_arg: str = args[0]
+            types_arg: dict[str, type[Any]] | list[type[Any]] = args[1]
+            output_path_arg: Path = args[2]
+            layer = layer_arg
+            types = types_arg
+            actual_output_path = Path(output_path_arg)
+        elif len(args) == 2:
+            # テストが期待するAPI: generate(layer, types) - output_pathはデフォルト
+            layer_arg: str = args[0]
+            types_arg: dict[str, type[Any]] | list[type[Any]] = args[1]
+            layer = layer_arg
+            types = types_arg
+            filename = self.config.layer_filename_template.format(layer=layer)
+            actual_output_path = self.config.output_directory / filename
+        elif len(args) == 1 and 'layer' in kwargs and 'types' in kwargs:
+            # 新しいAPI: generate(output_path, layer=layer, types=types)
+            output_path_arg: Path = args[0]
+            layer = kwargs['layer']
+            types = kwargs['types']
+            actual_output_path = Path(output_path_arg)
+        else:
+            raise ValueError("Invalid arguments. Use generate(layer, types, output_path) or generate(output_path, layer=layer, types=types)")
+
+        if not isinstance(layer, str) or not isinstance(types, (dict, list)):
+            raise ValueError("layer must be str and types must be dict[str, type[Any]] or list[type[Any]]")
         if layer is None or types is None:
             raise ValueError("layer and types parameters are required")
-
-        if output_path is None:
-            filename = self.config.layer_filename_template.format(layer=layer)
-            output_path = self.config.output_directory / filename
-        else:
-            # output_path was provided as parameter
-            pass
 
         # Clear markdown builder
         self.md.clear()
@@ -76,9 +96,9 @@ class LayerDocGenerator(DocumentGenerator):
 
         # Write to file
         content = self.md.build()
-        self._write_file(output_path, content)
+        self._write_file(Path(actual_output_path), content)
 
-        print(f"✅ Generated {output_path}: {len(types)} types")
+        print(f"✅ Generated {actual_output_path}: {len(types) if isinstance(types, list) else len(types)} types")
 
     def _generate_header(self, layer: str) -> None:
         """Generate document header.
@@ -127,7 +147,7 @@ class LayerDocGenerator(DocumentGenerator):
             )
             self.md.code_block("python", code_example).line_break()
 
-    def _generate_type_sections(self, layer: str, types: dict[str, type[Any]]) -> None:
+    def _generate_type_sections(self, layer: str, types: dict[str, type[Any]] | list[type[Any]]) -> None:
         """Generate documentation sections for all types.
 
         Args:
@@ -303,24 +323,42 @@ class IndexDocGenerator(DocumentGenerator):
 
     def generate(
         self,
-        output_path: Path,
+        *args: object,
         **kwargs: object,
     ) -> None:
         """Generate index documentation.
 
         Args:
-            type_registry: Registry of all types organized by layer
-            output_path: Optional override for output path
-            **kwargs: Additional configuration parameters
+            *args: Positional arguments (type_registry, output_path) or (output_path,)
+            **kwargs: Additional configuration parameters (type_registry)
         """
-        type_registry = kwargs.get('type_registry')
-        if not isinstance(type_registry, dict):
+        # 変数の初期化
+        type_registry: dict[str, dict[str, type[Any]]]
+        actual_output_path: Path
+
+        if len(args) == 1 and 'type_registry' in kwargs:
+            # 新しいAPI: generate(output_path, type_registry=type_registry)
+            output_path_arg: Path = args[0]
+            type_registry = kwargs['type_registry']
+            actual_output_path = Path(output_path_arg)
+        elif len(args) == 2:
+            # テストが期待するAPI: generate(type_registry, output_path)
+            type_registry_arg: dict[str, dict[str, type[Any]]] = args[0]
+            output_path_arg: Path = args[1]
+            type_registry = type_registry_arg
+            actual_output_path = Path(output_path_arg)
+        elif len(args) == 1:
+            # テストが期待するAPI: generate(type_registry) - output_pathはデフォルト
+            type_registry_arg: dict[str, dict[str, type[Any]]] = args[0]
+            type_registry = type_registry_arg
+            actual_output_path = self.config.output_directory / self.config.index_filename
+        else:
+            raise ValueError("Invalid arguments. Use generate(type_registry, output_path) or generate(output_path, type_registry=type_registry)")
+
+        if not isinstance(type_registry, (dict, defaultdict)):
             raise ValueError("type_registry must be dict[str, dict[str, type[Any]]]")
         if type_registry is None:
             raise ValueError("type_registry parameter is required")
-
-        if output_path is None:
-            output_path = self.config.output_directory / self.config.index_filename
 
         # Clear markdown builder
         self.md.clear()
@@ -334,10 +372,10 @@ class IndexDocGenerator(DocumentGenerator):
 
         # Write to file
         content = self.md.build()
-        self._write_file(output_path, content)
+        self._write_file(Path(actual_output_path), content)
 
         total_types = sum(len(layer_types) for layer_types in type_registry.values())
-        print(f"✅ Generated index {output_path}: {total_types} total types")
+        print(f"✅ Generated index {actual_output_path}: {total_types} total types")
 
     def _generate_header(self) -> None:
         """Generate document header."""
@@ -422,9 +460,10 @@ class IndexDocGenerator(DocumentGenerator):
         self.md.heading(2, "📊 統計情報").line_break()
         self.md.bullet_point(f"**総型数**: {total_types}")
 
-        # TODO: Add TypeRegistry.get_available_types_all() when available
-        # all_types = TypeRegistry.get_available_types_all()
-        # self.md.bullet_point(f"**全レイヤー型一覧**: {all_types}")
+        # すべての利用可能な型名を取得
+        from schemas.type_index import get_available_types_all
+        all_types = get_available_types_all()
+        self.md.bullet_point(f"**全レイヤー型一覧**: {', '.join(all_types)}")
 
     def _add_footer(self) -> None:
         """Add generation footer."""

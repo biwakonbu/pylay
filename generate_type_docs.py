@@ -28,7 +28,7 @@ def generate_layer_docs(layer: str, types: dict[str, type[Any]], output_dir: str
 
     generator = LayerDocGenerator(config=config)
     output_path = Path(output_dir) / f"{layer}.md"
-    generator.generate(layer, types, output_path)
+    generator.generate(output_path, layer=layer, types=types)
 
 
 def generate_index_docs(output_path: str = "docs/type_index.md") -> None:
@@ -40,7 +40,7 @@ def generate_index_docs(output_path: str = "docs/type_index.md") -> None:
     config = TypeDocConfig()
 
     generator = IndexDocGenerator(config=config)
-    generator.generate(TYPE_REGISTRY, Path(output_path))
+    generator.generate(Path(output_path), type_registry=TYPE_REGISTRY)
 
 
 def generate_docs(output_dir: str = "docs/types") -> None:

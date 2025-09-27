@@ -36,4 +36,5 @@ request = APIRequestType(service_name="MyService")
 ## 📊 統計情報
 
 - **総型数**: 11
-**生成日**: 2025-09-27T14:32:40.615951
+- **全レイヤー型一覧**: NoneType, bool, bytes, dict, float, frozenset, int, list, set, str, tuple
+**生成日**: 2025-09-27T17:16:10.290952

@@ -236,7 +236,7 @@ class TypeContext:
         """型をコンテキストに追加"""
         self.type_map[name] = spec
 
-    def resolve_ref(self, ref: str) -> TypeSpec:
+    def resolve_ref(self, ref: str | TypeSpec) -> TypeSpec:
         """参照を解決してTypeSpecを返す"""
         if isinstance(ref, RefPlaceholder):
             ref_name = ref.ref_name
@@ -265,7 +265,9 @@ class TypeContext:
                 return self._resolve_nested_refs(resolved)
             finally:
                 self.resolving.remove(ref)
-
+        else:
+            # TypeSpecやその他のオブジェクトの場合はそのまま返す
+            return ref
 
     def _resolve_nested_refs(self, spec: TypeSpec) -> TypeSpec:
         """ネストされた参照を解決"""
