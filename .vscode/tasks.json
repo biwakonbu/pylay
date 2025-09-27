@@ -1,0 +1,211 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "uv: sync",
+            "type": "shell",
+            "command": "uv",
+            "args": ["sync"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "mypy: check",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "mypy"],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                "$mypy"
+            ]
+        },
+        {
+            "label": "ruff: check",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "ruff", "check", "."],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                "$ruff"
+            ]
+        },
+        {
+            "label": "ruff: format",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "ruff", "format", "."],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "pytest: run",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "pytest"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "pre-commit: install",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "pre-commit", "install"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "pre-commit: run",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "pre-commit", "run", "--all-files"],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "install: all",
+            "type": "shell",
+            "command": "uv",
+            "args": ["sync"],
+            "dependsOn": ["pre-commit: install"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "quality: check",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "mypy", "&&", "uv", "run", "ruff", "check", ".", "&&", "uv", "run", "pre-commit", "run", "--all-files"],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                "$mypy",
+                "$ruff"
+            ]
+        },
+        {
+            "label": "format: all",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "ruff", "format", "."],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "test: run",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "pytest", "--cov=src", "--cov-report=html", "--cov-report=term"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "all: check",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "ruff", "format", ".", "&&", "uv", "run", "mypy", "&&", "uv", "run", "pytest", "--cov=src", "--cov-report=html", "--cov-report=term", "&&", "uv", "run", "pre-commit", "run", "--all-files"],
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                "$mypy",
+                "$ruff"
+            ]
+        }
+    ]
+}

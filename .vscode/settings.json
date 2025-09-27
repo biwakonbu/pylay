@@ -1,0 +1,71 @@
+{
+    "python.defaultInterpreterPath": "./.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+
+    // mypy 設定
+    "mypy.enabled": true,
+    "mypy.configFile": "mypy.ini",
+    "mypy.runUsingActiveInterpreter": true,
+    "mypy.severity": {
+        "error": true,
+        "note": true,
+        "warning": true
+    },
+
+    // ruff 設定
+    "ruff.enable": true,
+    "ruff.organizeImports": true,
+    "ruff.fixAll": true,
+    "ruff.importStrategy": "fromEnvironment",
+
+    // フォーマット設定
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+
+    // 型チェック設定
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+
+    // テスト設定
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestPath": "./.venv/bin/pytest",
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+
+    // エディタ設定
+    "files.associations": {
+        "*.md": "markdown"
+    },
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true,
+
+    // 検索と置換
+    "search.exclude": {
+        "**/.git": true,
+        "**/.venv": true,
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    },
+
+    // Git 設定
+    "git.confirmSync": false,
+    "git.autofetch": true,
+
+    // ワークスペース設定
+    "extensions.ignoreRecommendations": false,
+
+    // Python 固有設定
+    "[python]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.rulers": [88],
+        "editor.wordWrap": "off"
+    }
+}

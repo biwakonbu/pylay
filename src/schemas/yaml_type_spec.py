@@ -32,6 +32,39 @@ class TypeRoot(BaseModel):
     """YAML型仕様のルートモデル (v1.1構造)"""
     types: Dict[str, TypeSpec] = Field(default_factory=dict, description="型仕様のルート辞書。キー=型名、値=TypeSpec")
 
+    @field_validator('types', mode='before')
+    @classmethod
+    def validate_types(cls, v):
+        """typesフィールドのバリデーション（生のdictも受け入れる）"""
+        if isinstance(v, dict):
+            result = {}
+            for key, value in v.items():
+                if isinstance(value, dict):
+                    # dictの場合、TypeSpecに変換
+                    result[key] = _create_spec_from_data(value)
+                elif isinstance(value, TypeSpec):
+                    result[key] = value
+                else:
+                    # 参照文字列の場合
+                    result[key] = value
+            return result
+        return v
+
+def _create_spec_from_data(data: dict, root_key: str = None) -> TypeSpec:
+    """dictからTypeSpecサブクラスを作成 (内部関数)"""
+    type_key = data.get('type')
+    if type_key == 'list':
+        return ListTypeSpec(**data)
+    elif type_key == 'dict':
+        return DictTypeSpec(**data)
+    elif type_key == 'union':
+        return UnionTypeSpec(**data)
+    else:
+        # 基本型: nameをroot_keyから補完（v1.1対応）
+        if root_key:
+            data['name'] = root_key
+        return TypeSpec(**data)
+
 # 参照解決のためのコンテキスト
 class TypeContext:
     """型参照解決のためのコンテキスト"""
@@ -54,7 +87,8 @@ class TypeContext:
 
             self.resolving.add(ref)
             try:
-                return self._resolve_nested_refs(self.type_map[ref])
+                resolved = self.type_map[ref]
+                return self._resolve_nested_refs(resolved)
             finally:
                 self.resolving.remove(ref)
         else:
@@ -64,18 +98,25 @@ class TypeContext:
         """ネストされた参照を解決"""
         if isinstance(spec, ListTypeSpec):
             resolved_items = self.resolve_ref(spec.items)
+            # itemsが参照文字列からTypeSpecに解決された場合、適切な型に変換
+            if isinstance(resolved_items, str):
+                # まだ参照文字列の場合は、そのまま保持
+                final_items = resolved_items
+            else:
+                # TypeSpecに解決された場合は、そのまま使用
+                final_items = resolved_items
             return ListTypeSpec(
                 name=spec.name,
                 type=spec.type,
                 description=spec.description,
                 required=spec.required,
-                items=resolved_items
+                items=final_items
             )
         elif isinstance(spec, DictTypeSpec):
-            resolved_props = {
-                key: self.resolve_ref(prop)
-                for key, prop in spec.properties.items()
-            }
+            resolved_props = {}
+            for key, prop in spec.properties.items():
+                # 参照文字列またはTypeSpecのどちらでも解決
+                resolved_props[key] = self.resolve_ref(prop)
             return DictTypeSpec(
                 name=spec.name,
                 type=spec.type,

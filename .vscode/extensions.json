@@ -1,0 +1,41 @@
+{
+    "recommendations": [
+        // Python 開発必須
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.pylint",
+
+        // mypy 型チェック
+        "ms-python.mypy-type-checker",
+
+        // Ruff (高速リンター/フォーマッター)
+        "charliermarsh.ruff",
+
+        // テスト支援
+        "ms-python.pytest",
+
+        // Git 連携
+        "eamodio.gitlens",
+        "ms-vscode.vscode-json",
+
+        // Markdown 支援
+        "yzhang.markdown-all-in-one",
+        "ms-vscode.vscode-markdownlint",
+
+        // 開発効率化
+        "ms-vscode.vscode-jupyter",
+        "redhat.vscode-yaml",
+        "ms-python.vscode-pylance",
+
+        // 便利ツール
+        "ms-vscode.vscode-json",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense"
+    ],
+    "unwantedRecommendations": [
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.pylint"
+    ]
+}

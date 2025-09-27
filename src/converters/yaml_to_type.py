@@ -1,47 +1,64 @@
 import yaml
-from typing import Any, Dict, Type
+from typing import Any, Dict, Type, Union
 from pydantic import ValidationError
 
-from schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeRoot
+from src.schemas.yaml_type_spec import (
+    TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeRoot, TypeContext, TypeSpecOrRef, _create_spec_from_data
+)
 
 def yaml_to_spec(yaml_str: str, root_key: str = None) -> TypeSpec | TypeRoot:
-    """YAML文字列からTypeSpecまたはTypeRootを生成 (v1.1対応)"""
+    """YAML文字列からTypeSpecまたはTypeRootを生成 (v1.1対応、参照解決付き)"""
     data = yaml.safe_load(yaml_str)
-    
+
     # v1.1: ルートがdictの場合、トップレベルキーを型名として扱う
     if isinstance(data, dict) and not root_key:
         if 'types' in data:
-            # 複数型: TypeRoot
-            return TypeRoot(**data)
+            # 複数型: TypeRoot（参照解決付き）
+            type_root = TypeRoot(**data)
+            # 参照解決を実行
+            resolved_types = _resolve_all_refs(type_root.types)
+            return TypeRoot(types=resolved_types)
         else:
             # 単一型: 最初のキーを型名としてTypeSpec作成
             if len(data) == 1:
                 type_name, spec_data = next(iter(data.items()))
                 spec_data['name'] = type_name  # nameを補完（オプション）
-                return _create_spec_from_data(spec_data)
+                spec = _create_spec_from_data(spec_data)
+                # 単一型の場合も参照解決を実行（循環参照チェックのため）
+                context = TypeContext()
+                context.add_type(type_name, spec)
+                return context.resolve_ref(spec)
             else:
                 # 複数単一型: TypeRoot(types=data) に変換
-                return TypeRoot(types=data)
+                type_root = TypeRoot(types=data)
+                resolved_types = _resolve_all_refs(type_root.types)
+                return TypeRoot(types=resolved_types)
     elif isinstance(data, dict):
         # 従来v1または指定root_key: nameフィールドで処理
-        return _create_spec_from_data(data, root_key)
-    
+        spec = _create_spec_from_data(data, root_key)
+        # 参照解決（循環参照チェックのため）
+        context = TypeContext()
+        if spec.name:
+            context.add_type(spec.name, spec)
+        return context.resolve_ref(spec)
+
     raise ValueError("Invalid YAML structure for TypeSpec or TypeRoot")
 
-def _create_spec_from_data(data: dict, root_key: str = None) -> TypeSpec:
-    """dictからTypeSpecサブクラスを作成 (内部関数)"""
-    type_key = data.get('type')
-    if type_key == 'list':
-        return ListTypeSpec(**data)
-    elif type_key == 'dict':
-        return DictTypeSpec(**data)
-    elif type_key == 'union':
-        return UnionTypeSpec(**data)
-    else:
-        # 基本型: nameをroot_keyから補完（v1.1対応）
-        if root_key:
-            data['name'] = root_key
-        return TypeSpec(**data)
+def _resolve_all_refs(types: Dict[str, TypeSpec]) -> Dict[str, TypeSpec]:
+    """すべての参照を解決"""
+    context = TypeContext()
+
+    # まずすべての型をコンテキストに追加（元のspecを保持）
+    for name, spec in types.items():
+        context.add_type(name, spec)
+
+    # 次にすべての参照を解決（_resolve_nested_refsを使って構造を維持）
+    resolved_types = {}
+    for name, spec in types.items():
+        resolved_types[name] = context._resolve_nested_refs(spec)
+
+    return resolved_types
+
 
 def validate_with_spec(spec: TypeSpec, data: Any) -> bool:
     """TypeSpecに基づいてデータをバリデーション"""
@@ -97,7 +114,7 @@ if __name__ == "__main__":
     spec = yaml_to_spec(yaml_example)
     print(type(spec))  # TypeRoot
     print(spec.types['User'].description)  # ユーザー情報を表す型
-    
+
     # 単一型例
     single_yaml = """
     User:
