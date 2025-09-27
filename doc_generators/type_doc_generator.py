@@ -40,8 +40,8 @@ class LayerDocGenerator(DocumentGenerator):
 
     def generate(
         self,
-        *args: object,
-        **kwargs: object,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         """Generate layer documentation.
 
@@ -56,25 +56,43 @@ class LayerDocGenerator(DocumentGenerator):
 
         if len(args) == 3:
             # テストが期待するAPI: generate(layer, types, output_path)
-            layer_arg: str = args[0]
-            types_arg: dict[str, type[Any]] | list[type[Any]] = args[1]
-            output_path_arg: Path = args[2]
+            layer_arg = args[0]
+            types_arg = args[1]
+            output_path_arg = args[2]
+            if not isinstance(layer_arg, str):
+                raise ValueError("layer must be a string")
+            if not isinstance(types_arg, (dict, list)):
+                raise ValueError("types must be a dict or list")
+            if not isinstance(output_path_arg, (str, Path)):
+                raise ValueError("output_path must be a string or Path")
             layer = layer_arg
             types = types_arg
             actual_output_path = Path(output_path_arg)
         elif len(args) == 2:
             # テストが期待するAPI: generate(layer, types) - output_pathはデフォルト
-            layer_arg: str = args[0]
-            types_arg: dict[str, type[Any]] | list[type[Any]] = args[1]
+            layer_arg = args[0]
+            types_arg = args[1]
+            if not isinstance(layer_arg, str):
+                raise ValueError("layer must be a string")
+            if not isinstance(types_arg, (dict, list)):
+                raise ValueError("types must be a dict or list")
             layer = layer_arg
             types = types_arg
             filename = self.config.layer_filename_template.format(layer=layer)
             actual_output_path = self.config.output_directory / filename
         elif len(args) == 1 and 'layer' in kwargs and 'types' in kwargs:
             # 新しいAPI: generate(output_path, layer=layer, types=types)
-            output_path_arg: Path = args[0]
-            layer = kwargs['layer']
-            types = kwargs['types']
+            output_path_arg = args[0]
+            layer_kw = kwargs['layer']
+            types_kw = kwargs['types']
+            if not isinstance(output_path_arg, (str, Path)):
+                raise ValueError("output_path must be a string or Path")
+            if not isinstance(layer_kw, str):
+                raise ValueError("layer must be a string")
+            if not isinstance(types_kw, (dict, list)):
+                raise ValueError("types must be a dict or list")
+            layer = layer_kw
+            types = types_kw
             actual_output_path = Path(output_path_arg)
         else:
             raise ValueError("Invalid arguments. Use generate(layer, types, output_path) or generate(output_path, layer=layer, types=types)")
@@ -323,8 +341,8 @@ class IndexDocGenerator(DocumentGenerator):
 
     def generate(
         self,
-        *args: object,
-        **kwargs: object,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
         """Generate index documentation.
 

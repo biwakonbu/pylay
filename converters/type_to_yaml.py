@@ -1,8 +1,10 @@
 import yaml
 import inspect
-from typing import Any, get_origin, get_args, Dict, Union as TypingUnion
+from typing import Any, get_origin, get_args, Dict, List, Union as TypingUnion, Optional
 
 from schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeSpecOrRef
+
+
 
 def _get_basic_type_str(typ: type[Any]) -> str:
     """基本型の型名を取得"""
@@ -83,6 +85,91 @@ def _get_class_properties_with_docstrings(cls: type[Any]) -> Dict[str, TypeSpecO
 
     return properties
 
+def _handle_basic_type(typ: type[Any], type_name: str, description: str | None) -> TypeSpec:
+    """基本型をTypeSpecに変換"""
+    if typ in {str, int, float, bool}:
+        type_str = _get_basic_type_str(typ)
+        return TypeSpec(name=type_name, type=type_str, description=description)
+    else:
+        # カスタムクラスはdict型として扱い、フィールドのdocstringを取得
+        properties = _get_class_properties_with_docstrings(typ)
+        return DictTypeSpec(
+            name=type_name,
+            type='dict',
+            description=description,
+            properties=properties
+        )
+
+
+def _handle_list_type(typ: type[Any], type_name: str, description: str | None, args: tuple[type, ...]) -> ListTypeSpec:
+    """List型をListTypeSpecに変換"""
+    if args:
+        item_type = args[0]
+        if get_origin(item_type) is None and item_type not in {str, int, float, bool}:
+            # カスタム型の場合、参照として保持
+            return ListTypeSpec(
+                name=type_name,
+                items=_get_type_name(item_type),  # 参照文字列として保持
+                description=description
+            )
+        else:
+            # 基本型の場合、TypeSpecとして展開
+            items_spec = type_to_spec(item_type)
+            return ListTypeSpec(name=type_name, items=items_spec, description=description)
+    else:
+        # 型パラメータなし
+        return ListTypeSpec(name=type_name, items=TypeSpec(name='any', type='any'), description=description)
+
+
+def _handle_dict_type(typ: type[Any], type_name: str, description: str | None, args: tuple[type, ...]) -> DictTypeSpec:
+    """Dict型をDictTypeSpecに変換"""
+    if args and len(args) >= 2:
+        key_type, value_type = args[0], args[1]
+
+        # Dict[str, T] のような場合、propertiesとして扱う
+        if key_type is str:
+            properties: Dict[str, TypeSpecOrRef] = {}
+
+            # 値型がカスタム型の場合、参照として保持
+            if get_origin(value_type) is None and value_type not in {str, int, float, bool}:
+                # 各プロパティの型名をキーとして参照を保持（実際のプロパティ解決は別途）
+                properties[_get_type_name(value_type)] = _get_type_name(value_type)
+            else:
+                # 基本型の場合、TypeSpecとして展開
+                value_spec = type_to_spec(value_type)
+                properties[_get_type_name(value_type)] = value_spec
+
+            return DictTypeSpec(
+                name=type_name,
+                properties=properties,
+                description=description
+            )
+        else:
+            # キーがstr以外の場合、簡易的にanyとして扱う
+            return DictTypeSpec(name=type_name, properties={}, description=description)
+    else:
+        return DictTypeSpec(name=type_name, properties={}, description=description)
+
+
+def _handle_union_type(typ: type[Any], type_name: str, description: str | None, args: tuple[type, ...]) -> UnionTypeSpec:
+    """Union型をUnionTypeSpecに変換"""
+    if args:
+        variants: List[TypeSpecOrRef] = []
+
+        for arg in args:
+            if get_origin(arg) is None and arg not in {str, int, float, bool}:
+                # カスタム型の場合、参照として保持
+                variants.append(_get_type_name(arg))
+            else:
+                # 基本型の場合、TypeSpecとして展開
+                variant_spec = type_to_spec(arg)
+                variants.append(variant_spec)
+
+        return UnionTypeSpec(name=type_name, variants=variants, description=description)
+    else:
+        return UnionTypeSpec(name=type_name, variants=[], description=description)
+
+
 def type_to_spec(typ: type[Any]) -> TypeSpec:
     """Python型をTypeSpecに変換（v1.1対応）"""
     origin = get_origin(typ)
@@ -95,90 +182,18 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
     type_name = _get_type_name(typ)
 
     if origin is None:
-        # 基本型またはカスタムクラス
-        if typ in {str, int, float, bool}:
-            type_str = _get_basic_type_str(typ)
-            return TypeSpec(name=type_name, type=type_str, description=description)
-        else:
-            # カスタムクラスはdict型として扱い、フィールドのdocstringを取得
-            properties = _get_class_properties_with_docstrings(typ)
-            return DictTypeSpec(
-                name=type_name,
-                type='dict',
-                description=description,
-                properties=properties
-            )
-
+        return _handle_basic_type(typ, type_name, description)
     elif origin is list:
-        # List型は常にtype: "list" として処理
-        if args:
-            item_type = args[0]
-            if get_origin(item_type) is None and item_type not in {str, int, float, bool}:
-                # カスタム型の場合、参照として保持
-                return ListTypeSpec(
-                    name=type_name,
-                    items=_get_type_name(item_type),  # 参照文字列として保持
-                    description=description
-                )
-            else:
-                # 基本型の場合、TypeSpecとして展開
-                items_spec = type_to_spec(item_type)
-                return ListTypeSpec(name=type_name, items=items_spec, description=description)
-        else:
-            # 型パラメータなし
-            return ListTypeSpec(name=type_name, items=TypeSpec(name='any', type='any'), description=description)
-
+        return _handle_list_type(typ, type_name, description, args)
     elif origin is dict:
-        if args and len(args) >= 2:
-            key_type, value_type = args[0], args[1]
-
-            # Dict[str, T] のような場合、propertiesとして扱う
-            if key_type is str:
-                properties: Dict[str, TypeSpecOrRef] = {}
-
-                # 値型がカスタム型の場合、参照として保持
-                if get_origin(value_type) is None and value_type not in {str, int, float, bool}:
-                    # 各プロパティの型名をキーとして参照を保持（実際のプロパティ解決は別途）
-                    properties[_get_type_name(value_type)] = _get_type_name(value_type)
-                else:
-                    # 基本型の場合、TypeSpecとして展開
-                    value_spec = type_to_spec(value_type)
-                    properties[_get_type_name(value_type)] = value_spec
-
-                return DictTypeSpec(
-                    name=type_name,
-                    properties=properties,
-                    description=description
-                )
-            else:
-                # キーがstr以外の場合、簡易的にanyとして扱う
-                return DictTypeSpec(name=type_name, properties={}, description=description)
-        else:
-            return DictTypeSpec(name=type_name, properties={}, description=description)
-
+        return _handle_dict_type(typ, type_name, description, args)
     elif origin is TypingUnion:
-        # Union型（Union[int, str] など）
-        if args:
-            variants: List[TypeSpecOrRef] = []
-
-            for arg in args:
-                if get_origin(arg) is None and arg not in {str, int, float, bool}:
-                    # カスタム型の場合、参照として保持
-                    variants.append(_get_type_name(arg))
-                else:
-                    # 基本型の場合、TypeSpecとして展開
-                    variant_spec = type_to_spec(arg)
-                    variants.append(variant_spec)
-
-            return UnionTypeSpec(name=type_name, variants=variants, description=description)
-        else:
-            return UnionTypeSpec(name=type_name, variants=[], description=description)
-
+        return _handle_union_type(typ, type_name, description, args)
     else:
         # 未サポート型
         return TypeSpec(name=type_name, type='unknown', description=description)
 
-def type_to_yaml(typ: type[Any], output_file: str = None, as_root: bool = True) -> str | Dict[str, dict]:
+def type_to_yaml(typ: type[Any], output_file: Optional[str] = None, as_root: bool = True) -> str | Dict[str, dict]:
     """型をYAML文字列に変換、またはファイル出力 (v1.1対応)"""
     spec = type_to_spec(typ)
 
@@ -200,7 +215,7 @@ def type_to_yaml(typ: type[Any], output_file: str = None, as_root: bool = True) 
 
     return yaml_str if as_root else yaml_data
 
-def types_to_yaml(types: Dict[str, type[Any]], output_file: str = None) -> str:
+def types_to_yaml(types: Dict[str, type[Any]], output_file: Optional[str] = None) -> str:
     """複数型をYAML文字列に変換 (v1.1対応)"""
     specs = {}
     for name, typ in types.items():

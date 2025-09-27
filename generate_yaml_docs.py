@@ -8,7 +8,12 @@ def generate_yaml_docs_from_file(yaml_file: str, output_dir: str = "docs/yaml_ty
         yaml_str = f.read()
 
     spec = yaml_to_spec(yaml_str)
-    generate_yaml_docs(spec, output_dir)
+    if hasattr(spec, 'types'):
+        # TypeRootの場合、最初の型を使用
+        first_type = next(iter(spec.types.values()))
+        generate_yaml_docs(first_type, output_dir)
+    else:
+        generate_yaml_docs(spec, output_dir)
 
 if __name__ == "__main__":
     # サンプルYAMLファイルからドキュメント生成

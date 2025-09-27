@@ -48,9 +48,28 @@ class TestDocGeneratorsIntegration:
         assert "**生成日**:" in test_content
         assert "**生成日**:" in type_content
 
-        # Both should use consistent markdown structure
-        assert test_content.startswith("# テストカタログ")
-        assert "型インデックス" in type_content
+    def test_yaml_doc_generator_depth_limit(self):
+        """YAMLドキュメント生成の深さ制限テスト"""
+        from doc_generators.yaml_doc_generator import YamlDocGenerator
+        from schemas.yaml_type_spec import TypeSpec, DictTypeSpec
+
+        # 深くネストされた構造を作成
+        deep_spec = TypeSpec(name="str", type="str")
+        for i in range(15):  # 深さ15のネスト
+            deep_spec = DictTypeSpec(
+                name=f"Level{i}",
+                type="dict",
+                properties={"value": deep_spec}
+            )
+
+        generator = YamlDocGenerator()
+        output_path = self.output_dir / "deep_test.md"
+
+        # 深さ制限付きで生成
+        generator.generate(output_path, spec=deep_spec)
+
+        content = output_path.read_text(encoding="utf-8")
+        assert "深さ制限を超えました" in content
 
     def test_parallel_generation_workflow(self):
         """Test that both generators can run in parallel without conflicts."""

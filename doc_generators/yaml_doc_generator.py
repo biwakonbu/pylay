@@ -30,7 +30,12 @@ class YamlDocGenerator(DocumentGenerator):
         if spec.description:
             self.md.paragraph(spec.description)
 
-    def _generate_body(self, spec: TypeSpec | str) -> None:
+    def _generate_body(self, spec: TypeSpec | str, depth: int = 0) -> None:
+        """再帰的に型情報を生成（深さ制限付き）"""
+        if depth > 10:  # 深さ制限
+            self.md.paragraph("... (深さ制限を超えました)")
+            return
+
         self.md.heading(2, "型情報")
         if isinstance(spec, str):
             self.md.paragraph(f"参照: {spec}")
@@ -39,16 +44,16 @@ class YamlDocGenerator(DocumentGenerator):
 
         if isinstance(spec, ListTypeSpec):
             self.md.heading(2, "要素型")
-            self._generate_body(spec.items)
+            self._generate_body(spec.items, depth + 1)
         elif isinstance(spec, DictTypeSpec):
             self.md.heading(2, "プロパティ")
             for name, prop in spec.properties.items():
                 self.md.heading(3, name)
-                self._generate_body(prop)
+                self._generate_body(prop, depth + 1)
         elif isinstance(spec, UnionTypeSpec):
             self.md.heading(2, "バリアント")
             for variant in spec.variants:
-                self._generate_body(variant)
+                self._generate_body(variant, depth + 1)
 
     def _generate_footer(self) -> None:
         self.md.horizontal_rule()

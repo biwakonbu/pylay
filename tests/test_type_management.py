@@ -463,3 +463,68 @@ def test_error_handling():
     """
     with pytest.raises(Exception):  # PydanticのValidationError
         yaml_to_spec(incomplete_yaml)
+
+
+def test_validate_with_spec_depth_limit():
+    """validate_with_specの深さ制限テスト"""
+    # 深くネストされた構造を作成（深さ5程度）
+    deep_spec = TypeSpec(name="str", type="str")
+    for _ in range(5):  # 深さ5のネスト
+        deep_spec = DictTypeSpec(
+            name="nested",
+            type="dict",
+            properties={"value": deep_spec}
+        )
+
+    # 深さ制限なしで有効なデータ
+    deep_data = {"value": {"value": {"value": {"value": {"value": "deep"}}}}}
+    # 深さ制限を超えない場合
+    assert validate_with_spec(deep_spec, deep_data, max_depth=10) is True
+
+    # 深さ制限を超えるとFalse
+    assert validate_with_spec(deep_spec, deep_data, max_depth=3) is False
+
+    # 浅い構造はOK
+    shallow_spec = DictTypeSpec(
+        name="shallow",
+        type="dict",
+        properties={"value": TypeSpec(name="str", type="str")}
+    )
+    shallow_data = {"value": "test"}
+    assert validate_with_spec(shallow_spec, shallow_data, max_depth=10) is True
+
+
+def test_type_to_spec_function_splitting():
+    """type_to_specの関数分割テスト"""
+    from converters.type_to_yaml import (
+        _handle_basic_type, _handle_list_type, _handle_dict_type, _handle_union_type,
+        _get_basic_type_str, _get_type_name, _get_docstring
+    )
+
+    # 基本型テスト
+    assert _get_basic_type_str(str) == 'str'
+    assert _get_basic_type_str(int) == 'int'
+    assert _get_basic_type_str(float) == 'float'
+    assert _get_basic_type_str(bool) == 'bool'
+    assert _get_basic_type_str(list) == 'any'  # 未定義型
+
+    # 型名取得テスト
+    assert _get_type_name(str) == 'str'
+    assert _get_type_name(list) == 'list'
+
+    # docstring取得テスト
+    doc = _get_docstring(str)
+    assert doc is not None
+    assert "Create a new string" in doc
+
+    # ハンドラーテスト
+    basic_spec = _handle_basic_type(str, "TestStr", "テスト文字列")
+    assert basic_spec.type == 'str'
+    assert basic_spec.name == "TestStr"
+    assert basic_spec.description == "テスト文字列"
+
+    # List型テスト
+    list_spec = _handle_list_type(list, "TestList", "テストリスト", (str,))
+    assert list_spec.type == 'list'
+    assert isinstance(list_spec.items, TypeSpec)
+    assert list_spec.items.type == 'str'
