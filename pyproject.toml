@@ -6,7 +6,9 @@ authors = [{name = "Your Name", email = "your.email@example.com"}]
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "networkx>=3.5",
     "pydantic>=2.8.2",
+    "pydot>=4.0.1",
     "pyyaml>=6.0.2",
 ]
 
@@ -21,6 +23,8 @@ dev = [
     "pre-commit>=3.0.0",
     "pytest-cov>=4.0.0",
     "pytest-xdist>=3.0.0",
+    "networkx>=3.3",
+    "pydot>=3.0.0",
 ]
 
 [tool.poetry]

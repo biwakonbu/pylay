@@ -4,6 +4,7 @@ Python ASTを解析し、型依存グラフを構築するためのコンポー�
 """
 
 import ast
+from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 from collections.abc import Mapping, Sequence
 from datetime import datetime
@@ -34,13 +35,13 @@ class ASTDependencyExtractor:
         self._node_cache.clear()
         self._processing_stack.clear()
 
-    def extract_dependencies(self, file_path: str) -> TypeDependencyGraph:
-        """指定されたPythonファイルから依存関係を抽出"""
+    def extract_dependencies(self, file_path: str, include_mypy: bool = False) -> TypeDependencyGraph:
         """
         指定されたPythonファイルから依存関係を抽出。
 
         Args:
             file_path: 解析対象のPythonファイルパス
+            include_mypy: mypy型推論を含めるかどうか
 
         Returns:
             抽出された依存グラフ
@@ -65,16 +66,35 @@ class ASTDependencyExtractor:
         # 依存関係を抽出
         self._extract_from_ast(tree, file_path)
 
+        # mypy統合（オプション）
+        if include_mypy:
+            from converters.mypy_type_extractor import MypyTypeExtractor
+            mypy_extractor = MypyTypeExtractor()
+            mypy_results = mypy_extractor.extract_types_with_mypy(file_path)
+            mypy_nodes, mypy_edges = mypy_extractor._extract_mypy_nodes_and_edges(mypy_results)
+
+            # mypyノードを追加
+            for node in mypy_nodes:
+                if node.name not in self.nodes:
+                    self.nodes[node.name] = node
+
+            # mypyエッジを追加
+            for edge in mypy_edges:
+                edge_key = f"{edge.source}->{edge.target}:{edge.relation_type}"
+                if edge_key not in self.edges:
+                    self.edges[edge_key] = edge
+
         # グラフを構築
         graph = TypeDependencyGraph(
             nodes=list(self.nodes.values()),
             edges=list(self.edges.values()),
             metadata={
                 'source_file': file_path,
-                'extraction_method': 'AST_analysis',
+                'extraction_method': 'AST_analysis_with_mypy' if include_mypy else 'AST_analysis',
                 'extraction_timestamp': datetime.now().isoformat(),
                 'node_count': len(self.nodes),
-                'edge_count': len(self.edges)
+                'edge_count': len(self.edges),
+                'mypy_enabled': include_mypy
             }
         )
 
@@ -89,6 +109,14 @@ class ASTDependencyExtractor:
                 self._handle_function_def(node, file_path)
             elif isinstance(node, ast.Assign):
                 self._handle_assign(node, file_path)
+            elif isinstance(node, ast.Import):
+                self._handle_import(node, file_path)
+            elif isinstance(node, ast.ImportFrom):
+                self._handle_import_from(node, file_path)
+            elif isinstance(node, ast.Attribute):
+                self._handle_attribute(node, file_path)
+            elif isinstance(node, ast.Call):
+                self._handle_call(node, file_path)
 
     def _handle_class_def(self, node: ast.ClassDef, file_path: str) -> None:
         """クラス定義から依存を抽出"""
@@ -181,6 +209,101 @@ class ASTDependencyExtractor:
             return_type = self._get_type_name_from_ast(node.returns)
             if return_type:
                 self._add_edge(method_name, return_type, 'returns', weight=0.8)
+
+    def _handle_call(self, node: ast.Call, file_path: str) -> None:
+        """関数呼び出しから依存を抽出"""
+        if hasattr(node.func, 'id'):
+            func_name = node.func.id
+            # 関数呼び出しノードを作成（必要に応じて）
+            call_node = GraphNode(
+                name=f"call_{func_name}",
+                node_type='function_call',
+                attributes={'source_file': file_path, 'called_function': func_name}
+            )
+            self._add_node(call_node)
+
+            # 呼び出し元の関数を探す（簡易的に）
+            # 実際の実装ではコールスタックやコンテキストが必要
+            self._add_edge(call_node.name, func_name, 'calls', weight=0.8)
+        elif isinstance(node.func, ast.Attribute):
+            # obj.method() のような属性アクセス呼び出し
+            self._handle_attribute_call(node.func, file_path)
+
+    def _handle_import(self, node: ast.Import, file_path: str) -> None:
+        """import文から依存を抽出"""
+        for alias in node.names:
+            module_name = alias.name
+            import_node = GraphNode(
+                name=module_name,
+                node_type='module',
+                attributes={'source_file': file_path, 'import_type': 'direct'}
+            )
+            self._add_node(import_node)
+
+            # 現在のファイルがモジュールに依存
+            current_module = Path(file_path).stem
+            self._add_edge(current_module, module_name, 'imports', weight=0.9)
+
+    def _handle_import_from(self, node: ast.ImportFrom, file_path: str) -> None:
+        """from import文から依存を抽出"""
+        if node.module:
+            module_name = node.module
+            import_node = GraphNode(
+                name=module_name,
+                node_type='module',
+                attributes={'source_file': file_path, 'import_type': 'from'}
+            )
+            self._add_node(import_node)
+
+            # インポートされたシンボル
+            for alias in node.names:
+                symbol_name = alias.name
+                symbol_node = GraphNode(
+                    name=f"{module_name}.{symbol_name}",
+                    node_type='imported_symbol',
+                    attributes={'source_file': file_path, 'imported_from': module_name}
+                )
+                self._add_node(symbol_node)
+
+                # 依存関係
+                current_module = Path(file_path).stem
+                self._add_edge(current_module, module_name, 'imports', weight=0.9)
+                self._add_edge(symbol_node.name, module_name, 'belongs_to', weight=0.8)
+
+    def _handle_attribute(self, node: ast.Attribute, file_path: str) -> None:
+        """属性アクセスから依存を抽出"""
+        if hasattr(node.value, 'id') and hasattr(node, 'attr'):
+            obj_name = node.value.id
+            attr_name = node.attr
+
+            # 属性アクセスノードを作成
+            attr_node = GraphNode(
+                name=f"{obj_name}.{attr_name}",
+                node_type='attribute_access',
+                attributes={'source_file': file_path, 'object': obj_name, 'attribute': attr_name}
+            )
+            self._add_node(attr_node)
+
+            # オブジェクトへの依存
+            self._add_edge(attr_node.name, obj_name, 'references', weight=0.7)
+
+    def _handle_attribute_call(self, node: ast.Attribute, file_path: str) -> None:
+        """属性を通じた関数呼び出しから依存を抽出"""
+        if hasattr(node.value, 'id') and hasattr(node, 'attr'):
+            obj_name = node.value.id
+            method_name = node.attr
+
+            # メソッド呼び出しノードを作成
+            method_call_node = GraphNode(
+                name=f"{obj_name}.{method_name}()",
+                node_type='method_call',
+                attributes={'source_file': file_path, 'object': obj_name, 'method': method_name}
+            )
+            self._add_node(method_call_node)
+
+            # オブジェクトとメソッドへの依存
+            self._add_edge(method_call_node.name, obj_name, 'references', weight=0.7)
+            self._add_edge(method_call_node.name, method_name, 'calls', weight=0.8)
 
     def _handle_assign(self, node: ast.Assign, file_path: str) -> None:
         """変数代入から依存を抽出"""

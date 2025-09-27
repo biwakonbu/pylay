@@ -11,7 +11,7 @@ from datetime import datetime
 
 
 # ノードタイプの定義
-NodeType = Literal['class', 'function', 'variable', 'module', 'type_alias', 'method']
+NodeType = Literal['class', 'function', 'variable', 'module', 'type_alias', 'method', 'function_call', 'method_call', 'attribute_access', 'imported_symbol']
 
 # 関係タイプの定義
 RelationType = Literal['inherits', 'calls', 'references', 'imports', 'depends_on', 'returns', 'implements']
