@@ -49,6 +49,12 @@ class PylayConfig(BaseModel):
         description="型推論の厳密さ（strict, normal, loose）"
     )
 
+    # 出力ディレクトリクリーンアップフラグ
+    clean_output_dir: bool = Field(
+        default=True,
+        description="実行時に出力ディレクトリをクリーンアップするかどうか"
+    )
+
     # 除外パターン
     exclude_patterns: list[str] = Field(
         default=[

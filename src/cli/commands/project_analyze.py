@@ -74,10 +74,40 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
             console.print(f"  出力ディレクトリ: {config.output_dir}")
             console.print(f"  Markdown生成: {config.generate_markdown}")
             console.print(f"  依存関係抽出: {config.extract_deps}")
+            console.print(f"  クリーンアップ: {config.clean_output_dir}")
             console.print()
 
+        # cleanフラグの決定（コマンドラインオプションが優先、未指定の場合は設定値を使用）
+        effective_clean = clean or config.clean_output_dir
+
+        # dry-runの場合は実際の処理をスキップ
+        if dry_run:
+            # プロジェクトスキャナーを作成
+            scanner = ProjectScanner(config)
+
+            # パスの検証
+            validation = scanner.validate_paths()
+            if not validation["valid"]:
+                console.print("[bold red]❌ 設定エラー:[/bold red]")
+                for error in validation["errors"]:
+                    console.print(f"  {error}")
+                return
+
+            # 解析対象ファイルの取得
+            python_files = scanner.get_python_files()
+
+            console.print(f"[bold blue]解析対象ファイル ({len(python_files)}個):[/bold blue]")
+            for file_path in python_files:
+                console.print(f"  {file_path}")
+            return
+
         # cleanオプションが指定された場合、出力ディレクトリを削除
-        if clean:
+        if effective_clean:
+            if verbose:
+                if clean:
+                    console.print(f"[yellow]🗑️  --clean オプションにより出力ディレクトリを削除します[/yellow]")
+                else:
+                    console.print(f"[yellow]🗑️  設定により出力ディレクトリを削除します[/yellow]")
             output_dir = config.get_absolute_paths(Path.cwd())["output_dir"]
             if output_dir.exists():
                 import shutil
