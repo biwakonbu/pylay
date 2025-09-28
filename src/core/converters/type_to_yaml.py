@@ -336,20 +336,20 @@ def extract_types_from_module(module_path: str | Path) -> str:
 
     try:
         # AST解析で型エイリアスやクラス定義を抽出
-        with open(module_path, 'r', encoding='utf-8') as f:
+        with open(module_path, "r", encoding="utf-8") as f:
             source = f.read()
 
         tree = ast.parse(source)
 
         for node in ast.walk(tree):
             # 型エイリアス（Python 3.12+）
-            if hasattr(ast, 'TypeAlias') and isinstance(node, ast.TypeAlias):
+            if hasattr(ast, "TypeAlias") and isinstance(node, ast.TypeAlias):
                 if isinstance(node.name, ast.Name):
                     type_name = node.name.id
                     # 型エイリアスを動的に評価（制限付き）
                     try:
                         # 安全な方法で型を解決
-                        local_vars = {}
+                        local_vars: dict[str, Any] = {}
                         exec(f"{type_name} = None", {"__builtins__": {}}, local_vars)
                         types_dict[type_name] = local_vars[type_name]
                     except:
@@ -372,10 +372,14 @@ def extract_types_from_module(module_path: str | Path) -> str:
                 var_name = node.target.id
                 try:
                     # 型アノテーションから型を解決
-                    if hasattr(ast, 'unparse'):
+                    if hasattr(ast, "unparse"):
                         type_str = ast.unparse(node.annotation)
                         local_vars = {}
-                        exec(f"{var_name}: {type_str} = None", {"__builtins__": {}}, local_vars)
+                        exec(
+                            f"{var_name}: {type_str} = None",
+                            {"__builtins__": {}},
+                            local_vars,
+                        )
                         types_dict[var_name] = local_vars[var_name]
                 except:
                     pass

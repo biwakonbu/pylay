@@ -46,7 +46,9 @@ class YamlDocGenerator(DocumentGenerator):
         if spec.description:
             self.md.paragraph(spec.description)
 
-    def _generate_body(self, spec: TypeSpec | RefPlaceholder | str, depth: int = 0) -> None:
+    def _generate_body(
+        self, spec: TypeSpec | RefPlaceholder | str, depth: int = 0
+    ) -> None:
         """再帰的に型情報を生成（深さ制限付き）"""
         if depth > 10:  # 深さ制限
             self.md.paragraph("... (深さ制限を超えました)")
