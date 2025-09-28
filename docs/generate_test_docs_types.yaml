@@ -1,8 +1,0 @@
-types:
-  generate_test_docs:
-    type: function
-    args:
-      output_path: str
-    returns: None
-    docstring: "テストファイルからテストカタログを生成\n\nArgs:\n    output_path: Path where the test
-      catalog should be written"

@@ -1,8 +1,0 @@
-types:
-  generate_yaml_docs_from_file:
-    type: function
-    args:
-      yaml_file: str
-      output_dir: str
-    returns: None
-    docstring: YAMLファイルから型仕様を読み込み、ドキュメント生成
