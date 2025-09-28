@@ -1,9 +1,11 @@
 from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.doc_generators.yaml_doc_generator import generate_yaml_docs
+from src.core.schemas.pylay_config import PylayConfig
+from pathlib import Path
 
 
 def generate_yaml_docs_from_file(
-    yaml_file: str, output_dir: str = "docs/yaml_types"
+    yaml_file: str, output_dir: str | None = None
 ) -> None:
     """YAMLファイルから型仕様を読み込み、ドキュメント生成"""
     with open(yaml_file, "r", encoding="utf-8") as f:
@@ -16,6 +18,28 @@ def generate_yaml_docs_from_file(
         generate_yaml_docs(first_type, output_dir)
     else:
         generate_yaml_docs(spec, output_dir)
+
+
+def generate_yaml_docs_from_file_with_config(
+    yaml_file: str, config_path: str | None = None
+) -> None:
+    """YAMLファイルから型仕様を読み込み、設定ファイルに基づいてドキュメント生成"""
+    if config_path is None:
+        # デフォルト設定ファイルを使用
+        try:
+            config = PylayConfig.from_pyproject_toml()
+            config.ensure_output_structure(Path.cwd())
+            documents_dir = config.get_documents_output_dir(Path.cwd())
+            generate_yaml_docs_from_file(yaml_file, str(documents_dir))
+        except Exception:
+            # 設定ファイルがない場合はデフォルト値を使用
+            generate_yaml_docs_from_file(yaml_file)
+    else:
+        # 指定された設定ファイルを使用
+        config = PylayConfig.from_pyproject_toml(Path(config_path).parent)
+        config.ensure_output_structure(Path(config_path).parent)
+        documents_dir = config.get_documents_output_dir(Path(config_path).parent)
+        generate_yaml_docs_from_file(yaml_file, str(documents_dir))
 
 
 if __name__ == "__main__":

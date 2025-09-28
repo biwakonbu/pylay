@@ -120,7 +120,7 @@ max_depth = 5
                 os.chdir(temp_path)
 
                 runner = CliRunner()
-                result = runner.invoke(cli, ["project", "project-analyze"])
+                result = runner.invoke(cli, ["project-analyze"])
 
                 assert result.exit_code == 0
                 assert "プロジェクト解析開始" in result.output
@@ -130,7 +130,8 @@ max_depth = 5
                 output_dir = temp_path / "generated_docs"
                 assert output_dir.exists()
 
-                yaml_files = list(output_dir.glob("*_types.yaml"))
+                # YAMLファイルは src/ サブディレクトリに生成される
+                yaml_files = list(output_dir.glob("**/*_types.yaml"))
                 assert len(yaml_files) > 0
 
                 # 生成されたYAMLファイルの内容確認
@@ -300,7 +301,7 @@ target_dirs = ["test_src/"]
             try:
                 os.chdir(temp_path)
                 result = runner.invoke(cli, [
-                    "project", "project-analyze",
+                    "project-analyze",
                     "--dry-run"
                 ])
 
@@ -353,7 +354,7 @@ extract_deps = true
             try:
                 os.chdir(temp_path)
                 result = runner.invoke(cli, [
-                    "project", "project-analyze"
+                    "project-analyze"
                 ])
 
                 # 結果の検証

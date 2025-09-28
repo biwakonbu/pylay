@@ -15,9 +15,11 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRe
 
 from ...core.project_scanner import ProjectScanner
 from ...core.schemas.pylay_config import PylayConfig
+from ...core.output_manager import OutputPathManager
 from ...core.converters.type_to_yaml import extract_types_from_module
 from ...core.converters.infer_types import infer_types_from_file
 from ...core.converters.extract_deps import extract_dependencies_from_file
+from ...core.converters.yaml_to_type import yaml_to_spec
 from ...core.doc_generators.type_doc_generator import LayerDocGenerator
 from ...core.doc_generators.yaml_doc_generator import YamlDocGenerator
 
@@ -67,6 +69,10 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
             config = PylayConfig.from_pyproject_toml(project_root)
         else:
             config = PylayConfig.from_pyproject_toml()
+            project_root = Path.cwd()
+
+        # OutputPathManager を初期化（統一パス管理）
+        output_manager = OutputPathManager(config, project_root)
 
         if verbose:
             console.print(f"[bold blue]設定読み込み完了:[/bold blue]")
@@ -75,6 +81,10 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
             console.print(f"  Markdown生成: {config.generate_markdown}")
             console.print(f"  依存関係抽出: {config.extract_deps}")
             console.print(f"  クリーンアップ: {config.clean_output_dir}")
+            structure = output_manager.get_output_structure()
+            console.print(f"  YAML出力: {structure['yaml']}")
+            console.print(f"  Markdown出力: {structure['markdown']}")
+            console.print(f"  グラフ出力: {structure['graph']}")
             console.print()
 
         # cleanフラグの決定（コマンドラインオプションが優先、未指定の場合は設定値を使用）
@@ -101,18 +111,18 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
                 console.print(f"  {file_path}")
             return
 
-        # cleanオプションが指定された場合、出力ディレクトリを削除
+        # cleanオプションが指定された場合、出力ディレクトリを削除（OutputPathManager 使用）
         if effective_clean:
             if verbose:
                 if clean:
-                    console.print(f"[yellow]🗑️  --clean オプションにより出力ディレクトリを削除します[/yellow]")
+                    console.print(f"[yellow]🗑️  --clean オプションにより出力ディレクトリ（docs/pylay-types/全体）を削除します[/yellow]")
                 else:
-                    console.print(f"[yellow]🗑️  設定により出力ディレクトリを削除します[/yellow]")
-            output_dir = config.get_absolute_paths(Path.cwd())["output_dir"]
+                    console.print(f"[yellow]🗑️  設定により出力ディレクトリ（docs/pylay-types/全体）を削除します[/yellow]")
+            output_dir = output_manager.get_output_structure()["yaml"]
             if output_dir.exists():
                 import shutil
                 shutil.rmtree(output_dir)
-                console.print(f"[yellow]🗑️  出力ディレクトリを削除しました: {output_dir}[/yellow]")
+                console.print(f"[yellow]🗑️  出力ディレクトリを削除しました: {output_dir}（src/, documents/ 等含む）[/yellow]")
             else:
                 console.print(f"[yellow]ℹ️  出力ディレクトリが存在しないため削除をスキップ: {output_dir}[/yellow]")
 
@@ -151,10 +161,10 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
         console.print()
 
         # 解析の実行
-        results = asyncio.run(_analyze_project_async(config, python_files, verbose))
+        results = asyncio.run(_analyze_project_async(config, python_files, verbose, output_manager))
 
         # 結果の出力
-        _output_results(config, results, verbose)
+        _output_results(config, results, verbose, output_manager)
 
     except FileNotFoundError as e:
         console.print(f"[bold red]❌ 設定ファイルエラー:[/bold red] {e}")
@@ -170,7 +180,8 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
 async def _analyze_project_async(
     config: PylayConfig,
     python_files: list[Path],
-    verbose: bool
+    verbose: bool,
+    output_manager: OutputPathManager
 ) -> dict[str, Any]:
     """
     プロジェクトの非同期解析を実行します。
@@ -208,7 +219,7 @@ async def _analyze_project_async(
 
         for file_path in python_files:
             try:
-                file_result = await _analyze_file_async(config, file_path, verbose)
+                file_result = await _analyze_file_async(config, file_path, verbose, output_manager)
                 results["file_results"][str(file_path)] = file_result
                 results["files_processed"] += 1
 
@@ -233,7 +244,8 @@ async def _analyze_project_async(
 async def _analyze_file_async(
     config: PylayConfig,
     file_path: Path,
-    verbose: bool
+    verbose: bool,
+    output_manager: OutputPathManager
 ) -> dict[str, Any]:
     """
     単一ファイルの非同期解析を実行します。
@@ -259,39 +271,38 @@ async def _analyze_file_async(
         if types_yaml:
             result["types_extracted"] = True
 
-            # YAMLファイルに出力
-            if config.generate_markdown:
-                base_output_dir = config.get_absolute_paths(Path.cwd())["output_dir"]
+            # YAMLファイルに出力（OutputPathManager 使用）
+            yaml_file = output_manager.get_yaml_path(file_path)
+            with open(yaml_file, "w", encoding="utf-8") as f:
+                f.write(types_yaml)
 
-                # ファイルパスに基づいて適切な出力ディレクトリを決定
-                try:
-                    # プロジェクトルートからの相対パスを取得
-                    project_root = Path.cwd()
-                    relative_path = file_path.relative_to(project_root)
+            result["outputs"]["yaml"] = str(yaml_file)
 
-                    # src/ 内のファイルは src/ 配下に配置
-                    if relative_path.parts[0] == "src":
-                        output_dir = base_output_dir / "src" / Path(*relative_path.parts[1:-1])
-                    # scripts/ 内のファイルは scripts/ 配下に配置
-                    elif relative_path.parts[0] == "scripts":
-                        output_dir = base_output_dir / "scripts" / Path(*relative_path.parts[1:-1])
-                    else:
-                        # その他のファイルはそのまま
-                        output_dir = base_output_dir
-                except ValueError:
-                    # 相対パスが取得できない場合（ファイルがプロジェクト外の場合）
-                    output_dir = base_output_dir
+            if verbose:
+                console.print(f"  ✓ 型情報抽出完了: {yaml_file}")
 
-                yaml_file = output_dir / f"{file_path.stem}_types.yaml"
-                yaml_file.parent.mkdir(parents=True, exist_ok=True)
+                # Markdownドキュメント生成（OutputPathManager 使用）
+                if config.generate_markdown:
+                    try:
+                        spec = yaml_to_spec(types_yaml)
 
-                with open(yaml_file, "w", encoding="utf-8") as f:
-                    f.write(types_yaml)
+                        # TypeRoot の場合、最初の型を使用
+                        if hasattr(spec, "types") and spec.types:
+                            spec = next(iter(spec.types.values()))
 
-                result["outputs"]["yaml"] = str(yaml_file)
+                        md_file = output_manager.get_markdown_path(source_file=file_path)
 
-                if verbose:
-                    console.print(f"  ✓ 型情報抽出完了: {yaml_file}")
+                        generator = YamlDocGenerator()
+                        generator.generate(str(md_file), spec=spec)
+
+                        result["docs_generated"] = True
+                        result["outputs"]["markdown"] = str(md_file)
+
+                        if verbose:
+                            console.print(f"  ✓ Markdownドキュメント生成完了: {md_file}")
+                    except Exception as e:
+                        if verbose:
+                            console.print(f"  ✗ Markdown生成エラー ({file_path}): {e}")
 
     except Exception as e:
         if verbose:
@@ -328,7 +339,7 @@ async def _analyze_file_async(
     return result
 
 
-def _output_results(config: PylayConfig, results: dict[str, Any], verbose: bool) -> None:
+def _output_results(config: PylayConfig, results: dict[str, Any], verbose: bool, output_manager: OutputPathManager) -> None:
     """
     解析結果を出力します。
 
@@ -336,14 +347,17 @@ def _output_results(config: PylayConfig, results: dict[str, Any], verbose: bool)
         config: pylay設定
         results: 解析結果
         verbose: 詳細出力フラグ
+        output_manager: OutputPathManager インスタンス
     """
-    output_dir = config.get_absolute_paths(Path.cwd())["output_dir"]
+    structure = output_manager.get_output_structure()
 
     console.print(f"\n[bold green]✅ 解析完了[/bold green]")
     console.print(f"処理ファイル数: {results['files_processed']}")
     console.print(f"型情報抽出: {results['types_extracted']} ファイル")
     console.print(f"依存関係発見: {results['dependencies_found']} ファイル")
-    console.print(f"出力ディレクトリ: {output_dir}")
+    console.print(f"ドキュメント生成: {results['docs_generated']} ファイル")
+    console.print(f"YAML出力: {structure['yaml']}")
+    console.print(f"Markdown出力: {structure['markdown']}")
 
     if results["errors"]:
         console.print(f"\n[bold yellow]⚠️  エラー発生: {len(results['errors'])} 件[/bold yellow]")

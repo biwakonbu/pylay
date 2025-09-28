@@ -11,6 +11,7 @@ from src.core.schemas.yaml_type_spec import (
     DictTypeSpec,
     UnionTypeSpec,
 )
+from src.core.schemas.pylay_config import PylayConfig
 
 
 class YamlDocGenerator(DocumentGenerator):
@@ -94,9 +95,24 @@ class YamlDocGenerator(DocumentGenerator):
 
 
 # 統合関数
-def generate_yaml_docs(spec: TypeSpec, output_dir: str = "docs/yaml_types") -> None:
+def generate_yaml_docs(spec: TypeSpec, output_dir: str | None = None) -> None:
     """YAML仕様からドキュメント生成"""
+    if output_dir is None:
+        # 設定ファイルから出力ディレクトリを取得
+        try:
+            pylay_config = PylayConfig.from_pyproject_toml()
+            pylay_config.ensure_output_structure(Path.cwd())
+            output_dir = str(pylay_config.get_documents_output_dir(Path.cwd()))
+        except Exception:
+            # 設定ファイルがない場合はデフォルト値を使用
+            output_dir = "docs/pylay-types/documents"
+
     config = TypeDocConfig(output_directory=Path(output_dir))
     generator = YamlDocGenerator(filesystem=config.filesystem)  # 依存注入
+
+    # TypeRoot の場合、最初の型を使用
+    if hasattr(spec, "types") and spec.types:
+        spec = next(iter(spec.types.values()))
+
     output_path = Path(output_dir) / f"{spec.name}.md"
     generator.generate(output_path, spec=spec)

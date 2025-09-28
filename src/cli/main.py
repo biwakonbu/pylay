@@ -10,6 +10,8 @@ from ..core.doc_generators.type_doc_generator import LayerDocGenerator
 from ..core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from ..core.doc_generators.test_catalog_generator import CatalogGenerator
 from ..core.converters.extract_deps import extract_dependencies_from_file
+from ..core.schemas.pylay_config import PylayConfig
+from ..core.output_manager import OutputPathManager
 import mypy.api
 from .commands.project_analyze import project_analyze
 
@@ -64,22 +66,27 @@ def generate_type_docs(input: str, output: str) -> None:
 @click.option(
     "--output",
     type=click.Path(),
-    default="docs/yaml_docs.md",
-    help="出力 Markdown ファイル",
+    help="出力 Markdown ファイル（デフォルト: 設定ファイルに基づく）",
 )
-def generate_yaml_docs(input: str, output: str) -> None:
+def generate_yaml_docs(input: str, output: Optional[str]) -> None:
     """YAML 型仕様から Markdown ドキュメントを生成"""
+    try:
+        config = PylayConfig.from_pyproject_toml()
+        output_manager = OutputPathManager(config)
+        default_output = str(output_manager.get_markdown_path(filename="yaml_docs.md"))
+    except Exception:
+        # 設定ファイルがない場合はデフォルト値を使用
+        default_output = "docs/pylay-types/documents/yaml_docs.md"
+
+    if output is None:
+        output = default_output
+
     click.echo(f"YAML ドキュメント生成: {input} -> {output}")
     with open(input, "r", encoding="utf-8") as f:
         yaml_str = f.read()
 
     spec = yaml_to_spec(yaml_str)
     generator = YamlDocGenerator()
-
-    if output == "docs/yaml_docs.md":
-        # デフォルト出力先の場合はディレクトリを作成
-        Path(output).parent.mkdir(parents=True, exist_ok=True)
-
     generator.generate(output, spec=spec)
     click.echo(f"生成完了: {output}")
 

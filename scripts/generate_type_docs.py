@@ -18,15 +18,26 @@ from src.core.schemas.type_index import TYPE_REGISTRY, build_registry
 
 
 def generate_layer_docs(
-    layer: str, types: dict[str, type[Any]], output_dir: str = "docs/types"
+    layer: str, types: dict[str, type[Any]], output_dir: str | None = None
 ) -> None:
     """レイヤー別型ドキュメント生成（完全自動成長対応）
 
     Args:
         layer: Layer name
         types: Dictionary of types in the layer
-        output_dir: Output directory path
+        output_dir: Output directory path（デフォルト: 設定ファイルに基づく）
     """
+    if output_dir is None:
+        try:
+            from src.core.schemas.pylay_config import PylayConfig
+            from src.core.output_manager import OutputPathManager
+            config_pylay = PylayConfig.from_pyproject_toml()
+            output_manager = OutputPathManager(config_pylay)
+            output_dir = str(output_manager.get_output_structure()["markdown"])
+        except Exception:
+            output_dir = "docs/pylay-types/documents"
+
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
     config = TypeDocConfig(output_directory=Path(output_dir))
 
     generator = LayerDocGenerator(config=config)
@@ -34,12 +45,25 @@ def generate_layer_docs(
     generator.generate(output_path, layer=layer, types=types)
 
 
-def generate_index_docs(output_path: str = "docs/type_index.md") -> None:
+def generate_index_docs(output_path: str | None = None) -> None:
     """インデックスファイル生成: レイヤー別リンクと統一利用方法
 
     Args:
-        output_path: Output file path
+        output_path: Output path（デフォルト: 設定ファイルに基づく）
     """
+    if output_path is None:
+        try:
+            from src.core.schemas.pylay_config import PylayConfig
+            from src.core.output_manager import OutputPathManager
+            config_pylay = PylayConfig.from_pyproject_toml()
+            output_manager = OutputPathManager(config_pylay)
+            output_path = str(output_manager.get_markdown_path(filename="type_index.md"))
+        except Exception:
+            output_path = "docs/pylay-types/documents/type_index.md"
+
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
+    # 既存の docstring は上にあるので、ここは不要
     config = TypeDocConfig()
 
     generator = IndexDocGenerator(config=config)

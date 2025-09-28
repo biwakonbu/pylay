@@ -135,3 +135,57 @@ class PylayConfig(BaseModel):
             "target_dirs": absolute_target_dirs,
             "output_dir": absolute_output_dir,
         }
+
+    def get_output_subdirs(self, project_root: Path) -> dict[str, Path]:
+        """
+        出力ディレクトリのサブディレクトリ（types/, documents/ など）の絶対パスを取得します。
+
+        Args:
+            project_root: プロジェクトルートディレクトリ
+
+        Returns:
+            サブディレクトリの絶対パスの辞書
+        """
+        base_output_dir = (project_root / self.output_dir).resolve()
+
+        return {
+            "base": base_output_dir,
+            "types": base_output_dir / "types",
+            "documents": base_output_dir / "documents",
+        }
+
+    def get_types_output_dir(self, project_root: Path) -> Path:
+        """
+        型データ出力ディレクトリの絶対パスを取得します。
+
+        Args:
+            project_root: プロジェクトルートディレクトリ
+
+        Returns:
+            型データ出力ディレクトリの絶対パス
+        """
+        return self.get_output_subdirs(project_root)["types"]
+
+    def get_documents_output_dir(self, project_root: Path) -> Path:
+        """
+        ドキュメント出力ディレクトリの絶対パスを取得します。
+
+        Args:
+            project_root: プロジェクトルートディレクトリ
+
+        Returns:
+            ドキュメント出力ディレクトリの絶対パス
+        """
+        return self.get_output_subdirs(project_root)["documents"]
+
+    def ensure_output_structure(self, project_root: Path) -> None:
+        """
+        出力ディレクトリの構造（types/, documents/ など）を作成します。
+
+        Args:
+            project_root: プロジェクトルートディレクトリ
+        """
+        subdirs = self.get_output_subdirs(project_root)
+
+        for dir_path in subdirs.values():
+            dir_path.mkdir(parents=True, exist_ok=True)

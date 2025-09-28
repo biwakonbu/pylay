@@ -145,6 +145,7 @@ output_dir = "docs/pylay-types"
 generate_markdown = true
 extract_deps = true
 infer_level = "strict"
+clean_output_dir = true
 exclude_patterns = [
     "**/tests/**",
     "**/*_test.py",
