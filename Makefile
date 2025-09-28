@@ -85,3 +85,34 @@ ci: ## CIで実行する全チェック
 	$(MAKE) safety-check
 	$(MAKE) radon-check
 	$(MAKE) interrogate-check
+
+# PyPI公開関連
+build: ## パッケージをビルド
+	uv build
+
+install-local: ## ビルドしたパッケージをローカルインストール（テスト用）
+	pip install dist/pylay-0.1.0-py3-none-any.whl --force-reinstall
+
+test-install: build install-local ## ビルドしてテストインストールを実行
+	pylay --version
+
+publish-test: build ## テストPyPIに公開
+	@echo "テストPyPIに公開します..."
+	twine upload --repository testpypi dist/*
+
+publish: build ## 本番PyPIに公開
+	@echo "本番PyPIに公開します..."
+	@echo "⚠️  公開前に以下の確認をお願いします:"
+	@echo "   1. PyPIアカウントとAPIトークンが設定されていること"
+	@echo "   2. バージョン番号が適切であること"
+	@echo "   3. テストPyPIで動作確認済みであること"
+	@read -p "上記の確認が完了したらEnterを押してください..."
+	twine upload dist/*
+
+check-pypi: ## PyPIでの公開状況を確認
+	@echo "本番PyPIの状況を確認中..."
+	@curl -s https://pypi.org/pypi/pylay/json | python -c "import sys, json; data = json.load(sys.stdin); print(f'Version: {data.get(\"info\", {}).get(\"version\", \"Not found\")}'); print(f'Published: {len(data.get(\"releases\", {}))} versions')" 2>/dev/null || echo "Not published or error"
+
+check-test-pypi: ## テストPyPIでの公開状況を確認
+	@echo "テストPyPIの状況を確認中..."
+	@curl -s https://test.pypi.org/pypi/pylay/json | python -c "import sys, json; data = json.load(sys.stdin); print(f'Version: {data.get(\"info\", {}).get(\"version\", \"Not found\")}'); print(f'Published: {len(data.get(\"releases\", {}))} versions')" 2>/dev/null || echo "Not published or error"
