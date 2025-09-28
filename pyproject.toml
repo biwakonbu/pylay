@@ -140,15 +140,15 @@ ignore_missing_imports = true
 
 [tool.pylay]
 # pylay プロジェクト全体解析設定
-target_dirs = ["src/", "scripts/", "utils/"]
-output_dir = "docs/pylay-types/"
+target_dirs = ["src", "scripts", "utils"]
+output_dir = "docs/pylay-types"
 generate_markdown = true
 extract_deps = true
 infer_level = "strict"
 exclude_patterns = [
     "**/tests/**",
     "**/*_test.py",
-    "**/__pycache__/**",
+    "**/__pycache__",
     "**/.venv/**",
     "**/node_modules/**",
     "**/dist/**",

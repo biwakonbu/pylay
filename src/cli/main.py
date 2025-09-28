@@ -11,7 +11,7 @@ from ..core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from ..core.doc_generators.test_catalog_generator import CatalogGenerator
 from ..core.converters.extract_deps import extract_dependencies_from_file
 import mypy.api
-from .commands import project_analyze
+from .commands.project_analyze import project_analyze
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
@@ -184,13 +184,6 @@ def convert() -> None:
     """型と YAML の相互変換"""
 
 
-@cli.group()
-def project() -> None:
-    """プロジェクト全体解析コマンド"""
-
-
-# project-analyzeコマンドをprojectグループに追加
-project.add_command(project_analyze.project_analyze)
 
 
 @convert.command("to-yaml")
@@ -236,6 +229,10 @@ class GeneratedModel(BaseModel):
         click.echo(f"出力: {output_py}")
     else:
         click.echo(model_code)
+
+
+# project-analyze コマンドを追加
+cli.add_command(project_analyze)
 
 
 if __name__ == "__main__":

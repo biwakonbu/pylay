@@ -220,6 +220,7 @@ docs/core/
 docs/yaml_types/
 docs/v1/
 docs/development/
+docs/pylay-types/
 docs/test_catalog.md
 docs/debug_catalog.md
 docs/static-type-index-guide.md

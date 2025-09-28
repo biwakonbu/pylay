@@ -85,21 +85,20 @@ class ProjectScanner:
         Returns:
             除外対象の場合はTrue
         """
-        relative_path = path.relative_to(self.project_root)
+        # パスが相対パスの場合は絶対パスに変換
+        if not path.is_absolute():
+            path = self.project_root / path
 
+        try:
+            relative_path = path.relative_to(self.project_root)
+        except ValueError:
+            # パスがプロジェクトルートのサブパスではない場合は除外
+            return True
+
+        # パス自体が除外パターンにマッチするかをチェック
         for pattern in self.config.exclude_patterns:
             if fnmatch.fnmatch(str(relative_path), pattern):
                 return True
-
-            # ディレクトリの場合は、その中のファイルも含めてチェック
-            if path.is_dir():
-                try:
-                    for item in path.rglob("*"):
-                        item_relative = item.relative_to(self.project_root)
-                        if fnmatch.fnmatch(str(item_relative), pattern):
-                            return True
-                except (OSError, PermissionError):
-                    continue
 
         return False
 

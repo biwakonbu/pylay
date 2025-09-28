@@ -42,7 +42,12 @@ console = Console()
     is_flag=True,
     help="詳細なログを出力"
 )
-def project_analyze(config_path: str | None, dry_run: bool, verbose: bool) -> None:
+@click.option(
+    "--clean",
+    is_flag=True,
+    help="出力ディレクトリを削除してから再生成"
+)
+def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean: bool) -> None:
     """
     プロジェクト全体を解析し、型情報、依存関係、ドキュメントを生成します。
 
@@ -70,6 +75,16 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool) -> No
             console.print(f"  Markdown生成: {config.generate_markdown}")
             console.print(f"  依存関係抽出: {config.extract_deps}")
             console.print()
+
+        # cleanオプションが指定された場合、出力ディレクトリを削除
+        if clean:
+            output_dir = config.get_absolute_paths(Path.cwd())["output_dir"]
+            if output_dir.exists():
+                import shutil
+                shutil.rmtree(output_dir)
+                console.print(f"[yellow]🗑️  出力ディレクトリを削除しました: {output_dir}[/yellow]")
+            else:
+                console.print(f"[yellow]ℹ️  出力ディレクトリが存在しないため削除をスキップ: {output_dir}[/yellow]")
 
         # プロジェクトスキャナーを作成
         scanner = ProjectScanner(config)
@@ -216,7 +231,27 @@ async def _analyze_file_async(
 
             # YAMLファイルに出力
             if config.generate_markdown:
-                output_dir = config.get_absolute_paths(Path.cwd())["output_dir"]
+                base_output_dir = config.get_absolute_paths(Path.cwd())["output_dir"]
+
+                # ファイルパスに基づいて適切な出力ディレクトリを決定
+                try:
+                    # プロジェクトルートからの相対パスを取得
+                    project_root = Path.cwd()
+                    relative_path = file_path.relative_to(project_root)
+
+                    # src/ 内のファイルは src/ 配下に配置
+                    if relative_path.parts[0] == "src":
+                        output_dir = base_output_dir / "src" / Path(*relative_path.parts[1:-1])
+                    # scripts/ 内のファイルは scripts/ 配下に配置
+                    elif relative_path.parts[0] == "scripts":
+                        output_dir = base_output_dir / "scripts" / Path(*relative_path.parts[1:-1])
+                    else:
+                        # その他のファイルはそのまま
+                        output_dir = base_output_dir
+                except ValueError:
+                    # 相対パスが取得できない場合（ファイルがプロジェクト外の場合）
+                    output_dir = base_output_dir
+
                 yaml_file = output_dir / f"{file_path.stem}_types.yaml"
                 yaml_file.parent.mkdir(parents=True, exist_ok=True)
 
