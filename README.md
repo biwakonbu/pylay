@@ -15,11 +15,44 @@ Python の type hint と docstrings を利用した types <-> docs 間の透過�
 - YAML型仕様からMarkdownドキュメントを自動生成
 - 型推論と依存関係抽出（mypy + ASTハイブリッド）
 - 型 <-> YAML <-> 型 <-> Markdownのラウンドトリップ変換
+- **プロジェクト全体解析**（pyproject.toml設定駆動）
 
 ### 対象ユーザー
 - 型安全性を重視するPython開発者
 - ドキュメントの自動生成を求めるチーム
 - PydanticやYAMLを活用した型仕様管理が必要なアプリケーション開発者
+
+## 設定ファイル（pyproject.toml）
+
+pylay は `pyproject.toml` の `[tool.pylay]` セクションで設定を管理できます：
+
+```toml
+[tool.pylay]
+# 解析対象ディレクトリ
+target_dirs = ["src/"]
+
+# 出力ディレクトリ
+output_dir = "docs/"
+
+# ドキュメント生成フラグ
+generate_markdown = true
+
+# 依存関係抽出フラグ
+extract_deps = true
+
+# 型推論レベル
+infer_level = "strict"
+
+# 除外パターン
+exclude_patterns = [
+    "**/tests/**",
+    "**/*_test.py",
+    "**/__pycache__/**",
+]
+
+# 最大解析深度
+max_depth = 10
+```
 
 ## CLI ツール使用例
 
@@ -55,6 +88,21 @@ pylay convert to-yaml --input src/core/schemas/yaml_type_spec.py --output types.
 pylay convert to-type --input types.yaml --output-py model.py
 ```
 
+### プロジェクト全体解析
+```bash
+# pyproject.toml設定に基づいてプロジェクト全体を解析
+pylay project project-analyze
+
+# 設定ファイルを指定して解析
+pylay project project-analyze --config-path /path/to/pyproject.toml
+
+# 実際の処理を行わず、解析対象ファイルのみ表示（dry-run）
+pylay project project-analyze --dry-run
+
+# 詳細なログを出力
+pylay project project-analyze --verbose
+```
+
 ### ヘルプの表示
 ```bash
 # 全体のヘルプ
@@ -79,6 +127,38 @@ pip install pylay
 
 ```bash
 pip install pylay[viz]  # matplotlibとnetworkxを追加
+```
+
+## pylay による自己解析結果
+
+pylayプロジェクトは自らのツールを使って自己解析を行っています：
+
+### 📊 プロジェクト構造
+- **解析済みファイル**: 14個
+- **抽出されたクラス**: 8個
+- **抽出された関数**: 61個
+- **抽出された変数**: 2個
+
+### 🏗️ 主要コンポーネント
+- **PylayCLI**: CLIツールのメインクラス
+- **NetworkXGraphAdapter**: 依存関係グラフ処理
+- **RefResolver**: 参照解決と循環参照検出
+- **型変換システム**: YAML ↔ Python型変換
+
+### 📁 生成されたドキュメント
+pylayは自らのプロジェクトを解析し、`docs/`ディレクトリに以下のファイルを生成しています：
+
+- 各Pythonファイルの型情報（`*_types.yaml`）
+- 依存関係グラフ
+- テストカタログ
+- APIドキュメント
+
+```bash
+# pylayプロジェクトを解析
+pylay project project-analyze
+
+# 解析結果を確認
+ls docs/*_types.yaml
 ```
 
 ## 参考資料

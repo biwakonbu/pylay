@@ -1,0 +1,27 @@
+types:
+  process_data:
+    type: function
+    args:
+      items: list[str]
+    returns: int
+    docstring: 文字列リストの長さを返します。
+  x:
+    type: variable
+    var_type: int
+  SampleClass:
+    type: class
+    bases: []
+    docstring: サンプルクラス
+  __init__:
+    type: function
+    args:
+      self: Any
+      name: str
+    returns: None
+    docstring:
+  get_name:
+    type: function
+    args:
+      self: Any
+    returns: str
+    docstring:

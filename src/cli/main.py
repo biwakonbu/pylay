@@ -11,6 +11,7 @@ from ..core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from ..core.doc_generators.test_catalog_generator import CatalogGenerator
 from ..core.converters.extract_deps import extract_dependencies_from_file
 import mypy.api
+from .commands import project_analyze
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
@@ -181,6 +182,15 @@ def analyze_types(input: str, output_yaml: Optional[str], infer: bool) -> None:
 @cli.group()
 def convert() -> None:
     """型と YAML の相互変換"""
+
+
+@cli.group()
+def project() -> None:
+    """プロジェクト全体解析コマンド"""
+
+
+# project-analyzeコマンドをprojectグループに追加
+project.add_command(project_analyze.project_analyze)
 
 
 @convert.command("to-yaml")

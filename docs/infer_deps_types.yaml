@@ -1,0 +1,6 @@
+types:
+  main:
+    type: function
+    args: {}
+    returns: None
+    docstring: メイン実行関数。

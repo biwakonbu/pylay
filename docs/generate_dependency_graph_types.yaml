@@ -1,0 +1,21 @@
+types:
+  generate_dependency_docs:
+    type: function
+    args:
+      input_file: str
+      output_file: str
+      visualize: bool
+      dot_file: Optional[str]
+      include_mypy: bool
+      analyze_graph: bool
+      graphml_file: Optional[str]
+    returns: None
+    docstring: "Pythonファイルから依存グラフを抽出し、ドキュメントを生成。\n\nArgs:\n    input_file: 入力Pythonファイルパス\n\
+      \    output_file: 出力Markdownファイルパス\n    visualize: 視覚化（DOTファイル）を出力するかどうか\n \
+      \   dot_file: DOTファイル出力パス（オプション）\n    include_mypy: mypy型推論を含めるかどうか\n    analyze_graph:
+      NetworkX分析を実行するかどうか\n    graphml_file: GraphMLファイル出力パス（オプション）"
+  main:
+    type: function
+    args: {}
+    returns: None
+    docstring: メインエントリーポイント

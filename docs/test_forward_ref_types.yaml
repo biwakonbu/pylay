@@ -1,0 +1,35 @@
+types:
+  Node:
+    type: class
+    bases: []
+    docstring: 循環参照を持つノードクラス
+  Tree:
+    type: class
+    bases: []
+    docstring: 木構造のクラス
+  create_node:
+    type: function
+    args:
+      value: int
+    returns: Node
+    docstring: ノードを作成
+  __init__:
+    type: function
+    args:
+      self: Any
+      root: Node
+    returns: None
+    docstring:
+  add_child:
+    type: function
+    args:
+      self: Any
+      child: Node
+    returns: None
+    docstring: 子ノードを追加
+  get_parent:
+    type: function
+    args:
+      self: Any
+    returns: Node | None
+    docstring: 親ノードを取得

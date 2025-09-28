@@ -138,6 +138,24 @@ module = [
 ]
 ignore_missing_imports = true
 
+[tool.pylay]
+# pylay プロジェクト全体解析設定
+target_dirs = ["src/", "scripts/", "utils/"]
+output_dir = "docs/"
+generate_markdown = true
+extract_deps = true
+infer_level = "strict"
+exclude_patterns = [
+    "**/tests/**",
+    "**/*_test.py",
+    "**/__pycache__/**",
+    "**/.venv/**",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+]
+max_depth = 10
+
 [tool.uv.sources]
 # ローカル開発用
 # pylay = { path = ".", editable = true }

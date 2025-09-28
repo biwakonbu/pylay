@@ -332,65 +332,88 @@ def extract_types_from_module(module_path: str | Path) -> str:
     module_path = Path(module_path)
 
     # モジュールから型定義を抽出
-    types_dict: dict[str, type[Any]] = {}
+    type_definitions: dict[str, Any] = {}
 
     try:
-        # AST解析で型エイリアスやクラス定義を抽出
+        # AST解析で型定義を抽出
         with open(module_path, "r", encoding="utf-8") as f:
             source = f.read()
 
         tree = ast.parse(source)
 
         for node in ast.walk(tree):
-            # 型エイリアス（Python 3.12+）
-            if hasattr(ast, "TypeAlias") and isinstance(node, ast.TypeAlias):
-                if isinstance(node.name, ast.Name):
-                    type_name = node.name.id
-                    # 型エイリアスを動的に評価（制限付き）
-                    try:
-                        # 安全な方法で型を解決
-                        local_vars: dict[str, Any] = {}
-                        exec(f"{type_name} = None", {"__builtins__": {}}, local_vars)
-                        types_dict[type_name] = local_vars[type_name]
-                    except:
-                        pass
-
-            # クラス定義
-            elif isinstance(node, ast.ClassDef):
+            # クラス定義（Pydantic BaseModelなど）
+            if isinstance(node, ast.ClassDef):
                 class_name = node.name
-                # クラスを動的に作成（制限付き）
-                try:
-                    # 安全な方法でクラスを解決
-                    local_vars = {}
-                    exec(f"class {class_name}: pass", {"__builtins__": {}}, local_vars)
-                    types_dict[class_name] = local_vars[class_name]
-                except:
-                    pass
+                # 基底クラスを取得
+                base_classes = []
+                if node.bases:
+                    for base in node.bases:
+                        if isinstance(base, ast.Name):
+                            base_classes.append(base.id)
+                        elif isinstance(base, ast.Attribute):
+                            # typing.List などの場合
+                            base_classes.append(ast.unparse(base))
 
-            # 変数アノテーション付きの代入（型エイリアス相当）
+                # クラス情報を記録
+                type_definitions[class_name] = {
+                    "type": "class",
+                    "bases": base_classes,
+                    "docstring": ast.get_docstring(node),
+                }
+
+            # 関数定義
+            elif isinstance(node, ast.FunctionDef):
+                func_name = node.name
+                # 引数の型情報を取得
+                args_info = {}
+                if node.args.args:
+                    for arg in node.args.args:
+                        if arg.annotation:
+                            args_info[arg.arg] = ast.unparse(arg.annotation)
+                        else:
+                            args_info[arg.arg] = "Any"
+
+                # 戻り値の型情報
+                returns_info = "Any"
+                if node.returns:
+                    returns_info = ast.unparse(node.returns)
+
+                type_definitions[func_name] = {
+                    "type": "function",
+                    "args": args_info,
+                    "returns": returns_info,
+                    "docstring": ast.get_docstring(node),
+                }
+
+            # 変数アノテーション付きの代入
             elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
                 var_name = node.target.id
-                try:
-                    # 型アノテーションから型を解決
-                    if hasattr(ast, "unparse"):
-                        type_str = ast.unparse(node.annotation)
-                        local_vars = {}
-                        exec(
-                            f"{var_name}: {type_str} = None",
-                            {"__builtins__": {}},
-                            local_vars,
-                        )
-                        types_dict[var_name] = local_vars[var_name]
-                except:
-                    pass
+                if node.annotation:
+                    var_type = ast.unparse(node.annotation)
+                    type_definitions[var_name] = {
+                        "type": "variable",
+                        "var_type": var_type,
+                    }
 
     except Exception as e:
         # AST解析に失敗した場合は空の辞書を返す
+        print(f"AST解析エラー: {e}")
         pass
 
-    # 抽出された型をYAMLに変換
-    if types_dict:
-        return types_to_yaml(types_dict)
+    # 抽出された型定義をYAML形式に変換
+    if type_definitions:
+        yaml = YAML()
+        yaml.preserve_quotes = True
+        yaml.indent(mapping=2, sequence=4, offset=2)
+
+        # 出力用の構造を作成
+        output_data = {"types": type_definitions}
+
+        import io
+        output = io.StringIO()
+        yaml.dump(output_data, output)
+        return output.getvalue().strip()
     else:
         return "types: {}"
 
