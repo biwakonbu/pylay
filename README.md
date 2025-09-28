@@ -45,12 +45,65 @@ make pre-commit-install
 uv run pre-commit install
 ```
 
+## CLI ツール使用例
+
+pylay を CLI ツールとして使用できます：
+
+### 型ドキュメント生成
+```bash
+# Python ファイルからMarkdownドキュメントを生成
+pylay generate type-docs --input src/core/schemas/yaml_type_spec.py --output docs/types.md
+
+# YAML ファイルからMarkdownドキュメントを生成
+pylay generate yaml-docs --input examples/sample_types.yaml --output docs/yaml_types.md
+
+# テストカタログを生成
+pylay generate test-catalog --input tests/ --output docs/test_catalog.md
+
+# 依存関係グラフを生成（matplotlibが必要）
+pylay generate dependency-graph --input src/ --output docs/dependency_graph.png
+```
+
+### 型解析と変換
+```bash
+# モジュールから型を解析してYAML出力
+pylay analyze types --input src/core/schemas/yaml_type_spec.py --output-yaml types.yaml
+
+# mypyによる型推論を実行
+pylay analyze types --input src/core/schemas/yaml_type_spec.py --infer
+
+# Python型をYAMLに変換
+pylay convert to-yaml --input src/core/schemas/yaml_type_spec.py --output types.yaml
+
+# YAMLをPydantic BaseModelに変換
+pylay convert to-type --input types.yaml --output-py model.py
+```
+
+### ヘルプの表示
+```bash
+# 全体のヘルプ
+pylay --help
+
+# サブコマンドのヘルプ
+pylay generate --help
+pylay analyze --help
+pylay convert --help
+```
+
+## インストール
+
 ### pip 経由のインストール
 開発版のインストール（ローカル）:
 ```bash
 pip install -e .  # editable モード（開発時推奨）
 # または
 pip install .     # 通常インストール
+```
+
+### オプション機能のインストール
+視覚化機能を使用する場合:
+```bash
+pip install -e ".[viz]"  # matplotlibとnetworkxを追加
 ```
 
 PyPI からのインストール（公開後）:
