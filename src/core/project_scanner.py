@@ -7,7 +7,8 @@
 
 import fnmatch
 from pathlib import Path
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 from .schemas.pylay_config import PylayConfig
 
@@ -40,9 +41,7 @@ class ProjectScanner:
             yield from self._scan_directory(target_dir, current_depth=0)
 
     def _scan_directory(
-        self,
-        directory: Path,
-        current_depth: int = 0
+        self, directory: Path, current_depth: int = 0
     ) -> Generator[Path, None, None]:
         """
         ディレクトリを再帰的に走査します。
@@ -126,7 +125,7 @@ class ProjectScanner:
             "stats": {
                 "target_dirs_count": len(absolute_paths["target_dirs"]),
                 "output_dir": str(absolute_paths["output_dir"]),
-            }
+            },
         }
 
         # 対象ディレクトリの検証
