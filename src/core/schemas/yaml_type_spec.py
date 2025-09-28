@@ -1,5 +1,4 @@
-from typing import Any, Union, Literal, Optional, Annotated, ForwardRef
-from typing_extensions import NewType  # Python 3.13+ で標準化予定、拡張で安全確保
+from typing import Any, Union, Literal, Optional, Annotated, ForwardRef, NewType
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 class RefPlaceholder(BaseModel):

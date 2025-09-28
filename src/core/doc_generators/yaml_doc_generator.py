@@ -6,6 +6,7 @@ from .markdown_builder import MarkdownBuilder
 
 from src.core.schemas.yaml_type_spec import (
     TypeSpec,
+    RefPlaceholder,
     ListTypeSpec,
     DictTypeSpec,
     UnionTypeSpec,
@@ -45,7 +46,7 @@ class YamlDocGenerator(DocumentGenerator):
         if spec.description:
             self.md.paragraph(spec.description)
 
-    def _generate_body(self, spec: TypeSpec | str, depth: int = 0) -> None:
+    def _generate_body(self, spec: TypeSpec | RefPlaceholder | str, depth: int = 0) -> None:
         """再帰的に型情報を生成（深さ制限付き）"""
         if depth > 10:  # 深さ制限
             self.md.paragraph("... (深さ制限を超えました)")
@@ -54,6 +55,8 @@ class YamlDocGenerator(DocumentGenerator):
         self.md.heading(2, "型情報")
         if isinstance(spec, str):
             self.md.paragraph(f"参照: {spec}")
+        elif isinstance(spec, RefPlaceholder):
+            self.md.paragraph(f"参照: {spec.ref_name}")
         else:
             self.md.code_block("yaml", self._spec_to_yaml(spec))
 

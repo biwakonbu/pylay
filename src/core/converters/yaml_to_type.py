@@ -3,10 +3,10 @@ from pydantic import ValidationError
 from ruamel.yaml import YAML
 
 from src.core.schemas.yaml_type_spec import (
-    TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, GenericTypeSpec, TypeRoot, TypeContext, TypeSpecOrRef, _create_spec_from_data
+    TypeSpec, RefPlaceholder, ListTypeSpec, DictTypeSpec, UnionTypeSpec, GenericTypeSpec, TypeRoot, TypeContext, TypeSpecOrRef, _create_spec_from_data
 )
 
-def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeRoot:
+def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeRoot | RefPlaceholder:
     """YAML文字列からTypeSpecまたはTypeRootを生成 (v1.1対応、参照解決付き)"""
     yaml_parser = YAML()
     data = yaml_parser.load(yaml_str)
@@ -51,8 +51,20 @@ def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeR
         if spec.name:
             context.add_type(spec.name, spec)
         return context.resolve_ref(spec)
-
-    raise ValueError("Invalid YAML structure for TypeSpec or TypeRoot")
+    elif isinstance(data, list):
+        # リストの場合は最初の要素をTypeSpecとして処理
+        if not data:
+            raise ValueError("Empty list cannot be converted to TypeSpec")
+        if not isinstance(data[0], dict):
+            raise ValueError("List elements must be dict for TypeSpec conversion")
+        spec = _create_spec_from_data(data[0], root_key)
+        # 参照解決（循環参照チェックのため）
+        context = TypeContext()
+        if spec.name:
+            context.add_type(spec.name, spec)
+        return context.resolve_ref(spec)
+    else:
+        raise ValueError("Invalid YAML structure for TypeSpec or TypeRoot")
 
 def _detect_circular_references_from_data(types_data: dict[str, Any]) -> None:
     """生のデータから循環参照を検出"""
@@ -212,6 +224,8 @@ def validate_with_spec(spec: TypeSpecOrRef, data: Any) -> bool:
             else:
                 # 未サポートの型はFalse
                 return False
+        # デフォルトでFalseを返す（TypeSpecOrRefの型チェック用）
+        return False
     except Exception:
         return False
 
