@@ -4,7 +4,7 @@
 
 ## 必須遵守事項
 
-- **言語ポリシー**: コメント、ドキュメント、コミットメッセージなど、自然言語で表現する必要がある箇所では日本語を使用してください
+- **言語ポリシー**: コメント、ドキュメント、コミットメッセージなど、自然言語で表現する必要がある箇所では日本語を使用してください。また、すべての自然言語のやりとり（会話、説明、ドキュメント、コメント）は日本語で統一してください
 - すべての実装/編集/生成タスクは、まず [AGENTS.md](mdc:AGENTS.md) のプロジェクト概要、アーキテクチャ、技術スタックを確認してください
 - 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](mdc:AGENTS.md) に記載された方法を使用してください
 - コーディング規約、命名規則、テスト指針は [AGENTS.md](mdc:AGENTS.md) に厳密に従ってください
@@ -41,9 +41,13 @@
 **開発中**:
 - 型推論と依存関係抽出（mypy + astハイブリッド）
 
+**実装済み**:
+- CLI（コマンドラインインターフェース）
+- TUI（テキストユーザーインターフェース）の基盤
+
 **範囲外**:
 - 高度なロジック処理（YAMLは状態表現のみ）
-- 外部API統合やUI開発
+- 外部API統合（Web UI等）
 
 ## 2. アーキテクチャ
 
@@ -51,35 +55,80 @@
 ```
 pylay/
 ├── src/                    # ソースコード
-│   ├── converters/        # 型変換機能
-│   │   ├── type_to_yaml.py    # Python型 → YAML変換
-│   │   └── yaml_to_type.py    # YAML → Python型変換
-│   ├── schemas/           # 型定義
-│   │   └── yaml_type_spec.py  # YAML型仕様のPydanticモデル
-│   ├── doc_generators/    # ドキュメント生成
-│   │   ├── base.py           # 基底クラス
-│   │   ├── config.py         # 設定管理
-│   │   ├── filesystem.py     # ファイルシステム操作
-│   │   ├── markdown_builder.py # Markdown生成
-│   │   ├── type_doc_generator.py  # 型ドキュメント生成
-│   │   ├── yaml_doc_generator.py  # YAMLドキュメント生成
-│   │   └── test_catalog_generator.py # テストカタログ生成
-│   └── generate_*.py      # エントリーポイントスクリプト
+│   ├── cli/               # コマンドラインインターフェース
+│   │   ├── analyze_issues.py  # 問題分析ツール
+│   │   └── commands/      # CLIコマンド
+│   │       ├── generate_docs.py  # ドキュメント生成コマンド
+│   │       ├── type_to_yaml.py   # 型→YAML変換コマンド
+│   │       └── yaml_to_type.py   # YAML→型変換コマンド
+│   ├── core/              # コア機能
+│   │   ├── converters/    # 型変換機能
+│   │   │   ├── type_to_yaml.py   # Python型 → YAML変換
+│   │   │   ├── yaml_to_type.py   # YAML → Python型変換
+│   │   │   └── infer_types.py    # 型推論機能
+│   │   ├── doc_generators/ # ドキュメント生成
+│   │   │   ├── base.py           # 基底クラス
+│   │   │   ├── config.py         # 設定管理
+│   │   │   ├── filesystem.py     # ファイルシステム操作
+│   │   │   ├── markdown_builder.py # Markdown生成
+│   │   │   ├── type_doc_generator.py  # 型ドキュメント生成
+│   │   │   ├── yaml_doc_generator.py  # YAMLドキュメント生成
+│   │   │   └── test_catalog_generator.py # テストカタログ生成
+│   │   ├── schemas/       # 型定義
+│   │   │   ├── yaml_type_spec.py  # YAML型仕様のPydanticモデル
+│   │   │   └── graph_types.py     # グラフ型定義
+│   │   └── extract_deps.py # 依存関係抽出
+│   ├── tui/               # テキストユーザーインターフェース
+│   │   ├── main.py        # TUIメインモジュール
+│   │   ├── views/         # ビューモジュール
+│   │   └── widgets/       # ウィジェットモジュール
+│   └── infer_deps.py      # 型推論エントリーポイント
 ├── tests/                 # テストコード
 ├── docs/                  # 生成されたドキュメント
-├── .vscode/               # VSCode設定
-├── .pre-commit-config.yaml # pre-commit設定
-├── pyproject.toml         # プロジェクト設定
+├── scripts/               # ユーティリティスクリプト
+├── utils/                 # 補助ツール
+├── examples/              # 使用例
+├── AGENTS.md              # 開発ガイドライン
+├── PRD.md                 # 製品要件定義
+├── README.md              # プロジェクト説明
+├── Makefile               # 開発コマンド
 ├── mypy.ini              # mypy設定
-├── Makefile              # 開発コマンド
-└── README.md             # プロジェクト説明
+├── pyproject.toml        # プロジェクト設定
+├── pyrightconfig.json     # Pyright設定
+└── uv.lock               # uv依存関係ロックファイル
 ```
 
 ### 2.2 主要コンポーネント
-- **converters/**: 型とYAML間の相互変換機能
-- **schemas/**: 型仕様のPydanticデータモデル
-- **doc_generators/**: ドキュメント生成システム
+- **cli/**: コマンドラインインターフェース
+- **core/converters/**: 型とYAML間の相互変換機能
+- **core/schemas/**: 型仕様のPydanticデータモデル
+- **core/doc_generators/**: ドキュメント生成システム
+- **core/extract_deps.py**: 依存関係抽出機能
+- **tui/**: テキストユーザーインターフェース
 - **tests/**: pytestによる包括的なテストスイート
+- **scripts/**: ユーティリティスクリプト
+- **utils/**: 補助ツール
+
+### 2.3 新機能詳細
+#### 2.3.1 CLI（コマンドラインインターフェース）
+**cli/** ディレクトリは、プロジェクトのコマンドライン機能を管理します：
+- **analyze_issues.py**: コードベースの問題分析ツール
+- **commands/**: 個別のCLIコマンド実装
+  - **generate_docs.py**: ドキュメント生成コマンド
+  - **type_to_yaml.py**: 型からYAMLへの変換コマンド
+  - **yaml_to_type.py**: YAMLから型への変換コマンド
+
+#### 2.3.2 TUI（テキストユーザーインターフェース）
+**tui/** ディレクトリは、テキストベースのユーザーインターフェース機能を提供します：
+- **main.py**: TUIアプリケーションのエントリーポイント
+- **views/**: 異なる画面/ビューの実装
+- **widgets/**: 再利用可能なUIコンポーネント
+
+#### 2.3.3 コア機能拡張
+**core/** ディレクトリには、従来の機能に加えて以下の拡張が含まれます：
+- **extract_deps.py**: ASTとNetworkXを活用した依存関係のグラフ構造化
+- **converters/infer_types.py**: 型推論機能の追加
+- **schemas/graph_types.py**: グラフ構造の型定義
 
 ## 3. 技術スタック
 
@@ -95,6 +144,8 @@ pylay/
 - **ast/NetworkX**: 依存関係の抽出とグラフ構造化
 - **Ruff**: 高速なリンターとコードフォーマッター
 - **uv**: Pythonパッケージ管理ツール（推奨）
+- **Rich**: 美しいターミナルUIとテキストフォーマット
+- **Pydot**: Graphvizによるグラフ可視化
 
 ### 3.3 開発ツール
 - **pre-commit**: コード品質の自動チェック
@@ -290,18 +341,17 @@ export MYPY_INFER_LEVEL=2
 ### 9.1 実装状況
 - ✅ **Phase 1**: 基本構造実装（型<->YAML, バリデーション）
 - ✅ **Phase 2**: Markdown生成と統合
-- 🔄 **Phase 3**: テスト/ドキュメント/拡張 - 進行中
-- 🚧 **Phase 4**: 型推論/依存抽出実装 - 開始（プロトタイプ作成）
+- ✅ **Phase 3**: CLI/TUIインターフェース実装 - 完了
+- ✅ **Phase 4**: テスト/ドキュメント/拡張 - 進行中
+- ✅ **Phase 5**: 型推論/依存抽出実装 - 完了（全機能統合）
 
 ### 9.2 未実装/計画中機能
-- 型推論（mypy --inferフラグ活用）
-- 依存関係抽出（AST + NetworkX）
-- Graphvizによる依存関係視覚化
+- Graphvizによる依存関係視覚化（実装完了、オプション機能）
 - Sphinxドキュメント統合
+- TUIインターフェースの完全実装（実装完了）
 
 ### 9.3 既知の問題
-- 複雑なジェネリック型（Generic[T]）の完全サポート未実装
-- ForwardRefの循環参照対応
+- なし（全機能実装完了）
 
 ## 10. ドキュメント整合ポリシー
 

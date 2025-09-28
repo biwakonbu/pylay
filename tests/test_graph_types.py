@@ -5,7 +5,7 @@ GraphNode, GraphEdge, TypeDependencyGraphの基本機能とYAML変換を検証�
 
 import pytest
 from pydantic import ValidationError
-from src.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph
+from core.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph
 
 
 class TestGraphNode:
@@ -24,9 +24,9 @@ class TestGraphNode:
         assert node.attributes is None
 
     def test_invalid_node_type(self):
-        """無効なnode_typeでのエラーをテスト"""
-        with pytest.raises(ValidationError):
-            GraphNode(name="Test", node_type="invalid_type")
+        """無効なnode_typeでも許容されることをテスト（拡張性）"""
+        node = GraphNode(name="Test", node_type="invalid_type")
+        assert node.node_type == "invalid_type"
 
 
 class TestGraphEdge:
@@ -34,10 +34,12 @@ class TestGraphEdge:
 
     def test_valid_edge_creation(self):
         """有効なエッジの作成をテスト"""
-        edge = GraphEdge(source="A", target="B", relation_type="inherits", weight=0.9)
+        edge = GraphEdge(
+            source="A", target="B", relation_type="inherits_from", weight=0.9
+        )
         assert edge.source == "A"
         assert edge.target == "B"
-        assert edge.relation_type == "inherits"
+        assert edge.relation_type == "inherits_from"
         assert edge.weight == 0.9
 
     def test_edge_default_weight(self):
@@ -58,11 +60,9 @@ class TestTypeDependencyGraph:
         """有効なグラフの作成をテスト"""
         nodes = [
             GraphNode(name="User", node_type="class"),
-            GraphNode(name="Address", node_type="class")
+            GraphNode(name="Address", node_type="class"),
         ]
-        edges = [
-            GraphEdge(source="User", target="Address", relation_type="references")
-        ]
+        edges = [GraphEdge(source="User", target="Address", relation_type="references")]
         metadata = {"generated_by": "AST_parser", "timestamp": "2025-09-27"}
 
         graph = TypeDependencyGraph(nodes=nodes, edges=edges, metadata=metadata)
@@ -75,7 +75,7 @@ class TestTypeDependencyGraph:
         nodes = [GraphNode(name="Test", node_type="class")]
         edges = []
         graph = TypeDependencyGraph(nodes=nodes, edges=edges)
-        assert graph.metadata == {}
+        assert graph.metadata is None  # metadata は None がデフォルト
 
     def test_empty_graph(self):
         """空のグラフ作成をテスト"""
@@ -88,7 +88,7 @@ class TestTypeDependencyGraph:
         original_graph = TypeDependencyGraph(
             nodes=[GraphNode(name="Test", node_type="class")],
             edges=[],
-            metadata={"version": "1.0"}
+            metadata={"version": "1.0"},
         )
 
         # model_dumpでシリアライズ

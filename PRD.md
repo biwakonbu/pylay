@@ -99,7 +99,6 @@ Pythonのtype hintとdocstringsを活用した、types（型情報）とdocs（�
 ## 5. リスクと依存
 
 ### 5.1 リスク
-- 複雑な型（Generic, ForwardRef）の完全サポート未実装 → 段階的拡張。
 - YAMLの曖昧性 → Pydanticの厳格モードで緩和。
 - mypy推論の限界（動的型未対応） → astハイブリッドで補完。
 
@@ -113,7 +112,7 @@ Pythonのtype hintとdocstringsを活用した、types（型情報）とdocs（�
 - **Phase 1**: 基本構造実装（型<->YAML, バリデーション） - 完了。
 - **Phase 2**: Markdown生成と統合 - 完了。
 - **Phase 3**: テスト/ドキュメント/拡張 - 進行中。
-- **Phase 4**: 型推論/依存抽出実装 - 開始（プロトタイプ作成）。
+- **Phase 4**: 型推論/依存抽出実装 - 完了。
 - **リリース**: v0.1.0 (基本機能完成)。
 
 ## 7. 参考資料

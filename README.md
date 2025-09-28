@@ -9,7 +9,7 @@ Python の type hint と docstrings を利用した types <-> docs 間の透過�
 - Pythonの型オブジェクトをYAML形式の型仕様に変換
 - YAML型仕様からPydantic BaseModelとしてパース・バリデーション
 - YAML型仕様からMarkdownドキュメントを自動生成
-- 型推論と依存関係抽出（mypy + ASTハイブリッド、開発中）
+- 型推論と依存関係抽出（mypy + ASTハイブリッド）
 - 型 <-> YAML <-> 型 <-> Markdownのラウンドトリップ変換
 
 ### 対象ユーザー
@@ -18,9 +18,8 @@ Python の type hint と docstrings を利用した types <-> docs 間の透過�
 - PydanticやYAMLを活用した型仕様管理が必要なアプリケーション開発者
 
 ### プロジェクトステータス
-- **実装済み**: 型 <-> YAML 相互変換、Pydantic v2バリデーション、YAML -> Markdown生成、基本テスト
-- **開発中**: 型推論と依存関係抽出
-- **範囲外**: 高度なロジック処理、外部API/UI統合
+- **実装済み**: 型 <-> YAML 相互変換、Pydantic v2バリデーション、YAML -> Markdown生成、型推論と依存関係抽出、CLI/TUIインターフェース、基本テスト
+- **範囲外**: 高度なロジック処理、外部API統合（Web UI等）
 
 詳細は [PRD.md](PRD.md) を参照してください。
 
@@ -44,6 +43,24 @@ uv sync
 make pre-commit-install
 # または
 uv run pre-commit install
+```
+
+### pip 経由のインストール
+開発版のインストール（ローカル）:
+```bash
+pip install -e .  # editable モード（開発時推奨）
+# または
+pip install .     # 通常インストール
+```
+
+PyPI からのインストール（公開後）:
+```bash
+pip install pylay
+```
+
+使用例:
+```bash
+pylay  # TUI を起動
 ```
 
 ### VSCode設定
@@ -99,6 +116,9 @@ make interrogate-check
 
 # CIチェック
 make ci
+
+# 型推論と依存関係抽出を実行（例: make infer-deps FILE=src/example.py）
+make infer-deps FILE=src/example.py
 
 # クリーンアップ
 make clean

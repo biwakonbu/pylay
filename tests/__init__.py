@@ -1,1 +1,1 @@
-# スクリプト関連のテスト
+"""pylay tests package"""

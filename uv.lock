@@ -712,9 +712,9 @@ source = { editable = "." }
 dependencies = [
     { name = "networkx" },
     { name = "pydantic" },
-    { name = "pydot" },
     { name = "pyyaml" },
-    { name = "types-pyyaml" },
+    { name = "rich" },
+    { name = "ruamel-yaml" },
 ]
 
 [package.optional-dependencies]
@@ -743,26 +743,27 @@ dev = [
     { name = "radon" },
     { name = "ruff" },
     { name = "safety" },
+    { name = "types-pyyaml" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "interrogate", marker = "extra == 'dev'", specifier = ">=1.7.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.18.2" },
-    { name = "networkx", specifier = ">=3.5" },
+    { name = "networkx", specifier = ">=3.3" },
     { name = "networkx", marker = "extra == 'dev'", specifier = ">=3.3" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pydantic", specifier = ">=2.8.2" },
-    { name = "pydot", specifier = ">=4.0.1" },
     { name = "pydot", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.3" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "radon", marker = "extra == 'dev'", specifier = ">=6.0.1" },
+    { name = "rich", specifier = ">=13.7.0" },
+    { name = "ruamel-yaml", specifier = ">=0.18.6" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6.0" },
     { name = "safety", marker = "extra == 'dev'", specifier = ">=3.2.3" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
 ]
 provides-extras = ["dev"]
 
@@ -777,6 +778,7 @@ dev = [
     { name = "radon", specifier = ">=6.0.1" },
     { name = "ruff", specifier = ">=0.6.0" },
     { name = "safety", specifier = ">=3.2.3" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
 ]
 
 [[package]]

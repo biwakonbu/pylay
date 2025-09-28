@@ -20,18 +20,20 @@ from doc_generators.type_doc_generator import (
 from doc_generators.type_inspector import TypeInspector
 
 
-
 # Test fixtures
 class MockPydanticModel(BaseModel):
     """Mock Pydantic model for testing."""
+
     name: str
     value: int
 
 
 def MockNewType():
     """Mock NewType for testing."""
+
     def mock_type(value: str) -> str:
         return value
+
     mock_type.__supertype__ = str
     return mock_type
 
@@ -55,8 +57,10 @@ class TestTypeInspector:
 
     def test_get_docstring_from_class(self) -> None:
         """Test extracting docstring from a class."""
+
         class TestClass:
             """This is a test docstring."""
+
             pass
 
         docstring = self.inspector.get_docstring(TestClass)
@@ -64,6 +68,7 @@ class TestTypeInspector:
 
     def test_get_docstring_from_class_without_docstring(self) -> None:
         """Test extracting docstring from class without docstring."""
+
         class TestClass:
             pass
 
@@ -110,6 +115,7 @@ class TestTypeInspector:
 
     def test_is_pydantic_model_with_regular_class(self):
         """Test Pydantic model detection with regular class."""
+
         class RegularClass:
             pass
 
@@ -141,6 +147,7 @@ class TestTypeInspector:
 
     def test_get_pydantic_schema_with_non_pydantic(self):
         """Test getting schema from non-Pydantic class."""
+
         class RegularClass:
             pass
 
@@ -162,7 +169,9 @@ class TestTypeInspector:
 
     def test_format_type_definition_with_pydantic(self):
         """Test formatting Pydantic type definition."""
-        definition = self.inspector.format_type_definition("MockModel", MockPydanticModel)
+        definition = self.inspector.format_type_definition(
+            "MockModel", MockPydanticModel
+        )
 
         assert "```json" in definition
         assert "properties" in definition
@@ -178,6 +187,7 @@ class TestTypeInspector:
 
     def test_format_type_definition_fallback(self):
         """Test formatting with fallback for unknown types."""
+
         class UnknownType:
             pass
 
@@ -309,8 +319,8 @@ class TestLayerDocGenerator:
 
         content = self.filesystem.get_content(self.output_path)
         assert "利用方法（完全自動成長）" in content
-        assert 'UserId' in content
-        assert 'TypeFactory.get_auto' in content
+        assert "UserId" in content
+        assert "TypeFactory.get_auto" in content
 
     def test_generate_includes_footer(self):
         """Test that generated document includes footer."""
@@ -461,8 +471,12 @@ class TestIndexDocGenerator:
 
         type_registry = {
             "primitives": {
-                "Type1": str, "Type2": str, "Type3": str,
-                "Type4": str, "Type5": str, "Type6": str,
+                "Type1": str,
+                "Type2": str,
+                "Type3": str,
+                "Type4": str,
+                "Type5": str,
+                "Type6": str,
             }
         }
 

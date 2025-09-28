@@ -7,7 +7,7 @@ import networkx as nx
 from typing import Any, Optional
 from pathlib import Path
 
-from src.schemas.graph_types import TypeDependencyGraph
+from core.schemas.graph_types import TypeDependencyGraph
 
 
 class NetworkXGraphAdapter:
@@ -33,7 +33,7 @@ class NetworkXGraphAdapter:
                 node_type=node.node_type,
                 attributes=node.attributes,
                 qualified_name=node.qualified_name,
-                is_external=node.is_external()
+                is_external=node.is_external(),
             )
 
         # エッジを追加
@@ -44,7 +44,7 @@ class NetworkXGraphAdapter:
                 relation_type=edge.relation_type,
                 weight=edge.weight,
                 metadata=edge.metadata,
-                is_strong=edge.is_strong_dependency()
+                is_strong=edge.is_strong_dependency(),
             )
 
     def get_networkx_graph(self) -> nx.DiGraph:
@@ -105,13 +105,19 @@ class NetworkXGraphAdapter:
     def get_subgraph_by_type(self, node_type: str) -> nx.DiGraph:
         """指定されたノードタイプのサブグラフを取得"""
         assert self.nx_graph is not None
-        nodes_of_type = [node.name for node in self.graph.nodes if node.node_type == node_type]
+        nodes_of_type = [
+            node.name for node in self.graph.nodes if node.node_type == node_type
+        ]
         return self.nx_graph.subgraph(nodes_of_type)
 
     def get_strong_dependency_subgraph(self) -> nx.DiGraph:
         """強い依存関係のみのサブグラフを取得"""
         assert self.nx_graph is not None
-        strong_edges = [(edge.source, edge.target) for edge in self.graph.edges if edge.is_strong_dependency()]
+        strong_edges = [
+            (edge.source, edge.target)
+            for edge in self.graph.edges
+            if edge.is_strong_dependency()
+        ]
         return self.nx_graph.edge_subgraph(strong_edges)
 
     def export_to_graphml(self, output_path: Path) -> None:
@@ -128,12 +134,13 @@ class NetworkXGraphAdapter:
         """DOTファイルからSVGを生成"""
         try:
             import subprocess
+
             # dotコマンドでSVGを生成
             result = subprocess.run(
-                ['dot', '-Tsvg', str(dot_path), '-o', str(svg_path)],
+                ["dot", "-Tsvg", str(dot_path), "-o", str(svg_path)],
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=30,
             )
 
             if result.returncode != 0:
@@ -141,7 +148,9 @@ class NetworkXGraphAdapter:
             else:
                 print(f"✅ SVGファイルを生成: {svg_path}")
         except FileNotFoundError:
-            print("⚠️  Graphvizのdotコマンドが見つかりません。sudo apt install graphviz を実行してください。")
+            print(
+                "⚠️  Graphvizのdotコマンドが見つかりません。sudo apt install graphviz を実行してください。"
+            )
         except subprocess.TimeoutExpired:
             print("⚠️  SVG生成がタイムアウトしました。")
         except Exception as e:
@@ -155,55 +164,57 @@ class NetworkXGraphAdapter:
         # ノードのスタイル設定
         for node_name in vis_graph.nodes:
             node_data = vis_graph.nodes[node_name]
-            node_type = node_data.get('node_type', 'unknown')
+            node_type = node_data.get("node_type", "unknown")
 
             # スタイル設定
-            if node_type == 'class':
-                node_data['shape'] = 'box'
-                node_data['style'] = 'filled'
-                node_data['fillcolor'] = 'lightblue'
-            elif node_type == 'function':
-                node_data['shape'] = 'ellipse'
-                node_data['style'] = 'filled'
-                node_data['fillcolor'] = 'lightgreen'
-            elif node_type == 'variable':
-                node_data['shape'] = 'diamond'
-                node_data['style'] = 'filled'
-                node_data['fillcolor'] = 'lightyellow'
-            elif node_type == 'module':
-                node_data['shape'] = 'hexagon'
-                node_data['style'] = 'filled'
-                node_data['fillcolor'] = 'lightgray'
+            if node_type == "class":
+                node_data["shape"] = "box"
+                node_data["style"] = "filled"
+                node_data["fillcolor"] = "lightblue"
+            elif node_type == "function":
+                node_data["shape"] = "ellipse"
+                node_data["style"] = "filled"
+                node_data["fillcolor"] = "lightgreen"
+            elif node_type == "variable":
+                node_data["shape"] = "diamond"
+                node_data["style"] = "filled"
+                node_data["fillcolor"] = "lightyellow"
+            elif node_type == "module":
+                node_data["shape"] = "hexagon"
+                node_data["style"] = "filled"
+                node_data["fillcolor"] = "lightgray"
             else:
-                node_data['shape'] = 'circle'
-                node_data['style'] = 'filled'
-                node_data['fillcolor'] = 'white'
+                node_data["shape"] = "circle"
+                node_data["style"] = "filled"
+                node_data["fillcolor"] = "white"
 
         # エッジのスタイル設定
         for source, target, edge_data in vis_graph.edges(data=True):
-            relation_type = edge_data.get('relation_type', 'unknown')
-            weight = edge_data.get('weight', 1.0)
+            relation_type = edge_data.get("relation_type", "unknown")
+            weight = edge_data.get("weight", 1.0)
 
             # 関係によるスタイル
-            if relation_type == 'inherits':
-                edge_data['color'] = 'blue'
-                edge_data['style'] = 'solid'
-            elif relation_type == 'references':
-                edge_data['color'] = 'green'
-                edge_data['style'] = 'dashed'
-            elif relation_type == 'calls':
-                edge_data['color'] = 'red'
-                edge_data['style'] = 'dotted'
+            if relation_type == "inherits":
+                edge_data["color"] = "blue"
+                edge_data["style"] = "solid"
+            elif relation_type == "references":
+                edge_data["color"] = "green"
+                edge_data["style"] = "dashed"
+            elif relation_type == "calls":
+                edge_data["color"] = "red"
+                edge_data["style"] = "dotted"
             else:
-                edge_data['color'] = 'black'
-                edge_data['style'] = 'solid'
+                edge_data["color"] = "black"
+                edge_data["style"] = "solid"
 
             # 重みによる太さ
-            edge_data['penwidth'] = str(max(1.0, weight * 3))
+            edge_data["penwidth"] = str(max(1.0, weight * 3))
 
         return vis_graph
 
-    def export_visualization(self, dot_path: Path, svg_path: Optional[Path] = None) -> None:
+    def export_visualization(
+        self, dot_path: Path, svg_path: Optional[Path] = None
+    ) -> None:
         """視覚化用グラフをDOTとSVGでエクスポート"""
         vis_graph = self.create_visualization_graph()
 
@@ -221,13 +232,14 @@ class NetworkXGraphAdapter:
             return {}
 
         return {
-            'node_count': self.nx_graph.number_of_nodes(),
-            'edge_count': self.nx_graph.number_of_edges(),
-            'density': nx.density(self.nx_graph),
-            'is_dag': nx.is_directed_acyclic_graph(self.nx_graph),
-            'cycles_count': len(self.detect_cycles()),
-            'components_count': nx.number_strongly_connected_components(self.nx_graph),
-            'average_degree': sum(dict(self.nx_graph.degree()).values()) / max(1, self.nx_graph.number_of_nodes())
+            "node_count": self.nx_graph.number_of_nodes(),
+            "edge_count": self.nx_graph.number_of_edges(),
+            "density": nx.density(self.nx_graph),
+            "is_dag": nx.is_directed_acyclic_graph(self.nx_graph),
+            "cycles_count": len(self.detect_cycles()),
+            "components_count": nx.number_strongly_connected_components(self.nx_graph),
+            "average_degree": sum(dict(self.nx_graph.degree()).values())
+            / max(1, self.nx_graph.number_of_nodes()),
         }
 
     def get_node_statistics(self) -> dict[str, dict[str, Any]]:
@@ -242,11 +254,11 @@ class NetworkXGraphAdapter:
                 out_edges = list(self.nx_graph.out_edges(node_name))
 
                 stats[node_name] = {
-                    'type': node.node_type,
-                    'is_external': node.is_external(),
-                    'in_degree': len(in_edges),
-                    'out_degree': len(out_edges),
-                    'total_degree': len(in_edges) + len(out_edges)
+                    "type": node.node_type,
+                    "is_external": node.is_external(),
+                    "in_degree": len(in_edges),
+                    "out_degree": len(out_edges),
+                    "total_degree": len(in_edges) + len(out_edges),
                 }
 
         return stats
@@ -257,13 +269,15 @@ class NetworkXGraphAdapter:
         stats = {}
 
         for source, target, data in self.nx_graph.edges(data=True):
-            edge = self.graph.get_edges_by_source(source)[0]  # 簡易的に最初のエッジを取得
+            edge = self.graph.get_edges_by_source(source)[
+                0
+            ]  # 簡易的に最初のエッジを取得
             if edge:
                 stats[f"{source}->{target}"] = {
-                    'relation_type': edge.relation_type,
-                    'weight': edge.weight,
-                    'is_strong': edge.is_strong_dependency(),
-                    'strength': edge.get_dependency_strength()
+                    "relation_type": edge.relation_type,
+                    "weight": edge.weight,
+                    "is_strong": edge.is_strong_dependency(),
+                    "strength": edge.get_dependency_strength(),
                 }
 
         return stats

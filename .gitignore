@@ -208,3 +208,18 @@ analysis_report.json
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Test output files
+test_output/
+complex_test/
+error_test/
+
+# Generated documentation files
+docs/types/
+docs/core/
+docs/yaml_types/
+docs/v1/
+docs/development/
+docs/test_catalog.md
+docs/debug_catalog.md
+docs/static-type-index-guide.md
