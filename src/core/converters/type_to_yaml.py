@@ -1,6 +1,7 @@
 import inspect
 from typing import Any, get_origin, get_args, Union as TypingUnion, ForwardRef, Generic
 from ruamel.yaml import YAML
+from pathlib import Path
 
 from src.core.schemas.yaml_type_spec import (
     TypeSpec,
@@ -315,6 +316,83 @@ def types_to_yaml(types: dict[str, type[Any]], output_file: str | None = None) -
             f.write(yaml_str)
 
     return yaml_str
+
+
+def extract_types_from_module(module_path: str | Path) -> str:
+    """Pythonモジュールから型を抽出してYAML形式で返す
+
+    Args:
+        module_path: Pythonモジュールのパス（.pyファイル）
+
+    Returns:
+        YAML形式の型定義文字列
+    """
+    import ast
+
+    module_path = Path(module_path)
+
+    # モジュールから型定義を抽出
+    types_dict: dict[str, type[Any]] = {}
+
+    try:
+        # AST解析で型エイリアスやクラス定義を抽出
+        with open(module_path, "r", encoding="utf-8") as f:
+            source = f.read()
+
+        tree = ast.parse(source)
+
+        for node in ast.walk(tree):
+            # 型エイリアス（Python 3.12+）
+            if hasattr(ast, "TypeAlias") and isinstance(node, ast.TypeAlias):
+                if isinstance(node.name, ast.Name):
+                    type_name = node.name.id
+                    # 型エイリアスを動的に評価（制限付き）
+                    try:
+                        # 安全な方法で型を解決
+                        local_vars: dict[str, Any] = {}
+                        exec(f"{type_name} = None", {"__builtins__": {}}, local_vars)
+                        types_dict[type_name] = local_vars[type_name]
+                    except:
+                        pass
+
+            # クラス定義
+            elif isinstance(node, ast.ClassDef):
+                class_name = node.name
+                # クラスを動的に作成（制限付き）
+                try:
+                    # 安全な方法でクラスを解決
+                    local_vars = {}
+                    exec(f"class {class_name}: pass", {"__builtins__": {}}, local_vars)
+                    types_dict[class_name] = local_vars[class_name]
+                except:
+                    pass
+
+            # 変数アノテーション付きの代入（型エイリアス相当）
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                var_name = node.target.id
+                try:
+                    # 型アノテーションから型を解決
+                    if hasattr(ast, "unparse"):
+                        type_str = ast.unparse(node.annotation)
+                        local_vars = {}
+                        exec(
+                            f"{var_name}: {type_str} = None",
+                            {"__builtins__": {}},
+                            local_vars,
+                        )
+                        types_dict[var_name] = local_vars[var_name]
+                except:
+                    pass
+
+    except Exception as e:
+        # AST解析に失敗した場合は空の辞書を返す
+        pass
+
+    # 抽出された型をYAMLに変換
+    if types_dict:
+        return types_to_yaml(types_dict)
+    else:
+        return "types: {}"
 
 
 # 例

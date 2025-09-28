@@ -1,6 +1,10 @@
 # pylay
 Python の type hint と docstrings を利用した types <-> docs 間の透過的なジェネレータ
 
+[![PyPI version](https://img.shields.io/pypi/v/pylay.svg)](https://pypi.org/project/pylay/)
+[![Python version](https://img.shields.io/pypi/pyversions/pylay.svg)](https://pypi.org/project/pylay/)
+[![License](https://img.shields.io/pypi/l/pylay.svg)](https://github.com/biwakonbu/pylay/blob/main/LICENSE)
+
 ## プロジェクト概要
 
 **pylay** は、Pythonの型ヒント（type hint）とdocstringsを活用して、型情報（types）とドキュメント（docs）間の自動変換を実現するツールです。主な目的は、Pythonの型をYAML形式の仕様に変換し、PydanticによるバリデーションやMarkdownドキュメントの生成を容易にすることです。
@@ -26,15 +30,142 @@ Python の type hint と docstrings を利用した types <-> docs 間の透過�
 ## 開発環境セットアップ
 
 ### 必要なツール
-- Python 3.13+
+- Python 3.12+
 - [uv](https://github.com/astral-sh/uv) (推奨) または [Poetry](https://python-poetry.org/)
 - [pre-commit](https://pre-commit.com/)
 
 **重要**: システムPythonの使用を避け、常に `uv run` 経由で仮想環境を使用してください。
 
-### セットアップ手順
+### インストール
+
+#### PyPI からのインストール（推奨）
 ```bash
-# 1. 依存関係をインストール（Python 3.13環境が自動作成）
+pip install pylay
+```
+
+## 📦 PyPI 公開手順
+
+### 公開前の準備
+
+1. **PyPIアカウントの登録**
+   ```bash
+   # ブラウザで https://pypi.org/account/register/ にアクセスしてアカウントを作成
+   ```
+
+2. **APIトークンの取得**
+   ```bash
+   # PyPIアカウント設定ページ（https://pypi.org/manage/account/）でAPIトークンを作成
+   # スコープ: "Entire account" を選択
+   ```
+
+3. **環境変数の設定**
+   ```bash
+   export TWINE_USERNAME=__token__
+   export TWINE_PASSWORD="pypi-XXXXXX..."  # 取得したAPIトークン
+   ```
+
+### 公開手順
+
+#### 1. バージョン確認と更新
+```bash
+# 現在のバージョンを確認
+grep 'version = ' pyproject.toml
+
+# 必要に応じてバージョンを更新（例: 0.1.0 -> 0.1.1）
+```
+
+#### 2. クリーンアップとビルド
+```bash
+# 古いビルドファイルをクリーンアップ
+make clean
+
+# パッケージをビルド
+uv build
+
+# ビルドされたファイルを確認
+ls -la dist/
+```
+
+#### 3. テストインストール
+```bash
+# ビルドされたパッケージをテストインストール
+pip install dist/pylay-0.1.0-py3-none-any.whl --force-reinstall
+
+# 動作確認
+pylay --version
+pylay --help
+```
+
+#### 4. PyPI への公開
+```bash
+# twineがインストールされていない場合はインストール
+pip install twine
+
+# 公開実行（テスト用）
+twine upload --repository testpypi dist/*
+
+# 本番環境への公開（実際の公開時はこれを使用）
+twine upload dist/*
+```
+
+#### 5. 公開確認
+```bash
+# PyPIで公開されたか確認
+curl -s https://pypi.org/pypi/pylay/json | python -m json.tool
+
+# テストPyPIで確認する場合
+curl -s https://test.pypi.org/pypi/pylay/json | python -m json.tool
+```
+
+### Makefile を使った公開
+
+```bash
+# ビルドとテスト
+make build test-install
+
+# テストPyPIに公開
+make publish-test
+
+# 本番PyPIに公開（要確認）
+make publish
+
+# 公開状況確認
+make check-pypi
+make check-test-pypi
+```
+
+詳細な手順は [PUBLISH.md](docs/PUBLISH.md) を参照してください。
+
+### 注意事項
+
+- **初回公開時**: プロジェクト名「pylay」が既に使用されていないことを確認
+- **バージョン管理**: 公開済みバージョンと重複しないよう注意
+- **セキュリティ**: APIトークンは安全に管理し、Gitにはコミットしない
+- **テスト公開**: 本番公開前にテストPyPIで動作確認することを推奨
+
+### トラブルシューティング
+
+#### パッケージがインストールできない場合
+```bash
+# 依存関係の確認
+pip show pylay
+
+# キャッシュクリア
+pip cache purge
+```
+
+#### 公開が失敗する場合
+```bash
+# 詳細なエラーメッセージを確認
+twine upload --verbose dist/*
+
+# 認証エラー時はトークンの確認を
+twine check dist/*
+```
+
+#### 開発環境でのインストール
+```bash
+# 1. 依存関係をインストール（Python 3.12+環境が自動作成）
 make install
 # または
 uv sync

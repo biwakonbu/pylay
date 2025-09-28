@@ -5,9 +5,10 @@ description = "Python の type hint と docstrings を利用した types <-> doc
 authors = [{name = "Ryo HIGASIGAWA", email = "your.email@example.com"}]
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -16,7 +17,6 @@ classifiers = [
     "Topic :: Software Development :: Code Generators",
 ]
 keywords = ["python", "type-hints", "pydantic", "yaml", "documentation", "generator"]
-long_description_content_type = "text/markdown"
 dependencies = [
     "pydantic>=2.8.2",
     "pyyaml>=6.0.2",
@@ -25,6 +25,7 @@ dependencies = [
     "networkx>=3.3",
     "click>=8.3.0",
     "matplotlib>=3.10.6",
+    "mypy>=1.18.2",
 ]
 
 [project.urls]
@@ -64,7 +65,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.13"
+python = ">=3.12"
 pydantic = ">=2.8.2"
 pyyaml = ">=6.0.2"
 ruamel-yaml = ">=0.18.6"
@@ -82,15 +83,15 @@ pytest-xdist = ">=3.0.0"
 
 [tool.ruff]
 line-length = 88
-target-version = "py313"
+target-version = "py312"
 
 [tool.ruff.lint]
-# Python 3.13+ の新しい型構文を有効化
+# Python 3.12+ 対応の設定
 select = [
-    "UP007",  # Use X | Y for type unions (Python 3.13+)
     "UP006",  # Use PEP 585 imports (Python 3.9+)
     "UP035",  # Use PEP 585 generic types (Python 3.9+)
 ]
+# Python 3.13+ の新機能は使用しない（Python 3.12対応のため）
 
 [build-system]
 requires = ["poetry-core"]
@@ -114,6 +115,28 @@ dev-dependencies = [
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "tests.*",
+    "scripts.*",
+]
+ignore_missing_imports = true
 
 [tool.uv.sources]
 # ローカル開発用
