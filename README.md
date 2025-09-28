@@ -74,9 +74,13 @@ pip install pylay
 ```
 
 ### オプション機能のインストール
+
 視覚化機能を使用する場合:
+
 ```bash
 pip install pylay[viz]  # matplotlibとnetworkxを追加
+```
+
 ## 参考資料
 
 - [Pydantic ドキュメント](https://docs.pydantic.dev/)
