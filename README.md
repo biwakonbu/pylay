@@ -1,6 +1,10 @@
 # pylay
 Python の type hint と docstrings を利用した types <-> docs 間の透過的なジェネレータ
 
+[![PyPI version](https://img.shields.io/pypi/v/pylay.svg)](https://pypi.org/project/pylay/)
+[![Python version](https://img.shields.io/pypi/pyversions/pylay.svg)](https://pypi.org/project/pylay/)
+[![License](https://img.shields.io/pypi/l/pylay.svg)](https://github.com/biwakonbu/pylay/blob/main/LICENSE)
+
 ## プロジェクト概要
 
 **pylay** は、Pythonの型ヒント（type hint）とdocstringsを活用して、型情報（types）とドキュメント（docs）間の自動変換を実現するツールです。主な目的は、Pythonの型をYAML形式の仕様に変換し、PydanticによるバリデーションやMarkdownドキュメントの生成を容易にすることです。
@@ -26,15 +30,22 @@ Python の type hint と docstrings を利用した types <-> docs 間の透過�
 ## 開発環境セットアップ
 
 ### 必要なツール
-- Python 3.13+
+- Python 3.12+
 - [uv](https://github.com/astral-sh/uv) (推奨) または [Poetry](https://python-poetry.org/)
 - [pre-commit](https://pre-commit.com/)
 
 **重要**: システムPythonの使用を避け、常に `uv run` 経由で仮想環境を使用してください。
 
-### セットアップ手順
+### インストール
+
+#### PyPI からのインストール（推奨）
 ```bash
-# 1. 依存関係をインストール（Python 3.13環境が自動作成）
+pip install pylay
+```
+
+#### 開発環境でのインストール
+```bash
+# 1. 依存関係をインストール（Python 3.12+環境が自動作成）
 make install
 # または
 uv sync

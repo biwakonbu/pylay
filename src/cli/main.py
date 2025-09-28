@@ -6,14 +6,14 @@ from typing import Optional
 
 from ..core.converters.type_to_yaml import extract_types_from_module
 from ..core.converters.yaml_to_type import yaml_to_spec
-from ..core.doc_generators.type_doc_generator import TypeDocGenerator
+from ..core.doc_generators.type_doc_generator import LayerDocGenerator
 from ..core.doc_generators.yaml_doc_generator import YamlDocGenerator
-from ..core.doc_generators.test_catalog_generator import TestCatalogGenerator
-from ..core.extract_deps import extract_dependencies
+from ..core.doc_generators.test_catalog_generator import CatalogGenerator
+from ..core.converters.extract_deps import extract_dependencies_from_file
 import mypy.api
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
-@click.version_option(prog_name="pylay")
+@click.version_option(version="0.1.0")
 @click.option("--verbose", is_flag=True, help="詳細ログを出力")
 @click.option("--config", type=click.Path(exists=True), help="設定ファイルのパス (YAML)")
 def cli(verbose: bool, config: Optional[str]) -> None:
@@ -38,8 +38,8 @@ def generate() -> None:
 def generate_type_docs(input: str, output: str) -> None:
     """Python 型から Markdown ドキュメントを生成"""
     click.echo(f"型ドキュメント生成: {input} -> {output}")
-    generator = TypeDocGenerator()
-    docs = generator.generate_from_path(Path(input))
+    generator = LayerDocGenerator()
+    docs = generator.generate(Path(input))
     if output == "docs/type_docs.md":
         # デフォルト出力先の場合はディレクトリを作成
         Path(output).parent.mkdir(parents=True, exist_ok=True)
@@ -72,8 +72,8 @@ def generate_yaml_docs(input: str, output: str) -> None:
 def generate_test_catalog(input_dir: str, output: str) -> None:
     """テストカタログを生成"""
     click.echo(f"テストカタログ生成: {input_dir} -> {output}")
-    generator = TestCatalogGenerator()
-    catalog = generator.generate_from_directory(Path(input_dir))
+    generator = CatalogGenerator()
+    catalog = generator.generate(Path(input_dir))
     if output == "docs/test_catalog.md":
         # デフォルト出力先の場合はディレクトリを作成
         Path(output).parent.mkdir(parents=True, exist_ok=True)
@@ -88,7 +88,7 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
     """依存関係グラフを生成 (NetworkX + matplotlib)"""
     click.echo(f"依存グラフ生成: {input_dir} -> {output}")
     try:
-        graph = extract_dependencies(Path(input_dir))
+        graph = extract_dependencies_from_file(str(Path(input_dir)))
         # matplotlibでグラフを生成
         import matplotlib.pyplot as plt
         import networkx as nx

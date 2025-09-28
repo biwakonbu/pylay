@@ -1043,6 +1043,10 @@ dev = [
     { name = "ruff" },
     { name = "safety" },
 ]
+viz = [
+    { name = "matplotlib" },
+    { name = "networkx" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -1063,9 +1067,11 @@ requires-dist = [
     { name = "click", specifier = ">=8.3.0" },
     { name = "interrogate", marker = "extra == 'dev'", specifier = ">=1.7.0" },
     { name = "matplotlib", specifier = ">=3.10.6" },
+    { name = "matplotlib", marker = "extra == 'viz'", specifier = ">=3.5.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.18.2" },
     { name = "networkx", specifier = ">=3.3" },
     { name = "networkx", marker = "extra == 'dev'", specifier = ">=3.3" },
+    { name = "networkx", marker = "extra == 'viz'", specifier = ">=3.3" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pydantic", specifier = ">=2.8.2" },
     { name = "pydot", marker = "extra == 'dev'", specifier = ">=3.0.0" },
@@ -1079,7 +1085,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6.0" },
     { name = "safety", marker = "extra == 'dev'", specifier = ">=3.2.3" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["dev", "viz"]
 
 [package.metadata.requires-dev]
 dev = [
