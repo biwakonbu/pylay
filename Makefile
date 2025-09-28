@@ -24,7 +24,7 @@ type-check: ## 型チェック（mypy）
 	uv run mypy src/core/converters/type_to_yaml.py src/core/converters/yaml_to_type.py src/core/doc_generators/yaml_doc_generator.py src/core/doc_generators/base.py src/core/doc_generators/config.py src/core/schemas/yaml_type_spec.py src/core/schemas/type_index.py src/core/converters/mypy_type_extractor.py src/core/converters/ast_dependency_extractor.py src/core/converters/infer_types.py src/core/converters/extract_deps.py src/infer_deps.py tests/test_type_inference.py tests/test_dependency_extraction.py
 
 test: ## テストを実行
-	uv run pytest --cov=. --cov-report=html --cov-report=term
+	uv run pytest --cov=. --cov-report=html --cov-report=xml --cov-report=term
 
 test-fast: ## 高速テスト実行（カバレッジなし）
 	uv run pytest

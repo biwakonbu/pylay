@@ -1,0 +1,58 @@
+name: CI
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: ["3.13"]
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v4
+              with:
+                  python-version: ${{ matrix.python-version }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+
+            - name: Install dependencies
+              run: |
+                  uv sync
+
+            - name: Run tests
+              run: |
+                  make test
+
+            - name: Run quality checks
+              run: |
+                  make quality-check
+
+            - name: Run security check
+              run: |
+                  make safety-check
+
+            - name: Run complexity check
+              run: |
+                  make radon-check
+
+            - name: Run docstring coverage check
+              run: |
+                  make interrogate-check
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
