@@ -1,0 +1,114 @@
+types:
+  PylayCLI:
+    type: class
+    bases: []
+    docstring: pylay CLIツールのメインクラス
+  main:
+    type: function
+    args: {}
+    returns: None
+    docstring: メインエントリーポイント
+  __init__:
+    type: function
+    args:
+      self: Any
+    returns: None
+    docstring: CLIツールを初期化する
+  _create_parser:
+    type: function
+    args:
+      self: Any
+    returns: argparse.ArgumentParser
+    docstring: "コマンドライン引数パーサーを作成する\n\nReturns:\n    設定済みのArgumentParserインスタンス"
+  run_type_to_yaml:
+    type: function
+    args:
+      self: Any
+      input_path: str
+      output_path: str
+      module_name: Optional[str]
+    returns: None
+    docstring: "Python型定義をYAML型仕様に変換する\n\nArgs:\n    input_path: 入力Pythonファイルのパス\n\
+      \    output_path: 出力YAMLファイルのパス\n    module_name: 解析対象のモジュール名"
+  run_yaml_to_type:
+    type: function
+    args:
+      self: Any
+      input_path: str
+      output_path: str
+    returns: None
+    docstring: "YAML型仕様をPython型定義に変換する\n\nArgs:\n    input_path: 入力YAMLファイルのパス\n \
+      \   output_path: 出力Pythonファイルのパス"
+  run_generate_docs:
+    type: function
+    args:
+      self: Any
+      input_path: str
+      output_path: str
+      format_type: str
+    returns: None
+    docstring: "YAML型仕様からMarkdownドキュメントを生成する\n\nArgs:\n    input_path: 入力YAMLファイルのパス\n\
+      \    output_path: 出力Markdownファイルまたはディレクトリのパス\n    format_type: 出力形式（\"single\"\
+      \ または \"multiple\"）"
+  run_infer_deps:
+    type: function
+    args:
+      self: Any
+      input_path: str
+      visualize: bool
+    returns: None
+    docstring: "型推論と依存関係抽出を実行する\n\nArgs:\n    input_path: 入力Pythonファイルのパス\n    visualize:
+      Graphviz視覚化を実行するかどうか"
+  run_interactive:
+    type: function
+    args:
+      self: Any
+    returns: None
+    docstring: 対話モードで操作する
+  _interactive_type_to_yaml:
+    type: function
+    args:
+      self: Any
+    returns: None
+    docstring: 対話モードでtype-to-yamlを実行
+  _interactive_yaml_to_type:
+    type: function
+    args:
+      self: Any
+    returns: None
+    docstring: 対話モードでyaml-to-typeを実行
+  _interactive_generate_docs:
+    type: function
+    args:
+      self: Any
+    returns: None
+    docstring: 対話モードでgenerate-docsを実行
+  _interactive_infer_deps:
+    type: function
+    args:
+      self: Any
+    returns: None
+    docstring: 対話モードでinfer-depsを実行
+  _show_success_message:
+    type: function
+    args:
+      self: Any
+      message: str
+      details: dict[str, str]
+    returns: None
+    docstring: 成功メッセージを表示する
+  _extract_types_and_convert_to_yaml:
+    type: function
+    args:
+      self: Any
+      file_path: str
+    returns: str
+    docstring: Pythonファイルから型を抽出してYAMLに変換する
+  _show_error_message:
+    type: function
+    args:
+      self: Any
+      message: str
+      error: str
+    returns: None
+    docstring: エラーメッセージを表示する

@@ -141,7 +141,7 @@ ignore_missing_imports = true
 [tool.pylay]
 # pylay プロジェクト全体解析設定
 target_dirs = ["src/", "scripts/", "utils/"]
-output_dir = "docs/"
+output_dir = "docs/pylay-types/"
 generate_markdown = true
 extract_deps = true
 infer_level = "strict"
