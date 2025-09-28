@@ -1,10 +1,11 @@
 # tests/scripts/test_generate_test_docs.py - テストドキュメント生成スクリプトのテスト
 """テストドキュメント生成スクリプトのテスト（実体テスト中心）"""
+
 import shutil
 import tempfile
 from pathlib import Path
 
-from generate_test_docs import generate_test_docs
+from scripts.generate_test_docs import generate_test_docs
 
 
 class TestGenerateTestDocs:

@@ -21,7 +21,7 @@ lint: ## リンターでコードチェック（Ruff）
 	uv run ruff check . --fix
 
 type-check: ## 型チェック（mypy）
-	uv run mypy converters/type_to_yaml.py converters/yaml_to_type.py doc_generators/yaml_doc_generator.py doc_generators/base.py doc_generators/config.py schemas/yaml_type_spec.py schemas/type_index.py src/schemas/graph_types.py tests/test_graph_types.py
+	uv run mypy src/core/converters/type_to_yaml.py src/core/converters/yaml_to_type.py src/core/doc_generators/yaml_doc_generator.py src/core/doc_generators/base.py src/core/doc_generators/config.py src/core/schemas/yaml_type_spec.py src/core/schemas/type_index.py src/core/converters/mypy_type_extractor.py src/core/converters/ast_dependency_extractor.py src/core/converters/infer_types.py src/core/converters/extract_deps.py src/infer_deps.py tests/test_type_inference.py tests/test_dependency_extraction.py
 
 test: ## テストを実行
 	uv run pytest --cov=. --cov-report=html --cov-report=term
@@ -39,10 +39,9 @@ coverage: test ## カバレッジレポートを開く
 		echo "Open htmlcov/index.html in your browser"; \
 	fi
 
-quality-check: ## 品質チェック（型チェック + リンター + pre-commit）
-	uv run mypy converters/type_to_yaml.py converters/yaml_to_type.py doc_generators/yaml_doc_generator.py doc_generators/base.py doc_generators/config.py schemas/yaml_type_spec.py schemas/type_index.py src/schemas/graph_types.py tests/test_graph_types.py
+quality-check: ## 品質チェック（型チェック + リンター）
+	uv run mypy src/core/converters/type_to_yaml.py src/core/converters/yaml_to_type.py src/core/doc_generators/yaml_doc_generator.py src/core/doc_generators/base.py src/core/doc_generators/config.py src/core/schemas/yaml_type_spec.py src/core/schemas/type_index.py src/core/schemas/graph_types.py src/core/converters/infer_types.py src/core/converters/extract_deps.py tests/test_graph_types.py tests/test_type_inference.py tests/test_dependency_extraction.py
 	uv run ruff check .
-	uv run pre-commit run --all-files
 
 pre-commit-install: ## pre-commitフックをインストール
 	uv run pre-commit install
@@ -58,6 +57,15 @@ radon-check: ## コード複雑度チェック
 
 interrogate-check: ## docstringカバレッジチェック
 	uv run interrogate .
+
+infer-deps: ## 型推論と依存関係抽出を実行（例: make infer-deps FILE=src/example.py）
+	uv run python src/infer_deps.py $(FILE)
+
+tui-run: ## TUI アプリを起動
+	uv run python -m src.tui.main
+
+tui-test: ## TUI 関連テストを実行
+	uv run pytest tests/test_tui/
 
 all-check: format type-check test quality-check ## すべてのチェックを実行（フォーマット → 型チェック → テスト → 品質チェック）
 

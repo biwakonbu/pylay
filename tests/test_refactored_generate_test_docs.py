@@ -80,7 +80,9 @@ class TestCatalogGenerator:
         # Should find test classes and methods
         assert "TestGenerateTestDocs" in content
         assert "test_generate_test_docs_with_valid_files" in content
-        assert "pytest tests/test_generate_test_docs.py::TestGenerateTestDocs" in content
+        assert (
+            "pytest tests/test_generate_test_docs.py::TestGenerateTestDocs" in content
+        )
 
     def test_generate_with_custom_output_path(self):
         """Test generation with custom output path override."""
@@ -123,7 +125,9 @@ class TestCatalogGenerator:
             filesystem=self.filesystem,
         )
 
-        test_functions = generator._extract_test_functions(tests.test_generate_test_docs)
+        test_functions = generator._extract_test_functions(
+            tests.test_generate_test_docs
+        )
 
         # Should find test methods from test classes
         assert len(test_functions) > 0
@@ -164,7 +168,9 @@ class TestCatalogGenerator:
         count = generator._count_test_modules()
 
         # Should count actual test modules in tests/scripts
-        assert count >= 2  # At least test_generate_test_docs and test_generate_type_docs
+        assert (
+            count >= 2
+        )  # At least test_generate_test_docs and test_generate_type_docs
 
     def test_format_generation_footer(self):
         """Test generation footer formatting."""
@@ -279,11 +285,7 @@ class TestMarkdownBuilder:
 
     def test_bullet_points(self):
         """Test bullet point generation."""
-        result = (
-            self.md.bullet_point("Item 1")
-            .bullet_point("Item 2", level=2)
-            .build()
-        )
+        result = self.md.bullet_point("Item 1").bullet_point("Item 2", level=2).build()
 
         expected = "- Item 1\n  - Item 2\n"
         assert result == expected
@@ -297,9 +299,7 @@ class TestMarkdownBuilder:
     def test_table_generation(self):
         """Test table generation."""
         result = (
-            self.md.table_header(["Col1", "Col2"])
-            .table_row(["Data1", "Data2"])
-            .build()
+            self.md.table_header(["Col1", "Col2"]).table_row(["Data1", "Data2"]).build()
         )
 
         expected = "| Col1 | Col2 |\n| --- | --- |\n| Data1 | Data2 |\n"

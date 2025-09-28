@@ -1,0 +1,10 @@
+
+types:
+  sample_module:
+    type: dict
+    description: サンプル型定義
+    properties:
+      sample_field:
+        type: str
+        description: サンプルフィールド
+        required: true

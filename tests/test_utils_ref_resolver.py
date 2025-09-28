@@ -16,18 +16,15 @@ class TestRefResolver:
         types_data = {
             "User": {
                 "type": "dict",
-                "properties": {
-                    "id": {"type": "int"},
-                    "name": {"type": "str"}
-                }
+                "properties": {"id": {"type": "int"}, "name": {"type": "str"}},
             },
             "Order": {
                 "type": "dict",
                 "properties": {
                     "user_id": {"type": "str"},  # 参照なし
-                    "amount": {"type": "float"}
-                }
-            }
+                    "amount": {"type": "float"},
+                },
+            },
         }
         # 例外が発生しないことを確認
         RefResolver.detect_cycles_from_data(types_data)
@@ -39,14 +36,14 @@ class TestRefResolver:
                 "type": "dict",
                 "properties": {
                     "b": "B"  # Bを参照
-                }
+                },
             },
             "B": {
                 "type": "dict",
                 "properties": {
                     "a": "A"  # Aを参照 -> 循環
-                }
-            }
+                },
+            },
         }
         with pytest.raises(ValueError, match="Circular reference detected"):
             RefResolver.detect_cycles_from_data(types_data)
@@ -55,7 +52,7 @@ class TestRefResolver:
         """基本的な参照収集のテスト"""
         spec_data = {
             "type": "list",
-            "items": "User"  # 参照
+            "items": "User",  # 参照
         }
         refs = RefResolver._collect_refs_from_data(spec_data)
         assert "User" in refs
@@ -66,11 +63,8 @@ class TestRefResolver:
             "type": "dict",
             "properties": {
                 "user": "User",
-                "orders": {
-                    "type": "list",
-                    "items": "Order"
-                }
-            }
+                "orders": {"type": "list", "items": "Order"},
+            },
         }
         refs = RefResolver._collect_refs_from_data(spec_data)
         assert "User" in refs
@@ -78,10 +72,7 @@ class TestRefResolver:
 
     def test_collect_refs_from_data_union(self):
         """Union型の参照収集のテスト"""
-        spec_data = {
-            "type": "union",
-            "variants": ["User", "Admin"]
-        }
+        spec_data = {"type": "union", "variants": ["User", "Admin"]}
         refs = RefResolver._collect_refs_from_data(spec_data)
         assert "User" in refs
         assert "Admin" in refs
@@ -89,14 +80,12 @@ class TestRefResolver:
     def test_detect_cycles_types_no_cycles(self):
         """TypeSpecベースの循環参照検出（なし）のテスト"""
         user_spec = DictTypeSpec(
-            name="User",
-            type="dict",
-            properties={"id": TypeSpec(name="id", type="int")}
+            name="User", type="dict", properties={"id": TypeSpec(name="id", type="int")}
         )
         order_spec = DictTypeSpec(
             name="Order",
             type="dict",
-            properties={"user_id": TypeSpec(name="user_id", type="str")}
+            properties={"user_id": TypeSpec(name="user_id", type="str")},
         )
         types = {"User": user_spec, "Order": order_spec}
 
@@ -108,12 +97,12 @@ class TestRefResolver:
         user_spec = DictTypeSpec(
             name="User",
             type="dict",
-            properties={"order": "Order"}  # 参照
+            properties={"order": "Order"},  # 参照
         )
         order_spec = DictTypeSpec(
             name="Order",
             type="dict",
-            properties={"user": "User"}  # 参照 -> 循環
+            properties={"user": "User"},  # 参照 -> 循環
         )
         types = {"User": user_spec, "Order": order_spec}
 
@@ -122,25 +111,17 @@ class TestRefResolver:
 
     def test_collect_refs_from_spec_basic(self):
         """TypeSpecからの参照収集（基本）のテスト"""
-        spec = ListTypeSpec(
-            name="UserList",
-            type="list",
-            items="User"
-        )
+        spec = ListTypeSpec(name="UserList", type="list", items="User")
         refs = RefResolver._collect_refs_from_spec(spec)
         assert "User" in refs
 
     def test_collect_refs_from_spec_nested(self):
         """TypeSpecからの参照収集（ネスト）のテスト"""
         user_spec = DictTypeSpec(
-            name="User",
-            type="dict",
-            properties={"id": TypeSpec(name="id", type="int")}
+            name="User", type="dict", properties={"id": TypeSpec(name="id", type="int")}
         )
         order_spec = DictTypeSpec(
-            name="Order",
-            type="dict",
-            properties={"user": user_spec}
+            name="Order", type="dict", properties={"user": user_spec}
         )
         refs = RefResolver._collect_refs_from_spec(order_spec)
         # ネストされたTypeSpecからの参照は収集されない（str参照のみ）
@@ -149,9 +130,7 @@ class TestRefResolver:
     def test_resolve_all_basic(self):
         """基本的な参照解決のテスト"""
         user_spec = DictTypeSpec(
-            name="User",
-            type="dict",
-            properties={"id": TypeSpec(name="id", type="int")}
+            name="User", type="dict", properties={"id": TypeSpec(name="id", type="int")}
         )
         types = {"User": user_spec}
 
@@ -164,9 +143,7 @@ class TestRefResolver:
         # 実際のTypeContextが必要なので、簡易テスト
         # 詳細なテストは統合テストでカバー
         user_spec = DictTypeSpec(
-            name="User",
-            type="dict",
-            properties={"id": TypeSpec(name="id", type="int")}
+            name="User", type="dict", properties={"id": TypeSpec(name="id", type="int")}
         )
         types = {"User": user_spec}
 

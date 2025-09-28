@@ -6,7 +6,13 @@ yaml_to_type.py から抽出・モジュール化されたものです。
 """
 
 from typing import Any
-from schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec, UnionTypeSpec, TypeContext
+from schemas.yaml_type_spec import (
+    TypeSpec,
+    ListTypeSpec,
+    DictTypeSpec,
+    UnionTypeSpec,
+    TypeContext,
+)
 
 
 class RefResolver:
@@ -127,16 +133,16 @@ class RefResolver:
 
         if isinstance(spec_data, dict):
             for key, value in spec_data.items():
-                if key == 'items' and isinstance(value, str):
+                if key == "items" and isinstance(value, str):
                     refs.append(value)
-                elif key == 'properties' and isinstance(value, dict):
+                elif key == "properties" and isinstance(value, dict):
                     for prop_value in value.values():
                         if isinstance(prop_value, str):
                             refs.append(prop_value)
                         elif isinstance(prop_value, dict):
                             # ネストされたproperties内の参照
                             refs.extend(RefResolver._collect_refs_from_data(prop_value))
-                elif key == 'variants' and isinstance(value, list):
+                elif key == "variants" and isinstance(value, list):
                     for variant in value:
                         if isinstance(variant, str):
                             refs.append(variant)
@@ -167,6 +173,7 @@ class RefResolver:
             参照文字列のリスト
         """
         from schemas.yaml_type_spec import RefPlaceholder
+
         refs = []
 
         if isinstance(spec, ListTypeSpec):
@@ -174,7 +181,7 @@ class RefResolver:
                 refs.append(spec.items.ref_name)
             elif isinstance(spec.items, str):
                 refs.append(spec.items)
-            elif hasattr(spec.items, '__class__'):  # TypeSpecの場合
+            elif hasattr(spec.items, "__class__"):  # TypeSpecの場合
                 refs.extend(RefResolver._collect_refs_from_spec(spec.items))
         elif isinstance(spec, DictTypeSpec):
             for prop in spec.properties.values():
@@ -182,7 +189,7 @@ class RefResolver:
                     refs.append(prop.ref_name)
                 elif isinstance(prop, str):
                     refs.append(prop)
-                elif hasattr(prop, '__class__'):  # TypeSpecの場合
+                elif hasattr(prop, "__class__"):  # TypeSpecの場合
                     refs.extend(RefResolver._collect_refs_from_spec(prop))
         elif isinstance(spec, UnionTypeSpec):
             for variant in spec.variants:
@@ -190,7 +197,7 @@ class RefResolver:
                     refs.append(variant.ref_name)
                 elif isinstance(variant, str):
                     refs.append(variant)
-                elif hasattr(variant, '__class__'):  # TypeSpecの場合
+                elif hasattr(variant, "__class__"):  # TypeSpecの場合
                     refs.extend(RefResolver._collect_refs_from_spec(variant))
 
         return refs
