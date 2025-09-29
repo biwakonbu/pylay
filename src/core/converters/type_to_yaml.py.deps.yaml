@@ -1,0 +1,11 @@
+dependencies:
+  type_to_yaml.py:
+    attributes:
+      attribute: py
+      object: type_to_yaml
+      source_file: /tmp/tmp6wxueeir.py
+    depends_on: []
+    relations: []
+    type: attribute_access
+    used_by:
+    - type_to_yaml

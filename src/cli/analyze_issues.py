@@ -42,7 +42,10 @@ class ProjectAnalyzer:
         self.results: list[CheckResult] = []
 
     def run_command(
-        self, cmd: list[str], description: str, expected_exit_codes: list[int] | None = None
+        self,
+        cmd: list[str],
+        description: str,
+        expected_exit_codes: list[int] | None = None,
     ) -> CheckResult:
         """
         コマンドを実行し、結果を記録する

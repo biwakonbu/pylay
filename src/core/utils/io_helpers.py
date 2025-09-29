@@ -70,4 +70,6 @@ def read_file_content(file_path: Path) -> str:
     except FileNotFoundError:
         raise FileNotFoundError(f"ファイルが見つかりません: {file_path}")
     except UnicodeDecodeError as e:
-        raise UnicodeDecodeError(e.encoding, e.object, e.start, e.end, f"エンコーディングエラー: {file_path}")
+        raise UnicodeDecodeError(
+            e.encoding, e.object, e.start, e.end, f"エンコーディングエラー: {file_path}"
+        )

@@ -97,7 +97,9 @@ class FullAnalyzer(Analyzer):
                     )
 
                     temp_analyzer = DependencyExtractionAnalyzer(self.config)
-                    type_refs = temp_analyzer._extract_type_refs_from_string(str(type_str))
+                    type_refs = temp_analyzer._extract_type_refs_from_string(
+                        str(type_str)
+                    )
                     for ref in type_refs:
                         if ref != node.name:
                             edge = GraphEdge(

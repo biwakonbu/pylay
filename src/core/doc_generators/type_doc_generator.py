@@ -1,5 +1,6 @@
 """Type documentation generators for automated type documentation."""
 
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Optional
 
@@ -549,7 +550,7 @@ class IndexDocGenerator(DocumentGenerator):
         self.md.bullet_point(f"**総型数**: {total_types}")
 
         # すべての利用可能な型名を取得
-        from schemas.type_index import get_available_types_all
+        from src.core.schemas.type_index import get_available_types_all
 
         all_types = get_available_types_all()
         self.md.bullet_point(f"**全レイヤー型一覧**: {', '.join(all_types)}")

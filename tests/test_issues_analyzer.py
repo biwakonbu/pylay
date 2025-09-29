@@ -19,11 +19,15 @@ class TestProjectAnalyzer:
 
         # 成功コマンドのモック
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = type("MockResult", (), {
-                "returncode": 0,
-                "stdout": "Success",
-                "stderr": "",
-            })()
+            mock_run.return_value = type(
+                "MockResult",
+                (),
+                {
+                    "returncode": 0,
+                    "stdout": "Success",
+                    "stderr": "",
+                },
+            )()
 
             result = analyzer.run_command(["echo", "test"], "Test Command")
 
@@ -37,11 +41,15 @@ class TestProjectAnalyzer:
         analyzer = ProjectAnalyzer(tmp_path)
 
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = type("MockResult", (), {
-                "returncode": 1,
-                "stdout": "",
-                "stderr": "Error",
-            })()
+            mock_run.return_value = type(
+                "MockResult",
+                (),
+                {
+                    "returncode": 1,
+                    "stdout": "",
+                    "stderr": "Error",
+                },
+            )()
 
             result = analyzer.run_command(["false"], "Failing Command")
 
@@ -93,8 +101,20 @@ class TestProjectAnalyzer:
             "failed_checks": 1,
             "checks_with_issues": 1,
             "results": [
-                {"name": "Check1", "success": True, "has_issues": False, "output_lines": 0, "error_lines": 0},
-                {"name": "Check2", "success": False, "has_issues": True, "output_lines": 1, "error_lines": 2},
+                {
+                    "name": "Check1",
+                    "success": True,
+                    "has_issues": False,
+                    "output_lines": 0,
+                    "error_lines": 0,
+                },
+                {
+                    "name": "Check2",
+                    "success": False,
+                    "has_issues": True,
+                    "output_lines": 1,
+                    "error_lines": 2,
+                },
             ],
         }
 
@@ -122,6 +142,7 @@ class TestProjectAnalyzer:
 
         assert report_path.exists()
         import json
+
         with open(report_path) as f:
             data = json.load(f)
             assert "timestamp" in data

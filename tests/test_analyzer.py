@@ -113,7 +113,9 @@ y: str
     def test_merge_inferred_types(self):
         """型マージのテスト"""
         existing = {"x": "int"}
-        inferred = {"y": {"variable_name": "y", "inferred_type": "str", "confidence": 0.8}}
+        inferred = {
+            "y": {"variable_name": "y", "inferred_type": "str", "confidence": 0.8}
+        }
         config = PylayConfig()
         from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
 
@@ -418,6 +420,7 @@ def invalid_syntax(
 
     def test_timeout_subprocess_handling(self, tmp_path, monkeypatch):
         """subprocessタイムアウトのハンドリング"""
+
         def mock_run(*args, **kwargs):
             raise subprocess.TimeoutExpired(["cmd"], 10)
 
@@ -435,10 +438,13 @@ def invalid_syntax(
         # 無効なグラフ（循環など）
         graph = TypeDependencyGraph(nodes=[], edges=[])
         # 意図的に無効なデータを追加
-        invalid_node = GraphNode(name="invalid", node_type="class", attributes={"invalid": "none"})
+        invalid_node = GraphNode(
+            name="invalid", node_type="class", attributes={"invalid": "none"}
+        )
         graph.add_node(invalid_node)
 
         from src.core.analyzer.graph_processor import GraphProcessor
+
         processor = GraphProcessor()
 
         # YAML変換でエラーが起きないことを確認

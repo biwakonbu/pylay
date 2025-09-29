@@ -245,7 +245,9 @@ def visualize_dependencies(graph: nx.DiGraph, output_path: str = "deps.png") -> 
     try:
         # 動的importを使ってpydotとgraphviz_layoutをインポート
         pydot = importlib.import_module("pydot")
-        graphviz_layout = importlib.import_module("networkx.drawing.nx_pydot").graphviz_layout
+        graphviz_layout = importlib.import_module(
+            "networkx.drawing.nx_pydot"
+        ).graphviz_layout
 
         # NetworkXグラフをpydotグラフに変換
         pydot_graph = graphviz_layout(graph)

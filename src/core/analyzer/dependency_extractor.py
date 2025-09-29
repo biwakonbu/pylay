@@ -22,6 +22,7 @@ from src.core.schemas.graph_types import (
     RelationType,
 )
 from src.core.schemas.pylay_config import PylayConfig
+from src.core.utils.io_helpers import TempFileConfig
 
 
 class DependencyExtractionAnalyzer(Analyzer):
@@ -58,7 +59,11 @@ class DependencyExtractionAnalyzer(Analyzer):
             # コード文字列の場合、一時ファイルを作成して解析
             from src.core.utils.io_helpers import create_temp_file
 
-            temp_config: TempFileConfig = {"code": input_path, "suffix": ".py", "mode": "w"}
+            temp_config: TempFileConfig = {
+                "code": input_path,
+                "suffix": ".py",
+                "mode": "w",
+            }
             temp_path = create_temp_file(temp_config)
             file_path = str(temp_path)
         elif isinstance(input_path, Path):
@@ -468,7 +473,9 @@ class DependencyExtractionAnalyzer(Analyzer):
                     if node.attributes and "inferred_type" in node.attributes:
                         type_str = node.attributes["inferred_type"]
                         if type_str != "Any":
-                            type_refs = self._extract_type_refs_from_string(str(type_str))
+                            type_refs = self._extract_type_refs_from_string(
+                                str(type_str)
+                            )
                             for ref in type_refs:
                                 if ref != node.name:
                                     self._add_edge(

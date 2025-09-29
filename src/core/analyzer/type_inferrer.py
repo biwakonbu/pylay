@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from src.core.analyzer.base import Analyzer
 from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode
-from src.core.schemas.analyzer_types import InferResult
+from src.core.schemas.analyzer_types import InferResult, TempFileConfig
 
 
 class TypeInferenceAnalyzer(Analyzer):
@@ -40,7 +40,11 @@ class TypeInferenceAnalyzer(Analyzer):
             # コード文字列の場合、一時ファイルを作成
             from src.core.utils.io_helpers import create_temp_file, cleanup_temp_file
 
-            temp_config: TempFileConfig = {"code": input_path, "suffix": ".py", "mode": "w"}
+            temp_config: TempFileConfig = {
+                "code": input_path,
+                "suffix": ".py",
+                "mode": "w",
+            }
             temp_path = create_temp_file(temp_config)
             try:
                 return self._analyze_from_file(temp_path)
@@ -162,7 +166,9 @@ class TypeInferenceAnalyzer(Analyzer):
         return types
 
     def merge_inferred_types(
-        self, existing_annotations: dict[str, str], inferred_types: dict[str, InferResult]
+        self,
+        existing_annotations: dict[str, str],
+        inferred_types: dict[str, InferResult],
     ) -> dict[str, str]:
         """
         既存の型アノテーションと推論結果をマージします。

@@ -3,6 +3,9 @@
 import click
 from pathlib import Path
 from typing import Optional
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.table import Table
 
 from ..core.converters.type_to_yaml import extract_types_from_module
 from ..core.converters.yaml_to_type import yaml_to_spec
@@ -16,19 +19,52 @@ import mypy.api
 from .commands.project_analyze import project_analyze
 
 
+class PylayCLI:
+    """pylay CLIツールのメインクラス"""
+
+    def __init__(self) -> None:
+        """CLIツールを初期化する"""
+        self.console = Console()
+
+    def show_success_message(self, message: str, details: dict[str, str]) -> None:
+        """成功メッセージを表示する"""
+        table = Table(title=f"✅ {message}", show_header=False, box=None)
+        table.add_column("項目", style="cyan", width=12)
+        table.add_column("値", style="white")
+
+        for key, value in details.items():
+            table.add_row(key, value)
+
+        self.console.print(table)
+
+    def show_error_message(self, message: str, error: str) -> None:
+        """エラーメッセージを表示する"""
+        self.console.print(f"[red]❌ エラー: {message}[/red]")
+        self.console.print(f"[red]詳細: {error}[/red]")
+
+
+cli_instance = PylayCLI()
+
+
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.version_option(version="0.1.0")
 @click.option("--verbose", is_flag=True, help="詳細ログを出力")
 @click.option(
     "--config", type=click.Path(exists=True), help="設定ファイルのパス (YAML)"
 )
-def cli(verbose: bool, config: Optional[str]) -> None:
+@click.pass_context
+def cli(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:
     """pylay: 型解析、自動型生成、ドキュメント生成ツール
 
     使用例:
         pylay generate type-docs --input module.py --output docs.md
         pylay analyze types --input module.py
+        pylay convert to-yaml --input module.py --output types.yaml
+        pylay convert to-type --input types.yaml --output model.py
     """
+    ctx.ensure_object(dict)
+    ctx.obj["verbose"] = verbose
+    ctx.obj["config"] = config
     if verbose:
         click.echo("pylay CLI 開始 (verbose モード)")
     if config:
@@ -50,15 +86,29 @@ def generate() -> None:
 )
 def generate_type_docs(input: str, output: str) -> None:
     """Python 型から Markdown ドキュメントを生成"""
-    click.echo(f"型ドキュメント生成: {input} -> {output}")
-    generator = LayerDocGenerator()
-    docs = generator.generate(Path(input))
-    if output == "docs/type_docs.md":
-        # デフォルト出力先の場合はディレクトリを作成
-        Path(output).parent.mkdir(parents=True, exist_ok=True)
-    with open(output, "w", encoding="utf-8") as f:
-        f.write(docs)
-    click.echo(f"生成完了: {output}")
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=cli_instance.console,
+        ) as progress:
+            task = progress.add_task("📝 型ドキュメント生成中...", total=None)
+            generator = LayerDocGenerator()
+            docs = generator.generate(Path(input))
+            progress.update(task, description="💾 ファイル出力中...")
+
+        if output == "docs/type_docs.md":
+            # デフォルト出力先の場合はディレクトリを作成
+            Path(output).parent.mkdir(parents=True, exist_ok=True)
+        with open(output, "w", encoding="utf-8") as f:
+            f.write(docs)
+
+        cli_instance.show_success_message(
+            "型ドキュメント生成が完了しました",
+            {"入力": input, "出力": output},
+        )
+    except Exception as e:
+        cli_instance.show_error_message("型ドキュメント生成に失敗しました", str(e))
 
 
 @generate.command("yaml-docs")
@@ -81,14 +131,27 @@ def generate_yaml_docs(input: str, output: Optional[str]) -> None:
     if output is None:
         output = default_output
 
-    click.echo(f"YAML ドキュメント生成: {input} -> {output}")
-    with open(input, "r", encoding="utf-8") as f:
-        yaml_str = f.read()
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=cli_instance.console,
+        ) as progress:
+            task = progress.add_task("📝 YAMLドキュメント生成中...", total=None)
 
-    spec = yaml_to_spec(yaml_str)
-    generator = YamlDocGenerator()
-    generator.generate(output, spec=spec)
-    click.echo(f"生成完了: {output}")
+            with open(input, "r", encoding="utf-8") as f:
+                yaml_str = f.read()
+
+            spec = yaml_to_spec(yaml_str)
+            generator = YamlDocGenerator()
+            generator.generate(output, spec=spec)
+
+        cli_instance.show_success_message(
+            "YAMLドキュメント生成が完了しました",
+            {"入力": input, "出力": output},
+        )
+    except Exception as e:
+        cli_instance.show_error_message("YAMLドキュメント生成に失敗しました", str(e))
 
 
 @generate.command("test-catalog")
@@ -160,44 +223,6 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
 
 
 @cli.group()
-def analyze() -> None:
-    """静的解析コマンド (mypy + AST 型推論/依存抽出)"""
-
-
-@analyze.command("types")
-@click.argument("input", type=click.Path(exists=True))
-@click.option("--output-yaml", type=click.Path(), help="型を YAML にエクスポート")
-@click.option("--infer", is_flag=True, help="mypy で型推論を実行")
-def analyze_types(input: str, output_yaml: Optional[str], infer: bool) -> None:
-    """モジュールから型を解析/推論し、YAML 出力可能"""
-    click.echo(f"型解析: {input}")
-    if infer:
-        result = mypy.api.run([str(input), "--infer", "--check"])
-        click.echo(f"mypy 出力: {result}")
-        if "error" in result.lower():
-            raise click.Abort("mypy エラー: 型推論失敗")
-
-    # analyzerを使用して型抽出
-    from src.core.analyzer.base import create_analyzer
-    from src.core.schemas.pylay_config import PylayConfig
-
-    config = PylayConfig()
-    analyzer = create_analyzer(config, mode="types_only")
-    graph = analyzer.analyze(Path(input))
-
-    # グラフからYAML生成
-    from src.core.converters.type_to_yaml import graph_to_yaml
-
-    types_yaml = graph_to_yaml(graph)
-    if output_yaml:
-        with open(output_yaml, "w") as f:
-            f.write(types_yaml)
-        click.echo(f"YAML 出力: {output_yaml}")
-    else:
-        click.echo(types_yaml)
-
-
-@cli.group()
 def convert() -> None:
     """型と YAML の相互変換"""
 
@@ -212,14 +237,27 @@ def convert() -> None:
 )
 def convert_to_yaml(input_module: str, output: str) -> None:
     """Python 型を YAML に変換"""
-    click.echo(f"型 -> YAML 変換: {input_module}")
-    yaml_str = extract_types_from_module(Path(input_module))
-    if output == "-":
-        click.echo(yaml_str)
-    else:
-        with open(output, "w") as f:
-            f.write(yaml_str)
-        click.echo(f"出力: {output}")
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=cli_instance.console,
+        ) as progress:
+            task = progress.add_task("🔄 型→YAML変換中...", total=None)
+            yaml_str = extract_types_from_module(Path(input_module))
+
+        if output == "-":
+            cli_instance.console.print("[bold green]YAML出力:[/bold green]")
+            cli_instance.console.print(yaml_str)
+        else:
+            with open(output, "w") as f:
+                f.write(yaml_str)
+            cli_instance.show_success_message(
+                "型→YAML変換が完了しました",
+                {"入力": input_module, "出力": output},
+            )
+    except Exception as e:
+        cli_instance.show_error_message("型→YAML変換に失敗しました", str(e))
 
 
 @convert.command("to-type")
@@ -227,28 +265,114 @@ def convert_to_yaml(input_module: str, output: str) -> None:
 @click.option("--output-py", type=click.Path(), help="出力 Python コード (BaseModel)")
 def convert_to_type(input_yaml: str, output_py: Optional[str]) -> None:
     """YAML を Pydantic BaseModel に変換"""
-    click.echo(f"YAML -> 型変換: {input_yaml}")
-    with open(input_yaml, "r", encoding="utf-8") as f:
-        yaml_str = f.read()
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=cli_instance.console,
+        ) as progress:
+            task = progress.add_task("🔄 YAML→型変換中...", total=None)
 
-    spec = yaml_to_spec(yaml_str)
-    model_code = f"""from pydantic import BaseModel
+            with open(input_yaml, "r", encoding="utf-8") as f:
+                yaml_str = f.read()
+
+            spec = yaml_to_spec(yaml_str)
+            model_code = f"""from pydantic import BaseModel
 from typing import {", ".join([t.__name__ if hasattr(t, "__name__") else str(t) for t in spec.__class__.__mro__ if t != object])}
 
 # 生成されたPydanticモデル
 class GeneratedModel(BaseModel):
     pass
 """
-    if output_py:
-        with open(output_py, "w") as f:
-            f.write(model_code)
-        click.echo(f"出力: {output_py}")
-    else:
-        click.echo(model_code)
+
+        if output_py:
+            with open(output_py, "w") as f:
+                f.write(model_code)
+            cli_instance.show_success_message(
+                "YAML→型変換が完了しました",
+                {"入力": input_yaml, "出力": output_py},
+            )
+        else:
+            cli_instance.console.print(
+                "[bold green]生成されたPythonコード:[/bold green]"
+            )
+            cli_instance.console.print(model_code)
+    except Exception as e:
+        cli_instance.show_error_message("YAML→型変換に失敗しました", str(e))
 
 
 # project-analyze コマンドを追加
 cli.add_command(project_analyze)
+
+
+@cli.group()
+def analyze() -> None:
+    """型解析・依存関係分析コマンド"""
+
+
+@analyze.command("infer-deps")
+@click.argument("input_file", type=click.Path(exists=True))
+@click.option("--visualize", "-v", is_flag=True, help="Graphvizで依存関係を視覚化")
+@click.pass_context
+def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> None:
+    """型推論と依存関係抽出を実行"""
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=cli_instance.console,
+        ) as progress:
+            task = progress.add_task("🔍 型推論と依存関係抽出中...", total=None)
+
+            # 型推論と依存関係抽出を実行
+            graph = extract_dependencies_from_file(Path(input_file))
+
+            progress.update(task, description="📊 結果を表示中...")
+
+            # 推論された型の情報を表示
+            if graph.nodes:
+                table = Table(title="🔍 推論された型情報", show_header=True)
+                table.add_column("モジュール", style="cyan", width=30)
+                table.add_column("型", style="white")
+
+                for node in graph.nodes:
+                    if node.attributes and "inferred_type" in node.attributes:
+                        table.add_row(node.name, node.attributes["inferred_type"])
+                cli_instance.console.print(table)
+
+            cli_instance.console.print("\n[bold green]✅ 依存関係抽出完了[/bold green]")
+            cli_instance.console.print(f"ノード数: {len(graph.nodes)}")
+            cli_instance.console.print(f"エッジ数: {len(graph.edges)}")
+            if graph.metadata and "cycles" in graph.metadata:
+                cycles = graph.metadata["cycles"]
+                if cycles:
+                    cli_instance.console.print(f"循環数: {len(cycles)}")
+
+            # 視覚化オプション
+            if visualize:
+                progress.update(task, description="🎨 視覚化中...")
+                from ..core.analyzer.graph_processor import GraphProcessor
+
+                output_image = f"{input_file}.deps.png"
+                processor = GraphProcessor()
+                processor.visualize_graph(graph, output_image)
+                cli_instance.console.print(
+                    f"📊 依存関係グラフを {output_image} に保存しました"
+                )
+
+        # 結果を表示
+        cli_instance.show_success_message(
+            "型推論と依存関係抽出が完了しました",
+            {
+                "入力": input_file,
+                "ノード数": str(len(graph.nodes)),
+                "エッジ数": str(len(graph.edges)),
+                "視覚化": "実行" if visualize else "スキップ",
+            },
+        )
+
+    except Exception as e:
+        cli_instance.show_error_message("型推論と依存関係抽出に失敗しました", str(e))
 
 
 if __name__ == "__main__":
