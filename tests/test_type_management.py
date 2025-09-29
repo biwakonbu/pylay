@@ -112,8 +112,8 @@ def test_v1_1_multiple_types():
 
     yaml_str = types_to_yaml(types_dict)
 
-    # 生成されたYAMLを確認
-    assert "types:" in yaml_str
+    # 生成されたYAMLを確認（新形式では types: なし）
+    assert "types:" not in yaml_str
     assert "User:" in yaml_str
     assert "UsersList:" in yaml_str
     assert "description: ユーザーを表す型" in yaml_str
@@ -156,8 +156,8 @@ def test_roundtrip_transparency():
         {"Product": Product, "Products": Products, "Result": Result}
     )
 
-    # 基本的な構造確認
-    assert "types:" in original_yaml
+    # 基本的な構造確認（新形式では types: なし）
+    assert "types:" not in original_yaml
     assert "Product:" in original_yaml
     assert "Products:" in original_yaml
     assert "Result:" in original_yaml
@@ -228,6 +228,19 @@ def test_circular_reference_detection():
     # 循環参照は検出されてエラーになることを確認
     with pytest.raises(ValueError, match="Circular reference detected"):
         yaml_to_spec(yaml_with_circular_refs)
+
+    # 自己参照の循環も検出
+    yaml_self_circular = """
+    types:
+      SelfRef:
+        type: dict
+        properties:
+          self:
+            type: list
+            items: SelfRef
+    """
+    with pytest.raises(ValueError, match="Circular reference detected"):
+        yaml_to_spec(yaml_self_circular)
 
 
 def test_nested_structures():
@@ -405,8 +418,7 @@ def test_complex_union_types():
     ComplexUnion = str | int | float | bool
 
     # Python型からYAMLに変換
-    # UnionType の __name__ エラーを回避するためスキップ
-    pytest.skip("ComplexUnion test temporarily skipped due to UnionType.__name__ issue")
+    yaml_str = type_to_yaml(ComplexUnion)
 
     # YAMLからspecを生成
     spec = yaml_to_spec(yaml_str)
@@ -464,7 +476,7 @@ def test_error_handling():
       - proper
       - dict
     """
-    with pytest.raises(ValueError, match="Invalid YAML structure"):
+    with pytest.raises(Exception):  # ValidationError
         yaml_to_spec(invalid_yaml)
 
     # 未定義の参照
@@ -487,6 +499,19 @@ def test_error_handling():
     with pytest.raises(Exception):  # PydanticのValidationError
         yaml_to_spec(incomplete_yaml)
 
+    # バリデーション失敗: Union型の無効データ
+    union_yaml = """
+    types:
+      TestUnion:
+        type: union
+        variants:
+          - type: str
+          - type: int
+    """
+    union_spec = yaml_to_spec(union_yaml)
+    union_data = {"invalid": "data"}  # dictはUnion[str|int]に合わない
+    assert validate_with_spec(union_spec.types["TestUnion"], union_data) is False
+
 
 def test_validate_with_spec_depth_limit():
     """validate_with_specの深さ制限テスト"""
@@ -500,11 +525,10 @@ def test_validate_with_spec_depth_limit():
     # 深さ制限なしで有効なデータ
     deep_data = {"value": {"value": {"value": {"value": {"value": "deep"}}}}}
     # 深さ制限を超えない場合
-    assert validate_with_spec(deep_spec, deep_data) is True  # max_depth パラメータ削除
+    assert validate_with_spec(deep_spec, deep_data) is True
 
     # 深さ制限を超えるとFalse
-    # max_depth パラメータはサポートされていないので、深さチェックをスキップ
-    # assert validate_with_spec(deep_spec, deep_data, max_depth=3) is False
+    assert validate_with_spec(deep_spec, deep_data, max_depth=3) is False
 
     # 浅い構造はOK
     shallow_spec = DictTypeSpec(
@@ -513,9 +537,7 @@ def test_validate_with_spec_depth_limit():
         properties={"value": TypeSpec(name="str", type="str")},
     )
     shallow_data = {"value": "test"}
-    assert (
-        validate_with_spec(shallow_spec, shallow_data) is True
-    )  # max_depth サポートなし
+    assert validate_with_spec(shallow_spec, shallow_data) is True
 
 
 @pytest.mark.skip(reason="関数が削除されたためスキップ")

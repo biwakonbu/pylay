@@ -5,10 +5,10 @@
 ## 必須遵守事項
 
 - **言語ポリシー**: コメント、ドキュメント、コミットメッセージなど、自然言語で表現する必要がある箇所では日本語を使用してください。また、すべての自然言語のやりとり（会話、説明、ドキュメント、コメント）は日本語で統一してください
-- すべての実装/編集/生成タスクは、まず [AGENTS.md](mdc:AGENTS.md) のプロジェクト概要、アーキテクチャ、技術スタックを確認してください
-- 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](mdc:AGENTS.md) に記載された方法を使用してください
-- コーディング規約、命名規則、テスト指針は [AGENTS.md](mdc:AGENTS.md) に厳密に従ってください
-- セキュリティ考慮事項、環境変数設定は [AGENTS.md](mdc:AGENTS.md) に記載されたポリシーを遵守してください
+- すべての実装/編集/生成タスクは、まず [AGENTS.md](AGENTS.md) のプロジェクト概要、アーキテクチャ、技術スタックを確認してください
+- 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](AGENTS.md) に記載された方法を使用してください
+- コーディング規約、命名規則、テスト指針は [AGENTS.md](AGENTS.md) に厳密に従ってください
+- セキュリティ考慮事項、環境変数設定は [AGENTS.md](AGENTS.md) に記載されたポリシーを遵守してください
 - プロジェクトステータス（実装済み/開発予定）を確認し、未実装の機能に対しては「未実装/計画中」と明記してください
 - シェルコマンド実行の制限事項（単一コマンドの実行、環境変数の設定制限）を厳守してください
 - ドキュメント整合ポリシーを遵守し、実装とドキュメントの乖離を防いでください
@@ -159,7 +159,7 @@ pylay/
 
 ### 4.1 必要なツール
 - Python 3.13+
-- [uv](https://github.com/astral-sh/uv) (推奨) または [Poetry](https://python-poetry.org/)
+- [uv](https://github.com/astral-sh/uv)
 - [pre-commit](https://pre-commit.com/)
 
 ### 4.2 Pythonランタイム管理ポリシー
@@ -172,13 +172,9 @@ pylay/
 ### 4.3 セットアップ手順
 ```bash
 # 1. 依存関係をインストール（Python 3.13環境が自動作成されます）
-make install
-# または
 uv sync
 
 # 2. pre-commitフックをインストール
-make pre-commit-install
-# または
 uv run pre-commit install
 ```
 
@@ -198,7 +194,51 @@ python -m pytest
 mypy
 ```
 
-### 4.5 VSCode設定
+### 4.5 Makefile の使い方
+Makefile は開発コマンドを統一的に管理するためのツールです。主要なコマンドをリストアップし、各コマンドの説明と使用例を記述します。`make help` で全コマンドを表示可能です。
+
+- **make install**: 依存関係をインストールします。初回セットアップに使用。
+  使用例: `make install`
+
+- **make dev**: 開発環境をセットアップ（インストール + pre-commitインストール）。
+  使用例: `make dev`
+
+- **make format**: コードをRuffでフォーマットします。
+  使用例: `make format`
+
+- **make lint**: Ruffでコードをチェックし、修正可能な問題を自動修正します。
+  使用例: `make lint`
+
+- **make type-check**: mypyで型チェックを実行します。
+  使用例: `make type-check`
+
+- **make test**: pytestでテストを実行し、カバレッジレポートを生成します。
+  使用例: `make test`
+
+- **make test-fast**: カバレッジなしで高速テストを実行します。
+  使用例: `make test-fast`
+
+- **make coverage**: カバレッジレポートを表示します。
+  使用例: `make coverage`
+
+- **make quality-check**: 型チェックとリンターを一括実行します。
+  使用例: `make quality-check`
+
+- **make analyze**: pyproject.toml の設定に基づいてプロジェクト全体の型解析とドキュメント生成を実行します。target_dirs で指定されたディレクトリをスキャンし、型情報をYAMLにエクスポート、依存関係を抽出、Markdownドキュメントを生成します。出力は docs/pylay-types/ に documents/ と src/ 等の階層構造で整理されます。
+  使用例: `make analyze`
+
+- **make all-check**: フォーマット、型チェック、テスト、品質チェック、プロジェクト解析を一括実行します。
+  使用例: `make all-check`
+
+- **make clean**: キャッシュと一時ファイルをクリーンアップします。
+  使用例: `make clean`
+
+- **make ci**: CIで実行する全チェックを実行します。
+  使用例: `make ci`
+
+これらのコマンドは、uv run を使用して仮想環境内で実行されます。詳細は `make help` を参照してください。
+
+### 4.6 VSCode設定
 VSCodeを使用する場合、以下の拡張機能が推奨されます：
 - Python（Microsoft社提供）
 - Pylint

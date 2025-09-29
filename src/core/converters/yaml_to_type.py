@@ -18,7 +18,7 @@ from src.core.schemas.yaml_type_spec import (
 
 def yaml_to_spec(
     yaml_str: str, root_key: str | None = None
-) -> TypeSpec | TypeRoot | RefPlaceholder:
+) -> TypeSpec | TypeRoot | RefPlaceholder | None:
     """YAML文字列からTypeSpecまたはTypeRootを生成 (v1.1対応、参照解決付き)"""
     yaml_parser = YAML()
     data = yaml_parser.load(yaml_str)
@@ -26,7 +26,7 @@ def yaml_to_spec(
     # v1.1: ルートがdictの場合、トップレベルキーを型名として扱う
     if isinstance(data, dict) and not root_key:
         if "types" in data:
-            # 複数型: 循環参照を許容するため検出をスキップ
+            # 旧形式: 複数型（types: コンテナ使用）
             types_data = data["types"]
             # _detect_circular_references_from_data(types_data)
 
@@ -36,35 +36,27 @@ def yaml_to_spec(
             resolved_types = _resolve_all_refs(type_root.types)
             # 参照解決されたTypeRootを返す
             return type_root.__class__(types=resolved_types)
+        elif len(data) > 1:
+            # 新形式: 複数型（トップレベルに直接型名キー）
+            types_dict = {k: _create_spec_from_data(v, k) for k, v in data.items()}
+            type_root = TypeRoot(types=types_dict)
+            # 参照解決を実行
+            resolved_types = _resolve_all_refs(type_root.types)
+            # 参照解決されたTypeRootを返す
+            return type_root.__class__(types=resolved_types)
         else:
-            # 単一型: 最初のキーを型名としてTypeSpec作成
-            if len(data) == 1:
-                type_name, spec_data = next(iter(data.items()))
-                if not isinstance(spec_data, dict):
-                    raise ValueError(
-                        f"Invalid YAML structure for type '{type_name}': expected dict, got {type(spec_data).__name__}"
-                    )
-                spec_data["name"] = type_name  # nameを補完（オプション）
-                spec = _create_spec_from_data(spec_data)
-                # 単一型の場合も参照解決を実行（循環参照チェックのため）
-                context = TypeContext()
-                context.add_type(type_name, spec)
-                return context.resolve_ref(spec)
+            # 従来v1または指定root_key: nameフィールドで処理
+            if len(data) == 1 and "type" not in data:
+                # トップレベルが型名の場合 (例: TestDict: {type: dict, ...})
+                key, value = list(data.items())[0]
+                spec = _create_spec_from_data(value, key)
             else:
-                # 複数単一型: 循環参照を許容するため検出をスキップ
-                # _detect_circular_references_from_data(data)
-                type_root = TypeRoot(types=data)
-                resolved_types = _resolve_all_refs(type_root.types)
-                # 参照解決されたTypeRootを返す
-                return type_root.__class__(types=resolved_types)
-    elif isinstance(data, dict):
-        # 従来v1または指定root_key: nameフィールドで処理
-        spec = _create_spec_from_data(data, root_key)
-        # 参照解決（循環参照チェックのため）
-        context = TypeContext()
-        if spec.name:
-            context.add_type(spec.name, spec)
-        return context.resolve_ref(spec)
+                spec = _create_spec_from_data(data, root_key)
+            # 参照解決（循環参照チェックのため）
+            context = TypeContext()
+            if spec.name:
+                context.add_type(spec.name, spec)
+            return context.resolve_ref(spec)
     elif isinstance(data, list):
         # リストの場合は最初の要素をTypeSpecとして処理
         if not data:
@@ -206,8 +198,12 @@ def _collect_refs_from_spec(spec: TypeSpec) -> list[str]:
     return refs
 
 
-def validate_with_spec(spec: TypeSpecOrRef, data: Any) -> bool:
+def validate_with_spec(
+    spec: TypeSpecOrRef, data: Any, max_depth: int = 10, current_depth: int = 0
+) -> bool:
     """TypeSpecに基づいてデータをバリデーション"""
+    if current_depth > max_depth:
+        return False  # 深さ制限超過
     try:
         # 参照文字列の場合、常にTrue（参照解決は別途）
         if isinstance(spec, str):
@@ -217,15 +213,23 @@ def validate_with_spec(spec: TypeSpecOrRef, data: Any) -> bool:
                 return False
             for key, prop_spec in spec.properties.items():
                 if key in data:
-                    if not validate_with_spec(prop_spec, data[key]):
+                    if not validate_with_spec(
+                        prop_spec, data[key], max_depth, current_depth + 1
+                    ):
                         return False
             return True
         elif isinstance(spec, ListTypeSpec):
             if not isinstance(data, list):
                 return False
-            return all(validate_with_spec(spec.items, item) for item in data)
+            return all(
+                validate_with_spec(spec.items, item, max_depth, current_depth + 1)
+                for item in data
+            )
         elif isinstance(spec, UnionTypeSpec):
-            return any(validate_with_spec(variant, data) for variant in spec.variants)
+            return any(
+                validate_with_spec(variant, data, max_depth, current_depth + 1)
+                for variant in spec.variants
+            )
         elif isinstance(spec, TypeSpec):
             # 基本型バリデーション
             if spec.type == "str":

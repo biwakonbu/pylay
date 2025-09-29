@@ -77,3 +77,17 @@ def combine(a: str | int) -> list[str] | dict[str, int]:
         assert isinstance(graph, nx.DiGraph)
         assert "str | int" in graph.nodes()
         assert "list[str] | dict[str, int]" in graph.nodes()
+
+    def test_union_in_generic_types(self):
+        """Generic型内のUnionテスト（List[str | int]など）"""
+        code = """
+from typing import List
+
+def process_items(items: List[str | int]) -> List[str]:
+    return [str(item) for item in items]
+"""
+        graph = extract_dependencies_from_code(code)
+
+        assert isinstance(graph, nx.DiGraph)
+        assert "List" in graph.nodes()
+        assert "List[str | int]" in graph.nodes()

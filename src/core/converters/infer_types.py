@@ -15,7 +15,7 @@ from collections.abc import Mapping
 
 
 def infer_types_from_code(
-    code: str, module_name: str = "temp_module"
+    code: str, module_name: str = "temp_module", config_file: str | None = None
 ) -> dict[str, Any]:
     """
     与えられたPythonコードから型を推論します。
@@ -23,6 +23,7 @@ def infer_types_from_code(
     Args:
         code: 推論対象のPythonコード
         module_name: 一時的なモジュール名
+        config_file: mypy設定ファイルのパス（pyproject.tomlなど）
 
     Returns:
         推論された型情報の辞書
@@ -36,9 +37,18 @@ def infer_types_from_code(
         temp_file_path = f.name
 
     try:
+        # mypy コマンドの構築
+        cmd = ["uv", "run", "mypy", "--infer", "--dump-type-stats"]
+
+        # 設定ファイルが指定されている場合は追加
+        if config_file:
+            cmd.extend(["--config-file", config_file])
+
+        cmd.append(temp_file_path)
+
         # mypy --infer を実行
         result = subprocess.run(
-            ["uv", "run", "mypy", "--infer", "--dump-type-stats", temp_file_path],
+            cmd,
             capture_output=True,
             text=True,
             cwd=Path(__file__).parent.parent.parent,  # pylayルート
@@ -106,12 +116,15 @@ def merge_inferred_types(
     return merged
 
 
-def infer_types_from_file(file_path: str) -> dict[str, Any]:
+def infer_types_from_file(
+    file_path: str, config_file: str | None = None
+) -> dict[str, Any]:
     """
     ファイルから型を推論します。
 
     Args:
         file_path: Pythonファイルのパス
+        config_file: mypy設定ファイルのパス（pyproject.tomlなど）
 
     Returns:
         推論された型情報の辞書
@@ -120,7 +133,7 @@ def infer_types_from_file(file_path: str) -> dict[str, Any]:
         code = f.read()
 
     module_name = Path(file_path).stem
-    return infer_types_from_code(code, module_name)
+    return infer_types_from_code(code, module_name, config_file)
 
 
 def extract_existing_annotations(file_path: str) -> dict[str, str]:

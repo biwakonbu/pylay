@@ -1,4 +1,4 @@
-from typing import Any, Union, Literal, Optional, Annotated, ForwardRef, NewType
+from typing import Any, Literal, Optional, Annotated, ForwardRef, NewType
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 
@@ -47,23 +47,29 @@ class TypeSpec(BaseModel):
 
 
 # 参照解決のための型エイリアス（前方参照用）
-TypeSpecOrRef = Union[RefPlaceholder, str, "TypeSpec"]
+type TypeSpecOrRef = RefPlaceholder | str | TypeSpec
 
 
 class ListTypeSpec(TypeSpec):
     """リスト型の仕様"""
 
     type: Literal["list"] = "list"
-    items: TypeSpecOrRef = Field(
-        ..., description="リストの要素型 (参照文字列またはTypeSpec)"
-    )
+    items: Any = Field(..., description="リストの要素型 (参照文字列またはTypeSpec)")
+
+    @field_validator("items", mode="before")
+    @classmethod
+    def validate_items(cls, v: Any) -> Any:
+        """itemsの前処理バリデーション（dictをTypeSpecに変換）"""
+        if isinstance(v, dict):
+            return _create_spec_from_data(v)
+        return v
 
 
 class DictTypeSpec(TypeSpec):
     """辞書型の仕様（プロパティの型をTypeSpecOrRefに統一）"""
 
     type: Literal["dict"] = "dict"
-    properties: dict[str, TypeSpecOrRef] = Field(
+    properties: dict[str, Any] = Field(
         default_factory=dict, description="辞書のプロパティ (参照文字列またはTypeSpec)"
     )
     additional_properties: bool = Field(False, description="追加プロパティ許可")
@@ -91,18 +97,46 @@ class UnionTypeSpec(TypeSpec):
     """Union型の仕様（参照型をTypeSpecOrRefに統一）"""
 
     type: Literal["union"] = "union"
-    variants: list[TypeSpecOrRef] = Field(
+    variants: list[Any] = Field(
         ..., description="Unionのバリアント (参照文字列またはTypeSpec)"
     )
+
+    @field_validator("variants", mode="before")
+    @classmethod
+    def validate_variants(cls, v: Any) -> Any:
+        """variantsの前処理バリデーション（dictをTypeSpecに変換）"""
+        if isinstance(v, list):
+            result = []
+            for item in v:
+                if isinstance(item, dict):
+                    result.append(_create_spec_from_data(item))
+                else:
+                    result.append(item)
+            return result
+        return v
 
 
 class GenericTypeSpec(TypeSpec):
     """Generic型の仕様（例: Generic[T]）（参照型をTypeSpecOrRefに統一）"""
 
     type: Literal["generic"] = "generic"
-    params: list[TypeSpecOrRef] = Field(
+    params: list[Any] = Field(
         ..., description="Genericのパラメータ (参照文字列またはTypeSpec)"
     )
+
+    @field_validator("params", mode="before")
+    @classmethod
+    def validate_params(cls, v: Any) -> Any:
+        """paramsの前処理バリデーション（dictをTypeSpecに変換）"""
+        if isinstance(v, list):
+            result = []
+            for item in v:
+                if isinstance(item, dict):
+                    result.append(_create_spec_from_data(item))
+                else:
+                    result.append(item)
+            return result
+        return v
 
     @model_validator(mode="after")
     def validate_generic_depth(self) -> "GenericTypeSpec":
@@ -205,22 +239,25 @@ def _create_spec_from_data(data: dict, root_key: str | None = None) -> TypeSpec:
     # 参照文字列を保持するための前処理
     processed_data = _preprocess_refs_for_spec_creation(data)
 
+    # nameが設定されていない場合、root_keyから設定
+    if "name" not in processed_data and root_key:
+        processed_data["name"] = root_key
+
     type_key = processed_data.get("type")
     if type_key == "list":
         # itemsが参照文字列の場合は明示的にListTypeSpecとして作成
         items_value = processed_data.get("items")
         if isinstance(items_value, str):
-            # 参照文字列の場合は明示的にListTypeSpecを作成
-            return ListTypeSpec(
-                name=processed_data.get("name"),
-                type=type_key,
-                description=processed_data.get("description"),
-                required=processed_data.get("required", True),
-                items=items_value,  # 参照文字列をそのまま保持
-            )
+            # 参照文字列の場合は明示的にListTypeSpecとして作成
+            return ListTypeSpec(**processed_data)
         else:
             return ListTypeSpec(**processed_data)
     elif type_key == "dict":
+        # properties内のdictをTypeSpecに変換
+        processed_data["properties"] = {
+            k: _create_spec_from_data(v, None) if isinstance(v, dict) else v
+            for k, v in processed_data["properties"].items()
+        }
         return DictTypeSpec(**processed_data)
     elif type_key == "union":
         return UnionTypeSpec(**processed_data)
@@ -228,8 +265,6 @@ def _create_spec_from_data(data: dict, root_key: str | None = None) -> TypeSpec:
         return GenericTypeSpec(**processed_data)
     else:
         # 基本型: nameをroot_keyから補完（v1.1対応）
-        if root_key:
-            processed_data["name"] = root_key
         return TypeSpec(**processed_data)
 
 

@@ -67,7 +67,11 @@ tui-run: ## TUI アプリを起動
 tui-test: ## TUI 関連テストを実行
 	uv run pytest tests/test_tui/
 
-all-check: format type-check test quality-check ## すべてのチェックを実行（フォーマット → 型チェック → テスト → 品質チェック）
+# 新しいターゲット: プロジェクト解析と生成
+analyze: ## プロジェクト全体を解析し、型情報、依存関係、ドキュメントを生成します。
+	uv run pylay project-analyze
+
+all-check: format type-check test quality-check analyze ## フォーマット、型チェック、テスト、品質チェック、プロジェクト解析を一括実行します。
 
 clean: ## キャッシュと一時ファイルをクリーンアップ
 	uv run ruff clean
