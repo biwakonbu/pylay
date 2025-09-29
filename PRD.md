@@ -66,6 +66,25 @@ Pythonのtype hintとdocstringsを活用した、types（型情報）とdocs（�
 - エントリーポイントスクリプト: generate_type_docs.py, generate_yaml_docs.py, infer_deps.py など。
 - テストフレームワーク: pytestによるラウンドトリップテスト（型 -> YAML -> 型 -> MDの整合性、依存抽出の正確性）。
 
+### 2.6 プロジェクト全体解析機能（pyproject.toml統合）
+- **設定駆動解析**: pyproject.tomlの[tool.pylay]セクションで設定を一元管理。
+- **ディレクトリ走査**: 指定ディレクトリ内のPythonファイルを自動検出・解析。
+- **一括生成**: 型情報抽出、依存関係グラフ化、YAML/Markdownドキュメント生成を一括実行。
+- **CLI統合**: `pylay project-analyze`コマンドで実行（dry-run、verboseモード対応）。
+- **設定項目**:
+  - target_dirs: 解析対象ディレクトリ
+  - output_dir: 出力先ディレクトリ
+  - generate_markdown: Markdown生成有無
+  - extract_deps: 依存関係抽出有無
+  - exclude_patterns: 除外パターン
+  - infer_level: 型推論レベル
+- **出力構造**:
+  ```
+  docs/pylay-types/
+  ├── src/                    # YAML型仕様
+  └── documents/              # Markdownドキュメント
+  ```
+
 ## 3. 非機能要件
 
 ### 3.1 パフォーマンス
