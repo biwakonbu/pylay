@@ -2,7 +2,6 @@
 型推論機能のテスト
 """
 
-import pytest
 from pathlib import Path
 from core.converters.infer_types import (
     infer_types_from_code,

@@ -6,10 +6,8 @@ ProjectAnalyzerの各チェック機能をモックでテスト。
 
 import pytest
 from unittest.mock import patch
-from pathlib import Path
 
 from src.cli.analyze_issues import ProjectAnalyzer, CheckResult
-from src.core.schemas.pylay_config import PylayConfig
 
 
 class TestProjectAnalyzer:

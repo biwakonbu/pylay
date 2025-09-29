@@ -3,7 +3,6 @@ ForwardRefと循環参照のテスト用コード
 """
 
 from __future__ import annotations
-from typing import Optional
 
 
 class Node:

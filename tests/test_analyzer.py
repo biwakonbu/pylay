@@ -6,7 +6,6 @@ analyzerモジュールのテスト
 
 import pytest
 import subprocess
-from pathlib import Path
 from unittest.mock import patch
 
 from src.core.analyzer.base import Analyzer, create_analyzer, FullAnalyzer

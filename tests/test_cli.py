@@ -1,10 +1,6 @@
 """CLI 機能のテスト"""
 
-import pytest
 from click.testing import CliRunner
-from pathlib import Path
-import tempfile
-import os
 
 from src.cli.main import cli
 
