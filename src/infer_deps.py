@@ -36,23 +36,24 @@ def main() -> None:
 
     print(f"Processing {file_path}...")
 
-    # 型推論
-    try:
-        existing_annotations = extract_existing_annotations(file_path)
-        inferred_types = infer_types_from_file(file_path)
-        merged_types = merge_inferred_types(existing_annotations, inferred_types)
+    # analyzerを使用して解析
+    from src.core.analyzer.base import create_analyzer
+    from src.core.schemas.pylay_config import PylayConfig
+    from src.core.analyzer.graph_processor import GraphProcessor
 
-        print("推論された型:")
-        for var, typ in merged_types.items():
-            print(f"  {var}: {typ}")
+    config = PylayConfig()
+    analyzer = create_analyzer(config, mode="full")
+    graph = analyzer.analyze(file_path)
 
-    except Exception as e:
-        print(f"型推論に失敗しました: {e}")
+    # 型推論結果表示
+    print("推論された型:")
+    for node in graph.nodes:
+        if node.attributes and "inferred_type" in node.attributes:
+            print(f"  {node.name}: {node.attributes['inferred_type']}")
 
-    # 依存関係抽出
-    try:
-        deps_graph = extract_dependencies_from_file(file_path)
-        yaml_spec = convert_graph_to_yaml_spec(deps_graph)
+    # 依存関係YAML
+    processor = GraphProcessor()
+    yaml_spec = processor.convert_graph_to_yaml_spec(graph)
 
         # YAML出力
         output_yaml = f"{file_path}.deps.yaml"
@@ -62,7 +63,7 @@ def main() -> None:
         print(f"依存関係を {output_yaml} に保存しました。")
 
         # 視覚化（オプション）
-        visualize_dependencies(deps_graph, f"{file_path}.deps.png")
+        processor.visualize_graph(graph, f"{file_path}.deps.png")
 
     except Exception as e:
         print(f"依存関係抽出に失敗しました: {e}")

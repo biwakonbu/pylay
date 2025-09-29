@@ -17,6 +17,7 @@ def _recursive_dump(obj: Any) -> Any:
 
 from ruamel.yaml import YAML
 from pathlib import Path
+from typing import Any
 
 from src.core.schemas.yaml_type_spec import (
     TypeSpec,
@@ -26,6 +27,7 @@ from src.core.schemas.yaml_type_spec import (
     GenericTypeSpec,
     TypeSpecOrRef,
 )
+from src.core.schemas.graph_types import TypeDependencyGraph
 
 MAX_DEPTH = 10  # Generic再帰の深さ制限
 
@@ -171,7 +173,7 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
                 properties=properties,
             )
 
-    elif issubclass(origin, Generic) or origin is Generic:
+    elif origin is Generic:
         # Generic[T]型（カスタムGenericサポート）
         if args:
             generic_args = _recurse_generic_args(args)
@@ -415,6 +417,38 @@ def extract_types_from_module(module_path: str | Path) -> str | None:
         return output.getvalue().strip()
     else:
         return None  # 空の場合、Noneを返す（ノイズ回避）
+
+
+def graph_to_yaml(graph: TypeDependencyGraph, output_file: str | None = None) -> str:
+    """
+    TypeDependencyGraphからYAML形式の依存仕様を生成します。
+
+    Args:
+        graph: 型依存グラフ
+        output_file: 出力ファイルパス（Noneの場合、文字列として返す）
+
+    Returns:
+        YAML形式の依存仕様文字列
+    """
+    from src.core.analyzer.graph_processor import GraphProcessor
+
+    processor = GraphProcessor()
+    yaml_data = processor.convert_graph_to_yaml_spec(graph)
+
+    yaml_parser = YAML()
+    yaml_parser.preserve_quotes = True
+    yaml_parser.indent(mapping=2, sequence=4, offset=2)
+
+    import io
+    output = io.StringIO()
+    yaml_parser.dump(yaml_data, output)
+    yaml_str = output.getvalue().strip()
+
+    if output_file:
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(yaml_str)
+
+    return yaml_str
 
 
 # 例

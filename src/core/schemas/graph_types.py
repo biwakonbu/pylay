@@ -66,7 +66,7 @@ class GraphEdge(BaseModel):
     source: str
     target: str
     relation_type: RelationType
-    weight: float = 1.0
+    weight: float = Field(default=1.0, ge=0.0, le=1.0)  # 0.0から1.0の範囲
     attributes: Optional[dict[str, Any]] = None
     metadata: Optional[dict[str, Any]] = None
 
@@ -88,6 +88,7 @@ class TypeDependencyGraph(BaseModel):
     nodes: list[GraphNode]
     edges: list[GraphEdge]
     metadata: Optional[dict[str, Any]] = None
+    inferred_nodes: Optional[list[GraphNode]] = None  # 推論されたノード
 
     def add_node(self, node: GraphNode) -> None:
         """ノードを追加"""

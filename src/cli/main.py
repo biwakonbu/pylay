@@ -177,7 +177,17 @@ def analyze_types(input: str, output_yaml: Optional[str], infer: bool) -> None:
         if "error" in result.lower():
             raise click.Abort("mypy エラー: 型推論失敗")
 
-    types_yaml = extract_types_from_module(Path(input))
+    # analyzerを使用して型抽出
+    from src.core.analyzer.base import create_analyzer
+    from src.core.schemas.pylay_config import PylayConfig
+
+    config = PylayConfig()
+    analyzer = create_analyzer(config, mode="types_only")
+    graph = analyzer.analyze(Path(input))
+
+    # グラフからYAML生成
+    from src.core.converters.type_to_yaml import graph_to_yaml
+    types_yaml = graph_to_yaml(graph)
     if output_yaml:
         with open(output_yaml, "w") as f:
             f.write(types_yaml)

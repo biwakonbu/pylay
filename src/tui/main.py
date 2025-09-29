@@ -272,51 +272,50 @@ class PylayCLI:
                 task = progress.add_task("🔍 型推論を実行中...", total=None)
 
                 # 型推論を実行
-                from src.core.converters.infer_types import (
-                    infer_types_from_file,
-                    extract_existing_annotations,
-                    merge_inferred_types,
-                )
+                from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+                from src.core.schemas.pylay_config import PylayConfig
 
-                existing_annotations = extract_existing_annotations(input_path)
-                inferred_types = infer_types_from_file(input_path)
-                merged_types = merge_inferred_types(
-                    existing_annotations, inferred_types
-                )
+                config = PylayConfig()
+                analyzer = TypeInferenceAnalyzer(config)
+                inferred_graph = analyzer.analyze(input_path)
 
                 progress.update(task, description="📊 依存関係を抽出中...")
 
                 # 依存関係抽出
-                from src.core.converters.ast_dependency_extractor import (
-                    ASTDependencyExtractor,
-                )
+                from src.core.analyzer.dependency_extractor import DependencyExtractionAnalyzer
 
-                extractor = ASTDependencyExtractor()
-                graph = extractor.extract_dependencies(input_path, include_mypy=True)
+                dep_analyzer = DependencyExtractionAnalyzer(config)
+                graph = dep_analyzer.analyze(input_path)
 
                 progress.update(task, description="📄 結果を保存中...")
 
                 # 結果を表示
                 self.console.print(f"\n[bold green]✅ 型推論完了[/bold green]")
-                if merged_types:
+                if inferred_graph.nodes:
                     table = Table(title="推論された型", show_header=True)
                     table.add_column("変数名", style="cyan")
                     table.add_column("型", style="white")
-                    for var, typ in merged_types.items():
-                        table.add_row(var, str(typ))
+                    for node in inferred_graph.nodes:
+                        if node.attributes and "inferred_type" in node.attributes:
+                            table.add_row(node.name, node.attributes["inferred_type"])
                     self.console.print(table)
 
                 self.console.print(f"\n[bold green]✅ 依存関係抽出完了[/bold green]")
                 self.console.print(f"ノード数: {len(graph.nodes)}")
                 self.console.print(f"エッジ数: {len(graph.edges)}")
+                if graph.metadata and "cycles" in graph.metadata:
+                    cycles = graph.metadata["cycles"]
+                    if cycles:
+                        self.console.print(f"循環数: {len(cycles)}")
 
                 # 視覚化オプション
                 if visualize:
                     progress.update(task, description="🎨 視覚化中...")
-                    from src.core.extract_deps import visualize_dependencies
+                    from src.core.analyzer.graph_processor import GraphProcessor
 
                     output_image = f"{input_path}.deps.png"
-                    visualize_dependencies(graph, output_image)
+                    processor = GraphProcessor()
+                    processor.visualize_graph(graph, output_image)
                     self.console.print(
                         f"📊 依存関係グラフを {output_image} に保存しました"
                     )
