@@ -29,7 +29,9 @@ class GraphProcessor:
         """プロセッサを初期化"""
         self.nx_available = nx is not None
         if not self.nx_available:
-            print("警告: networkxがインストールされていません。一部の機能が制限されます。")
+            print(
+                "警告: networkxがインストールされていません。一部の機能が制限されます。"
+            )
 
     def analyze_cycles(self, graph: TypeDependencyGraph) -> list[list[str]]:
         """
@@ -72,8 +74,12 @@ class GraphProcessor:
             "is_directed": nx_graph.is_directed(),
         }
         if nx_graph.is_directed():
-            metrics["strongly_connected_components"] = list(nx.strongly_connected_components(nx_graph))
-            metrics["weakly_connected_components"] = list(nx.weakly_connected_components(nx_graph))
+            metrics["strongly_connected_components"] = list(
+                nx.strongly_connected_components(nx_graph)
+            )
+            metrics["weakly_connected_components"] = list(
+                nx.weakly_connected_components(nx_graph)
+            )
         else:
             metrics["connected_components"] = list(nx.connected_components(nx_graph))
         return metrics
@@ -83,7 +89,7 @@ class GraphProcessor:
         graph: TypeDependencyGraph,
         output_path: Union[Path, str],
         format_type: str = "png",
-        layout: str = "spring"
+        layout: str = "spring",
     ) -> None:
         """
         グラフを視覚化して画像ファイルに保存します。
@@ -125,7 +131,9 @@ class GraphProcessor:
                 node_id,
                 label=node_label,
                 shape="box" if node_data.get("node_type") == "class" else "ellipse",
-                color="red" if node_data.get("node_type") == "inferred_variable" else "black",
+                color="red"
+                if node_data.get("node_type") == "inferred_variable"
+                else "black",
             )
             dot_graph.add_node(dot_node)
 
@@ -171,15 +179,15 @@ class GraphProcessor:
                 "type": node_type,
                 "depends_on": predecessors,
                 "used_by": successors,
-                "relations": [
-                    e.relation_type for e in graph.get_edges_to(node.id)
-                ],
+                "relations": [e.relation_type for e in graph.get_edges_to(node.id)],
                 "attributes": node.attributes,
             }
 
         return {"dependencies": dependencies}
 
-    def export_graphml(self, graph: TypeDependencyGraph, output_path: Union[Path, str]) -> None:
+    def export_graphml(
+        self, graph: TypeDependencyGraph, output_path: Union[Path, str]
+    ) -> None:
         """
         グラフをGraphML形式でエクスポートします。
 

@@ -59,8 +59,13 @@ class FullAnalyzer(Analyzer):
 
     def __init__(self, config: PylayConfig) -> None:
         super().__init__(config)
-        from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer as TypeInfAnalyzer
-        from src.core.analyzer.dependency_extractor import DependencyExtractionAnalyzer as DepAnalyzer
+        from src.core.analyzer.type_inferrer import (
+            TypeInferenceAnalyzer as TypeInfAnalyzer,
+        )
+        from src.core.analyzer.dependency_extractor import (
+            DependencyExtractionAnalyzer as DepAnalyzer,
+        )
+
         self.type_analyzer = TypeInfAnalyzer(config)
         self.dep_analyzer = DepAnalyzer(config)
 
@@ -88,7 +93,10 @@ class FullAnalyzer(Analyzer):
                 type_str = node.attributes["inferred_type"]
                 if type_str != "Any":
                     # 型参照を抽出してエッジ追加（簡易）
-                    from src.core.analyzer.dependency_extractor import DependencyExtractionAnalyzer
+                    from src.core.analyzer.dependency_extractor import (
+                        DependencyExtractionAnalyzer,
+                    )
+
                     temp_analyzer = DependencyExtractionAnalyzer(self.config)
                     type_refs = temp_analyzer._extract_type_refs_from_string(type_str)
                     for ref in type_refs:
@@ -102,10 +110,12 @@ class FullAnalyzer(Analyzer):
                             combined_edges.append(edge)
 
         # メタデータ更新
-        combined_metadata.update({
-            "analysis_type": "full",
-            "inferred_nodes_count": len(inferred_graph.nodes),
-        })
+        combined_metadata.update(
+            {
+                "analysis_type": "full",
+                "inferred_nodes_count": len(inferred_graph.nodes),
+            }
+        )
 
         return TypeDependencyGraph(
             nodes=combined_nodes,
@@ -129,15 +139,23 @@ def create_analyzer(config: PylayConfig, mode: str = "full") -> Analyzer:
         ValueError: 無効なmodeが指定された場合
     """
     if mode == "types_only":
-        from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer as TypeInfAnalyzer
+        from src.core.analyzer.type_inferrer import (
+            TypeInferenceAnalyzer as TypeInfAnalyzer,
+        )
+
         return TypeInfAnalyzer(config)
     elif mode == "deps_only":
-        from src.core.analyzer.dependency_extractor import DependencyExtractionAnalyzer as DepAnalyzer
+        from src.core.analyzer.dependency_extractor import (
+            DependencyExtractionAnalyzer as DepAnalyzer,
+        )
+
         return DepAnalyzer(config)
     elif mode == "full":
         return FullAnalyzer(config)
     else:
-        raise ValueError(f"無効な解析モード: {mode}. 'types_only', 'deps_only', 'full' のいずれかを指定してください。")
+        raise ValueError(
+            f"無効な解析モード: {mode}. 'types_only', 'deps_only', 'full' のいずれかを指定してください。"
+        )
 
 
 def get_supported_modes() -> list[str]:

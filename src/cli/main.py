@@ -187,6 +187,7 @@ def analyze_types(input: str, output_yaml: Optional[str], infer: bool) -> None:
 
     # グラフからYAML生成
     from src.core.converters.type_to_yaml import graph_to_yaml
+
     types_yaml = graph_to_yaml(graph)
     if output_yaml:
         with open(output_yaml, "w") as f:

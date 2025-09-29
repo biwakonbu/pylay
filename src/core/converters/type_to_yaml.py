@@ -440,6 +440,7 @@ def graph_to_yaml(graph: TypeDependencyGraph, output_file: str | None = None) ->
     yaml_parser.indent(mapping=2, sequence=4, offset=2)
 
     import io
+
     output = io.StringIO()
     yaml_parser.dump(yaml_data, output)
     yaml_str = output.getvalue().strip()

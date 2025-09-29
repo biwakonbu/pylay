@@ -15,7 +15,12 @@ except ImportError:
     nx = None
 
 from src.core.analyzer.base import Analyzer
-from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode, GraphEdge, RelationType
+from src.core.schemas.graph_types import (
+    TypeDependencyGraph,
+    GraphNode,
+    GraphEdge,
+    RelationType,
+)
 from src.core.schemas.pylay_config import PylayConfig
 
 
@@ -72,7 +77,9 @@ class DependencyExtractionAnalyzer(Analyzer):
         # グラフ構築
         metadata = {
             "source_file": file_path,
-            "extraction_method": "AST_analysis_with_mypy" if self.config.infer_level != "loose" else "AST_analysis",
+            "extraction_method": "AST_analysis_with_mypy"
+            if self.config.infer_level != "loose"
+            else "AST_analysis",
             "node_count": len(self.nodes),
             "edge_count": len(self.edges),
             "mypy_enabled": self.config.infer_level != "loose",
@@ -448,6 +455,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             return
         try:
             from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
             # 型推論を実行してノード/エッジ追加
             infer_analyzer = TypeInferenceAnalyzer(self.config)
             inferred_graph = infer_analyzer._analyze_from_file(Path(file_path))
@@ -462,7 +470,10 @@ class DependencyExtractionAnalyzer(Analyzer):
                             for ref in type_refs:
                                 if ref != node.name:
                                     self._add_edge(
-                                        node.name, ref, RelationType.REFERENCES, weight=0.5
+                                        node.name,
+                                        ref,
+                                        RelationType.REFERENCES,
+                                        weight=0.5,
                                     )
         except Exception:
             # mypy失敗時は無視

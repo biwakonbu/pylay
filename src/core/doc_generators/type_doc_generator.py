@@ -342,7 +342,9 @@ class LayerDocGenerator(DocumentGenerator):
         self.md.bullet_point(f"ノード数: {len(graph.nodes)}")
         self.md.bullet_point(f"エッジ数: {len(graph.edges)}")
         if graph.metadata:
-            self.md.bullet_point(f"抽出方法: {graph.metadata.get('extraction_method', 'unknown')}")
+            self.md.bullet_point(
+                f"抽出方法: {graph.metadata.get('extraction_method', 'unknown')}"
+            )
         self.md.line_break()
 
         # 循環検出
@@ -352,7 +354,7 @@ class LayerDocGenerator(DocumentGenerator):
                 self.md.heading(3, "⚠️ 循環依存")
                 for i, cycle in enumerate(cycles[:5]):  # 最初の5つ
                     cycle_str = " → ".join(cycle)
-                    self.md.bullet_point(f"サイクル {i+1}: {cycle_str}")
+                    self.md.bullet_point(f"サイクル {i + 1}: {cycle_str}")
                 if len(cycles) > 5:
                     self.md.bullet_point(f"他 {len(cycles) - 5} 個のサイクル")
             else:

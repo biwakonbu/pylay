@@ -10,7 +10,12 @@ from unittest.mock import patch
 
 from src.core.analyzer.base import Analyzer, create_analyzer, FullAnalyzer
 from src.core.analyzer.graph_processor import GraphProcessor
-from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode, GraphEdge, RelationType
+from src.core.schemas.graph_types import (
+    TypeDependencyGraph,
+    GraphNode,
+    GraphEdge,
+    RelationType,
+)
 from src.core.schemas.pylay_config import PylayConfig
 
 
@@ -26,14 +31,14 @@ class TestAnalyzerBase:
         """types_onlyモードのanalyzer作成"""
         config = PylayConfig()
         analyzer = create_analyzer(config, "types_only")
-        assert hasattr(analyzer, 'analyze')
+        assert hasattr(analyzer, "analyze")
         assert analyzer.config == config
 
     def test_create_analyzer_deps_only(self):
         """deps_onlyモードのanalyzer作成"""
         config = PylayConfig()
         analyzer = create_analyzer(config, "deps_only")
-        assert hasattr(analyzer, 'analyze')
+        assert hasattr(analyzer, "analyze")
         assert analyzer.config == config
 
     def test_create_analyzer_full(self):
@@ -66,13 +71,16 @@ def func(a: int) -> str:
 
         config = PylayConfig()
         from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
         analyzer = TypeInferenceAnalyzer(config)
         graph = analyzer.analyze(test_file)
 
         assert isinstance(graph, TypeDependencyGraph)
         assert len(graph.nodes) > 0
         # 推論された型を確認
-        inferred_nodes = [n for n in graph.nodes if n.attributes and "inferred_type" in n.attributes]
+        inferred_nodes = [
+            n for n in graph.nodes if n.attributes and "inferred_type" in n.attributes
+        ]
         assert len(inferred_nodes) > 0
 
     def test_analyze_code_string(self):
@@ -83,6 +91,7 @@ y: str
 """
         config = PylayConfig()
         from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
         analyzer = TypeInferenceAnalyzer(config)
         graph = analyzer.analyze(code)
 
@@ -94,6 +103,7 @@ y: str
         code = "x: int = 5"
         config = PylayConfig()
         from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
         analyzer = TypeInferenceAnalyzer(config)
         result = analyzer.infer_types_from_code(code)
 
@@ -106,6 +116,7 @@ y: str
         inferred = {"y": "str"}
         config = PylayConfig()
         from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
         analyzer = TypeInferenceAnalyzer(config)
         merged = analyzer.merge_inferred_types(existing, inferred)
 
@@ -130,6 +141,7 @@ def func(x: A) -> int:
 
         config = PylayConfig()
         from src.core.analyzer.dependency_extractor import DependencyExtractionAnalyzer
+
         analyzer = DependencyExtractionAnalyzer(config)
         graph = analyzer.analyze(test_file)
 
@@ -149,6 +161,7 @@ class A:
 """
         config = PylayConfig()
         from src.core.analyzer.dependency_extractor import DependencyExtractionAnalyzer
+
         analyzer = DependencyExtractionAnalyzer(config)
         graph = analyzer.analyze(code)
 
@@ -168,6 +181,7 @@ class B:
 
         config = PylayConfig()
         from src.core.analyzer.dependency_extractor import DependencyExtractionAnalyzer
+
         analyzer = DependencyExtractionAnalyzer(config)
         graph = analyzer.analyze(test_file)
 

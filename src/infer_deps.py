@@ -37,23 +37,24 @@ def main() -> None:
     print(f"Processing {file_path}...")
 
     # analyzerを使用して解析
-    from src.core.analyzer.base import create_analyzer
-    from src.core.schemas.pylay_config import PylayConfig
-    from src.core.analyzer.graph_processor import GraphProcessor
+    try:
+        from src.core.analyzer.base import create_analyzer
+        from src.core.schemas.pylay_config import PylayConfig
+        from src.core.analyzer.graph_processor import GraphProcessor
 
-    config = PylayConfig()
-    analyzer = create_analyzer(config, mode="full")
-    graph = analyzer.analyze(file_path)
+        config = PylayConfig()
+        analyzer = create_analyzer(config, mode="full")
+        graph = analyzer.analyze(file_path)
 
-    # 型推論結果表示
-    print("推論された型:")
-    for node in graph.nodes:
-        if node.attributes and "inferred_type" in node.attributes:
-            print(f"  {node.name}: {node.attributes['inferred_type']}")
+        # 型推論結果表示
+        print("推論された型:")
+        for node in graph.nodes:
+            if node.attributes and "inferred_type" in node.attributes:
+                print(f"  {node.name}: {node.attributes['inferred_type']}")
 
-    # 依存関係YAML
-    processor = GraphProcessor()
-    yaml_spec = processor.convert_graph_to_yaml_spec(graph)
+        # 依存関係YAML
+        processor = GraphProcessor()
+        yaml_spec = processor.convert_graph_to_yaml_spec(graph)
 
         # YAML出力
         output_yaml = f"{file_path}.deps.yaml"

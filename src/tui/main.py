@@ -282,7 +282,9 @@ class PylayCLI:
                 progress.update(task, description="📊 依存関係を抽出中...")
 
                 # 依存関係抽出
-                from src.core.analyzer.dependency_extractor import DependencyExtractionAnalyzer
+                from src.core.analyzer.dependency_extractor import (
+                    DependencyExtractionAnalyzer,
+                )
 
                 dep_analyzer = DependencyExtractionAnalyzer(config)
                 graph = dep_analyzer.analyze(input_path)
