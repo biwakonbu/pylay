@@ -8,16 +8,6 @@ Usage:
 
 import sys
 from pathlib import Path
-from type_extractor.infer_types import (
-    infer_types_from_file,
-    extract_existing_annotations,
-    merge_inferred_types,
-)
-from type_extractor.extract_deps import (
-    extract_dependencies_from_file,
-    convert_graph_to_yaml_spec,
-    visualize_dependencies,
-)
 import yaml
 
 

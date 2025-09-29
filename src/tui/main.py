@@ -13,7 +13,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from src.core.converters.yaml_to_type import yaml_to_spec, generate_pydantic_model
+from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.doc_generators.yaml_doc_generator import generate_yaml_docs
 from src.core.schemas.yaml_type_spec import TypeSpec
 from src.cli.commands.type_to_yaml import run_type_to_yaml

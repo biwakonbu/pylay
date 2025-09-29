@@ -10,10 +10,9 @@ import subprocess
 import tempfile
 import os
 from pathlib import Path
-from typing import Any, Union
-
 from src.core.analyzer.base import Analyzer
-from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode, RelationType
+from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode
+from src.core.schemas.analyzer_types import InferResult
 
 
 class TypeInferenceAnalyzer(Analyzer):
@@ -23,7 +22,7 @@ class TypeInferenceAnalyzer(Analyzer):
     mypyとASTを組み合わせた型推論を実行し、グラフを生成します。
     """
 
-    def analyze(self, input_path: Union[Path, str]) -> TypeDependencyGraph:
+    def analyze(self, input_path: Path | str) -> TypeDependencyGraph:
         """
         指定された入力から型推論を実行し、グラフを生成します。
 
@@ -39,13 +38,14 @@ class TypeInferenceAnalyzer(Analyzer):
         """
         if isinstance(input_path, str):
             # コード文字列の場合、一時ファイルを作成
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-                f.write(input_path)
-                temp_path = Path(f.name)
+            from src.core.utils.io_helpers import create_temp_file, cleanup_temp_file
+
+            temp_config: TempFileConfig = {"code": input_path, "suffix": ".py", "mode": "w"}
+            temp_path = create_temp_file(temp_config)
             try:
                 return self._analyze_from_file(temp_path)
             finally:
-                os.unlink(temp_path)
+                cleanup_temp_file(temp_path)
         elif isinstance(input_path, Path):
             return self._analyze_from_file(input_path)
         else:
@@ -90,7 +90,7 @@ class TypeInferenceAnalyzer(Analyzer):
 
     def infer_types_from_code(
         self, code: str, module_name: str = "temp_module"
-    ) -> dict[str, Any]:
+    ) -> dict[str, InferResult]:
         """
         与えられたPythonコードから型を推論します。
 
@@ -135,7 +135,7 @@ class TypeInferenceAnalyzer(Analyzer):
             # 一時ファイルを削除
             os.unlink(temp_file_path)
 
-    def parse_mypy_output(self, output: str) -> dict[str, Any]:
+    def parse_mypy_output(self, output: str) -> dict[str, InferResult]:
         """
         mypyの出力を解析して型情報を抽出します。
 
@@ -145,7 +145,7 @@ class TypeInferenceAnalyzer(Analyzer):
         Returns:
             抽出された型情報の辞書
         """
-        types = {}
+        types: dict[str, InferResult] = {}
         lines = output.split("\n")
 
         for line in lines:
@@ -155,12 +155,14 @@ class TypeInferenceAnalyzer(Analyzer):
                 if len(parts) >= 2:
                     var_name = parts[0].strip()
                     type_info = parts[1].strip()
-                    types[var_name] = type_info
+                    types[var_name] = InferResult(
+                        variable_name=var_name, inferred_type=type_info, confidence=0.8
+                    )
 
         return types
 
     def merge_inferred_types(
-        self, existing_annotations: dict[str, str], inferred_types: dict[str, Any]
+        self, existing_annotations: dict[str, str], inferred_types: dict[str, InferResult]
     ) -> dict[str, str]:
         """
         既存の型アノテーションと推論結果をマージします。
@@ -174,14 +176,14 @@ class TypeInferenceAnalyzer(Analyzer):
         """
         merged = existing_annotations.copy()
 
-        for var_name, inferred_type in inferred_types.items():
+        for var_name, infer_result in inferred_types.items():
             if var_name not in merged:
                 # 推論された型を追加
-                merged[var_name] = str(inferred_type)
+                merged[var_name] = infer_result["inferred_type"]
 
         return merged
 
-    def infer_types_from_file(self, file_path: str) -> dict[str, Any]:
+    def infer_types_from_file(self, file_path: str) -> dict[str, InferResult]:
         """
         ファイルから型を推論します。
 

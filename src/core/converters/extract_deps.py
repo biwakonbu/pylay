@@ -6,9 +6,9 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 """
 
 import ast
+import importlib
 import networkx as nx
-from typing import Any, Union
-from collections.abc import Mapping
+from typing import Any
 
 
 class DependencyExtractor(ast.NodeVisitor):
@@ -243,11 +243,12 @@ def visualize_dependencies(graph: nx.DiGraph, output_path: str = "deps.png") -> 
         output_path: 出力画像のパス
     """
     try:
-        import pydot
-        from networkx.drawing.nx_pydot import graphviz_layout
+        # 動的importを使ってpydotとgraphviz_layoutをインポート
+        pydot = importlib.import_module("pydot")
+        graphviz_layout = importlib.import_module("networkx.drawing.nx_pydot").graphviz_layout
 
         # NetworkXグラフをpydotグラフに変換
-        pydot_graph = nx.drawing.nx_pydot.to_pydot(graph)
+        pydot_graph = graphviz_layout(graph)
 
         # ノードの色を設定（型によって異なる色）
         for node in pydot_graph.get_nodes():

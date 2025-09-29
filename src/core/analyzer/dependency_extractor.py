@@ -7,7 +7,7 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 
 import ast
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 try:
     import networkx as nx
@@ -40,7 +40,7 @@ class DependencyExtractionAnalyzer(Analyzer):
         self._node_cache: dict[str, GraphNode] = {}
         self._processing_stack: set[str] = set()  # 循環参照防止
 
-    def analyze(self, input_path: Union[Path, str]) -> TypeDependencyGraph:
+    def analyze(self, input_path: Path | str) -> TypeDependencyGraph:
         """
         指定された入力から依存関係を抽出します。
 
@@ -56,9 +56,11 @@ class DependencyExtractionAnalyzer(Analyzer):
         """
         if isinstance(input_path, str):
             # コード文字列の場合、一時ファイルを作成して解析
-            with open("/tmp/temp_code.py", "w") as f:
-                f.write(input_path)
-            file_path = "/tmp/temp_code.py"
+            from src.core.utils.io_helpers import create_temp_file
+
+            temp_config: TempFileConfig = {"code": input_path, "suffix": ".py", "mode": "w"}
+            temp_path = create_temp_file(temp_config)
+            file_path = str(temp_path)
         elif isinstance(input_path, Path):
             file_path = str(input_path)
         else:
@@ -75,7 +77,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             self._integrate_mypy(file_path)
 
         # グラフ構築
-        metadata = {
+        metadata: dict[str, str | int | bool] = {
             "source_file": file_path,
             "extraction_method": "AST_analysis_with_mypy"
             if self.config.infer_level != "loose"
@@ -94,7 +96,7 @@ class DependencyExtractionAnalyzer(Analyzer):
         if nx:
             cycles = self._detect_cycles(graph)
             if cycles:
-                metadata["cycles"] = cycles
+                metadata["cycles"] = cycles  # type: ignore
 
         return graph
 
@@ -466,7 +468,7 @@ class DependencyExtractionAnalyzer(Analyzer):
                     if node.attributes and "inferred_type" in node.attributes:
                         type_str = node.attributes["inferred_type"]
                         if type_str != "Any":
-                            type_refs = self._extract_type_refs_from_string(type_str)
+                            type_refs = self._extract_type_refs_from_string(str(type_str))
                             for ref in type_refs:
                                 if ref != node.name:
                                     self._add_edge(

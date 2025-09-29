@@ -6,7 +6,7 @@ TypeDependencyGraphを基盤に高度なグラフ操作を実行します。
 """
 
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 try:
     import networkx as nx

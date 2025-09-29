@@ -1,6 +1,5 @@
 """Type documentation generators for automated type documentation."""
 
-from collections import defaultdict
 from pathlib import Path
 from typing import Any, Optional
 

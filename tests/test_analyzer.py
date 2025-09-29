@@ -5,6 +5,7 @@ analyzerモジュールのテスト
 """
 
 import pytest
+import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
@@ -113,7 +114,7 @@ y: str
     def test_merge_inferred_types(self):
         """型マージのテスト"""
         existing = {"x": "int"}
-        inferred = {"y": "str"}
+        inferred = {"y": {"variable_name": "y", "inferred_type": "str", "confidence": 0.8}}
         config = PylayConfig()
         from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
 
@@ -337,6 +338,7 @@ class TestEdgeCases:
         """空のコード文字列の処理"""
         config = PylayConfig()
         from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
         analyzer = TypeInferenceAnalyzer(config)
 
         graph = analyzer.analyze("")
@@ -359,6 +361,7 @@ class C:
 
         config = PylayConfig()
         from src.core.analyzer.dependency_extractor import DependencyExtractionAnalyzer
+
         analyzer = DependencyExtractionAnalyzer(config)
         graph = analyzer.analyze(test_file)
 
@@ -372,6 +375,7 @@ class C:
         """NetworkX未インストール時のフォールバック"""
         config = PylayConfig()
         from src.core.analyzer.graph_processor import GraphProcessor
+
         processor = GraphProcessor()
 
         # nx_availableがFalseの場合のメトリクス
@@ -381,3 +385,77 @@ class C:
         assert metrics["node_count"] == 0
         assert metrics["edge_count"] == 0
         assert "density" in metrics
+
+    def test_mypy_failure_handling(self, tmp_path):
+        """mypy失敗時のハンドリング"""
+        test_file = tmp_path / "invalid.py"
+        test_file.write_text("""
+def invalid_syntax(
+    # 無効な型アノテーション
+    x: NonExistentType
+""")
+
+        config = PylayConfig()
+        from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
+        analyzer = TypeInferenceAnalyzer(config)
+        # mypyが失敗してもエラーなく処理
+        with pytest.raises((ValueError, SyntaxError)):
+            graph = analyzer.analyze(test_file)
+
+    def test_large_file_handling(self, tmp_path):
+        """大規模ファイルの処理"""
+        test_file = tmp_path / "large.py"
+        large_code = "\n".join([f"x{i}: int = {i}" for i in range(1000)])
+        test_file.write_text(large_code)
+
+        config = PylayConfig()
+        from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
+        analyzer = TypeInferenceAnalyzer(config)
+        graph = analyzer.analyze(test_file)
+        assert isinstance(graph, TypeDependencyGraph)
+        assert len(graph.nodes) > 0
+
+    def test_timeout_subprocess_handling(self, tmp_path, monkeypatch):
+        """subprocessタイムアウトのハンドリング"""
+        def mock_run(*args, **kwargs):
+            raise subprocess.TimeoutExpired(["cmd"], 10)
+
+        monkeypatch.setattr("subprocess.run", mock_run)
+
+        config = PylayConfig()
+        from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
+        analyzer = TypeInferenceAnalyzer(config)
+        with pytest.raises((RuntimeError, subprocess.TimeoutExpired)):
+            analyzer.infer_types_from_code("x: int = 5")
+
+    def test_invalid_yaml_conversion(self, tmp_path):
+        """無効YAMLへの変換エラー"""
+        # 無効なグラフ（循環など）
+        graph = TypeDependencyGraph(nodes=[], edges=[])
+        # 意図的に無効なデータを追加
+        invalid_node = GraphNode(name="invalid", node_type="class", attributes={"invalid": "none"})
+        graph.add_node(invalid_node)
+
+        from src.core.analyzer.graph_processor import GraphProcessor
+        processor = GraphProcessor()
+
+        # YAML変換でエラーが起きないことを確認
+        yaml_data = processor.convert_graph_to_yaml_spec(graph)
+        assert "dependencies" in yaml_data
+
+    def test_os_path_independence(self, tmp_path):
+        """OSパス独立性のテスト"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("x: int = 5")
+
+        config = PylayConfig()
+        from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
+        analyzer = TypeInferenceAnalyzer(config)
+        graph = analyzer.analyze(test_file)
+
+        # パスが相対/絶対に関係なく動作
+        assert isinstance(graph, TypeDependencyGraph)

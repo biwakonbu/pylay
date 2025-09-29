@@ -7,7 +7,6 @@ Analyzerインターフェースとファクトリ関数を提供します。
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Union
 
 from src.core.schemas.graph_types import TypeDependencyGraph, GraphEdge, RelationType
 from src.core.schemas.pylay_config import PylayConfig
@@ -30,7 +29,7 @@ class Analyzer(ABC):
         self.config = config
 
     @abstractmethod
-    def analyze(self, input_path: Union[Path, str]) -> TypeDependencyGraph:
+    def analyze(self, input_path: Path | str) -> TypeDependencyGraph:
         """
         指定された入力から型依存グラフを生成します。
 
@@ -44,7 +43,7 @@ class Analyzer(ABC):
             ValueError: 入力が無効な場合
             RuntimeError: 解析に失敗した場合
         """
-        pass
+        ...
 
 
 # 実装クラスは別ファイルで定義（循環import回避）
@@ -69,7 +68,7 @@ class FullAnalyzer(Analyzer):
         self.type_analyzer = TypeInfAnalyzer(config)
         self.dep_analyzer = DepAnalyzer(config)
 
-    def analyze(self, input_path: Union[Path, str]) -> TypeDependencyGraph:
+    def analyze(self, input_path: Path | str) -> TypeDependencyGraph:
         """完全解析を実行し、グラフを生成"""
         # 型推論
         inferred_graph = self.type_analyzer.analyze(input_path)
@@ -98,7 +97,7 @@ class FullAnalyzer(Analyzer):
                     )
 
                     temp_analyzer = DependencyExtractionAnalyzer(self.config)
-                    type_refs = temp_analyzer._extract_type_refs_from_string(type_str)
+                    type_refs = temp_analyzer._extract_type_refs_from_string(str(type_str))
                     for ref in type_refs:
                         if ref != node.name:
                             edge = GraphEdge(
