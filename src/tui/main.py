@@ -10,9 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from rich.console import Console
-from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
 from src.core.converters.yaml_to_type import yaml_to_spec, generate_pydantic_model
@@ -46,8 +44,7 @@ class PylayCLI:
   pylay yaml-to-type --input types.yaml --output src/generated_types.py
   pylay generate-docs --input types.yaml --output docs/
 
-[bold cyan]対話モード:[/bold cyan]
-  pylay interactive
+[bold cyan]非対話モードのみ使用可能です[/bold cyan]
             """,
         )
 
@@ -136,12 +133,6 @@ class PylayCLI:
             help="Graphvizで依存関係を視覚化",
         )
 
-        # interactive コマンド
-        subparsers.add_parser(
-            "interactive",
-            help="対話モードで操作",
-        )
-
         return parser
 
     def run_type_to_yaml(
@@ -155,44 +146,15 @@ class PylayCLI:
             module_name: 解析対象のモジュール名
         """
         try:
-            input_file = Path(input_path)
-            output_file = Path(output_path)
-
-            if not input_file.exists():
-                self.console.print(
-                    f"[red]❌ エラー: 入力ファイル '{input_path}' が存在しません[/red]"
-                )
-                sys.exit(1)
-
-            # プログレス表示で処理中を示す
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                console=self.console,
-            ) as progress:
-                task = progress.add_task("🔍 型定義を解析中...", total=None)
-
-                # 型定義をYAMLに変換
-                yaml_content = self._extract_types_and_convert_to_yaml(str(input_file))
-                progress.update(task, description="✅ 型定義をYAMLに変換中...")
-
-                # 出力ディレクトリが存在しない場合は作成
-                output_file.parent.mkdir(parents=True, exist_ok=True)
-
-                # YAMLファイルに書き込み
-                output_file.write_text(yaml_content, encoding="utf-8")
-                progress.update(task, description="💾 ファイルに書き込み中...")
-
-            # 結果を表示
+            # 外部コマンドを呼び出す
+            run_type_to_yaml(input_path, output_path, module_name)
             self._show_success_message(
                 "型定義をYAMLに変換しました",
                 {
                     "入力": input_path,
                     "出力": output_path,
-                    "サイズ": f"{len(yaml_content)} 文字",
                 },
             )
-
         except Exception as e:
             self._show_error_message("型定義の変換に失敗しました", str(e))
 
@@ -204,48 +166,15 @@ class PylayCLI:
             output_path: 出力Pythonファイルのパス
         """
         try:
-            input_file = Path(input_path)
-            output_file = Path(output_path)
-
-            if not input_file.exists():
-                self.console.print(
-                    f"[red]❌ エラー: 入力ファイル '{input_path}' が存在しません[/red]"
-                )
-                sys.exit(1)
-
-            # プログレス表示で処理中を示す
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                console=self.console,
-            ) as progress:
-                task = progress.add_task("📖 YAMLファイルを解析中...", total=None)
-
-                # YAMLを型定義に変換
-                spec = yaml_to_spec(str(input_file))
-                if isinstance(spec, TypeSpec):
-                    python_content = generate_pydantic_model(spec)
-                else:
-                    python_content = "# Complex type (TypeRoot)"
-                progress.update(task, description="🔄 YAMLをPython型に変換中...")
-
-                # 出力ディレクトリが存在しない場合は作成
-                output_file.parent.mkdir(parents=True, exist_ok=True)
-
-                # Pythonファイルに書き込み
-                output_file.write_text(python_content, encoding="utf-8")
-                progress.update(task, description="💾 ファイルに書き込み中...")
-
-            # 結果を表示
+            # 外部コマンドを呼び出す
+            run_yaml_to_type(input_path, output_path)
             self._show_success_message(
                 "YAMLを型定義に変換しました",
                 {
                     "入力": input_path,
                     "出力": output_path,
-                    "サイズ": f"{len(python_content)} 文字",
                 },
             )
-
         except Exception as e:
             self._show_error_message("YAMLの変換に失敗しました", str(e))
 
@@ -406,79 +335,6 @@ class PylayCLI:
         except Exception as e:
             self._show_error_message("型推論と依存関係抽出に失敗しました", str(e))
 
-    def run_interactive(self) -> None:
-        """対話モードで操作する"""
-        self.console.print(
-            Panel.fit(
-                "[bold blue]pylay 対話モード[/bold blue]\n\n"
-                "Pythonの型情報とドキュメントを対話的に変換します。",
-                title="🎯 pylay",
-                border_style="blue",
-            )
-        )
-
-        while True:
-            self.console.print("\n[bold cyan]何をしますか？[/bold cyan]")
-            self.console.print("1. Python → YAML")
-            self.console.print("2. YAML → Python")
-            self.console.print("3. YAML → Markdown")
-            self.console.print("4. 型推論と依存抽出")
-            self.console.print("5. 終了")
-
-            choice = Prompt.ask("選択してください", choices=["1", "2", "3", "4"])
-
-            if choice == "4":
-                self.console.print("[green]👋 さようなら！[/green]")
-                break
-
-            try:
-                if choice == "1":
-                    self._interactive_type_to_yaml()
-                elif choice == "2":
-                    self._interactive_yaml_to_type()
-                elif choice == "3":
-                    self._interactive_generate_docs()
-            except KeyboardInterrupt:
-                self.console.print("\n[yellow]⚠️  処理が中断されました[/yellow]")
-                break
-            except Exception as e:
-                self._show_error_message("対話モードでエラーが発生しました", str(e))
-
-    def _interactive_type_to_yaml(self) -> None:
-        """対話モードでtype-to-yamlを実行"""
-        input_path = Prompt.ask("Pythonファイルのパスを入力してください")
-        output_path = Prompt.ask("出力YAMLファイルのパスを入力してください")
-        module_name = Prompt.ask("モジュール名（任意）", default="")
-
-        if module_name:
-            self.run_type_to_yaml(input_path, output_path, module_name)
-        else:
-            self.run_type_to_yaml(input_path, output_path)
-
-    def _interactive_yaml_to_type(self) -> None:
-        """対話モードでyaml-to-typeを実行"""
-        input_path = Prompt.ask("YAMLファイルのパスを入力してください")
-        output_path = Prompt.ask("出力Pythonファイルのパスを入力してください")
-
-        self.run_yaml_to_type(input_path, output_path)
-
-    def _interactive_generate_docs(self) -> None:
-        """対話モードでgenerate-docsを実行"""
-        input_path = Prompt.ask("YAMLファイルのパスを入力してください")
-        output_path = Prompt.ask("出力先のパスを入力してください")
-        format_type = Prompt.ask(
-            "出力形式", choices=["single", "multiple"], default="single"
-        )
-
-        self.run_generate_docs(input_path, output_path, format_type)
-
-    def _interactive_infer_deps(self) -> None:
-        """対話モードでinfer-depsを実行"""
-        input_path = Prompt.ask("Pythonファイルのパスを入力してください")
-        visualize = Confirm.ask("Graphvizで視覚化しますか？", default=False)
-
-        self.run_infer_deps(input_path, visualize)
-
     def _show_success_message(self, message: str, details: dict[str, str]) -> None:
         """成功メッセージを表示する"""
         table = Table(title=f"✅ {message}", show_header=False, box=None)
@@ -489,31 +345,6 @@ class PylayCLI:
             table.add_row(key, value)
 
         self.console.print(table)
-
-    def _extract_types_and_convert_to_yaml(self, file_path: str) -> str:
-        """Pythonファイルから型を抽出してYAMLに変換する"""
-
-        # Pythonファイルを動的に実行して型を抽出
-        spec = {
-            "file_path": file_path,
-            "module_name": Path(file_path).stem,
-        }
-
-        # ここでは簡単な実装として、サンプルYAMLを返す
-        # 実際の実装ではAST解析や動的インポートで型を抽出する
-        sample_yaml = f"""
-types:
-  {spec["module_name"]}:
-    type: dict
-    description: サンプル型定義
-    properties:
-      sample_field:
-        type: str
-        description: サンプルフィールド
-        required: true
-"""
-
-        return sample_yaml
 
     def _show_error_message(self, message: str, error: str) -> None:
         """エラーメッセージを表示する"""
@@ -533,15 +364,13 @@ def main() -> None:
 
     try:
         if args.command == "type-to-yaml":
-            run_type_to_yaml(args.input, args.output, args.module_name)
+            cli.run_type_to_yaml(args.input, args.output, args.module_name)
         elif args.command == "yaml-to-type":
-            run_yaml_to_type(args.input, args.output)
+            cli.run_yaml_to_type(args.input, args.output)
         elif args.command == "generate-docs":
             cli.run_generate_docs(args.input, args.output, args.format)
         elif args.command == "infer-deps":
             cli.run_infer_deps(args.input, args.visualize)
-        elif args.command == "interactive":
-            cli.run_interactive()
         else:
             cli.parser.print_help()
             sys.exit(1)

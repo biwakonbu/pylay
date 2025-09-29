@@ -39,24 +39,35 @@ class OutputPathManager:
             source_file: ソースPythonファイルのパス
 
         Returns:
-            YAML出力パス（例: docs/pylay-types/src/cli/main_types.yaml）
+            YAML出力パス（例: docs/pylay-types/src/cli/main.types.yaml）
         """
-        base_output_dir = self.config.get_absolute_paths(self.project_root)["output_dir"]
+        base_output_dir = self.config.get_absolute_paths(self.project_root)[
+            "output_dir"
+        ]
         relative_path = source_file.relative_to(self.project_root)
 
         # ソースファイルの場所に基づいて出力ディレクトリを決定
-        if relative_path.parts[0] == "src":
-            output_dir = base_output_dir / "src" / Path(*relative_path.parts[1:-1])
-        elif relative_path.parts[0] == "scripts":
-            output_dir = base_output_dir / "scripts" / Path(*relative_path.parts[1:-1])
+        # target_dirs に含まれるディレクトリの場合は、その構造を模倣
+        # target_dirs の値からスラッシュを除去して比較
+        normalized_target_dirs = [d.rstrip("/") for d in self.config.target_dirs]
+        if relative_path.parts[0] in normalized_target_dirs:
+            output_dir = (
+                base_output_dir
+                / relative_path.parts[0]
+                / Path(*relative_path.parts[1:-1])
+            )
         else:
             output_dir = base_output_dir
 
-        yaml_file = output_dir / f"{source_file.stem}_types.yaml"
+        yaml_file = (
+            output_dir / f"{source_file.stem}.types.yaml"
+        )  # _types を削除し、.types.yaml に変更
         yaml_file.parent.mkdir(parents=True, exist_ok=True)
         return yaml_file
 
-    def get_markdown_path(self, source_file: Optional[Path] = None, filename: Optional[str] = None) -> Path:
+    def get_markdown_path(
+        self, source_file: Optional[Path] = None, filename: Optional[str] = None
+    ) -> Path:
         """
         Markdownドキュメントファイルのパスを生成
 
@@ -71,7 +82,21 @@ class OutputPathManager:
 
         if source_file:
             # ファイル別生成（project_analyze 用）
-            md_file = documents_dir / f"{source_file.stem}_docs.md"
+            # ソースファイルの場所に基づいて出力ディレクトリを決定
+            # target_dirs に含まれるディレクトリの場合は、その構造を模倣
+            # target_dirs の値からスラッシュを除去して比較
+            relative_path = source_file.relative_to(self.project_root)
+            normalized_target_dirs = [d.rstrip("/") for d in self.config.target_dirs]
+            if relative_path.parts[0] in normalized_target_dirs:
+                output_dir = (
+                    documents_dir
+                    / relative_path.parts[0]
+                    / Path(*relative_path.parts[1:-1])
+                )
+            else:
+                output_dir = documents_dir
+
+            md_file = output_dir / f"{source_file.stem}_docs.md"
         elif filename:
             # 固定ファイル名（CLI generate 用）
             md_file = documents_dir / filename
@@ -107,5 +132,5 @@ class OutputPathManager:
         return {
             "yaml": base_dir,
             "markdown": self.config.get_documents_output_dir(self.project_root),
-            "graph": base_dir
+            "graph": base_dir,
         }

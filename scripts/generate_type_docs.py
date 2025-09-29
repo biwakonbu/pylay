@@ -31,6 +31,7 @@ def generate_layer_docs(
         try:
             from src.core.schemas.pylay_config import PylayConfig
             from src.core.output_manager import OutputPathManager
+
             config_pylay = PylayConfig.from_pyproject_toml()
             output_manager = OutputPathManager(config_pylay)
             output_dir = str(output_manager.get_output_structure()["markdown"])
@@ -55,9 +56,12 @@ def generate_index_docs(output_path: str | None = None) -> None:
         try:
             from src.core.schemas.pylay_config import PylayConfig
             from src.core.output_manager import OutputPathManager
+
             config_pylay = PylayConfig.from_pyproject_toml()
             output_manager = OutputPathManager(config_pylay)
-            output_path = str(output_manager.get_markdown_path(filename="type_index.md"))
+            output_path = str(
+                output_manager.get_markdown_path(filename="type_index.md")
+            )
         except Exception:
             output_path = "docs/pylay-types/documents/type_index.md"
 

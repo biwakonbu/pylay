@@ -191,8 +191,6 @@ def convert() -> None:
     """型と YAML の相互変換"""
 
 
-
-
 @convert.command("to-yaml")
 @click.argument("input_module", type=click.Path(exists=True))
 @click.option(

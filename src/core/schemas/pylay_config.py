@@ -21,38 +21,30 @@ class PylayConfig(BaseModel):
 
     # 解析対象ディレクトリ
     target_dirs: list[str] = Field(
-        default=["src/"],
-        description="解析対象のディレクトリパス（相対パス）"
+        default=["src/"], description="解析対象のディレクトリパス（相対パス）"
     )
 
     # 出力ディレクトリ
     output_dir: str = Field(
-        default="docs/",
-        description="出力ファイルの保存先ディレクトリ"
+        default="docs/", description="出力ファイルの保存先ディレクトリ"
     )
 
     # ドキュメント生成フラグ
     generate_markdown: bool = Field(
-        default=True,
-        description="Markdownドキュメントを生成するかどうか"
+        default=True, description="Markdownドキュメントを生成するかどうか"
     )
 
     # 依存関係抽出フラグ
-    extract_deps: bool = Field(
-        default=True,
-        description="依存関係を抽出するかどうか"
-    )
+    extract_deps: bool = Field(default=True, description="依存関係を抽出するかどうか")
 
     # 型推論レベル
     infer_level: str = Field(
-        default="strict",
-        description="型推論の厳密さ（strict, normal, loose）"
+        default="strict", description="型推論の厳密さ（strict, normal, loose）"
     )
 
     # 出力ディレクトリクリーンアップフラグ
     clean_output_dir: bool = Field(
-        default=True,
-        description="実行時に出力ディレクトリをクリーンアップするかどうか"
+        default=True, description="実行時に出力ディレクトリをクリーンアップするかどうか"
     )
 
     # 除外パターン
@@ -62,14 +54,11 @@ class PylayConfig(BaseModel):
             "**/*_test.py",
             "**/__pycache__/**",
         ],
-        description="解析から除外するファイルパターン"
+        description="解析から除外するファイルパターン",
     )
 
     # 最大解析深度
-    max_depth: int = Field(
-        default=10,
-        description="再帰解析の最大深度"
-    )
+    max_depth: int = Field(default=10, description="再帰解析の最大深度")
 
     @classmethod
     def from_pyproject_toml(cls, project_root: Path | None = None) -> "PylayConfig":
@@ -125,8 +114,7 @@ class PylayConfig(BaseModel):
             絶対パスの辞書
         """
         absolute_target_dirs = [
-            (project_root / target_dir).resolve()
-            for target_dir in self.target_dirs
+            (project_root / target_dir).resolve() for target_dir in self.target_dirs
         ]
 
         absolute_output_dir = (project_root / self.output_dir).resolve()

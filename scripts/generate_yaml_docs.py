@@ -4,9 +4,7 @@ from src.core.schemas.pylay_config import PylayConfig
 from pathlib import Path
 
 
-def generate_yaml_docs_from_file(
-    yaml_file: str, output_dir: str | None = None
-) -> None:
+def generate_yaml_docs_from_file(yaml_file: str, output_dir: str | None = None) -> None:
     """YAMLファイルから型仕様を読み込み、ドキュメント生成"""
     with open(yaml_file, "r", encoding="utf-8") as f:
         yaml_str = f.read()

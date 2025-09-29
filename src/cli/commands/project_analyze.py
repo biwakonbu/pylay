@@ -11,7 +11,13 @@ from typing import Any
 
 import click
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeRemainingColumn
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    BarColumn,
+    TimeRemainingColumn,
+)
 
 from ...core.project_scanner import ProjectScanner
 from ...core.schemas.pylay_config import PylayConfig
@@ -31,25 +37,16 @@ console = Console()
 @click.option(
     "--config-path",
     type=click.Path(exists=True),
-    help="pyproject.tomlのパス（デフォルト: 自動検出）"
+    help="pyproject.tomlのパス（デフォルト: 自動検出）",
 )
 @click.option(
-    "--dry-run",
-    is_flag=True,
-    help="実際の処理を行わず、解析対象ファイルのみ表示"
+    "--dry-run", is_flag=True, help="実際の処理を行わず、解析対象ファイルのみ表示"
 )
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="詳細なログを出力"
-)
-@click.option(
-    "--clean",
-    is_flag=True,
-    help="出力ディレクトリを削除してから再生成"
-)
-def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean: bool) -> None:
+@click.option("--verbose", "-v", is_flag=True, help="詳細なログを出力")
+@click.option("--clean", is_flag=True, help="出力ディレクトリを削除してから再生成")
+def project_analyze(
+    config_path: str | None, dry_run: bool, verbose: bool, clean: bool
+) -> None:
     """
     プロジェクト全体を解析し、型情報、依存関係、ドキュメントを生成します。
 
@@ -106,7 +103,9 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
             # 解析対象ファイルの取得
             python_files = scanner.get_python_files()
 
-            console.print(f"[bold blue]解析対象ファイル ({len(python_files)}個):[/bold blue]")
+            console.print(
+                f"[bold blue]解析対象ファイル ({len(python_files)}個):[/bold blue]"
+            )
             for file_path in python_files:
                 console.print(f"  {file_path}")
             return
@@ -115,16 +114,25 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
         if effective_clean:
             if verbose:
                 if clean:
-                    console.print(f"[yellow]🗑️  --clean オプションにより出力ディレクトリ（docs/pylay-types/全体）を削除します[/yellow]")
+                    console.print(
+                        f"[yellow]🗑️  --clean オプションにより出力ディレクトリ（docs/pylay-types/全体）を削除します[/yellow]"
+                    )
                 else:
-                    console.print(f"[yellow]🗑️  設定により出力ディレクトリ（docs/pylay-types/全体）を削除します[/yellow]")
+                    console.print(
+                        f"[yellow]🗑️  設定により出力ディレクトリ（docs/pylay-types/全体）を削除します[/yellow]"
+                    )
             output_dir = output_manager.get_output_structure()["yaml"]
             if output_dir.exists():
                 import shutil
+
                 shutil.rmtree(output_dir)
-                console.print(f"[yellow]🗑️  出力ディレクトリを削除しました: {output_dir}（src/, documents/ 等含む）[/yellow]")
+                console.print(
+                    f"[yellow]🗑️  出力ディレクトリを削除しました: {output_dir}（src/, documents/ 等含む）[/yellow]"
+                )
             else:
-                console.print(f"[yellow]ℹ️  出力ディレクトリが存在しないため削除をスキップ: {output_dir}[/yellow]")
+                console.print(
+                    f"[yellow]ℹ️  出力ディレクトリが存在しないため削除をスキップ: {output_dir}[/yellow]"
+                )
 
         # プロジェクトスキャナーを作成
         scanner = ProjectScanner(config)
@@ -147,11 +155,15 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
         python_files = scanner.get_python_files()
 
         if not python_files:
-            console.print("[bold yellow]⚠️  解析対象のPythonファイルが見つかりませんでした[/bold yellow]")
+            console.print(
+                "[bold yellow]⚠️  解析対象のPythonファイルが見つかりませんでした[/bold yellow]"
+            )
             return
 
         if dry_run:
-            console.print(f"[bold blue]解析対象ファイル ({len(python_files)}個):[/bold blue]")
+            console.print(
+                f"[bold blue]解析対象ファイル ({len(python_files)}個):[/bold blue]"
+            )
             for file_path in python_files:
                 console.print(f"  {file_path}")
             return
@@ -161,7 +173,9 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
         console.print()
 
         # 解析の実行
-        results = asyncio.run(_analyze_project_async(config, python_files, verbose, output_manager))
+        results = asyncio.run(
+            _analyze_project_async(config, python_files, verbose, output_manager)
+        )
 
         # 結果の出力
         _output_results(config, results, verbose, output_manager)
@@ -174,6 +188,7 @@ def project_analyze(config_path: str | None, dry_run: bool, verbose: bool, clean
         console.print(f"[bold red]❌ 予期しないエラー:[/bold red] {e}")
         if verbose:
             import traceback
+
             console.print(traceback.format_exc())
 
 
@@ -181,7 +196,7 @@ async def _analyze_project_async(
     config: PylayConfig,
     python_files: list[Path],
     verbose: bool,
-    output_manager: OutputPathManager
+    output_manager: OutputPathManager,
 ) -> dict[str, Any]:
     """
     プロジェクトの非同期解析を実行します。
@@ -200,7 +215,7 @@ async def _analyze_project_async(
         "dependencies_found": 0,
         "docs_generated": 0,
         "errors": [],
-        "file_results": {}
+        "file_results": {},
     }
 
     with Progress(
@@ -209,17 +224,15 @@ async def _analyze_project_async(
         BarColumn(),
         TimeRemainingColumn(),
         console=console,
-        transient=True
+        transient=True,
     ) as progress:
-
-        task = progress.add_task(
-            "プロジェクト解析中...",
-            total=len(python_files)
-        )
+        task = progress.add_task("プロジェクト解析中...", total=len(python_files))
 
         for file_path in python_files:
             try:
-                file_result = await _analyze_file_async(config, file_path, verbose, output_manager)
+                file_result = await _analyze_file_async(
+                    config, file_path, verbose, output_manager
+                )
                 results["file_results"][str(file_path)] = file_result
                 results["files_processed"] += 1
 
@@ -245,7 +258,7 @@ async def _analyze_file_async(
     config: PylayConfig,
     file_path: Path,
     verbose: bool,
-    output_manager: OutputPathManager
+    output_manager: OutputPathManager,
 ) -> dict[str, Any]:
     """
     単一ファイルの非同期解析を実行します。
@@ -262,13 +275,13 @@ async def _analyze_file_async(
         "types_extracted": False,
         "dependencies_found": False,
         "docs_generated": False,
-        "outputs": {}
+        "outputs": {},
     }
 
     # 型情報の抽出
     try:
         types_yaml = extract_types_from_module(file_path)
-        if types_yaml:
+        if types_yaml is not None:  # Noneの場合（型定義なし）をスキップ
             result["types_extracted"] = True
 
             # YAMLファイルに出力（OutputPathManager 使用）
@@ -281,28 +294,31 @@ async def _analyze_file_async(
             if verbose:
                 console.print(f"  ✓ 型情報抽出完了: {yaml_file}")
 
-                # Markdownドキュメント生成（OutputPathManager 使用）
-                if config.generate_markdown:
-                    try:
-                        spec = yaml_to_spec(types_yaml)
+            # Markdownドキュメント生成（OutputPathManager 使用）
+            if config.generate_markdown:
+                try:
+                    spec = yaml_to_spec(types_yaml)
 
-                        # TypeRoot の場合、最初の型を使用
-                        if hasattr(spec, "types") and spec.types:
-                            spec = next(iter(spec.types.values()))
+                    # TypeRoot の場合、最初の型を使用
+                    if hasattr(spec, "types") and spec.types:
+                        spec = next(iter(spec.types.values()))
 
-                        md_file = output_manager.get_markdown_path(source_file=file_path)
+                    md_file = output_manager.get_markdown_path(source_file=file_path)
 
-                        generator = YamlDocGenerator()
-                        generator.generate(str(md_file), spec=spec)
+                    generator = YamlDocGenerator()
+                    generator.generate(str(md_file), spec=spec)
 
-                        result["docs_generated"] = True
-                        result["outputs"]["markdown"] = str(md_file)
+                    result["docs_generated"] = True
+                    result["outputs"]["markdown"] = str(md_file)
 
-                        if verbose:
-                            console.print(f"  ✓ Markdownドキュメント生成完了: {md_file}")
-                    except Exception as e:
-                        if verbose:
-                            console.print(f"  ✗ Markdown生成エラー ({file_path}): {e}")
+                    if verbose:
+                        console.print(f"  ✓ Markdownドキュメント生成完了: {md_file}")
+                except Exception as e:
+                    if verbose:
+                        console.print(f"  ✗ Markdown生成エラー ({file_path}): {e}")
+        else:
+            if verbose:
+                console.print(f"  ℹ️  型定義なしのためスキップ: {file_path}")
 
     except Exception as e:
         if verbose:
@@ -316,7 +332,9 @@ async def _analyze_file_async(
                 result["dependencies_found"] = True
 
                 if verbose:
-                    console.print(f"  ✓ 依存関係抽出完了: {len(dep_graph.nodes())} ノード")
+                    console.print(
+                        f"  ✓ 依存関係抽出完了: {len(dep_graph.nodes())} ノード"
+                    )
 
         except Exception as e:
             if verbose:
@@ -326,8 +344,14 @@ async def _analyze_file_async(
     if config.infer_level != "none":
         try:
             # pyproject.tomlをmypy設定ファイルとして渡す
-            config_file = Path.cwd() / "pyproject.toml" if (Path.cwd() / "pyproject.toml").exists() else None
-            inferred_types = infer_types_from_file(str(file_path), str(config_file) if config_file else None)
+            config_file = (
+                Path.cwd() / "pyproject.toml"
+                if (Path.cwd() / "pyproject.toml").exists()
+                else None
+            )
+            inferred_types = infer_types_from_file(
+                str(file_path), str(config_file) if config_file else None
+            )
             if inferred_types:
                 if verbose:
                     console.print(f"  ✓ 型推論完了: {len(inferred_types)} 項目")
@@ -339,7 +363,12 @@ async def _analyze_file_async(
     return result
 
 
-def _output_results(config: PylayConfig, results: dict[str, Any], verbose: bool, output_manager: OutputPathManager) -> None:
+def _output_results(
+    config: PylayConfig,
+    results: dict[str, Any],
+    verbose: bool,
+    output_manager: OutputPathManager,
+) -> None:
     """
     解析結果を出力します。
 
@@ -360,7 +389,9 @@ def _output_results(config: PylayConfig, results: dict[str, Any], verbose: bool,
     console.print(f"Markdown出力: {structure['markdown']}")
 
     if results["errors"]:
-        console.print(f"\n[bold yellow]⚠️  エラー発生: {len(results['errors'])} 件[/bold yellow]")
+        console.print(
+            f"\n[bold yellow]⚠️  エラー発生: {len(results['errors'])} 件[/bold yellow]"
+        )
         if verbose:
             for error in results["errors"]:
                 console.print(f"  {error}")

@@ -43,7 +43,7 @@ generate_markdown = true
             yaml_path = manager.get_yaml_path(test_file)
 
             # パスが正しく生成されることを確認
-            expected_path = temp_path / "docs" / "src" / "cli" / "main_types.yaml"
+            expected_path = temp_path / "docs" / "src" / "cli" / "main.types.yaml"
             assert yaml_path == expected_path
             assert yaml_path.parent.exists()
 
@@ -68,7 +68,7 @@ generate_markdown = true
             test_file = temp_path / "src" / "main.py"
             md_path = manager.get_markdown_path(source_file=test_file)
 
-            expected_path = temp_path / "docs" / "documents" / "main_docs.md"
+            expected_path = temp_path / "docs" / "documents" / "src" / "main_docs.md"
             assert md_path == expected_path
 
             # 固定ファイル名生成
@@ -143,7 +143,10 @@ generate_markdown = true
             manager = OutputPathManager(config, temp_path)
 
             # source_file と filename の両方が None の場合
-            with pytest.raises(ValueError, match="source_file または filename のいずれかを指定してください"):
+            with pytest.raises(
+                ValueError,
+                match="source_file または filename のいずれかを指定してください",
+            ):
                 manager.get_markdown_path()
 
     def test_config_not_found_fallback(self):

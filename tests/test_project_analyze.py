@@ -86,7 +86,11 @@ max_depth = 5
             config = PylayConfig.from_pyproject_toml(temp_path)
             assert config.target_dirs == ["src/"]
             assert config.output_dir == "generated_docs/"
-            assert config.exclude_patterns == ["tests/**", "**/*_test.py", "**/__pycache__/**"]
+            assert config.exclude_patterns == [
+                "tests/**",
+                "**/*_test.py",
+                "**/__pycache__/**",
+            ]
             print("✅ 仮説1確認: 設定が正しく読み込まれた")
 
             # 仮説2: ディレクトリスキャンの検証
@@ -108,13 +112,17 @@ max_depth = 5
             # 仮説4: 型抽出とYAML出力の検証
             yaml_content = extract_types_from_module(src_dir / "user_model.py")
             assert yaml_content is not None
-            assert "User" in yaml_content
-            assert "create_user" in yaml_content
-            assert "get_user_by_id" in yaml_content
-            print("✅ 仮説4確認: 型抽出が正しくYAMLに変換")
+            assert "User" in yaml_content  # クラスは抽出される
+            assert "create_user" not in yaml_content  # 関数は抽出されない（修正後）
+            assert "get_user_by_id" not in yaml_content  # 関数は抽出されない（修正後）
+            assert (
+                "id" in yaml_content
+            )  # 型エイリアス（変数アノテーション）は抽出される
+            print("✅ 仮説4確認: 型抽出が正しくYAMLに変換（function除去）")
 
             # 仮説5: 完全なCLI実行の検証
             import os
+
             old_cwd = os.getcwd()
             try:
                 os.chdir(temp_path)
@@ -130,15 +138,16 @@ max_depth = 5
                 output_dir = temp_path / "generated_docs"
                 assert output_dir.exists()
 
-                # YAMLファイルは src/ サブディレクトリに生成される
-                yaml_files = list(output_dir.glob("**/*_types.yaml"))
+                # YAMLファイルは src/ サブディレクトリに生成される（修正後: *.types.yaml）
+                yaml_files = list(output_dir.glob("**/*.types.yaml"))
                 assert len(yaml_files) > 0
 
                 # 生成されたYAMLファイルの内容確認
                 yaml_file = yaml_files[0]
                 yaml_content = yaml_file.read_text()
                 assert "User" in yaml_content
-                assert "types:" in yaml_content
+                # 新形式では types: がないことを確認
+                assert "types:" not in yaml_content
 
                 print("✅ 仮説5確認: 完全なCLI実行が正常に完了")
 
@@ -210,10 +219,7 @@ def create_user(name: str, age: int) -> User:
             (tests_dir / "test_example.py").write_text("# Test file")
 
             # 設定オブジェクトを作成
-            config = PylayConfig(
-                target_dirs=["src/"],
-                exclude_patterns=["tests/**"]
-            )
+            config = PylayConfig(target_dirs=["src/"], exclude_patterns=["tests/**"])
 
             # スキャナーを作成
             scanner = ProjectScanner(config)
@@ -261,7 +267,7 @@ def create_user(name: str) -> User:
             spec = yaml_to_spec(yaml_content)
             # 基本的な構造を確認
             assert spec is not None
-            assert hasattr(spec, 'types')
+            assert hasattr(spec, "types")
 
             # 3. 設定とスキャナーの基本機能テスト
             config = PylayConfig()
@@ -297,13 +303,11 @@ target_dirs = ["test_src/"]
 
             # dry-runモードで実行（作業ディレクトリを変更）
             import os
+
             old_cwd = os.getcwd()
             try:
                 os.chdir(temp_path)
-                result = runner.invoke(cli, [
-                    "project-analyze",
-                    "--dry-run"
-                ])
+                result = runner.invoke(cli, ["project-analyze", "--dry-run"])
 
                 # 結果の検証
                 assert result.exit_code == 0
@@ -350,12 +354,11 @@ extract_deps = true
 
             # 完全実行（作業ディレクトリを変更）
             import os
+
             old_cwd = os.getcwd()
             try:
                 os.chdir(temp_path)
-                result = runner.invoke(cli, [
-                    "project-analyze"
-                ])
+                result = runner.invoke(cli, ["project-analyze"])
 
                 # 結果の検証
                 assert result.exit_code == 0
@@ -381,10 +384,7 @@ extract_deps = true
             temp_path = Path(temp_dir)
 
             # 存在しないディレクトリを指定
-            config = PylayConfig(
-                target_dirs=["nonexistent/"],
-                output_dir="docs/"
-            )
+            config = PylayConfig(target_dirs=["nonexistent/"], output_dir="docs/")
 
             scanner = ProjectScanner(config)
             scanner.project_root = temp_path

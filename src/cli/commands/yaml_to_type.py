@@ -31,7 +31,7 @@ def run_yaml_to_type(
         # Generate Python code
         code_lines = []
         code_lines.append("# Generated Python types from YAML specification")
-        code_lines.append("from typing import Optional, List, Dict, Union, Any")
+        code_lines.append("from typing import Optional, List, Dict")
         code_lines.append("from pydantic import BaseModel")
         code_lines.append("")
 
@@ -58,11 +58,16 @@ def run_yaml_to_type(
                 if not properties and spec_name:
                     return spec_name
                 # Dict型の場合
-                return "Dict[str, Any]"
+                return "Dict[str, str | int | float | bool]"
 
             elif spec_type == "union":
-                # Union 型の処理（簡易実装）
-                return "Union"
+                # Union 型の処理
+                variants = spec_data.get("variants", [])
+                if variants:
+                    variant_types = [spec_to_type_annotation(v) for v in variants]
+                    return " | ".join(variant_types)
+                else:
+                    return "str | int"  # デフォルト
 
             elif spec_type == "unknown":
                 # unknown の場合は元の name を使う（Optional[str] など）

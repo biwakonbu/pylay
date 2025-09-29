@@ -116,7 +116,9 @@ def merge_inferred_types(
     return merged
 
 
-def infer_types_from_file(file_path: str, config_file: str | None = None) -> dict[str, Any]:
+def infer_types_from_file(
+    file_path: str, config_file: str | None = None
+) -> dict[str, Any]:
     """
     ファイルから型を推論します。
 
