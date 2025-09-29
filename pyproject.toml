@@ -1,6 +1,6 @@
 [project]
 name = "pylay"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python の type hint と docstrings を利用した types <-> docs 間の透過的なジェネレータ"
 authors = [{name = "Ryo HIGASIGAWA", email = "your.email@example.com"}]
 readme = "README.md"
@@ -56,7 +56,7 @@ viz = [
 
 [tool.poetry]
 name = "pylay"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python の type hint と docstrings を利用した types <-> docs 間の透過的なジェネレータ"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
