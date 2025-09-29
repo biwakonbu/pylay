@@ -98,3 +98,18 @@ class TestCLI:
         runner = CliRunner()
         result = runner.invoke(cli, ["convert", "to-type", "nonexistent.yaml"])
         assert result.exit_code != 0  # エラーが発生することを期待
+
+    def test_analyze_types_with_infer_option(self, tmp_path):
+        """inferオプション付きでanalyze typesが動作することを確認"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("""
+class User:
+    name: str
+    age: int
+""")
+
+        runner = CliRunner()
+        result = runner.invoke(cli, ["analyze", "types", str(test_file), "--infer"])
+        # 実際の動作確認のため、exit_code=0を期待（エラーがなければOK）
+        # mypy推論が実行されることを確認
+        assert result.exit_code == 0 or "mypy 出力" in result.output

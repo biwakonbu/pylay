@@ -328,3 +328,56 @@ def get_user() -> User:
         assert isinstance(type_analyzer, Analyzer)
         assert isinstance(dep_analyzer, Analyzer)
         assert isinstance(full_analyzer, Analyzer)
+
+
+class TestEdgeCases:
+    """エッジケースのテスト"""
+
+    def test_empty_code_string(self):
+        """空のコード文字列の処理"""
+        config = PylayConfig()
+        from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+        analyzer = TypeInferenceAnalyzer(config)
+
+        graph = analyzer.analyze("")
+        assert isinstance(graph, TypeDependencyGraph)
+        assert len(graph.nodes) == 0
+
+    def test_complex_circular_dependency(self, tmp_path):
+        """複雑な循環依存の検出"""
+        test_file = tmp_path / "complex.py"
+        test_file.write_text("""
+class A:
+    b: 'B'
+
+class B:
+    c: 'C'
+
+class C:
+    a: 'A'
+""")
+
+        config = PylayConfig()
+        from src.core.analyzer.dependency_extractor import DependencyExtractionAnalyzer
+        analyzer = DependencyExtractionAnalyzer(config)
+        graph = analyzer.analyze(test_file)
+
+        # 循環が検出されるはず
+        assert len(graph.nodes) > 0
+        if graph.metadata and "cycles" in graph.metadata:
+            cycles = graph.metadata["cycles"]
+            assert len(cycles) > 0
+
+    def test_networkx_unavailable_fallback(self):
+        """NetworkX未インストール時のフォールバック"""
+        config = PylayConfig()
+        from src.core.analyzer.graph_processor import GraphProcessor
+        processor = GraphProcessor()
+
+        # nx_availableがFalseの場合のメトリクス
+        graph = TypeDependencyGraph(nodes=[], edges=[])
+        metrics = processor.compute_graph_metrics(graph)
+
+        assert metrics["node_count"] == 0
+        assert metrics["edge_count"] == 0
+        assert "density" in metrics

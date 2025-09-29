@@ -13,9 +13,10 @@ Python の type hint と docstrings を利用した types <-> docs 間の透過�
 - Pythonの型オブジェクトをYAML形式の型仕様に変換
 - YAML型仕様からPydantic BaseModelとしてパース・バリデーション
 - YAML型仕様からMarkdownドキュメントを自動生成
-- 型推論と依存関係抽出（mypy + ASTハイブリッド）
+- **高度な型推論と依存関係抽出**（mypy + ASTハイブリッド + NetworkXグラフ分析）
 - 型 <-> YAML <-> 型 <-> Markdownのラウンドトリップ変換
-- **プロジェクト全体解析**（pyproject.toml設定駆動）
+- **プロジェクト全体解析**（pyproject.toml設定駆動 + 循環依存検出）
+- **疎結合アーキテクチャ**（Analyzerインターフェースで柔軟な解析モード選択）
 
 ### 対象ユーザー
 - 型安全性を重視するPython開発者
@@ -95,6 +96,12 @@ pylay analyze types --input src/core/schemas/yaml_type_spec.py --output-yaml typ
 # mypyによる型推論を実行
 pylay analyze types --input src/core/schemas/yaml_type_spec.py --infer
 
+# 新機能: 高度な型推論と依存抽出（analyzer使用）
+pylay infer-deps --input src/core/schemas/yaml_type_spec.py --visualize
+
+# 解析モード指定（types_only, deps_only, full）
+pylay analyze types --input src/core/schemas/yaml_type_spec.py --mode full
+
 # Python型をYAMLに変換
 pylay convert to-yaml --input src/core/schemas/yaml_type_spec.py --output types.yaml
 
@@ -115,6 +122,9 @@ pylay project project-analyze --dry-run
 
 # 詳細なログを出力
 pylay project project-analyze --verbose
+
+# 新機能: 解析結果に依存グラフと循環検出を含む
+pylay project project-analyze --output docs/  # docs/pylay-types/ にグラフ出力
 ```
 
 ### ヘルプの表示

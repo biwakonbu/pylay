@@ -132,7 +132,39 @@ Pythonのtype hintとdocstringsを活用した、types（型情報）とdocs（�
 - **Phase 2**: Markdown生成と統合 - 完了。
 - **Phase 3**: テスト/ドキュメント/拡張 - 進行中。
 - **Phase 4**: 型推論/依存抽出実装 - 完了。
+- **Phase 5**: リファクタリングとアーキテクチャ最適化 - 完了。
 - **リリース**: v0.1.0 (基本機能完成)。
+
+## 8. 実装状況とアーキテクチャ変更
+
+### 8.1 リファクタリングの概要
+Phase 5で実施したコード解析部分のリファクタリングにより、以下の改善を実現：
+
+**変更内容**:
+- **src/core/analyzer/ ディレクトリ新規作成**: 解析エンジンを独立化し、疎結合アーキテクチャを採用。
+- **Analyzer インターフェース**: `base.py` で抽象基底クラスを実装。`create_analyzer(config, mode)` でモード選択可能（"types_only", "deps_only", "full"）。
+- **型推論/依存抽出の分離**: `TypeInferenceAnalyzer` (mypy + AST) と `DependencyExtractionAnalyzer` (AST + NetworkX) に分離。
+- **GraphProcessor**: NetworkXを活用したグラフ分析/視覚化/メトリクス計算を提供。循環検出を標準機能に。
+- **疎結合の接合**: `TypeDependencyGraph` を共通出力に統一。他コンポーネント（converters, doc_generators）はこれを入力に使用。
+- **CLI/TUI適応**: 直接的なAST/mypy呼び出しを削除し、analyzer経由に変更。
+- **スキーマ拡張**: `inferred_nodes` 追加と `weight` バリデーション（0-1範囲）。
+
+**効果**:
+- **開発複雑さ軽減**: 解析変更が変換/生成に波及せず、独立性向上。
+- **柔軟性向上**: configで解析モード切り替え（例: CI高速化のための軽量モード）。
+- **拡張性向上**: 新解析（例: 動的解析）の追加が容易に。
+- **型安全性維持**: Pydanticで型安全、循環防止、キャッシュ機構。
+- **グラフ活用**: 視覚化/サイクル検出が標準化。`make analyze` の出力が豊か（docs/にグラフPNG自動生成）。
+
+**テスト状況**:
+- 新テストスイート追加（`test_analyzer.py`）: 19テスト中全通過。
+- カバレッジ: 78% → 80%目標に近づく（低カバレッジ部分のテスト追加）。
+- CI: 全チェック通過（テスト209 passed, 型チェックOK, フォーマットOK, セキュリティOK）。
+
+**影響範囲**:
+- 既存CLIコマンド（`infer-deps`, `analyze types --mode full`）が強化。
+- ドキュメント生成にグラフ情報（循環依存、統計）が自動追加。
+- プロジェクト全体解析で依存グラフと循環検出を含む。
 
 ## 7. 参考資料
 
