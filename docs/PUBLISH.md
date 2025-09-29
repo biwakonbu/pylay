@@ -11,6 +11,35 @@ PyPI公開は以下の流れで行います：
 3. **公開段階**: テストPyPIと本番PyPIへの公開
 4. **確認段階**: 公開状況の確認と動作テスト
 
+## 📋 リリースプロセス全体
+
+リリースプロセスの詳細な流れは [AGENTS.md](AGENTS.md) の「12.3 リリースプロセス」を参照してください。
+
+### クイックスタート
+```bash
+# 1. 品質チェック
+make ci
+
+# 2. バージョン更新（pyproject.tomlを手動で更新）
+
+# 3. CHANGELOG更新（CHANGELOG.mdを手動で更新）
+
+# 4. テスト実行
+make test
+
+# 5. ビルド確認
+make build
+
+# 6. テストPyPI公開（動作確認）
+make publish-test
+
+# 7. 本番PyPI公開
+make publish
+
+# 8. GitHubリリース作成
+gh release create v0.2.0 --title "pylay v0.2.0" --notes-file CHANGELOG.md
+```
+
 ## 1. 準備段階
 
 ### 1.1 PyPIアカウントの登録
@@ -32,12 +61,15 @@ PyPI公開は以下の流れで行います：
 
 ```bash
 # APIトークンを環境変数に設定
-export TWINE_USERNAME=__token__
-export TWINE_PASSWORD="pypi-XXXXXX..."  # 取得したAPIトークン
+export UV_PUBLISH_USERNAME=__token__
+export UV_PUBLISH_PASSWORD="pypi-XXXXXX..."  # 取得したAPIトークン
+
+# またはトークンを直接設定する場合
+# export UV_PUBLISH_TOKEN="pypi-XXXXXX..."  # 取得したAPIトークン
 
 # 設定を確認
-echo $TWINE_USERNAME
-echo $TWINE_PASSWORD
+echo $UV_PUBLISH_USERNAME
+echo $UV_PUBLISH_PASSWORD
 ```
 
 **⚠️ セキュリティ注意**: APIトークンはGitリポジトリにコミットしないよう注意してください。
@@ -93,14 +125,7 @@ pylay --help
 
 ## 3. 公開段階
 
-### 3.1 Twineのインストール
-
-```bash
-# Twineがインストールされていない場合
-pip install twine
-```
-
-### 3.2 テストPyPIへの公開
+### 3.1 テストPyPIへの公開
 
 **推奨: 本番公開前にテストPyPIで動作確認してください**
 
@@ -109,10 +134,10 @@ pip install twine
 make publish-test
 
 # または手動で
-twine upload --repository testpypi dist/*
+uv publish --index testpypi
 ```
 
-### 3.3 テストPyPIでの確認
+### 3.2 テストPyPIでの確認
 
 ```bash
 # テストPyPIでの公開状況を確認
@@ -125,7 +150,7 @@ pip install --index-url https://test.pypi.org/simple/ pylay
 pylay --version
 ```
 
-### 3.4 本番PyPIへの公開
+### 3.3 本番PyPIへの公開
 
 **⚠️ 注意: 公開前に以下の確認をお願いします**
 - PyPIアカウントとAPIトークンが正しく設定されていること
@@ -137,7 +162,7 @@ pylay --version
 make publish
 
 # または手動で
-twine upload dist/*
+uv publish
 ```
 
 ## 4. 確認段階
@@ -191,11 +216,14 @@ pylay --help
 
 ```bash
 # 環境変数が正しく設定されているか確認
-echo $TWINE_USERNAME
-echo $TWINE_PASSWORD
+echo $UV_PUBLISH_USERNAME
+echo $UV_PUBLISH_PASSWORD
+
+# またはトークン直接設定の場合
+echo $UV_PUBLISH_TOKEN
 
 # APIトークンが有効か確認
-twine check dist/*
+uv publish --check-url https://test.pypi.org/
 ```
 
 ### 6.2 バージョン競合
@@ -256,7 +284,7 @@ make build
 ## 8. 参考資料
 
 - [PyPI公式ドキュメント](https://packaging.python.org/en/latest/tutorials/packaging-projects/)
-- [Twineドキュメント](https://twine.readthedocs.io/)
+- [uv publishドキュメント](https://docs.astral.sh/uv/guides/publish/)
 - [セマンティックバージョニング](https://semver.org/)
 
 ---

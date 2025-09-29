@@ -160,3 +160,5 @@ max_depth = 10
 [tool.uv.sources]
 # ローカル開発用
 # pylay = { path = ".", editable = true }
+
+# PyPI公開は環境変数で設定

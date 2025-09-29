@@ -95,14 +95,19 @@ build: ## パッケージをビルド
 	uv build
 
 install-local: ## ビルドしたパッケージをローカルインストール（テスト用）
-	pip install dist/pylay-0.1.0-py3-none-any.whl --force-reinstall
+	pip install dist/pylay-0.2.0-py3-none-any.whl --force-reinstall
 
 test-install: build install-local ## ビルドしてテストインストールを実行
 	pylay --version
 
 publish-test: build ## テストPyPIに公開
 	@echo "テストPyPIに公開します..."
-	twine upload --repository testpypi dist/*
+	@echo "⚠️  公開前に以下の確認をお願いします:"
+	@echo "   1. UV_TEST_INDEX=1 または uv.tomlにテストPyPI設定があること"
+	@echo "   2. バージョン番号が適切であること"
+	@echo "   3. ビルドが正常に完了していること"
+	@read -p "上記の確認が完了したらEnterを押してください..."
+	uv publish --index testpypi
 
 publish: build ## 本番PyPIに公開
 	@echo "本番PyPIに公開します..."
@@ -110,8 +115,10 @@ publish: build ## 本番PyPIに公開
 	@echo "   1. PyPIアカウントとAPIトークンが設定されていること"
 	@echo "   2. バージョン番号が適切であること"
 	@echo "   3. テストPyPIで動作確認済みであること"
-	@read -p "上記の確認が完了したらEnterを押してください..."
-	twine upload dist/*
+	@echo "   4. CHANGELOG.mdが更新されていること"
+	@echo "続行するにはEnterを押してください..."
+	@read confirm || echo "続行します..."
+	uv publish
 
 check-pypi: ## PyPIでの公開状況を確認
 	@echo "本番PyPIの状況を確認中..."
