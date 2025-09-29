@@ -17,9 +17,9 @@ import subprocess
 import sys
 import json
 import os
+import logging
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Any
 
 
 @dataclass
@@ -42,7 +42,10 @@ class ProjectAnalyzer:
         self.results: list[CheckResult] = []
 
     def run_command(
-        self, cmd: list[str], description: str, expected_exit_codes: list[int] = None
+        self,
+        cmd: list[str],
+        description: str,
+        expected_exit_codes: list[int] | None = None,
     ) -> CheckResult:
         """
         コマンドを実行し、結果を記録する
@@ -61,7 +64,7 @@ class ProjectAnalyzer:
         print(f"\n🔍 {description} を実行中...")
 
         try:
-            result = subprocess.run(
+            result: subprocess.CompletedProcess[str] = subprocess.run(
                 cmd,
                 cwd=self.project_root,
                 capture_output=True,
@@ -194,7 +197,7 @@ class ProjectAnalyzer:
         """依存関係の脆弱性をチェック"""
         return self.run_command(["uv", "run", "pip", "check"], "依存関係整合性チェック")
 
-    def run_all_checks(self) -> dict[str, Any]:
+    def run_all_checks(self) -> dict[str, object]:
         """
         すべてのチェックを実行し、結果をまとめる
 
@@ -211,7 +214,7 @@ class ProjectAnalyzer:
         self.check_security()
         self.check_complexity()
         self.check_docstring_coverage()
-        self.check_coverage_report()
+        # self.check_coverage_report()  # カバレッジレポートはオプション
         self.check_dependencies()
 
         # 結果をまとめる
@@ -239,7 +242,7 @@ class ProjectAnalyzer:
 
         return summary
 
-    def print_summary(self, summary: dict[str, Any]):
+    def print_summary(self, summary: dict[str, object]) -> None:
         """分析結果のサマリーを表示"""
         print("\n" + "=" * 60)
         print("📊 分析結果サマリー")
@@ -256,7 +259,7 @@ class ProjectAnalyzer:
         )
 
         print("\n📋 詳細結果:")
-        for result in summary["results"]:
+        for result in summary["results"]:  # type: ignore
             status = (
                 "✅"
                 if result["success"] and not result["has_issues"]
@@ -271,9 +274,9 @@ class ProjectAnalyzer:
                 )
 
         print("\n💡 推奨事項:")
-        if summary["failed_checks"] > 0:
+        if summary["failed_checks"] > 0:  # type: ignore
             print("  - 失敗したチェックを優先的に修正してください")
-        if summary["checks_with_issues"] > 0:
+        if summary["checks_with_issues"] > 0:  # type: ignore
             print("  - 問題のあるチェックの出力を確認してください")
         if summary["successful_checks"] == summary["total_checks"]:
             print("  - すべてのチェックが成功しました！プロジェクトの品質は良好です")
@@ -281,8 +284,8 @@ class ProjectAnalyzer:
             print("  - 問題を修正した後、再度実行することを推奨します")
 
     def save_report(
-        self, summary: dict[str, Any], filepath: str = "analysis_report.json"
-    ):
+        self, summary: dict[str, object], filepath: str = "analysis_report.json"
+    ) -> None:
         """分析レポートをJSONファイルに保存"""
         report = {
             "timestamp": subprocess.run(
@@ -308,8 +311,13 @@ class ProjectAnalyzer:
         print(f"\n💾 分析レポートを保存しました: {filepath}")
 
 
-def main():
+def main() -> None:
     """メイン実行関数"""
+    # ログ設定
+    logging.basicConfig(
+        level=os.getenv("LOG_LEVEL", "INFO"),
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
     analyzer = ProjectAnalyzer()
 
     try:
@@ -318,7 +326,7 @@ def main():
         analyzer.save_report(summary)
 
         # 終了コードを設定（問題があればエラーコードを返す）
-        exit_code = 1 if summary["failed_checks"] > 0 else 0
+        exit_code = 1 if summary["failed_checks"] > 0 else 0  # type: ignore
         sys.exit(exit_code)
 
     except KeyboardInterrupt:

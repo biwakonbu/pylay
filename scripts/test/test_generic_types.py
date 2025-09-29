@@ -2,8 +2,7 @@
 複雑なジェネリック型のテスト用コード
 """
 
-from typing import Union, Optional
-from collections.abc import Mapping
+from typing import Optional
 
 
 class GenericClass:

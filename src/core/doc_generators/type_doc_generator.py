@@ -2,11 +2,12 @@
 
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from .base import DocumentGenerator
 from .config import TypeDocConfig
 from .type_inspector import TypeInspector
+from src.core.schemas.graph_types import TypeDependencyGraph
 
 
 class LayerDocGenerator(DocumentGenerator):
@@ -55,12 +56,13 @@ class LayerDocGenerator(DocumentGenerator):
 
         Args:
             *args: Positional arguments (layer, types, output_path) or (output_path,)
-            **kwargs: Additional configuration parameters (layer, types)
+            **kwargs: Additional configuration parameters (layer, types, graph)
         """
         # 変数の初期化
         layer: str
         types: dict[str, type[Any]] | list[type[Any]]
         actual_output_path: Path
+        graph: Optional[TypeDependencyGraph] = kwargs.get("graph")
 
         if len(args) == 3:
             # テストが期待するAPI: generate(layer, types, output_path)
@@ -122,6 +124,8 @@ class LayerDocGenerator(DocumentGenerator):
         self._generate_auto_growth_section(layer)
         self._generate_layer_specific_section(layer)
         self._generate_type_sections(layer, types)
+        if graph:
+            self._generate_graph_section(graph, layer)
         self._add_footer()
 
         # Write to file
@@ -324,6 +328,44 @@ class LayerDocGenerator(DocumentGenerator):
             definition = self.inspector.format_type_definition(name, type_cls)
             self.md.raw(definition).line_break()
 
+    def _generate_graph_section(self, graph: TypeDependencyGraph, layer: str) -> None:
+        """Generate graph-related section.
+
+        Args:
+            graph: TypeDependencyGraph
+            layer: Layer name
+        """
+        self.md.heading(2, "🔗 依存関係グラフ").line_break()
+
+        # グラフメトリクス
+        self.md.heading(3, "グラフ統計")
+        self.md.bullet_point(f"ノード数: {len(graph.nodes)}")
+        self.md.bullet_point(f"エッジ数: {len(graph.edges)}")
+        if graph.metadata:
+            self.md.bullet_point(
+                f"抽出方法: {graph.metadata.get('extraction_method', 'unknown')}"
+            )
+        self.md.line_break()
+
+        # 循環検出
+        if graph.metadata and "cycles" in graph.metadata:
+            cycles = graph.metadata["cycles"]
+            if cycles:
+                self.md.heading(3, "⚠️ 循環依存")
+                for i, cycle in enumerate(cycles[:5]):  # 最初の5つ
+                    cycle_str = " → ".join(cycle)
+                    self.md.bullet_point(f"サイクル {i + 1}: {cycle_str}")
+                if len(cycles) > 5:
+                    self.md.bullet_point(f"他 {len(cycles) - 5} 個のサイクル")
+            else:
+                self.md.bullet_point("循環依存なし")
+        self.md.line_break()
+
+        # 視覚化リンク
+        graph_png = f"{layer}_deps.png"
+        self.md.heading(3, "視覚化")
+        self.md.paragraph(f"依存関係の視覚化: [画像: {graph_png}]").line_break()
+
     def _add_footer(self) -> None:
         """Add generation footer."""
         footer = self._format_generation_footer()
@@ -388,10 +430,8 @@ class IndexDocGenerator(DocumentGenerator):
             actual_output_path = Path(output_path_arg)
         elif len(args) == 2:
             # テストが期待するAPI: generate(type_registry, output_path)
-            type_registry_arg: dict[str, dict[str, type[Any]]] = args[0]
-            output_path_arg: Path = args[1]
-            type_registry = type_registry_arg
-            actual_output_path = Path(output_path_arg)
+            type_registry = args[0]
+            actual_output_path = Path(args[1])
         elif len(args) == 1:
             # テストが期待するAPI: generate(type_registry) - output_pathはデフォルト
             type_registry_arg: dict[str, dict[str, type[Any]]] = args[0]
@@ -510,7 +550,7 @@ class IndexDocGenerator(DocumentGenerator):
         self.md.bullet_point(f"**総型数**: {total_types}")
 
         # すべての利用可能な型名を取得
-        from schemas.type_index import get_available_types_all
+        from src.core.schemas.type_index import get_available_types_all
 
         all_types = get_available_types_all()
         self.md.bullet_point(f"**全レイヤー型一覧**: {', '.join(all_types)}")

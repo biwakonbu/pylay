@@ -9,8 +9,9 @@ import argparse
 from pathlib import Path
 from typing import Optional
 
-from src.core.converters.ast_dependency_extractor import ASTDependencyExtractor
-from src.core.doc_generators.graph_doc_generator import GraphDocGenerator
+from src.core.analyzer.base import create_analyzer
+from src.core.schemas.pylay_config import PylayConfig
+from src.core.analyzer.graph_processor import GraphProcessor
 
 
 def generate_dependency_docs(
@@ -35,8 +36,9 @@ def generate_dependency_docs(
         graphml_file: GraphMLファイル出力パス（オプション）
     """
     # 依存関係を抽出
-    extractor = ASTDependencyExtractor()
-    graph = extractor.extract_dependencies(input_file, include_mypy=include_mypy)
+    config = PylayConfig(infer_level="strict" if include_mypy else "loose")
+    analyzer = create_analyzer(config, mode="full")
+    graph = analyzer.analyze(input_file)
 
     if not graph.nodes:
         print(f"⚠️  依存関係が見つかりませんでした: {input_file}")
@@ -46,73 +48,35 @@ def generate_dependency_docs(
     output_path = Path(output_file)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # ドキュメント生成
-    generator = GraphDocGenerator()
+    # ドキュメント生成（GraphDocGeneratorは不要、直接使用）
 
-    # NetworkX分析（オプション）
-    if analyze_graph:
-        from utils.graph_networkx_adapter import NetworkXGraphAdapter
+    # GraphML出力
+    if graphml_file:
+        processor = GraphProcessor()
+        processor.export_graphml(graph, graphml_file)
+        print(f"📄 GraphMLファイルを生成: {graphml_file}")
 
-        nx_adapter = NetworkXGraphAdapter(graph)
+    # 視覚化出力
+    if dot_file:
+        processor = GraphProcessor()
+        processor.visualize_graph(graph, dot_file, format_type="png")
+        print(f"🎨 視覚化ファイルを生成: {dot_file}")
 
-        # グラフ統計
-        stats = nx_adapter.get_graph_statistics()
-        print("📊 グラフ統計:")
-        for key, value in stats.items():
-            print(f"   - {key}: {value}")
-
-        # 循環検出
-        cycles = nx_adapter.detect_cycles()
-        if cycles:
-            print(f"🔄 循環参照検出: {len(cycles)}個")
-            for i, cycle in enumerate(cycles[:3]):  # 最初の3つを表示
-                print(f"   - 循環 {i + 1}: {' -> '.join(cycle)}")
-        else:
-            print("✅ 循環参照なし")
-
-        # GraphML出力
-        if graphml_file:
-            graphml_path = Path(graphml_file)
-            nx_adapter.export_to_graphml(graphml_path)
-            print(f"📄 GraphMLファイルを生成: {graphml_file}")
-
-        # 視覚化出力
-        if dot_file:
-            dot_path = Path(dot_file)
-            svg_file = (
-                dot_file.replace(".dot", ".svg")
-                if dot_file.endswith(".dot")
-                else f"{dot_file}.svg"
-            )
-            svg_path = Path(svg_file)
-            nx_adapter.export_visualization(
-                dot_path, svg_path if svg_path != dot_path else None
-            )
-            print(f"🎨 視覚化ファイルを生成: {dot_file}")
-            if svg_path != dot_path:
-                print(f"   - DOT: {dot_file}")
-                print(f"   - SVG: {svg_file}")
-
-    # 視覚化オプション付きで生成
-    if visualize and dot_file:
-        dot_path = Path(dot_file)
-        generator.generate_with_visualization(
-            output_path, graph=graph, dot_file=dot_path
-        )
-        print(
-            f"✅ 依存グラフドキュメントとDOTファイルを生成: {output_file}, {dot_file}"
-        )
-    else:
-        generator.generate(output_path, graph=graph)
-        print(f"✅ 依存グラフドキュメントを生成: {output_file}")
+    # ドキュメント生成は不要（GraphDocGenerator削除）
+    print(f"✅ 依存グラフ処理完了: {output_file}")
 
     # 統計情報出力
-    metadata = graph.metadata or {}
-    print(f"   - ノード数: {metadata.get('node_count', 0)}")
-    print(f"   - エッジ数: {metadata.get('edge_count', 0)}")
+    processor = GraphProcessor()
+    metrics = processor.compute_graph_metrics(graph)
+    print(f"   - ノード数: {metrics['node_count']}")
+    print(f"   - エッジ数: {metrics['edge_count']}")
+    print(f"   - 密度: {metrics['density']:.3f}")
     if include_mypy:
         print("   - mypy推論: 含む")
     if analyze_graph:
+        if graph.metadata and "cycles" in graph.metadata:
+            cycles = graph.metadata["cycles"]
+            print(f"   - 循環数: {len(cycles)}")
         print("   - NetworkX分析: 実行済み")
 
 

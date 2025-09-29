@@ -26,7 +26,6 @@ from ...core.converters.type_to_yaml import extract_types_from_module
 from ...core.converters.infer_types import infer_types_from_file
 from ...core.converters.extract_deps import extract_dependencies_from_file
 from ...core.converters.yaml_to_type import yaml_to_spec
-from ...core.doc_generators.type_doc_generator import LayerDocGenerator
 from ...core.doc_generators.yaml_doc_generator import YamlDocGenerator
 
 

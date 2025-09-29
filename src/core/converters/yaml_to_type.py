@@ -1,5 +1,4 @@
 from typing import Any
-from pydantic import ValidationError
 from ruamel.yaml import YAML
 
 from src.core.schemas.yaml_type_spec import (
@@ -8,7 +7,6 @@ from src.core.schemas.yaml_type_spec import (
     ListTypeSpec,
     DictTypeSpec,
     UnionTypeSpec,
-    GenericTypeSpec,
     TypeRoot,
     TypeContext,
     TypeSpecOrRef,

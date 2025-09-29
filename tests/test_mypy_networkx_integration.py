@@ -4,8 +4,6 @@ mypy統合とNetworkX機能のテストモジュール。
 """
 
 import tempfile
-import pytest
-from pathlib import Path
 
 from src.core.converters.ast_dependency_extractor import ASTDependencyExtractor
 from src.core.converters.mypy_type_extractor import MypyTypeExtractor

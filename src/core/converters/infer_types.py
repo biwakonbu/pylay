@@ -10,8 +10,7 @@ import subprocess
 import tempfile
 import os
 from pathlib import Path
-from typing import Any, Optional
-from collections.abc import Mapping
+from typing import Any
 
 
 def infer_types_from_code(

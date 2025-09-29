@@ -7,10 +7,7 @@
 
 import tempfile
 from pathlib import Path
-from typing import Any
 
-import pytest
-import yaml
 from click.testing import CliRunner
 
 from src.cli.main import cli
@@ -18,7 +15,6 @@ from src.core.project_scanner import ProjectScanner
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.converters.type_to_yaml import extract_types_from_module
 from src.core.converters.yaml_to_type import yaml_to_spec
-from src.core.doc_generators.yaml_doc_generator import YamlDocGenerator
 
 
 class TestProjectAnalyze:

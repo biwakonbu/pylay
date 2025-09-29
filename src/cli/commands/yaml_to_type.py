@@ -1,8 +1,6 @@
 """YAML to type conversion command"""
 
 import sys
-from pathlib import Path
-
 from rich.console import Console
 
 from src.core.converters.yaml_to_type import yaml_to_spec

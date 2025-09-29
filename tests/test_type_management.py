@@ -4,7 +4,6 @@ import os
 
 from src.core.converters.type_to_yaml import type_to_yaml, types_to_yaml
 from src.core.converters.yaml_to_type import yaml_to_spec, validate_with_spec
-from src.core.doc_generators.yaml_doc_generator import generate_yaml_docs
 from src.core.schemas.yaml_type_spec import TypeSpec, DictTypeSpec
 
 
@@ -546,7 +545,6 @@ def test_type_to_spec_function_splitting():
     from src.core.converters.type_to_yaml import (
         _get_basic_type_str,
         _get_type_name,
-        _handle_basic_type,
         _handle_list_type,
     )
 

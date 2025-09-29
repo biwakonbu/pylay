@@ -2,7 +2,6 @@
 複雑なジェネリック型のテスト
 """
 
-import pytest
 import networkx as nx
 from core.converters.extract_deps import extract_dependencies_from_code
 

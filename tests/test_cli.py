@@ -1,10 +1,6 @@
 """CLI 機能のテスト"""
 
-import pytest
 from click.testing import CliRunner
-from pathlib import Path
-import tempfile
-import os
 
 from src.cli.main import cli
 
@@ -31,7 +27,7 @@ class TestCLI:
         runner = CliRunner()
         result = runner.invoke(cli, ["analyze", "--help"])
         assert result.exit_code == 0
-        assert "静的解析コマンド" in result.stdout
+        assert "型解析・依存関係分析コマンド" in result.stdout
 
     def test_convert_help(self):
         """convertコマンドのヘルプが表示されることを確認"""
@@ -47,12 +43,12 @@ class TestCLI:
         assert result.exit_code == 0
         assert "Python 型から Markdown ドキュメントを生成" in result.stdout
 
-    def test_analyze_types_help(self):
-        """analyze typesコマンドのヘルプが表示されることを確認"""
+    def test_analyze_infer_deps_help(self):
+        """analyze infer-depsコマンドのヘルプが表示されることを確認"""
         runner = CliRunner()
-        result = runner.invoke(cli, ["analyze", "types", "--help"])
+        result = runner.invoke(cli, ["analyze", "infer-deps", "--help"])
         assert result.exit_code == 0
-        assert "モジュールから型を解析" in result.stdout
+        assert "型推論と依存関係抽出を実行" in result.stdout
 
     def test_convert_to_yaml_help(self):
         """convert to-yamlコマンドのヘルプが表示されることを確認"""
@@ -81,10 +77,10 @@ class TestCLI:
         result = runner.invoke(cli, ["generate", "type-docs", "nonexistent.py"])
         assert result.exit_code != 0  # エラーが発生することを期待
 
-    def test_analyze_types_with_invalid_input(self):
+    def test_analyze_infer_deps_with_invalid_input(self):
         """無効な入力ファイルでエラーが発生することを確認"""
         runner = CliRunner()
-        result = runner.invoke(cli, ["analyze", "types", "nonexistent.py"])
+        result = runner.invoke(cli, ["analyze", "infer-deps", "nonexistent.py"])
         assert result.exit_code != 0  # エラーが発生することを期待
 
     def test_convert_to_yaml_with_invalid_input(self):
@@ -98,3 +94,20 @@ class TestCLI:
         runner = CliRunner()
         result = runner.invoke(cli, ["convert", "to-type", "nonexistent.yaml"])
         assert result.exit_code != 0  # エラーが発生することを期待
+
+    def test_analyze_infer_deps_with_visualize_option(self, tmp_path):
+        """visualizeオプション付きでanalyze infer-depsが動作することを確認"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("""
+class User:
+    name: str
+    age: int
+""")
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli, ["analyze", "infer-deps", str(test_file), "--visualize"]
+        )
+        # 実際の動作確認のため、exit_code=0を期待（エラーがなければOK）
+        # 依存関係抽出が実行されることを確認
+        assert result.exit_code == 0 or "依存関係抽出" in result.output

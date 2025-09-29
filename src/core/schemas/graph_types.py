@@ -37,7 +37,7 @@ class GraphNode(BaseModel):
     name: str
     node_type: Literal["class", "function", "module"] | str  # 拡張性を考慮
     qualified_name: Optional[str] = None
-    attributes: Optional[dict[str, Any]] = None
+    attributes: Optional[dict[str, str | int | float | bool]] = None
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
@@ -66,8 +66,8 @@ class GraphEdge(BaseModel):
     source: str
     target: str
     relation_type: RelationType
-    weight: float = 1.0
-    attributes: Optional[dict[str, Any]] = None
+    weight: float = Field(default=1.0, ge=0.0, le=1.0)  # 0.0から1.0の範囲
+    attributes: Optional[dict[str, str | int | float | bool]] = None
     metadata: Optional[dict[str, Any]] = None
 
     def is_strong_dependency(self) -> bool:
@@ -88,6 +88,7 @@ class TypeDependencyGraph(BaseModel):
     nodes: list[GraphNode]
     edges: list[GraphEdge]
     metadata: Optional[dict[str, Any]] = None
+    inferred_nodes: Optional[list[GraphNode]] = None  # 推論されたノード
 
     def add_node(self, node: GraphNode) -> None:
         """ノードを追加"""
@@ -135,10 +136,6 @@ class TypeDependencyGraph(BaseModel):
     @classmethod
     def from_networkx(cls, graph: "nx.DiGraph") -> "TypeDependencyGraph":  # type: ignore
         """NetworkX DiGraph から構築"""
-        try:
-            import networkx as nx
-        except ImportError:
-            raise ImportError("networkx is required for from_networkx()")
 
         nodes = []
         edges = []

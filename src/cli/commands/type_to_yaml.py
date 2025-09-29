@@ -2,12 +2,9 @@
 
 import sys
 from pathlib import Path
-from typing import Any
-
 from rich.console import Console
 
-from src.core.converters.type_to_yaml import type_to_yaml, types_to_yaml
-from src.core.schemas.yaml_type_spec import TypeSpec
+from src.core.converters.type_to_yaml import types_to_yaml
 from enum import Enum
 
 
