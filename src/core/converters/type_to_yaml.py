@@ -4,7 +4,10 @@ from pydantic import BaseModel
 
 
 def _recursive_dump(obj: Any) -> Any:
-    """Pydanticモデルを再帰的にdictに変換"""
+    """Pydanticモデルを再帰的にdictに変換
+
+    Pydanticモデルのインスタンスを再帰的に辞書形式に変換します。
+    """
     if isinstance(obj, BaseModel):
         return obj.model_dump()
     elif isinstance(obj, dict):
@@ -148,7 +151,10 @@ def _get_class_properties_with_docstrings(cls: type[Any]) -> dict[str, TypeSpecO
 
 
 def type_to_spec(typ: type[Any]) -> TypeSpec:
-    """Python型をTypeSpecに変換（v1.1対応）"""
+    """Python型をTypeSpecに変換（v1.1対応）
+
+    Pythonの型オブジェクトをTypeSpec形式に変換します。v1.1対応版です。
+    """
     origin = get_origin(typ)
     args = get_args(typ)
 

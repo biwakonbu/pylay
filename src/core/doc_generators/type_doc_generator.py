@@ -1,4 +1,4 @@
-"""Type documentation generators for automated type documentation."""
+"""型ドキュメント自動生成機能"""
 
 from collections import defaultdict
 from pathlib import Path
@@ -11,18 +11,18 @@ from src.core.schemas.graph_types import TypeDependencyGraph
 
 
 class LayerDocGenerator(DocumentGenerator):
-    """Generator for layer-specific type documentation."""
+    """レイヤー固有の型ドキュメント生成器"""
 
     def __init__(
         self,
         config: TypeDocConfig | None = None,
         **kwargs: object,
     ) -> None:
-        """Initialize layer documentation generator.
+        """レイヤードキュメント生成器を初期化
 
         Args:
-            config: Configuration for type documentation generation
-            **kwargs: Additional arguments passed to parent constructor
+            config: 型ドキュメント生成の設定
+            **kwargs: 親コンストラクタに渡す追加引数
         """
         # Extract filesystem and markdown_builder from kwargs with proper typing
         from .filesystem import FileSystemInterface
@@ -52,11 +52,11 @@ class LayerDocGenerator(DocumentGenerator):
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        """Generate layer documentation.
+        """レイヤードキュメントを生成
 
         Args:
-            *args: Positional arguments (layer, types, output_path) or (output_path,)
-            **kwargs: Additional configuration parameters (layer, types, graph)
+            *args: 位置引数（layer, types, output_path）または（output_path,）
+            **kwargs: 追加設定パラメータ（layer, types, graph）
         """
         # 変数の初期化
         layer: str
@@ -367,13 +367,13 @@ class LayerDocGenerator(DocumentGenerator):
         self.md.paragraph(f"依存関係の視覚化: [画像: {graph_png}]").line_break()
 
     def _add_footer(self) -> None:
-        """Add generation footer."""
+        """生成フッターを追加"""
         footer = self._format_generation_footer()
         self.md.raw(footer)
 
 
 class IndexDocGenerator(DocumentGenerator):
-    """Generator for type documentation index."""
+    """型ドキュメント索引の生成器"""
 
     def __init__(
         self,
@@ -467,11 +467,11 @@ class IndexDocGenerator(DocumentGenerator):
         print(f"✅ Generated index {actual_output_path}: {total_types} total types")
 
     def _generate_header(self) -> None:
-        """Generate document header."""
+        """ドキュメントヘッダーを生成"""
         self.md.heading(1, "型インデックス（完全自動成長対応）").line_break()
 
     def _generate_unified_usage_section(self) -> None:
-        """Generate unified usage method section."""
+        """統一的な使用方法セクションを生成"""
         self.md.heading(2, "🚀 統一的な型取得方法").line_break()
 
         explanation = (
@@ -556,6 +556,6 @@ class IndexDocGenerator(DocumentGenerator):
         self.md.bullet_point(f"**全レイヤー型一覧**: {', '.join(all_types)}")
 
     def _add_footer(self) -> None:
-        """Add generation footer."""
+        """生成フッターを追加"""
         footer = self._format_generation_footer()
         self.md.raw(footer)

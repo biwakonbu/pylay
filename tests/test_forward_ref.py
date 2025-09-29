@@ -7,10 +7,16 @@ from core.converters.extract_deps import extract_dependencies_from_code
 
 
 class TestForwardRef:
-    """ForwardRefと循環参照のテストクラス"""
+    """ForwardRefと循環参照のテストクラス
+
+    ForwardRef（前方参照）と循環参照が正しく処理されることを確認します。
+    """
 
     def test_forward_ref_extraction(self):
-        """ForwardRefの抽出テスト"""
+        """ForwardRefの抽出テスト
+
+        ForwardRef（"Node"）が正しく抽出され、依存グラフに含まれることを確認します。
+        """
         code = """
 from typing import Optional
 
@@ -26,7 +32,10 @@ class Node:
         # ForwardRef "Node" が適切に処理されていることを確認
 
     def test_circular_reference_detection(self):
-        """循環参照の検出テスト"""
+        """循環参照の検出テスト
+
+        相互参照するクラス（AとB）の循環参照が正しく検出されることを確認します。
+        """
         code = """
 class A:
     def __init__(self, b: "B") -> None:
@@ -43,7 +52,10 @@ class B:
         assert len(graph.nodes()) > 0
 
     def test_union_type_with_forward_ref(self):
-        """ForwardRefを含むUnion型のテスト"""
+        """ForwardRefを含むUnion型のテスト
+
+        Union型内にForwardRefが含まれる場合の処理をテストします。
+        """
         code = """
 from typing import Union
 

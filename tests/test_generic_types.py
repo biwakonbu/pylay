@@ -25,7 +25,10 @@ def process(data: Dict[str, List[int]]) -> Dict[str, str]:
         assert "List" in graph.nodes()
 
     def test_union_types(self):
-        """Union型のテスト"""
+        """Union型のテスト
+
+        Union[str, int] などの型が正しく依存グラフに含まれることを確認します。
+        """
         code = """
 from typing import Union
 
@@ -40,7 +43,10 @@ def handle(value: Union[str, int]) -> Union[List[str], Dict[str, int]]:
         assert "Union[List[str], Dict[str, int]]" in graph.nodes()
 
     def test_optional_types(self):
-        """Optional型のテスト"""
+        """Optional型のテスト
+
+        Optional[Dict[str, int]] などの型が正しく依存グラフに含まれることを確認します。
+        """
         code = """
 from typing import Optional
 
@@ -66,7 +72,10 @@ data: Dict[str, List[Dict[str, Union[int, str]]]] = {}
         assert "Dict[str, List[Dict[str, Union[int, str]]]]" in graph.nodes()
 
     def test_python_310_union_syntax(self):
-        """Python 3.10+ のUnion構文（str | int）のテスト"""
+        """Python 3.10+ のUnion構文（str | int）のテスト
+
+        Python 3.10+ の新しいUnion構文（str | int）が正しく処理されることを確認します。
+        """
         code = """
 def combine(a: str | int) -> list[str] | dict[str, int]:
     return []
@@ -78,7 +87,10 @@ def combine(a: str | int) -> list[str] | dict[str, int]:
         assert "list[str] | dict[str, int]" in graph.nodes()
 
     def test_union_in_generic_types(self):
-        """Generic型内のUnionテスト（List[str | int]など）"""
+        """Generic型内のUnionテスト（List[str | int]など）
+
+        ジェネリック型内にUnionが含まれる場合の処理をテストします。
+        """
         code = """
 from typing import List
 

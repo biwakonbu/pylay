@@ -58,10 +58,16 @@ def get_user() -> User:
 
 
 class TestNetworkXIntegration:
-    """NetworkX統合のテスト"""
+    """NetworkX統合のテスト
+
+    mypy型推論とNetworkXグラフ構造の統合が正しく動作することを確認します。
+    """
 
     def test_networkx_adapter_creation(self):
-        """NetworkXアダプターの作成テスト"""
+        """NetworkXアダプターの作成テスト
+
+        NetworkXアダプターが正しく作成され、グラフ構造を処理できることを確認します。
+        """
         from core.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph
 
         nodes = [

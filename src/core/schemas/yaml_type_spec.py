@@ -23,7 +23,10 @@ class RefPlaceholder(BaseModel):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> Any:
-        """Pydanticのスキーマ生成"""
+        """Pydanticのスキーマ生成
+
+        Pydanticモデル用のスキーマを生成します。
+        """
         from pydantic_core import core_schema
 
         return core_schema.str_schema()
@@ -94,7 +97,10 @@ class DictTypeSpec(TypeSpec):
 
 
 class UnionTypeSpec(TypeSpec):
-    """Union型の仕様（参照型をTypeSpecOrRefに統一）"""
+    """Union型の仕様（参照型をTypeSpecOrRefに統一）
+
+    Union型の型仕様を定義します。参照型はTypeSpecOrRefに統一されています。
+    """
 
     type: Literal["union"] = "union"
     variants: list[Any] = Field(
@@ -117,7 +123,10 @@ class UnionTypeSpec(TypeSpec):
 
 
 class GenericTypeSpec(TypeSpec):
-    """Generic型の仕様（例: Generic[T]）（参照型をTypeSpecOrRefに統一）"""
+    """Generic型の仕様（例: Generic[T]）（参照型をTypeSpecOrRefに統一）
+
+    Generic型の型仕様を定義します（例: Generic[T]）。参照型はTypeSpecOrRefに統一されています。
+    """
 
     type: Literal["generic"] = "generic"
     params: list[Any] = Field(
@@ -140,7 +149,10 @@ class GenericTypeSpec(TypeSpec):
 
     @model_validator(mode="after")
     def validate_generic_depth(self) -> "GenericTypeSpec":
-        """Generic型のネスト深さを検証"""
+        """Generic型のネスト深さを検証
+
+        Generic型のネスト深さをチェックし、制限を超える場合はエラーを発生させます。
+        """
         MAX_DEPTH = 10
 
         def check_depth(items: list[TypeSpecOrRef], current_depth: int = 0) -> None:
@@ -168,7 +180,10 @@ class TypeRoot(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def preprocess_types(cls, data: Any) -> Any:
-        """TypeRoot構築前の参照文字列処理"""
+        """TypeRoot構築前の参照文字列処理
+
+        TypeRootを構築する前に参照文字列を解決します。
+        """
         if isinstance(data, dict) and "types" in data:
             processed_types = {}
             for name, spec_data in data["types"].items():

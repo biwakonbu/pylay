@@ -251,6 +251,7 @@ VSCodeを使用する場合、以下の拡張機能が推奨されます：
 - **日本語**でコメント、ドキュメント、コミットメッセージを記述
 - **型アノテーション完全**: mypyのstrictモードを遵守
 - **docstring必須**: Google形式で全モジュール/クラス/関数に記述
+- Pythonのコメントは、docstringをGoogle Styleで記述し、内容は日本語で記述する
 - **インポート順序**: standard library → third party → local imports
 
 ### 5.2 命名規則

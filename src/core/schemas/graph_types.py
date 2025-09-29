@@ -115,7 +115,10 @@ class TypeDependencyGraph(BaseModel):
         return [e for e in self.edges if e.target == node_id]
 
     def to_networkx(self) -> "nx.DiGraph":  # type: ignore
-        """NetworkX DiGraph に変換"""
+        """NetworkX DiGraph に変換
+
+        TypeDependencyGraphをNetworkX DiGraph形式に変換します。
+        """
         try:
             import networkx as nx
         except ImportError:
@@ -135,7 +138,10 @@ class TypeDependencyGraph(BaseModel):
 
     @classmethod
     def from_networkx(cls, graph: "nx.DiGraph") -> "TypeDependencyGraph":  # type: ignore
-        """NetworkX DiGraph から構築"""
+        """NetworkX DiGraph から構築
+
+        NetworkX DiGraphからTypeDependencyGraphを構築します。
+        """
 
         nodes = []
         edges = []

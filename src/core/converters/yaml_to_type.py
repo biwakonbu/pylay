@@ -164,7 +164,10 @@ def _detect_circular_references(types: dict[str, TypeSpec]) -> None:
 
 
 def _collect_refs_from_spec(spec: TypeSpec) -> list[str]:
-    """TypeSpecから参照文字列を収集"""
+    """TypeSpecから参照文字列を収集
+
+    TypeSpecオブジェクトから参照文字列を収集します。
+    """
     from src.core.schemas.yaml_type_spec import RefPlaceholder
 
     refs = []
@@ -199,7 +202,10 @@ def _collect_refs_from_spec(spec: TypeSpec) -> list[str]:
 def validate_with_spec(
     spec: TypeSpecOrRef, data: Any, max_depth: int = 10, current_depth: int = 0
 ) -> bool:
-    """TypeSpecに基づいてデータをバリデーション"""
+    """TypeSpecに基づいてデータをバリデーション
+
+    TypeSpec定義に基づいて入力データをバリデーションします。
+    """
     if current_depth > max_depth:
         return False  # 深さ制限超過
     try:
@@ -252,13 +258,16 @@ def validate_with_spec(
 
 
 def generate_pydantic_model(spec: TypeSpec, model_name: str = "DynamicModel") -> str:
-    """TypeSpecからPydanticモデルコードを生成 (簡易版)"""
+    """TypeSpecからPydanticモデルコードを生成 (簡易版)
+
+    TypeSpec定義からPydanticモデルコードを生成します（簡易版）。
+    """
     # これはコード生成なので、文字列として返す
     if isinstance(spec, TypeSpec):
         return f"class {model_name}(BaseModel):\\n    value: {spec.type}"
     # 他の型の場合、拡張可能
     else:
-        return f"class {model_name}(BaseModel):\\n    # Complex type\\n    pass"
+        return f"class {model_name}(BaseModel):\\n    # 複雑な型\\n    pass"
 
 
 # 例

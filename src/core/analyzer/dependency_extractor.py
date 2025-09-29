@@ -74,7 +74,7 @@ class DependencyExtractionAnalyzer(Analyzer):
         # 状態リセット
         self._reset_state()
 
-        # AST解析
+        # ASTを解析
         self._extract_dependencies_from_file(file_path)
 
         # mypy統合（config.infer_levelに基づく）

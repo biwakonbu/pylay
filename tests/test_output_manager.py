@@ -14,10 +14,16 @@ from src.core.output_manager import OutputPathManager
 
 
 class TestOutputPathManager:
-    """OutputPathManager のテスト"""
+    """OutputPathManager のテスト
+
+    OutputPathManagerクラスの機能が正しく動作することを確認します。
+    """
 
     def test_yaml_path_generation(self):
-        """YAML パス生成のテスト"""
+        """YAML パス生成のテスト
+
+        YAMLファイルのパスが正しく生成されることを確認します。
+        """
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
@@ -48,7 +54,10 @@ generate_markdown = true
             assert yaml_path.parent.exists()
 
     def test_markdown_path_generation(self):
-        """Markdown パス生成のテスト"""
+        """Markdown パス生成のテスト
+
+        Markdownファイルのパスが正しく生成されることを確認します。
+        """
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 

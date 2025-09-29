@@ -16,7 +16,10 @@ class TestVisualization:
     """視覚化機能のテストクラス"""
 
     def test_visualization_with_graphviz(self):
-        """Graphvizが利用可能な場合のテスト"""
+        """Graphvizが利用可能な場合のテスト
+
+        Graphvizがインストールされている場合のグラフ可視化機能をテストします。
+        """
         code = """
 def func(x: int) -> str:
     return str(x)
@@ -42,7 +45,10 @@ def func(x: int) -> str:
                 os.unlink(output_path)
 
     def test_visualization_without_graphviz(self):
-        """Graphvizが利用できない場合のテスト"""
+        """Graphvizが利用できない場合のテスト
+
+        Graphvizがインストールされていない場合のフォールバック動作をテストします。
+        """
         code = """
 def func(x: int) -> str:
     return str(x)

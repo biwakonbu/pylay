@@ -446,7 +446,10 @@ def test_complex_union_types():
 
     # Unionを含むDictのテスト
     class ContainerWithUnion:
-        """Unionを含むコンテナ"""
+        """Unionを含むコンテナ
+
+        Union型を含むコンテナクラスの型管理をテストします。
+        """
 
         value: str | int
         name: str

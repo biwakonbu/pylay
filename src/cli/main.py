@@ -85,7 +85,10 @@ def generate() -> None:
     help="出力 Markdown ファイル",
 )
 def generate_type_docs(input: str, output: str) -> None:
-    """Python 型から Markdown ドキュメントを生成"""
+    """Python 型から Markdown ドキュメントを生成
+
+    Pythonの型定義からMarkdown形式のドキュメントを生成します。
+    """
     try:
         with Progress(
             SpinnerColumn(),
@@ -236,7 +239,10 @@ def convert() -> None:
     help="出力 YAML ファイル (デフォルト: stdout)",
 )
 def convert_to_yaml(input_module: str, output: str) -> None:
-    """Python 型を YAML に変換"""
+    """Python 型を YAML に変換
+
+    Pythonの型定義をYAML形式に変換します。
+    """
     try:
         with Progress(
             SpinnerColumn(),

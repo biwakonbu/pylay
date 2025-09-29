@@ -72,7 +72,10 @@ class TempFileConfig(TypedDict):
 
 
 class AnalyzerConfig(TypedDict):
-    """Analyzer設定の型（PylayConfig拡張）"""
+    """Analyzer設定の型（PylayConfig拡張）
+
+    Analyzer固有の設定を管理するPylayConfigの拡張クラスです。
+    """
 
     infer_level: Literal["loose", "normal", "strict"]
     max_depth: int

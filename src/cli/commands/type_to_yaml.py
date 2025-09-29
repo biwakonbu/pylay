@@ -1,4 +1,7 @@
-"""Type to YAML conversion command"""
+"""型からYAMLへの変換コマンド
+
+Pythonの型定義をYAML形式に変換するCLIコマンドです。
+"""
 
 import sys
 from pathlib import Path
@@ -11,31 +14,31 @@ from enum import Enum
 def run_type_to_yaml(
     input_file: str, output_file: str, root_key: str | None = None
 ) -> None:
-    """Convert Python type to YAML specification
+    """Python型をYAML仕様に変換
 
     Args:
-        input_file: Path to Python module file
-        output_file: Output YAML file path
-        root_key: Root key for the YAML structure
+        input_file: Pythonモジュールファイルのパス
+        output_file: 出力YAMLファイルのパス
+        root_key: YAML構造のルートキー
     """
     console = Console()
 
     try:
-        # Import the module
+        # モジュールをインポート
         sys.path.insert(0, str(Path(input_file).parent))
         module_name = Path(input_file).stem
 
-        # Import the module dynamically
+        # モジュールをインポート dynamically
         import importlib
 
         module = importlib.import_module(module_name)
 
-        # Find all type annotations in the module
+        # モジュール内の全型アノテーションを検索
         types_dict = {}
         for name, obj in module.__dict__.items():
-            # Filter for user-defined classes: Pydantic models or Enums defined in this module
+            # ユーザ定義クラスをフィルタリング: このモジュールで定義されたPydanticモデルまたはEnum
             if isinstance(obj, type):
-                # Check if it's a Pydantic model (BaseModel subclass with annotations)
+                # Pydanticモデルかどうかをチェック（BaseModelのサブクラスでアノテーションを持つ）
                 is_pydantic_model = (
                     hasattr(obj, "__annotations__")
                     and hasattr(obj, "__pydantic_core_schema__")  # Pydantic v2
@@ -55,7 +58,7 @@ def run_type_to_yaml(
             console.print("[red]No convertible types found in the module[/red]")
             return
 
-        # Convert types to YAML
+        # 型をYAMLに変換
         types_to_yaml(types_dict, output_file)
 
         console.print(f"[green]Successfully converted types to {output_file}[/green]")

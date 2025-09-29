@@ -1,13 +1,22 @@
-"""Markdown builder with fluent API for document generation."""
+"""Markdownドキュメント生成のための流暢なAPIを提供するビルダー
+
+Markdownドキュメントを簡単に生成するためのBuilderパターン実装です。
+"""
 
 from typing import Self
 
 
 class MarkdownBuilder:
-    """Fluent API for building Markdown documents."""
+    """Markdownドキュメント構築のための流暢なAPI
+
+    メソッドチェーンを使用してMarkdownドキュメントを簡単に構築できます。
+    """
 
     def __init__(self) -> None:
-        """Initialize empty markdown builder."""
+        """空のMarkdownビルダーを初期化
+
+        空のMarkdownビルダーを初期化し、コンテンツリストを準備します。
+        """
         self._content: list[str] = []
 
     def heading(self, level: int, text: str) -> Self:

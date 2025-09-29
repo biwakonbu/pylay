@@ -1,4 +1,7 @@
-"""YAML to type conversion command"""
+"""YAMLから型への変換コマンド
+
+YAML仕様をPython型に変換するCLIコマンドです。
+"""
 
 import sys
 from rich.console import Console
@@ -9,24 +12,24 @@ from src.core.converters.yaml_to_type import yaml_to_spec
 def run_yaml_to_type(
     input_file: str, output_file: str, root_key: str | None = None
 ) -> None:
-    """Convert YAML specification to Python types
+    """YAML仕様をPython型に変換
 
     Args:
-        input_file: Path to input YAML file
-        output_file: Path to output Python file
-        root_key: Root key in YAML to convert
+        input_file: 入力YAMLファイルのパス
+        output_file: 出力Pythonファイルのパス
+        root_key: 変換するYAMLのルートキー
     """
     console = Console()
 
     try:
-        # Load YAML
+        # YAMLを読み込み
         with open(input_file, "r", encoding="utf-8") as f:
             yaml_str = f.read()
 
-        # Convert to Python types
+        # Python型に変換
         spec = yaml_to_spec(yaml_str, root_key)
 
-        # Generate Python code
+        # Pythonコードを生成
         code_lines = []
         code_lines.append("# Generated Python types from YAML specification")
         code_lines.append("from typing import Optional, List, Dict")
@@ -34,7 +37,10 @@ def run_yaml_to_type(
         code_lines.append("")
 
         def spec_to_type_annotation(spec_data: dict | str) -> str:
-            """TypeSpecデータからPython型アノテーションを生成"""
+            """TypeSpecデータからPython型アノテーションを生成
+
+            TypeSpec形式のデータからPythonの型アノテーションを生成します。
+            """
             if isinstance(spec_data, str):
                 # 参照文字列の場合（クラス名として扱う）
                 return spec_data
@@ -102,16 +108,16 @@ def run_yaml_to_type(
             return lines
 
         if hasattr(spec, "types"):
-            # Multi-type specification
+            # 複数型仕様
             for type_name, type_spec in spec.types.items():
                 code_lines.extend(
                     generate_class_code(type_name, type_spec.model_dump())
                 )
         else:
-            # Single type specification
+            # 単一型仕様
             code_lines.extend(generate_class_code("GeneratedType", spec.model_dump()))
 
-        # Write to file
+        # ファイルに書き込み
         with open(output_file, "w", encoding="utf-8") as f:
             f.write("\n".join(code_lines))
 

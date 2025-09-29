@@ -11,7 +11,10 @@ from src.cli.analyze_issues import ProjectAnalyzer, CheckResult
 
 
 class TestProjectAnalyzer:
-    """ProjectAnalyzerのテスト"""
+    """ProjectAnalyzerのテスト
+
+    ProjectAnalyzerのプロジェクト全体解析機能が正しく動作することを確認します。
+    """
 
     def test_run_command_success(self, tmp_path):
         """コマンド成功のテスト"""

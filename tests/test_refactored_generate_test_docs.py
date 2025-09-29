@@ -15,10 +15,16 @@ from doc_generators.test_catalog_generator import CatalogGenerator
 
 
 class TestCatalogGenerator:
-    """Test the refactored CatalogGenerator class."""
+    """リファクタリングされたCatalogGeneratorクラスのテスト
+
+    CatalogGeneratorクラスのリファクタリング版が正しく動作することを確認します。
+    """
 
     def setup_method(self):
-        """Set up test fixtures."""
+        """テストフィクスチャをセットアップ
+
+テストに必要な共通の設定やオブジェクトを準備します。
+"""
         self.filesystem = InMemoryFileSystem()
         self.output_path = Path("/test/output/catalog.md")
         self.config = CatalogConfig(
@@ -27,7 +33,10 @@ class TestCatalogGenerator:
         )
 
     def test_generator_initialization(self):
-        """Test generator initializes correctly."""
+        """生成器が正しく初期化されることをテスト
+
+        CatalogGeneratorが適切に初期化され、必要な属性が設定されることを確認します。
+        """
         generator = CatalogGenerator(
             config=self.config,
             filesystem=self.filesystem,
@@ -189,7 +198,10 @@ class TestCatalogGeneratorErrorHandling:
     """Test error handling in CatalogGenerator."""
 
     def setup_method(self):
-        """Set up test fixtures."""
+        """テストフィクスチャをセットアップ
+
+テストに必要な共通の設定やオブジェクトを準備します。
+"""
         self.filesystem = InMemoryFileSystem()
         self.config = CatalogConfig(
             test_directory=Path("tests"),
@@ -245,7 +257,10 @@ class TestMarkdownBuilder:
     """Test the MarkdownBuilder utility class."""
 
     def setup_method(self):
-        """Set up test fixtures."""
+        """テストフィクスチャをセットアップ
+
+テストに必要な共通の設定やオブジェクトを準備します。
+"""
         self.md = MarkdownBuilder()
 
     def test_heading_generation(self):
@@ -335,7 +350,10 @@ class TestInMemoryFileSystem:
     """Test the InMemoryFileSystem utility class."""
 
     def setup_method(self):
-        """Set up test fixtures."""
+        """テストフィクスチャをセットアップ
+
+テストに必要な共通の設定やオブジェクトを準備します。
+"""
         self.fs = InMemoryFileSystem()
 
     def test_write_and_read_file(self):

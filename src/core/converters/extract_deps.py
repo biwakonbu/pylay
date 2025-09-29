@@ -286,7 +286,7 @@ def visualize_dependencies(graph: nx.DiGraph, output_path: str = "deps.png") -> 
                     edge.set_color("black")
 
         # レイアウトを設定
-        pydot_graph.set_rankdir("TB")  # Top to Bottom
+        pydot_graph.set_rankdir("TB")  # 上から下
         pydot_graph.set_size("8,6")  # サイズ設定
 
         # 画像を保存

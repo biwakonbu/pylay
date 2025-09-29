@@ -20,10 +20,16 @@ from src.core.schemas.pylay_config import PylayConfig
 
 
 class TestAnalyzerBase:
-    """Analyzer基底クラスのテスト"""
+    """Analyzer基底クラスのテスト
+
+    Analyzer抽象基底クラスの基本的な動作をテストします。
+    """
 
     def test_analyzer_interface(self):
-        """Analyzerが抽象クラスであることを確認"""
+        """Analyzerが抽象クラスであることを確認
+
+        Analyzerクラスを直接インスタンス化できないことをテストします。
+        """
         with pytest.raises(TypeError):
             Analyzer(PylayConfig())
 
@@ -55,7 +61,10 @@ class TestAnalyzerBase:
 
 
 class TestTypeInferenceAnalyzer:
-    """TypeInferenceAnalyzerのテスト"""
+    """TypeInferenceAnalyzerのテスト
+
+    TypeInferenceAnalyzerの型推論機能が正しく動作することを確認します。
+    """
 
     def test_analyze_file(self, tmp_path):
         """ファイルからの型推論"""
@@ -127,7 +136,10 @@ y: str
 
 
 class TestDependencyExtractionAnalyzer:
-    """DependencyExtractionAnalyzerのテスト"""
+    """DependencyExtractionAnalyzerのテスト
+
+    DependencyExtractionAnalyzerの依存関係抽出機能が正しく動作することを確認します。
+    """
 
     def test_analyze_file(self, tmp_path):
         """ファイルからの依存抽出"""
@@ -194,10 +206,16 @@ class B:
 
 
 class TestGraphProcessor:
-    """GraphProcessorのテスト"""
+    """GraphProcessorのテスト
+
+    GraphProcessorのグラフ処理機能が正しく動作することを確認します。
+    """
 
     def test_analyze_cycles(self):
-        """循環分析"""
+        """循環分析
+
+        グラフ内の循環を検出する機能をテストします。
+        """
         # 循環なしのグラフ
         graph = TypeDependencyGraph(nodes=[], edges=[])
         node1 = GraphNode(name="A", node_type="class")
@@ -258,7 +276,10 @@ class TestGraphProcessor:
             processor.visualize_graph(graph, "test.png")
 
     def test_export_graphml(self, tmp_path):
-        """GraphMLエクスポート"""
+        """GraphMLエクスポート
+
+        グラフをGraphML形式でエクスポートする機能をテストします。
+        """
         graph = TypeDependencyGraph(nodes=[], edges=[])
         node = GraphNode(name="A", node_type="class")
         graph.add_node(node)
@@ -373,7 +394,10 @@ class C:
             assert len(cycles) > 0
 
     def test_networkx_unavailable_fallback(self):
-        """NetworkX未インストール時のフォールバック"""
+        """NetworkX未インストール時のフォールバック
+
+        NetworkXが利用できない場合のフォールバック動作をテストします。
+        """
         config = PylayConfig()
         from src.core.analyzer.graph_processor import GraphProcessor
 
