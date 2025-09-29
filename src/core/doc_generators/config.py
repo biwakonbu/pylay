@@ -1,4 +1,4 @@
-"""Configuration classes for document generators."""
+"""ドキュメントジェネレーター用の設定クラス。"""
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -8,7 +8,7 @@ from .filesystem import FileSystemInterface, RealFileSystem
 
 @dataclass
 class GeneratorConfig:
-    """Base configuration for document generators."""
+    """ドキュメントジェネレーターの基本設定。"""
 
     output_path: Path = field(default_factory=lambda: Path("docs"))
     include_patterns: list[str] = field(default_factory=list)
@@ -17,7 +17,7 @@ class GeneratorConfig:
 
 @dataclass
 class CatalogConfig(GeneratorConfig):
-    """Configuration for test catalog generator."""
+    """テストカタログジェネレーターの設定。"""
 
     test_directory: Path = field(default_factory=lambda: Path("tests"))
     output_path: Path = field(
@@ -31,7 +31,7 @@ class CatalogConfig(GeneratorConfig):
 
 @dataclass
 class TypeDocConfig(GeneratorConfig):
-    """Configuration for type documentation generator."""
+    """型ドキュメントジェネレーターの設定。"""
 
     output_directory: Path = field(default_factory=lambda: Path("docs/types"))
     index_filename: str = "README.md"

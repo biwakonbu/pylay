@@ -165,7 +165,7 @@ class GraphDocGenerator(DocumentGenerator):
             self._generate_dot_file(dot_file, graph)
 
     def _generate_dot_file(self, dot_path: Path, graph: TypeDependencyGraph) -> None:
-        """Graphviz DOTファイルを生成（ミニマム版）"""
+        """Graphviz DOTファイルを生成（ミニマム版）。"""
         lines = ["digraph DependencyGraph {"]
         lines.append("  rankdir=TB;")  # 上から下へ
 

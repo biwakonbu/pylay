@@ -1,4 +1,4 @@
-"""File system abstraction for document generators."""
+"""ドキュメントジェネレーター用のファイルシステム抽象化。"""
 
 from abc import abstractmethod
 from pathlib import Path
@@ -7,50 +7,50 @@ from typing import Protocol, runtime_checkable
 
 @runtime_checkable
 class FileSystemInterface(Protocol):
-    """Type-safe file system interface for dependency injection."""
+    """依存性注入用の型安全なファイルシステムインターフェース。"""
 
     @abstractmethod
     def write_text(self, path: Path, content: str, encoding: str = "utf-8") -> None:
-        """Write text content to a file."""
+        """テキストコンテンツをファイルに書き込む。"""
         ...
 
     @abstractmethod
     def mkdir(self, path: Path, parents: bool = True, exist_ok: bool = True) -> None:
-        """Create directory."""
+        """ディレクトリを作成する。"""
         ...
 
     @abstractmethod
     def exists(self, path: Path) -> bool:
-        """Check if path exists."""
+        """パスが存在するかどうかを確認する。"""
         ...
 
 
 class RealFileSystem:
-    """Real file system implementation."""
+    """実際のファイルシステム実装。"""
 
     def write_text(self, path: Path, content: str, encoding: str = "utf-8") -> None:
-        """Write text content to a file."""
+        """テキストコンテンツをファイルに書き込む。"""
         path.write_text(content, encoding=encoding)
 
     def mkdir(self, path: Path, parents: bool = True, exist_ok: bool = True) -> None:
-        """Create directory."""
+        """ディレクトリを作成する。"""
         path.mkdir(parents=parents, exist_ok=exist_ok)
 
     def exists(self, path: Path) -> bool:
-        """Check if path exists."""
+        """パスが存在するかどうかを確認する。"""
         return path.exists()
 
 
 class InMemoryFileSystem:
-    """In-memory file system for testing."""
+    """テスト用のインメモリファイルシステム。"""
 
     def __init__(self) -> None:
-        """Initialize in-memory file system."""
+        """インメモリファイルシステムを初期化する。"""
         self.files: dict[Path, str] = {}
         self.directories: set[Path] = set()
 
     def write_text(self, path: Path, content: str, encoding: str = "utf-8") -> None:
-        """Write text content to memory."""
+        """テキストコンテンツをメモリに書き込む。"""
         # Ensure parent directories exist
         parent = path.parent
         if parent != path:  # Avoid infinite loop for root
@@ -58,7 +58,7 @@ class InMemoryFileSystem:
         self.files[path] = content
 
     def mkdir(self, path: Path, parents: bool = True, exist_ok: bool = True) -> None:
-        """Create directory in memory."""
+        """メモリ内にディレクトリを作成する。"""
         if path in self.directories and not exist_ok:
             raise FileExistsError(f"Directory {path} already exists")
 
@@ -72,15 +72,15 @@ class InMemoryFileSystem:
             self.directories.add(path)
 
     def exists(self, path: Path) -> bool:
-        """Check if path exists in memory."""
+        """パスがメモリ内に存在するかどうかを確認する。"""
         return path in self.files or path in self.directories
 
     def get_content(self, path: Path) -> str:
-        """Get file content (test helper)."""
+        """ファイルコンテンツを取得する（テストヘルパー）。"""
         if path not in self.files:
             raise FileNotFoundError(f"File {path} not found")
         return self.files[path]
 
     def list_files(self) -> list[Path]:
-        """List all files (test helper)."""
+        """すべてのファイルをリストする（テストヘルパー）。"""
         return list(self.files.keys())

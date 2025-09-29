@@ -1,1 +1,1 @@
-"""Document generators package for automated documentation generation."""
+"""自動ドキュメント生成用のドキュメントジェネレーターパッケージ。"""

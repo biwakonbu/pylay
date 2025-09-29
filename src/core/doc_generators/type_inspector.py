@@ -1,4 +1,4 @@
-"""Type inspection utilities for type documentation generation."""
+"""型ドキュメント生成用の型検査ユーティリティ。"""
 
 import inspect
 import json
@@ -8,35 +8,35 @@ from pydantic import BaseModel
 
 
 class TypeInspector:
-    """Utility class for extracting information from types."""
+    """型から情報を抽出するためのユーティリティクラス。"""
 
     def __init__(self, skip_types: set[str] | None = None) -> None:
-        """Initialize type inspector.
+        """型検査器を初期化する。
 
         Args:
-            skip_types: Set of type names to skip during inspection
+            skip_types: 検査時にスキップする型名のセット
         """
         self.skip_types = skip_types or {"NewType"}
 
     def get_docstring(self, type_cls: type[Any]) -> str | None:
-        """Get docstring from a type class.
+        """型クラスからdocstringを取得する。
 
         Args:
-            type_cls: Type class to inspect
+            type_cls: 検査する型クラス
 
         Returns:
-            Docstring if available, None otherwise
+            docstringが存在する場合はその内容、存在しない場合はNone
         """
         return inspect.getdoc(type_cls)
 
     def extract_code_blocks(self, docstring: str) -> tuple[list[str], list[str]]:
-        """Extract description lines and code blocks from docstring.
+        """docstringから説明文行とコードブロックを抽出する。
 
         Args:
-            docstring: Raw docstring content
+            docstring: 生のdocstring内容
 
         Returns:
-            Tuple of (description_lines, code_blocks)
+            (説明文行のリスト, コードブロックのリスト) のタプル
         """
         lines = docstring.split("\n")
         description_lines = []
@@ -66,24 +66,24 @@ class TypeInspector:
         return description_lines, code_blocks
 
     def get_type_origin(self, type_cls: type[Any]) -> tuple[Any, tuple[Any, ...]]:
-        """Get type origin and args.
+        """型のoriginとargsを取得する。
 
         Args:
-            type_cls: Type class to inspect
+            type_cls: 検査する型クラス
 
         Returns:
-            Tuple of (origin, args)
+            (origin, args) のタプル
         """
         return get_origin(type_cls), get_args(type_cls)
 
     def is_pydantic_model(self, type_cls: type[Any]) -> bool:
-        """Check if type is a Pydantic model.
+        """型がPydanticモデルかどうかを確認する。
 
         Args:
-            type_cls: Type class to check
+            type_cls: 確認する型クラス
 
         Returns:
-            True if it's a Pydantic BaseModel, False otherwise
+            Pydantic BaseModelの場合はTrue、それ以外の場合はFalse
         """
         return (
             hasattr(type_cls, "model_json_schema")
@@ -92,35 +92,35 @@ class TypeInspector:
         )
 
     def is_newtype(self, type_cls: type[Any]) -> bool:
-        """Check if type is a NewType.
+        """型がNewTypeかどうかを確認する。
 
         Args:
-            type_cls: Type class to check
+            type_cls: 確認する型クラス
 
         Returns:
-            True if it's a NewType, False otherwise
+            NewTypeの場合はTrue、それ以外の場合はFalse
         """
         return hasattr(type_cls, "__supertype__")
 
     def get_newtype_supertype(self, type_cls: type[Any]) -> type[Any] | None:
-        """Get NewType supertype.
+        """NewTypeのスーパータイプを取得する。
 
         Args:
-            type_cls: NewType class
+            type_cls: NewTypeクラス
 
         Returns:
-            Supertype if available, None otherwise
+            スーパータイプが存在する場合はその型、存在しない場合はNone
         """
         return getattr(type_cls, "__supertype__", None)
 
     def get_pydantic_schema(self, type_cls: type[Any]) -> dict[str, Any] | None:
-        """Get Pydantic JSON schema.
+        """Pydantic JSONスキーマを取得する。
 
         Args:
-            type_cls: Pydantic model class
+            type_cls: Pydanticモデルクラス
 
         Returns:
-            JSON schema if available, None otherwise
+            JSONスキーマが存在する場合はその内容、存在しない場合はNone
         """
         if not self.is_pydantic_model(type_cls):
             return None
@@ -132,13 +132,13 @@ class TypeInspector:
             return None
 
     def is_standard_newtype_doc(self, docstring: str) -> bool:
-        """Check if docstring is the standard NewType documentation.
+        """docstringが標準的なNewTypeドキュメントかどうかを確認する。
 
         Args:
-            docstring: Docstring to check
+            docstring: 確認するdocstring
 
         Returns:
-            True if it's standard NewType documentation
+            標準的なNewTypeドキュメントの場合はTrue
         """
         return (
             "NewType creates simple unique types" in docstring
@@ -146,25 +146,25 @@ class TypeInspector:
         )
 
     def should_skip_type(self, type_name: str) -> bool:
-        """Check if type should be skipped.
+        """型をスキップすべきかどうかを確認する。
 
         Args:
-            type_name: Name of the type
+            type_name: 型の名前
 
         Returns:
-            True if type should be skipped
+            型をスキップすべき場合はTrue
         """
         return type_name in self.skip_types
 
     def format_type_definition(self, name: str, type_cls: type[Any]) -> str:
-        """Format type definition for documentation.
+        """ドキュメント用の型定義をフォーマットする。
 
         Args:
-            name: Type name
-            type_cls: Type class
+            name: 型名
+            type_cls: 型クラス
 
         Returns:
-            Formatted type definition string
+            フォーマットされた型定義文字列
         """
         if self.is_pydantic_model(type_cls):
             schema = self.get_pydantic_schema(type_cls)
