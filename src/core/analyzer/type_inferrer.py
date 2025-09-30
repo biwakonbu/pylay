@@ -3,6 +3,39 @@
 
 mypy の --infer フラグを活用して、未アノテーションのコードから型を自動推測します。
 推論結果を既存の型アノテーションとマージし、TypeDependencyGraph を構築します。
+
+信頼度計算
+----------
+型推論の信頼度は、以下の3要素を重み付けして計算されます：
+
+1. **基礎確実性（base_certainty）**: mypyの診断結果から導出（重み: 0.5）
+   - エラー/警告メッセージの有無を検査
+   - エラーがなければ確実性1.0、警告があれば0.7、エラーがあれば0.3
+
+2. **型複雑度ペナルティ（complexity_penalty）**: 型の複雑さに基づく減点（重み: 0.3）
+   - Union型: 0.15/個
+   - Optional/None: 0.1/個
+   - ジェネリック型（[の数）: 0.1/個
+   - Any型: 0.2/個
+   - ペナルティは最大1.0でキャップ
+
+3. **アノテーション品質ボーナス（annotation_bonus）**: 明示的型アノテーションの有無（重み: 0.2）
+   - 周辺スコープのアノテーション率を非線形（^0.8）で評価
+   - 型情報が豊富な環境では推論精度が向上すると仮定
+
+最終的な信頼度スコアは以下の式で計算されます：
+
+    confidence = 0.5 * base_certainty + 0.3 * (1.0 - complexity_penalty) + 0.2 * annotation_bonus
+
+スコアは0.0-1.0の範囲にクリップされます。
+
+使用例
+------
+    >>> from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+    >>> analyzer = TypeInferenceAnalyzer()
+    >>> graph = analyzer.analyze("path/to/file.py")
+    >>> for node in graph.nodes:
+    ...     print(f"{node.name}: {node.attributes.get('inferred_type')}")
 """
 
 import ast
