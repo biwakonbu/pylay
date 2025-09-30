@@ -7,6 +7,7 @@ import sys
 from rich.console import Console
 
 from src.core.converters.yaml_to_type import yaml_to_spec
+from src.core.schemas.yaml_type_spec import TypeRoot
 
 
 def run_yaml_to_type(
@@ -115,8 +116,6 @@ def run_yaml_to_type(
 
             lines.append("")
             return lines
-
-        from src.core.schemas.yaml_type_spec import TypeRoot
 
         if spec is not None and isinstance(spec, TypeRoot):
             # 複数型仕様
