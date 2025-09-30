@@ -23,7 +23,7 @@ from ...core.project_scanner import ProjectScanner
 from ...core.schemas.pylay_config import PylayConfig
 from ...core.output_manager import OutputPathManager
 from ...core.converters.type_to_yaml import extract_types_from_module
-from ...core.converters.infer_types import infer_types_from_file
+from ...core.analyzer.type_inferrer import TypeInferenceAnalyzer
 from ...core.converters.extract_deps import extract_dependencies_from_file
 from ...core.converters.yaml_to_type import yaml_to_spec
 from ...core.doc_generators.yaml_doc_generator import YamlDocGenerator
@@ -342,15 +342,8 @@ async def _analyze_file_async(
     # 型推論の実行
     if config.infer_level != "none":
         try:
-            # pyproject.tomlをmypy設定ファイルとして渡す
-            config_file = (
-                Path.cwd() / "pyproject.toml"
-                if (Path.cwd() / "pyproject.toml").exists()
-                else None
-            )
-            inferred_types = infer_types_from_file(
-                str(file_path), str(config_file) if config_file else None
-            )
+            analyzer = TypeInferenceAnalyzer(config)
+            inferred_types = analyzer.infer_types_from_file(str(file_path))
             if inferred_types:
                 if verbose:
                     console.print(f"  ✓ 型推論完了: {len(inferred_types)} 項目")

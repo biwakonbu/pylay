@@ -1,3 +1,8 @@
+"""YAML型仕様からMarkdownドキュメントを生成するモジュール。
+
+このモジュールは、TypeSpecオブジェクトからMarkdownドキュメントを生成します。
+"""
+
 from pathlib import Path
 
 from .base import DocumentGenerator
@@ -15,11 +20,24 @@ from src.core.schemas.pylay_config import PylayConfig
 
 
 class YamlDocGenerator(DocumentGenerator):
-    """YAML型仕様からドキュメントを生成"""
+    """YAML型仕様からドキュメントを生成します。
+
+    TypeSpecオブジェクトを受け取り、Markdownフォーマットのドキュメントを生成します。
+    """
 
     def generate(
         self, output_path: Path, spec: TypeSpec | object | None = None, **kwargs: object
     ) -> None:
+        """ドキュメントを生成し、ファイルに書き出します。
+
+        Args:
+            output_path: 出力先ファイルパス
+            spec: 型仕様オブジェクト
+            **kwargs: 追加パラメータ
+
+        Raises:
+            ValueError: specが指定されていない、または無効な場合
+        """
         if spec is None:
             spec = kwargs.get("spec")
         if spec is None:
@@ -43,6 +61,11 @@ class YamlDocGenerator(DocumentGenerator):
         self._write_file(output_path, content)
 
     def _generate_header(self, spec: TypeSpec) -> None:
+        """ドキュメントのヘッダー部分を生成します。
+
+        Args:
+            spec: 型仕様オブジェクト
+        """
         self.md.heading(1, f"型仕様: {spec.name}")
         if spec.description:
             self.md.paragraph(spec.description)
@@ -77,10 +100,19 @@ class YamlDocGenerator(DocumentGenerator):
                 self._generate_body(variant, depth + 1)
 
     def _generate_footer(self) -> None:
+        """ドキュメントのフッター部分を生成します。"""
         self.md.horizontal_rule()
         self.md.paragraph("このドキュメントは自動生成されました。")
 
     def _spec_to_yaml(self, spec: TypeSpec | str) -> str:
+        """TypeSpecをYAML文字列に変換します。
+
+        Args:
+            spec: 型仕様オブジェクトまたは参照文字列
+
+        Returns:
+            YAML形式の文字列
+        """
         if isinstance(spec, str):
             return f'"{spec}"'  # 参照文字列の場合は引用符で囲む
         from ruamel.yaml import YAML

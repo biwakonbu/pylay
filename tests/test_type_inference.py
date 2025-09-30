@@ -3,16 +3,23 @@
 """
 
 from pathlib import Path
-from core.converters.infer_types import (
-    infer_types_from_code,
-    infer_types_from_file,
-    merge_inferred_types,
-    extract_existing_annotations,
-)
+from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+from src.core.analyzer.models import InferResult
+from src.core.schemas.pylay_config import PylayConfig
 
 
 class TestTypeInference:
     """型推論機能のテストクラス"""
+
+    def _get_test_config(self) -> PylayConfig:
+        """テスト用の設定を取得"""
+        return PylayConfig(
+            target_dirs=["src"],
+            output_dir="docs/test-output",
+            infer_level="normal",
+            generate_markdown=True,
+            extract_deps=True,
+        )
 
     def test_infer_simple_types(self):
         """基本的な型の推論テスト"""
@@ -21,16 +28,29 @@ x = 42
 y = "hello"
 z = True
 """
-        inferred = infer_types_from_code(code)
+        config = self._get_test_config()
+        analyzer = TypeInferenceAnalyzer(config)
+        inferred = analyzer.infer_types_from_code(code)
 
         # 推論結果はmypyの出力によるため、環境により異なる可能性がある
         assert isinstance(inferred, dict)
+        for key, value in inferred.items():
+            assert isinstance(value, InferResult)
 
     def test_merge_inferred_types(self):
         """型マージ機能のテスト"""
+        config = self._get_test_config()
+        analyzer = TypeInferenceAnalyzer(config)
         existing = {"a": "int"}
-        inferred = {"b": "str", "c": "bool"}
-        merged = merge_inferred_types(existing, inferred)
+        inferred = {
+            "b": InferResult(
+                variable_name="b", inferred_type="str", confidence=0.9, line_number=1
+            ),
+            "c": InferResult(
+                variable_name="c", inferred_type="bool", confidence=0.85, line_number=2
+            ),
+        }
+        merged = analyzer.merge_inferred_types(existing, inferred)
 
         assert merged["a"] == "int"
         assert merged["b"] == "str"
@@ -46,7 +66,9 @@ def func(y: str) -> bool:
 """)
 
         try:
-            annotations = extract_existing_annotations(str(test_file))
+            config = self._get_test_config()
+            analyzer = TypeInferenceAnalyzer(config)
+            annotations = analyzer.extract_existing_annotations(str(test_file))
             assert "x" in annotations
             assert "y" in annotations
         finally:
@@ -61,7 +83,11 @@ b = "test"
 """)
 
         try:
-            inferred = infer_types_from_file(str(test_file))
+            config = self._get_test_config()
+            analyzer = TypeInferenceAnalyzer(config)
+            inferred = analyzer.infer_types_from_file(str(test_file))
             assert isinstance(inferred, dict)
+            for key, value in inferred.items():
+                assert isinstance(value, InferResult)
         finally:
             test_file.unlink()

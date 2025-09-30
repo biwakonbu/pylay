@@ -1,0 +1,183 @@
+"""
+アナライザーカスタム例外定義
+
+解析エラーを構造化して扱うための例外クラスを提供します。
+"""
+
+
+class AnalysisError(Exception):
+    """
+    解析エラーの基底クラス
+
+    すべてのアナライザー例外の親クラスです。
+    """
+
+    def __init__(self, message: str, file_path: str | None = None) -> None:
+        """
+        解析エラーを初期化します。
+
+        Args:
+            message: エラーメッセージ
+            file_path: エラーが発生したファイルパス（オプション）
+        """
+        self.message = message
+        self.file_path = file_path
+        super().__init__(self._format_message())
+
+    def _format_message(self) -> str:
+        """フォーマット済みエラーメッセージを生成"""
+        if self.file_path:
+            return f"{self.message} (ファイル: {self.file_path})"
+        return self.message
+
+
+class MypyExecutionError(AnalysisError):
+    """
+    mypy実行エラー
+
+    mypy型推論の実行に失敗した場合に発生します。
+    """
+
+    def __init__(
+        self,
+        message: str,
+        return_code: int,
+        stdout: str = "",
+        stderr: str = "",
+        file_path: str | None = None,
+    ) -> None:
+        """
+        mypy実行エラーを初期化します。
+
+        Args:
+            message: エラーメッセージ
+            return_code: mypy終了コード
+            stdout: 標準出力
+            stderr: 標準エラー
+            file_path: エラーが発生したファイルパス（オプション）
+        """
+        self.return_code = return_code
+        self.stdout = stdout
+        self.stderr = stderr
+        super().__init__(message, file_path)
+
+    def _format_message(self) -> str:
+        """詳細なエラーメッセージを生成"""
+        base_msg = super()._format_message()
+        details = f"{base_msg}\n終了コード: {self.return_code}"
+        if self.stderr:
+            limit = 200
+            if len(self.stderr) > limit:
+                details += f"\n標準エラー: {self.stderr[:limit]}..."
+            else:
+                details += f"\n標準エラー: {self.stderr}"
+        return details
+
+
+class ASTParseError(AnalysisError):
+    """
+    AST解析エラー
+
+    Pythonコードの構文解析に失敗した場合に発生します。
+    """
+
+    def __init__(
+        self, message: str, line_number: int | None = None, file_path: str | None = None
+    ) -> None:
+        """
+        AST解析エラーを初期化します。
+
+        Args:
+            message: エラーメッセージ
+            line_number: エラーが発生した行番号（オプション）
+            file_path: エラーが発生したファイルパス（オプション）
+        """
+        self.line_number = line_number
+        super().__init__(message, file_path)
+
+    def _format_message(self) -> str:
+        """行番号を含むエラーメッセージを生成"""
+        base_msg = super()._format_message()
+        if self.line_number:
+            return f"{base_msg} (行: {self.line_number})"
+        return base_msg
+
+
+class DependencyExtractionError(AnalysisError):
+    """
+    依存関係抽出エラー
+
+    依存関係の抽出処理に失敗した場合に発生します。
+    """
+
+    pass
+
+
+class TypeInferenceError(AnalysisError):
+    """
+    型推論エラー
+
+    型推論処理に失敗した場合に発生します。
+    """
+
+    def __init__(
+        self,
+        message: str,
+        variable_name: str | None = None,
+        file_path: str | None = None,
+    ) -> None:
+        """
+        型推論エラーを初期化します。
+
+        Args:
+            message: エラーメッセージ
+            variable_name: エラーが発生した変数名（オプション）
+            file_path: エラーが発生したファイルパス（オプション）
+        """
+        self.variable_name = variable_name
+        super().__init__(message, file_path)
+
+    def _format_message(self) -> str:
+        """変数名を含むエラーメッセージを生成"""
+        base_msg = super()._format_message()
+        if self.variable_name:
+            return f"{base_msg} (変数: {self.variable_name})"
+        return base_msg
+
+
+class CircularDependencyError(AnalysisError):
+    """
+    循環依存エラー
+
+    循環依存が検出された場合に発生します（厳密モードのみ）。
+    """
+
+    def __init__(
+        self, message: str, cycle: list[str], file_path: str | None = None
+    ) -> None:
+        """
+        循環依存エラーを初期化します。
+
+        Args:
+            message: エラーメッセージ
+            cycle: 循環パス（ノード名のリスト）
+            file_path: エラーが発生したファイルパス（オプション）
+        """
+        self.cycle = cycle
+        super().__init__(message, file_path)
+
+    def _format_message(self) -> str:
+        """循環パスを含むエラーメッセージを生成"""
+        base_msg = super()._format_message()
+        cycle_str = " -> ".join(self.cycle)
+        return f"{base_msg}\n循環パス: {cycle_str}"
+
+
+class ConfigurationError(AnalysisError):
+    """
+    設定エラー
+
+    無効な設定が指定された場合に発生します。
+    """
+
+    pass

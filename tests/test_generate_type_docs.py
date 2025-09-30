@@ -25,7 +25,7 @@ class TestGenerateTypeDocs:
     def test_generate_layer_docs_with_valid_types(self):
         """有効な型でのレイヤードキュメント生成テスト"""
         # 実際の型レジストリを使用してテスト
-        from schemas.type_index import TYPE_REGISTRY
+        from src.core.schemas.type_index import TYPE_REGISTRY
 
         # primitivesレイヤーがあることを確認
         assert "primitives" in TYPE_REGISTRY
@@ -51,7 +51,7 @@ class TestGenerateTypeDocs:
     def test_generate_layer_docs_skip_newtype(self):
         """NewTypeが正しく除外されることを確認"""
         # 実際のレジストリを使用してテスト
-        from schemas.type_index import TYPE_REGISTRY
+        from src.core.schemas.type_index import TYPE_REGISTRY
 
         generate_layer_docs(
             "primitives",
@@ -153,7 +153,7 @@ class TestGenerateTypeDocsPerformance:
         # 実際のレジストリを使用してテスト
         import time
 
-        from schemas.type_index import TYPE_REGISTRY
+        from src.core.schemas.type_index import TYPE_REGISTRY
 
         start_time = time.time()
 

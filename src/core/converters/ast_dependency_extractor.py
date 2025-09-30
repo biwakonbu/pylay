@@ -74,17 +74,23 @@ class ASTDependencyExtractor:
 
         # mypy統合（オプション）
         if include_mypy:
-            from src.core.converters.infer_types import (
-                infer_types_from_file,
-                extract_existing_annotations,
-                merge_inferred_types,
-            )
+            from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+            from src.core.schemas.pylay_config import PylayConfig
 
             # mypy型推論を実行
             try:
-                existing_annotations = extract_existing_annotations(file_path)
-                inferred_types = infer_types_from_file(file_path)
-                merged_types = merge_inferred_types(
+                # デフォルト設定で TypeInferenceAnalyzer を初期化
+                config = PylayConfig(
+                    target_dirs=["src"],
+                    output_dir=Path("docs/output"),
+                    infer_level="normal",
+                    generate_markdown=False,
+                    extract_deps=False,
+                )
+                analyzer = TypeInferenceAnalyzer(config)
+                existing_annotations = analyzer.extract_existing_annotations(file_path)
+                inferred_types = analyzer.infer_types_from_file(file_path)
+                merged_types = analyzer.merge_inferred_types(
                     existing_annotations, inferred_types
                 )
 

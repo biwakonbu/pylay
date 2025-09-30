@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from doc_generators.config import CatalogConfig
-from doc_generators.filesystem import InMemoryFileSystem
-from doc_generators.markdown_builder import MarkdownBuilder
-from doc_generators.test_catalog_generator import CatalogGenerator
+from src.core.doc_generators.config import CatalogConfig
+from src.core.doc_generators.filesystem import InMemoryFileSystem
+from src.core.doc_generators.markdown_builder import MarkdownBuilder
+from src.core.doc_generators.test_catalog_generator import CatalogGenerator
 
 
 class TestCatalogGenerator:
@@ -23,8 +23,8 @@ class TestCatalogGenerator:
     def setup_method(self):
         """テストフィクスチャをセットアップ
 
-テストに必要な共通の設定やオブジェクトを準備します。
-"""
+        テストに必要な共通の設定やオブジェクトを準備します。
+        """
         self.filesystem = InMemoryFileSystem()
         self.output_path = Path("/test/output/catalog.md")
         self.config = CatalogConfig(
@@ -200,8 +200,8 @@ class TestCatalogGeneratorErrorHandling:
     def setup_method(self):
         """テストフィクスチャをセットアップ
 
-テストに必要な共通の設定やオブジェクトを準備します。
-"""
+        テストに必要な共通の設定やオブジェクトを準備します。
+        """
         self.filesystem = InMemoryFileSystem()
         self.config = CatalogConfig(
             test_directory=Path("tests"),
@@ -259,8 +259,8 @@ class TestMarkdownBuilder:
     def setup_method(self):
         """テストフィクスチャをセットアップ
 
-テストに必要な共通の設定やオブジェクトを準備します。
-"""
+        テストに必要な共通の設定やオブジェクトを準備します。
+        """
         self.md = MarkdownBuilder()
 
     def test_heading_generation(self):
@@ -352,8 +352,8 @@ class TestInMemoryFileSystem:
     def setup_method(self):
         """テストフィクスチャをセットアップ
 
-テストに必要な共通の設定やオブジェクトを準備します。
-"""
+        テストに必要な共通の設定やオブジェクトを準備します。
+        """
         self.fs = InMemoryFileSystem()
 
     def test_write_and_read_file(self):
