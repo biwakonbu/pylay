@@ -212,7 +212,7 @@ class DependencyExtractionAnalyzer(Analyzer):
 
     def _extract_type_refs_from_string(self, type_str: str) -> list[str]:
         """
-        型文字列から型参照を抽出（ASTベース）
+        型文字列から型参照を抽出（統合ユーティリティ使用）
 
         ネストされたジェネリクス、Union型、Callable型など
         複雑な型アノテーションに対応します。
@@ -223,28 +223,11 @@ class DependencyExtractionAnalyzer(Analyzer):
         Returns:
             抽出された型参照のリスト（重複除去済み）
         """
-        import ast
+        from src.core.utils.type_parsing import extract_type_references
 
-        refs = []
-        try:
-            # 型文字列をPythonの式として解析
-            node = ast.parse(type_str, mode="eval")
-            for child in ast.walk(node):
-                if isinstance(child, ast.Name) and child.id[0].isupper():
-                    refs.append(child.id)
-        except SyntaxError:
-            # フォールバック: 文字列分割ベース
-            logger.debug(f"ASTパースに失敗、フォールバック使用: {type_str}")
-            parts = (
-                type_str.replace("[", " ")
-                .replace("]", " ")
-                .replace(",", " ")
-                .replace("|", " ")
-                .split()
-            )
-            refs = [p.strip() for p in parts if p and p[0].isupper()]
-
-        return list(set(refs))  # 重複除去
+        return extract_type_references(
+            type_str, exclude_builtins=True, deduplicate=True
+        )
 
     def _detect_cycles(self, graph: TypeDependencyGraph) -> list[list[str]]:
         """グラフから循環を検出"""
