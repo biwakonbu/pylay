@@ -240,7 +240,7 @@ class TypeInferenceAnalyzer(Analyzer):
 
 def run_mypy_inference(
     file_path: Path, mypy_flags: list[str], timeout: int = 60
-) -> dict[str, InferResult]:
+) -> MypyResult:
     """
     mypyを実行して型推論を行うユーティリティ関数
 
@@ -250,7 +250,7 @@ def run_mypy_inference(
         timeout: タイムアウト（秒）
 
     Returns:
-        推論された型情報の辞書
+        mypy実行結果（推論された型情報を含む）
 
     Raises:
         MypyExecutionError: mypy実行に失敗した場合
@@ -287,7 +287,7 @@ def run_mypy_inference(
     inferred_types = _parse_mypy_output(result.stdout)
     mypy_result.inferred_types = inferred_types
 
-    return inferred_types
+    return mypy_result
 
 
 def _parse_mypy_output(output: str) -> dict[str, InferResult]:
