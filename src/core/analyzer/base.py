@@ -11,6 +11,7 @@ from collections.abc import Callable
 
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
+from src.core.analyzer.exceptions import AnalysisError
 
 
 class Analyzer(ABC):
@@ -76,7 +77,11 @@ class FullAnalyzer(Analyzer):
             AnalysisError: 解析に失敗した場合
         """
         # 戦略に解析を委譲
-        file_path, cleanup = self._prepare_input(input_path)
+        try:
+            file_path, cleanup = self._prepare_input(input_path)
+        except OSError as e:
+            raise AnalysisError("入力の準備に失敗しました") from e
+
         try:
             return self.strategy.analyze(file_path)
         finally:
