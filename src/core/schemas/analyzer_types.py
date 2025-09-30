@@ -2,10 +2,14 @@
 アナライザー関連の型定義
 
 mypy strict準拠のためのTypedDictと型定義を提供します。
+Pydanticモデルは models.py から再エクスポートします。
 """
 
 from typing import TypedDict, Literal
 from enum import Enum
+
+# Pydanticモデルを再エクスポート
+from src.core.analyzer.models import InferResult, MypyResult  # noqa: F401
 
 
 class RelationType(str, Enum):
@@ -44,14 +48,6 @@ class Issue(TypedDict):
     line: int
     message: str
     severity: str
-
-
-class InferResult(TypedDict):
-    """型推論結果の型"""
-
-    variable_name: str
-    inferred_type: str
-    confidence: float
 
 
 class GraphMetrics(TypedDict):

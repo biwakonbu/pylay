@@ -121,9 +121,11 @@ y: str
 
     def test_merge_inferred_types(self):
         """型マージのテスト"""
+        from src.core.analyzer.models import InferResult
+
         existing = {"x": "int"}
         inferred = {
-            "y": {"variable_name": "y", "inferred_type": "str", "confidence": 0.8}
+            "y": InferResult(variable_name="y", inferred_type="str", confidence=0.8)
         }
         config = PylayConfig()
         from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer

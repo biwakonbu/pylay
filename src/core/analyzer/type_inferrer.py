@@ -12,7 +12,8 @@ import os
 from pathlib import Path
 from src.core.analyzer.base import Analyzer
 from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode
-from src.core.schemas.analyzer_types import InferResult, TempFileConfig
+from src.core.analyzer.models import InferResult, MypyResult
+from src.core.analyzer.exceptions import MypyExecutionError, TypeInferenceError
 
 
 class TypeInferenceAnalyzer(Analyzer):
@@ -34,11 +35,12 @@ class TypeInferenceAnalyzer(Analyzer):
 
         Raises:
             ValueError: 入力が無効な場合
-            RuntimeError: 推論に失敗した場合
+            TypeInferenceError: 推論に失敗した場合
         """
         if isinstance(input_path, str):
             # コード文字列の場合、一時ファイルを作成
             from src.core.utils.io_helpers import create_temp_file, cleanup_temp_file
+            from src.core.schemas.analyzer_types import TempFileConfig
 
             temp_config: TempFileConfig = {
                 "code": input_path,
@@ -184,8 +186,8 @@ class TypeInferenceAnalyzer(Analyzer):
 
         for var_name, infer_result in inferred_types.items():
             if var_name not in merged:
-                # 推論された型を追加
-                merged[var_name] = infer_result["inferred_type"]
+                # 推論された型を追加（Pydanticモデルのフィールドアクセス）
+                merged[var_name] = infer_result.inferred_type
 
         return merged
 
@@ -234,3 +236,82 @@ class TypeInferenceAnalyzer(Analyzer):
                         )
 
         return annotations
+
+
+def run_mypy_inference(
+    file_path: Path, mypy_flags: list[str], timeout: int = 60
+) -> dict[str, InferResult]:
+    """
+    mypyを実行して型推論を行うユーティリティ関数
+
+    Args:
+        file_path: 解析対象のファイルパス
+        mypy_flags: mypyフラグのリスト
+        timeout: タイムアウト（秒）
+
+    Returns:
+        推論された型情報の辞書
+
+    Raises:
+        MypyExecutionError: mypy実行に失敗した場合
+    """
+    cmd = ["uv", "run", "mypy"] + mypy_flags + [str(file_path)]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=Path(__file__).parent.parent.parent,
+        )
+    except subprocess.TimeoutExpired:
+        raise MypyExecutionError(
+            f"mypy実行がタイムアウトしました（{timeout}秒）",
+            return_code=-1,
+            file_path=str(file_path),
+        )
+    except FileNotFoundError:
+        raise MypyExecutionError(
+            "mypyコマンドが見つかりません。uvがインストールされているか確認してください。",
+            return_code=-1,
+            file_path=str(file_path),
+        )
+
+    # 結果を解析
+    mypy_result = MypyResult(
+        stdout=result.stdout, stderr=result.stderr, return_code=result.returncode
+    )
+
+    # 推論結果をパース
+    inferred_types = _parse_mypy_output(result.stdout)
+    mypy_result.inferred_types = inferred_types
+
+    return inferred_types
+
+
+def _parse_mypy_output(output: str) -> dict[str, InferResult]:
+    """
+    mypyの出力を解析して型情報を抽出します。
+
+    Args:
+        output: mypyの標準出力
+
+    Returns:
+        抽出された型情報の辞書
+    """
+    types: dict[str, InferResult] = {}
+    lines = output.split("\n")
+
+    for line in lines:
+        if "->" in line and ":" in line:
+            # 簡易的な解析（実際にはより詳細な実装が必要）
+            parts = line.split(":")
+            if len(parts) >= 2:
+                var_name = parts[0].strip()
+                type_info = parts[1].strip()
+                types[var_name] = InferResult(
+                    variable_name=var_name, inferred_type=type_info, confidence=0.8
+                )
+
+    return types
