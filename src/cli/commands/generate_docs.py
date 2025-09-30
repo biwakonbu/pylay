@@ -44,14 +44,14 @@ def run_generate_docs(
         if format_type == "single":
             # Single file output
             output_file = output_path / "types.md"
-            generator.generate(Path(str(output_file)), spec=spec)
+            generator.generate(output_file, spec=spec)
         else:
             # Multiple files output (not implemented yet)
             console.print(
                 "[yellow]Multiple file format not yet implemented, using single file[/yellow]"
             )
             output_file = output_path / "types.md"
-            generator.generate(Path(str(output_file)), spec=spec)
+            generator.generate(output_file, spec=spec)
 
         console.print(
             f"[green]Successfully generated documentation to {output_file}[/green]"

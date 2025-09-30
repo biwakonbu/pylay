@@ -307,7 +307,7 @@ async def _analyze_file_async(
                     md_file = output_manager.get_markdown_path(source_file=file_path)
 
                     generator = YamlDocGenerator()
-                    generator.generate(Path(str(md_file)), spec=spec)
+                    generator.generate(md_file, spec=spec)
 
                     result["docs_generated"] = True
                     result["outputs"]["markdown"] = str(md_file)
@@ -329,8 +329,8 @@ async def _analyze_file_async(
     if config.extract_deps:
         try:
             dep_graph = extract_dependencies_from_file(file_path)
-            nodes = list(dep_graph.nodes()) if hasattr(dep_graph, "nodes") else []
-            if dep_graph and len(nodes) > 0:
+            nodes = list(dep_graph.nodes())
+            if nodes:
                 result["dependencies_found"] = True
 
                 if verbose:

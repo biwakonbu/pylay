@@ -70,8 +70,7 @@ class TypeInferenceAnalyzer(Analyzer):
             型推論結果を含むTypeDependencyGraph
 
         Raises:
-            ValueError: 入力が無効な場合
-            TypeInferenceError: 推論に失敗した場合
+            ValueError: 入力が無効な場合、またはファイルが存在しない場合
         """
         if isinstance(input_path, str):
             # コード文字列の場合、一時ファイルを作成

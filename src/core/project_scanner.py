@@ -37,9 +37,6 @@ class ProjectScanner:
         """
         absolute_paths = self.config.get_absolute_paths(self.project_root)
         target_dirs = absolute_paths["target_dirs"]
-        assert isinstance(
-            target_dirs, list
-        ), "target_dirs は list[Path] 型である必要があります"
 
         for target_dir in target_dirs:
             yield from self._scan_directory(target_dir, current_depth=0)
@@ -122,11 +119,7 @@ class ProjectScanner:
             検証結果の辞書
         """
         absolute_paths = self.config.get_absolute_paths(self.project_root)
-        target_dirs_raw = absolute_paths["target_dirs"]
-        assert isinstance(
-            target_dirs_raw, list
-        ), "target_dirs は list[Path] 型である必要があります"
-        target_dirs = target_dirs_raw
+        target_dirs = absolute_paths["target_dirs"]
 
         validation_result = {
             "valid": True,

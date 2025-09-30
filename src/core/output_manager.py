@@ -43,9 +43,6 @@ class OutputPathManager:
         """
         paths = self.config.get_absolute_paths(self.project_root)
         base_output_dir = paths["output_dir"]
-        assert isinstance(
-            base_output_dir, Path
-        ), "output_dir は Path 型である必要があります"
         relative_path = source_file.relative_to(self.project_root)
 
         # ソースファイルの場所に基づいて出力ディレクトリを決定
@@ -122,7 +119,6 @@ class OutputPathManager:
         """
         paths = self.config.get_absolute_paths(self.project_root)
         output_dir = paths["output_dir"]
-        assert isinstance(output_dir, Path), "output_dir は Path 型である必要があります"
         graph_file = output_dir / filename
         graph_file.parent.mkdir(parents=True, exist_ok=True)
         return graph_file
@@ -136,7 +132,6 @@ class OutputPathManager:
         """
         paths = self.config.get_absolute_paths(self.project_root)
         base_dir = paths["output_dir"]
-        assert isinstance(base_dir, Path), "output_dir は Path 型である必要があります"
         return {
             "yaml": base_dir,
             "markdown": self.config.get_documents_output_dir(self.project_root),
