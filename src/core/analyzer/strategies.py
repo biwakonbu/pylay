@@ -345,7 +345,74 @@ class NormalAnalysisStrategy(AnalysisStrategy):
         # まずtyping評価を試みる
         try:
             # 型文字列をtyping環境で評価
-            typing_ns = {**typing.__dict__, "__builtins__": {}}
+            # セキュリティ: allowlist方式で必要最小限の属性のみ許可
+            allowed_typing_attrs = {
+                # 基本型コンストラクタ
+                "Any",
+                "Optional",
+                "Union",
+                "Literal",
+                "Final",
+                "ClassVar",
+                "Callable",
+                "TypeVar",
+                "Generic",
+                "Protocol",
+                "TypedDict",
+                "Annotated",
+                # コレクション型
+                "Sequence",
+                "Mapping",
+                "Iterable",
+                "Iterator",
+                "List",
+                "Dict",
+                "Set",
+                "Tuple",
+                "FrozenSet",
+                # ジェネリック型ユーティリティ
+                "get_origin",
+                "get_args",
+                "ForwardRef",
+                # 型操作ユーティリティ
+                "cast",
+                "overload",
+                "TypeAlias",
+                "Concatenate",
+                "ParamSpec",
+                "TypeGuard",
+                "Unpack",
+                # Python 3.10+の新機能
+                "TypeVarTuple",
+                "Never",
+                "Self",
+                "LiteralString",
+                "assert_type",
+                "reveal_type",
+                "dataclass_transform",
+                # 抽象基底クラス
+                "AbstractSet",
+                "MutableSet",
+                "MutableMapping",
+                "MutableSequence",
+                "Awaitable",
+                "Coroutine",
+                "AsyncIterable",
+                "AsyncIterator",
+                "ContextManager",
+                "AsyncContextManager",
+            }
+            typing_ns = {
+                k: v
+                for k, v in typing.__dict__.items()
+                if k in allowed_typing_attrs
+            }
+            typing_ns["__builtins__"] = {}
+
+            # TODO: 将来的にはASTパースのみで処理を完結させる移行を検討
+            # 現在の多層防御（eval失敗→ASTフォールバック）は有効だが、
+            # eval()によるセキュリティリスクを完全に排除するため、
+            # ASTパーサーの精度向上とともにeval()の使用を段階的に削減する
             obj = eval(type_str, typing_ns)  # noqa: S307
             extract_from_typing_obj(obj)
             if refs:
