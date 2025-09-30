@@ -101,10 +101,11 @@ class DependencyVisitor(ast.NodeVisitor):
         """型アノテーション付き代入を訪問"""
         if self.context.in_class_context() and isinstance(node.target, ast.Name):
             # クラス属性のアノテーション
+            assert self.context.current_class is not None
             type_name = self._get_type_name_from_ast(node.annotation)
             if type_name:
                 self._add_edge(
-                    self.context.current_class,  # type: ignore
+                    self.context.current_class,
                     type_name,
                     RelationType.REFERENCES,
                     weight=0.6,
@@ -331,17 +332,17 @@ class DependencyVisitor(ast.NodeVisitor):
         self, source: str, target: str, relation: RelationType, weight: float = 1.0
     ) -> None:
         """エッジを追加（重複を避ける）"""
-        if source != target and target not in self.state.visited_nodes:
-            self.state.visited_nodes.add(target)
+        if source != target:
             edge_key = f"{source}->{target}:{relation}"
-            edge = GraphEdge(
-                source=source,
-                target=target,
-                relation_type=relation,
-                weight=weight,
-                metadata={"extraction_method": "AST_analysis"},
-            )
-            self.state.edges[edge_key] = edge
+            if edge_key not in self.state.edges:
+                edge = GraphEdge(
+                    source=source,
+                    target=target,
+                    relation_type=relation,
+                    weight=weight,
+                    metadata={"extraction_method": "AST_analysis"},
+                )
+                self.state.edges[edge_key] = edge
 
 
 class TypeAnnotationVisitor(ast.NodeVisitor):
