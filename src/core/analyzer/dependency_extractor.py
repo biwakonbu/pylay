@@ -165,21 +165,40 @@ class DependencyExtractionAnalyzer(Analyzer):
             logger.warning(f"mypy統合に失敗しました ({file_path}): {e}")
 
     def _extract_type_refs_from_string(self, type_str: str) -> list[str]:
-        """型文字列から型参照を抽出"""
+        """
+        型文字列から型参照を抽出（ASTベース）
+
+        ネストされたジェネリクス、Union型、Callable型など
+        複雑な型アノテーションに対応します。
+
+        Args:
+            type_str: 型を表す文字列（例: "Dict[str, List[int]]", "int | str"）
+
+        Returns:
+            抽出された型参照のリスト（重複除去済み）
+        """
+        import ast
+
         refs = []
-        # 簡易的な分割（List[str] -> ['List', 'str']）
-        parts = (
-            type_str.replace("[", " ")
-            .replace("]", " ")
-            .replace(",", " ")
-            .replace("|", " ")
-            .split()
-        )
-        for part in parts:
-            part = part.strip()
-            if part and part[0].isupper():  # クラス名らしきもの
-                refs.append(part)
-        return refs
+        try:
+            # 型文字列をPythonの式として解析
+            node = ast.parse(type_str, mode='eval')
+            for child in ast.walk(node):
+                if isinstance(child, ast.Name) and child.id[0].isupper():
+                    refs.append(child.id)
+        except SyntaxError:
+            # フォールバック: 文字列分割ベース
+            logger.debug(f"ASTパースに失敗、フォールバック使用: {type_str}")
+            parts = (
+                type_str.replace("[", " ")
+                .replace("]", " ")
+                .replace(",", " ")
+                .replace("|", " ")
+                .split()
+            )
+            refs = [p.strip() for p in parts if p and p[0].isupper()]
+
+        return list(set(refs))  # 重複除去
 
     def _detect_cycles(self, graph: TypeDependencyGraph) -> list[list[str]]:
         """グラフから循環を検出"""

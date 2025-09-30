@@ -66,7 +66,11 @@ class MypyExecutionError(AnalysisError):
         base_msg = super()._format_message()
         details = f"{base_msg}\n終了コード: {self.return_code}"
         if self.stderr:
-            details += f"\n標準エラー: {self.stderr[:200]}..."  # 最初の200文字のみ
+            limit = 200
+            if len(self.stderr) > limit:
+                details += f"\n標準エラー: {self.stderr[:limit]}..."
+            else:
+                details += f"\n標準エラー: {self.stderr}"
         return details
 
 
