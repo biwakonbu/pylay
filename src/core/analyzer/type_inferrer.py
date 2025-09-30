@@ -303,15 +303,41 @@ def _parse_mypy_output(output: str) -> dict[str, InferResult]:
     types: dict[str, InferResult] = {}
     lines = output.split("\n")
 
-    for line in lines:
+    for line_num, line in enumerate(lines, start=1):
+        # 空行とコメント行をスキップ
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        # 型アノテーション行のみを処理
         if "->" in line and ":" in line:
-            # 簡易的な解析（実際にはより詳細な実装が必要）
-            parts = line.split(":")
-            if len(parts) >= 2:
+            try:
+                # maxsplit=1で最初の":"のみで分割（型に":"が含まれる場合に対応）
+                parts = line.split(":", maxsplit=1)
+                if len(parts) < 2:
+                    continue
+
                 var_name = parts[0].strip()
                 type_info = parts[1].strip()
+
+                # 変数名と型情報が空でないことを検証
+                if not var_name or not type_info:
+                    continue
+
+                # TODO: 信頼度の計算ロジックを実装する必要がある
+                # 現在は暫定的に0.8を使用しているが、以下の要素を考慮すべき：
+                # - mypy の推論結果の確実性
+                # - 型の複雑さ
+                # - ソースコードの品質
                 types[var_name] = InferResult(
-                    variable_name=var_name, inferred_type=type_info, confidence=0.8
+                    variable_name=var_name,
+                    inferred_type=type_info,
+                    confidence=0.8,  # TODO: 適切な信頼度計算に置き換える
+                    line_number=line_num,
                 )
+            except (ValueError, AttributeError) as e:
+                # パースエラーは無視して次の行に進む
+                # ログ出力が必要な場合はここに追加可能
+                continue
 
     return types
