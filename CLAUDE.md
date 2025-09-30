@@ -38,10 +38,10 @@
 - YAML -> Markdownドキュメント生成
 - 基本的なテストと相互変換の整合性検証
 
-**開発中**:
-- 型推論と依存関係抽出（mypy + astハイブリッド）
+**実装済み（続き）**:
+- 型推論と依存関係抽出（mypy + astハイブリッド） - 完了
 
-**実装済み**:
+**実装済み（UI）**:
 - CLI（コマンドラインインターフェース）
 - TUI（テキストユーザーインターフェース）の基盤
 
@@ -302,6 +302,8 @@ from typing import Union
 def process_data_old(data: Union[str, int, None]) -> Union[str, None]:
     return str(data) if data is not None else None
 ```
+
+**注意**: `X | Y` 形式のUnion型表記は、Python 3.10以降で `from __future__ import annotations` を使用することでも利用可能です（例: `def func(x: str | int) -> bool`）。ただし、このプロジェクトがPython 3.13以上を要求するのは、この型構文だけでなく、他の3.13固有機能（例: 拡張された標準ライブラリ、パフォーマンス改善等）を活用するためです。Python 3.10-3.12環境で動作させる場合は、`from __future__ import annotations` の追加を検討してください。
 
 **推奨**: Python 3.13+ の新機能を積極的に活用し、`typing` モジュールの古い形式は避ける。
 
