@@ -112,12 +112,12 @@ class FullAnalyzer(Analyzer):
             # コード文字列の場合、一時ファイルを作成
             from src.core.utils.io_helpers import create_temp_file, cleanup_temp_file
             from src.core.schemas.analyzer_types import TempFileConfig
+            from pydantic import ValidationError
 
-            temp_config: TempFileConfig = {
-                "code": input_path,
-                "suffix": ".py",
-                "mode": "w",
-            }
+            try:
+                temp_config = TempFileConfig(code=input_path, suffix=".py", mode="w")
+            except ValidationError as e:
+                raise ValueError(f"無効な入力: {e}") from e
             temp_path = create_temp_file(temp_config)
 
             # クリーンアップ関数を返す

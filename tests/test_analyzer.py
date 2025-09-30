@@ -365,9 +365,9 @@ class TestEdgeCases:
 
         analyzer = TypeInferenceAnalyzer(config)
 
-        graph = analyzer.analyze("")
-        assert isinstance(graph, TypeDependencyGraph)
-        assert len(graph.nodes) == 0
+        # 空文字列はValidationErrorを引き起こすため、ValueErrorが発生することを期待
+        with pytest.raises(ValueError, match="無効な入力"):
+            analyzer.analyze("")
 
     def test_complex_circular_dependency(self, tmp_path):
         """複雑な循環依存の検出"""

@@ -26,9 +26,9 @@ def create_temp_file(config: TempFileConfig) -> Path:
     """
     try:
         with tempfile.NamedTemporaryFile(
-            mode=config["mode"], suffix=config["suffix"], delete=False
+            mode=config.mode, suffix=config.suffix, delete=False
         ) as f:
-            f.write(config["code"])
+            f.write(config.code)
             temp_path = Path(f.name)
         return temp_path
     except OSError as e:

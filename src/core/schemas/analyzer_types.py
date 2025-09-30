@@ -7,6 +7,7 @@ Pydanticモデルは models.py から再エクスポートします。
 
 from typing import TypedDict, Literal
 from enum import Enum
+from pydantic import BaseModel, Field
 
 # Pydanticモデルを再エクスポート
 from src.core.analyzer.models import InferResult, MypyResult  # noqa: F401
@@ -59,12 +60,20 @@ class GraphMetrics(TypedDict):
     cycles: list[list[str]]
 
 
-class TempFileConfig(TypedDict):
-    """一時ファイル設定の型"""
+class TempFileConfig(BaseModel):
+    """一時ファイル設定のPydanticモデル
 
-    code: str
-    suffix: str
-    mode: str
+    Attributes:
+        code: 一時ファイルに書き込むコード内容
+        suffix: ファイルの拡張子（デフォルト: ".py"）
+        mode: ファイルオープンモード（デフォルト: "w"）
+    """
+
+    code: str = Field(..., description="一時ファイルに書き込むコード内容", min_length=1)
+    suffix: str = Field(default=".py", description="ファイルの拡張子")
+    mode: str = Field(
+        default="w", description="ファイルオープンモード", pattern="^[wab]\\+?$"
+    )
 
 
 class AnalyzerConfig(TypedDict):
