@@ -87,7 +87,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             visitor.visit(tree)
 
             # mypy統合（config.infer_levelに基づく）
-            if self.config.infer_level in ["strict", "normal"] and nx:
+            if self.config.infer_level in ["strict", "normal"]:
                 self._integrate_mypy(file_path)
 
             # グラフ構築
@@ -127,8 +127,6 @@ class DependencyExtractionAnalyzer(Analyzer):
 
     def _integrate_mypy(self, file_path: Path | str) -> None:
         """mypy統合（型推論結果を追加）"""
-        if not nx:
-            return
         try:
             from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
 
