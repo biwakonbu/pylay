@@ -58,11 +58,12 @@ class DependencyVisitor(ast.NodeVisitor):
 
             # 基底クラス（継承関係）
             for base in node.bases:
-                base_name = self._get_type_name_from_ast(base)
-                if base_name and base_name != class_name:
-                    self._add_edge(
-                        class_name, base_name, RelationType.INHERITS_FROM, weight=0.9
-                    )
+                base_names = self._get_type_names_from_ast(base)
+                for base_name in base_names:
+                    if base_name and base_name != class_name:
+                        self._add_edge(
+                            class_name, base_name, RelationType.INHERITS_FROM, weight=0.9
+                        )
 
             # クラス内部を走査（コンテキスト更新）
             prev_class = self.context.current_class
@@ -102,14 +103,15 @@ class DependencyVisitor(ast.NodeVisitor):
         if self.context.in_class_context() and isinstance(node.target, ast.Name):
             # クラス属性のアノテーション
             assert self.context.current_class is not None
-            type_name = self._get_type_name_from_ast(node.annotation)
-            if type_name:
-                self._add_edge(
-                    self.context.current_class,
-                    type_name,
-                    RelationType.REFERENCES,
-                    weight=0.6,
-                )
+            type_names = self._get_type_names_from_ast(node.annotation)
+            for type_name in type_names:
+                if type_name:
+                    self._add_edge(
+                        self.context.current_class,
+                        type_name,
+                        RelationType.REFERENCES,
+                        weight=0.6,
+                    )
         self.generic_visit(node)
 
     def visit_Import(self, node: ast.Import) -> None:
@@ -228,17 +230,19 @@ class DependencyVisitor(ast.NodeVisitor):
         # 引数の型アノテーション
         for arg in node.args.args:
             if arg.annotation:
-                arg_type = self._get_type_name_from_ast(arg.annotation)
-                if arg_type:
-                    self._add_edge(
-                        func_name, arg_type, RelationType.REFERENCES, weight=0.6
-                    )
+                arg_types = self._get_type_names_from_ast(arg.annotation)
+                for arg_type in arg_types:
+                    if arg_type:
+                        self._add_edge(
+                            func_name, arg_type, RelationType.REFERENCES, weight=0.6
+                        )
 
         # 戻り値の型アノテーション
         if node.returns:
-            return_type = self._get_type_name_from_ast(node.returns)
-            if return_type:
-                self._add_edge(func_name, return_type, RelationType.RETURNS, weight=0.8)
+            return_types = self._get_type_names_from_ast(node.returns)
+            for return_type in return_types:
+                if return_type:
+                    self._add_edge(func_name, return_type, RelationType.RETURNS, weight=0.8)
 
     def _visit_method_def(self, node: FunctionDefLike) -> None:
         """メソッド定義の処理"""
@@ -263,18 +267,20 @@ class DependencyVisitor(ast.NodeVisitor):
         # メソッドの引数と戻り値
         for arg in node.args.args:
             if arg.annotation:
-                arg_type = self._get_type_name_from_ast(arg.annotation)
-                if arg_type:
-                    self._add_edge(
-                        method_name, arg_type, RelationType.REFERENCES, weight=0.6
-                    )
+                arg_types = self._get_type_names_from_ast(arg.annotation)
+                for arg_type in arg_types:
+                    if arg_type:
+                        self._add_edge(
+                            method_name, arg_type, RelationType.REFERENCES, weight=0.6
+                        )
 
         if node.returns:
-            return_type = self._get_type_name_from_ast(node.returns)
-            if return_type:
-                self._add_edge(
-                    method_name, return_type, RelationType.RETURNS, weight=0.8
-                )
+            return_types = self._get_type_names_from_ast(node.returns)
+            for return_type in return_types:
+                if return_type:
+                    self._add_edge(
+                        method_name, return_type, RelationType.RETURNS, weight=0.8
+                    )
 
     def _visit_attribute_call(self, node: ast.Attribute) -> None:
         """属性を通じた関数呼び出しの処理"""
@@ -299,29 +305,51 @@ class DependencyVisitor(ast.NodeVisitor):
                 method_call_node.name, method_name, RelationType.CALLS, weight=0.8
             )
 
-    def _get_type_name_from_ast(self, node: ast.AST) -> Optional[str]:
-        """ASTノードから型名を抽出（ForwardRef対応）"""
+    def _get_type_names_from_ast(self, node: ast.AST) -> list[str]:
+        """
+        ASTノードから型名を抽出（ForwardRef対応、Union型は個別要素を返す）
+
+        Args:
+            node: 型を表すASTノード
+
+        Returns:
+            抽出された型名のリスト（Union型の場合は複数要素を返す）
+        """
         if isinstance(node, ast.Name):
-            return str(node.id)
+            return [str(node.id)]
         elif isinstance(node, ast.Attribute):
-            return str(node.attr)
+            return [str(node.attr)]
         elif isinstance(node, ast.Constant) and isinstance(node.value, str):
             # ForwardRef（文字列リテラル）
-            return node.value
+            return [node.value]
         elif isinstance(node, ast.Subscript):
-            # ジェネリック型（例: List[User] → User）
-            if hasattr(node.slice, "id"):
-                return str(node.slice.id)
-            elif hasattr(node.slice, "value") and hasattr(node.slice.value, "id"):
-                return str(node.slice.value.id)
+            # ジェネリック型（例: List[User] → User, Dict[str, List[int]] → [str, List[int]]）
+            # Python 3.9+では複数パラメータはast.Tupleとして表現される
+            if isinstance(node.slice, ast.Tuple):
+                # 複数のジェネリック型パラメータ（例: Dict[str, int]）
+                result: list[str] = []
+                for elt in node.slice.elts:
+                    result.extend(self._get_type_names_from_ast(elt))
+                return result
+            else:
+                # 単一パラメータ（例: List[User]）- 再帰的に処理
+                return self._get_type_names_from_ast(node.slice)
         elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
-            # Union型（例: str | int）
-            left_type = self._get_type_name_from_ast(node.left)
-            right_type = self._get_type_name_from_ast(node.right)
-            if left_type and right_type:
-                return f"{left_type} | {right_type}"
-            return left_type or right_type
-        return None
+            # Union型（例: str | int） - 各要素を個別に返す
+            left_types = self._get_type_names_from_ast(node.left)
+            right_types = self._get_type_names_from_ast(node.right)
+            return left_types + right_types
+        return []
+
+    def _get_type_name_from_ast(self, node: ast.AST) -> Optional[str]:
+        """
+        ASTノードから型名を抽出（後方互換性のため残す）
+
+        注意: Union型の場合は最初の要素のみを返します。
+        Union型の全要素を取得するには _get_type_names_from_ast を使用してください。
+        """
+        types = self._get_type_names_from_ast(node)
+        return types[0] if types else None
 
     def _add_node(self, node: GraphNode) -> None:
         """ノードを追加（重複を避ける）"""
