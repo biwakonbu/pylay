@@ -62,7 +62,10 @@ class DependencyVisitor(ast.NodeVisitor):
                 for base_name in base_names:
                     if base_name and base_name != class_name:
                         self._add_edge(
-                            class_name, base_name, RelationType.INHERITS_FROM, weight=0.9
+                            class_name,
+                            base_name,
+                            RelationType.INHERITS_FROM,
+                            weight=0.9,
                         )
 
             # クラス内部を走査（コンテキスト更新）
@@ -242,7 +245,9 @@ class DependencyVisitor(ast.NodeVisitor):
             return_types = self._get_type_names_from_ast(node.returns)
             for return_type in return_types:
                 if return_type:
-                    self._add_edge(func_name, return_type, RelationType.RETURNS, weight=0.8)
+                    self._add_edge(
+                        func_name, return_type, RelationType.RETURNS, weight=0.8
+                    )
 
     def _visit_method_def(self, node: FunctionDefLike) -> None:
         """メソッド定義の処理"""

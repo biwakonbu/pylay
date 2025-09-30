@@ -15,7 +15,7 @@ def temp_dir():
 
 def test_build_registry():
     """型レジストリの構築をテスト"""
-    from schemas.type_index import TYPE_REGISTRY, build_registry
+    from src.core.schemas.type_index import TYPE_REGISTRY, build_registry
 
     # レジストリを再構築
     build_registry()

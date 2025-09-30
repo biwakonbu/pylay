@@ -10,14 +10,14 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from doc_generators.config import TypeDocConfig
-from doc_generators.filesystem import InMemoryFileSystem
-from doc_generators.markdown_builder import MarkdownBuilder
-from doc_generators.type_doc_generator import (
+from src.core.doc_generators.config import TypeDocConfig
+from src.core.doc_generators.filesystem import InMemoryFileSystem
+from src.core.doc_generators.markdown_builder import MarkdownBuilder
+from src.core.doc_generators.type_doc_generator import (
     IndexDocGenerator,
     LayerDocGenerator,
 )
-from doc_generators.type_inspector import TypeInspector
+from src.core.doc_generators.type_inspector import TypeInspector
 
 
 # Test fixtures

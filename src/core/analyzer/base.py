@@ -56,6 +56,12 @@ class FullAnalyzer(Analyzer):
     """
 
     def __init__(self, config: PylayConfig) -> None:
+        """
+        FullAnalyzerを初期化します。
+
+        Args:
+            config: pylay設定オブジェクト
+        """
         super().__init__(config)
         from src.core.analyzer.strategies import create_analysis_strategy
 
@@ -116,12 +122,14 @@ class FullAnalyzer(Analyzer):
 
             # クリーンアップ関数を返す
             def cleanup() -> None:
+                """一時ファイルをクリーンアップします。"""
                 cleanup_temp_file(temp_path)
 
             return temp_path, cleanup
         elif isinstance(input_path, Path):
             # 既存ファイルの場合、何もしないクリーンアップ関数を返す
             def noop_cleanup() -> None:
+                """何も実行しないクリーンアップ関数です。"""
                 pass
 
             return input_path, noop_cleanup

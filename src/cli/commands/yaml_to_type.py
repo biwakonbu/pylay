@@ -90,6 +90,15 @@ def run_yaml_to_type(
                 return spec_type
 
         def generate_class_code(name: str, spec_data: dict) -> list[str]:
+            """Pydantic BaseModelクラスコードを生成します。
+
+            Args:
+                name: クラス名
+                spec_data: 型仕様データ
+
+            Returns:
+                生成されたコード行のリスト
+            """
             lines = []
             lines.append(f"class {name}(BaseModel):")
             if "description" in spec_data:

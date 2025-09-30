@@ -5,7 +5,7 @@ utils/ref_resolver.py のテスト
 import pytest
 
 from utils.ref_resolver import RefResolver
-from schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec
+from src.core.schemas.yaml_type_spec import TypeSpec, ListTypeSpec, DictTypeSpec
 
 
 class TestRefResolver:

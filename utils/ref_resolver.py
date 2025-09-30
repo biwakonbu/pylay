@@ -6,7 +6,7 @@ yaml_to_type.py から抽出・モジュール化されたものです。
 """
 
 from typing import Any
-from schemas.yaml_type_spec import (
+from src.core.schemas.yaml_type_spec import (
     TypeSpec,
     ListTypeSpec,
     DictTypeSpec,
@@ -172,7 +172,7 @@ class RefResolver:
         Returns:
             参照文字列のリスト
         """
-        from schemas.yaml_type_spec import RefPlaceholder
+        from src.core.schemas.yaml_type_spec import RefPlaceholder
 
         refs = []
 

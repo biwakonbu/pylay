@@ -78,7 +78,9 @@ class AnalysisStrategy(ABC):
                 project_root = project_root.parent
 
             # 相対パスからモジュール名を生成
-            relative_path = file_path.resolve().with_suffix("").relative_to(project_root)
+            relative_path = (
+                file_path.resolve().with_suffix("").relative_to(project_root)
+            )
             return relative_path.as_posix().replace("/", ".")
         except (ValueError, Exception):
             # フォールバック: ファイル名のみ
@@ -403,9 +405,7 @@ class NormalAnalysisStrategy(AnalysisStrategy):
                 "AsyncContextManager",
             }
             typing_ns = {
-                k: v
-                for k, v in typing.__dict__.items()
-                if k in allowed_typing_attrs
+                k: v for k, v in typing.__dict__.items() if k in allowed_typing_attrs
             }
             typing_ns["__builtins__"] = {}
 
