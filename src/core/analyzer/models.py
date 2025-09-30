@@ -9,6 +9,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 from src.core.schemas.graph_types import GraphNode, GraphEdge
+from src.core.schemas.pylay_config import PylayConfig
 
 
 class InferResult(BaseModel):
@@ -144,11 +145,15 @@ class InferenceConfig(BaseModel):
         return self.enable_mypy and self.infer_level != "loose"
 
     @classmethod
-    def from_pylay_config(cls, config: Any) -> "InferenceConfig":
+    def from_pylay_config(cls, config: "PylayConfig") -> "InferenceConfig":
         """PylayConfigから変換"""
+        max_depth = getattr(config, "max_depth", 10)
+        if not isinstance(max_depth, int) or max_depth < 1:
+            max_depth = 10
+
         return cls(
             infer_level=config.infer_level,
-            max_depth=getattr(config, "max_depth", 10),
+            max_depth=max_depth,
             enable_mypy=config.infer_level != "loose",
         )
 
