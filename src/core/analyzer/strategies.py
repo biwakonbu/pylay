@@ -7,11 +7,14 @@ AnalysisStrategyの抽象基底クラスと実装を提供します。
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+import logging
 
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.analyzer.models import AnalyzerState, ParseContext, InferenceConfig
-from src.core.analyzer.exceptions import AnalysisError
+from src.core.analyzer.exceptions import AnalysisError, MypyExecutionError
+
+logger = logging.getLogger(__name__)
 
 
 class AnalysisStrategy(ABC):
@@ -177,25 +180,135 @@ class NormalAnalysisStrategy(AnalysisStrategy):
                                     weight=0.5,
                                 )
                                 self.state.edges[edge_key] = edge
-        except Exception as e:
+        except (MypyExecutionError, AnalysisError) as e:
             # mypy失敗時はログして続行（Normalモードでは許容）
-            print(f"警告: mypy統合に失敗しました: {e}")
+            logger.warning(f"mypy統合に失敗しました ({file_path}): {e}")
 
     def _extract_type_refs(self, type_str: str) -> list[str]:
-        """型文字列から型参照を抽出"""
-        refs = []
-        parts = (
-            type_str.replace("[", " ")
-            .replace("]", " ")
-            .replace(",", " ")
-            .replace("|", " ")
-            .split()
-        )
-        for part in parts:
-            part = part.strip()
-            if part and part[0].isupper():
-                refs.append(part)
-        return refs
+        """
+        型文字列から型参照を抽出
+
+        複雑な型アノテーション（Optional, Dict, List, Callable, Union等）を
+        正しくパースし、ユーザー定義型名を抽出します。
+
+        Args:
+            type_str: 型を表す文字列（例: "Optional[Dict[str, List[int]]]"）
+
+        Returns:
+            抽出された型参照のリスト（重複なし）
+        """
+        import ast
+        import typing
+
+        refs: set[str] = set()
+
+        # 組み込み型とtyping primitiveを除外するセット
+        builtins_and_primitives = {
+            "int", "str", "float", "bool", "bytes", "list", "dict", "set", "tuple",
+            "frozenset", "type", "None", "Any", "Optional", "Union", "Literal",
+            "Final", "ClassVar", "Callable", "TypeVar", "Generic", "Protocol",
+            "TypedDict", "Annotated", "Sequence", "Mapping", "Iterable", "Iterator",
+        }
+
+        def extract_from_typing_obj(obj: object) -> None:
+            """typingオブジェクトから型参照を再帰的に抽出"""
+            try:
+                origin = typing.get_origin(obj)
+                args = typing.get_args(obj)
+
+                # originが存在する場合（Generic等）
+                if origin is not None:
+                    # originが型の場合、その名前を抽出
+                    if hasattr(origin, "__name__"):
+                        name = origin.__name__
+                        if name not in builtins_and_primitives:
+                            refs.add(name)
+
+                    # 型引数を再帰的に処理
+                    for arg in args:
+                        extract_from_typing_obj(arg)
+                # 通常の型オブジェクト
+                elif hasattr(obj, "__name__"):
+                    name = obj.__name__
+                    if name not in builtins_and_primitives:
+                        refs.add(name)
+                # ForwardRef（文字列型参照）
+                elif isinstance(obj, typing.ForwardRef):
+                    ref_name = obj.__forward_arg__
+                    if ref_name not in builtins_and_primitives:
+                        refs.add(ref_name)
+            except (AttributeError, TypeError):
+                # 型オブジェクトでない場合はスキップ
+                pass
+
+        def extract_from_ast_node(node: ast.AST) -> None:
+            """ASTノードから型参照を抽出"""
+            if isinstance(node, ast.Name):
+                if node.id not in builtins_and_primitives:
+                    refs.add(node.id)
+            elif isinstance(node, ast.Attribute):
+                # ドット区切りの型名（例: module.ClassName）
+                parts = []
+                current: ast.AST = node
+                while isinstance(current, ast.Attribute):
+                    parts.insert(0, current.attr)
+                    current = current.value
+                if isinstance(current, ast.Name):
+                    parts.insert(0, current.id)
+                if parts:
+                    # 最後の部分のみを型名として使用
+                    type_name = parts[-1]
+                    if type_name not in builtins_and_primitives:
+                        refs.add(type_name)
+            elif isinstance(node, ast.Subscript):
+                # Generic型（例: List[int], Dict[str, Any]）
+                extract_from_ast_node(node.value)
+                extract_from_ast_node(node.slice)
+            elif isinstance(node, ast.Tuple):
+                # 複数要素（例: Tuple[int, str]）
+                for elt in node.elts:
+                    extract_from_ast_node(elt)
+            elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+                # Union型の新形式（例: int | str）
+                extract_from_ast_node(node.left)
+                extract_from_ast_node(node.right)
+            elif isinstance(node, (ast.List, ast.Set)):
+                # リストやセット内の要素を処理
+                for elt in node.elts:
+                    extract_from_ast_node(elt)
+
+        # まずtyping評価を試みる
+        try:
+            # 型文字列をtyping環境で評価
+            typing_ns = {**typing.__dict__, "__builtins__": {}}
+            obj = eval(type_str, typing_ns)  # noqa: S307
+            extract_from_typing_obj(obj)
+            if refs:
+                return sorted(refs)
+        except (NameError, SyntaxError, AttributeError, TypeError):
+            # 評価失敗時はASTパースにフォールバック
+            pass
+
+        # ASTパースにフォールバック
+        try:
+            parsed = ast.parse(type_str, mode="eval")
+            extract_from_ast_node(parsed.body)
+        except SyntaxError:
+            # パース失敗時は単純な文字列分割にフォールバック
+            logger.debug(f"型文字列のパースに失敗しました: {type_str}")
+            parts = (
+                type_str.replace("[", " ")
+                .replace("]", " ")
+                .replace(",", " ")
+                .replace("|", " ")
+                .split()
+            )
+            for part in parts:
+                part = part.strip()
+                if part and part[0].isupper() and part not in builtins_and_primitives:
+                    refs.add(part)
+
+        return sorted(refs)
 
     def _get_extraction_method(self) -> str:
         return "AST_analysis_with_mypy"
@@ -223,11 +336,12 @@ class StrictAnalysisStrategy(NormalAnalysisStrategy):
         """mypy型推論を統合（Strictモード）"""
         try:
             super()._integrate_mypy(file_path)
-        except Exception as e:
+        except (MypyExecutionError, AnalysisError) as e:
             # Strictモードではエラーを伝播
+            logger.error(f"Strictモードでmypy統合に失敗しました ({file_path}): {e}")
             raise AnalysisError(
                 f"Strictモードでmypy統合に失敗しました: {e}", file_path=str(file_path)
-            )
+            ) from e
 
     def _detect_cycles(self, graph: TypeDependencyGraph) -> None:
         """循環依存を検出（Strictモードでは警告）"""

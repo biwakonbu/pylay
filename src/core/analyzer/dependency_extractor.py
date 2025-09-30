@@ -6,6 +6,7 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 """
 
 from pathlib import Path
+import logging
 
 try:
     import networkx as nx
@@ -15,9 +16,15 @@ except ImportError:
 from src.core.analyzer.base import Analyzer
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.analyzer.ast_visitors import DependencyVisitor, parse_ast
-from src.core.analyzer.exceptions import DependencyExtractionError
+from src.core.analyzer.exceptions import (
+    DependencyExtractionError,
+    TypeInferenceError,
+    MypyExecutionError,
+)
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
+
+logger = logging.getLogger(__name__)
 
 
 class DependencyExtractionAnalyzer(Analyzer):
@@ -154,9 +161,9 @@ class DependencyExtractionAnalyzer(Analyzer):
                                             weight=0.5,
                                         )
                                         self.state.edges[edge_key] = edge
-        except Exception:
-            # mypy失敗時は無視
-            pass
+        except (TypeInferenceError, MypyExecutionError) as e:
+            # mypy失敗時はログして続行
+            logger.warning(f"mypy統合に失敗しました ({file_path}): {e}")
 
     def _extract_type_refs_from_string(self, type_str: str) -> list[str]:
         """型文字列から型参照を抽出"""
