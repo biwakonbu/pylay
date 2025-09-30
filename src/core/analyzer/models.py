@@ -4,12 +4,15 @@
 Pydantic BaseModelを活用した型安全な内部状態管理を提供します。
 """
 
+import logging
 from pathlib import Path
 from typing import Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 from src.core.schemas.graph_types import GraphNode, GraphEdge
 from src.core.schemas.pylay_config import PylayConfig
+
+logger = logging.getLogger(__name__)
 
 
 class InferResult(BaseModel):
@@ -154,6 +157,11 @@ class InferenceConfig(BaseModel):
         # infer_levelのバリデーション
         infer_level = config.infer_level
         if infer_level not in ("loose", "normal", "strict"):
+            logger.warning(
+                f"無効なinfer_level '{infer_level}' が指定されました。"
+                f"デフォルト値 'normal' にフォールバックします。"
+                f"有効な値: 'loose', 'normal', 'strict'"
+            )
             infer_level = "normal"
 
         return cls(
