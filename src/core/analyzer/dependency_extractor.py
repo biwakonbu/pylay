@@ -16,7 +16,7 @@ try:
 except ImportError:
     nx = None
 
-from src.core.analyzer.base import Analyzer
+from src.core.analyzer.abc_base import Analyzer
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.analyzer.ast_visitors import DependencyVisitor, parse_ast
 from src.core.analyzer.exceptions import (

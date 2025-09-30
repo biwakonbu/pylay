@@ -46,7 +46,7 @@ import tempfile
 import os
 import re
 from pathlib import Path
-from src.core.analyzer.base import Analyzer
+from src.core.analyzer.abc_base import Analyzer
 from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode
 from src.core.analyzer.models import InferResult, MypyResult
 from src.core.analyzer.exceptions import MypyExecutionError
