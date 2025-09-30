@@ -38,11 +38,14 @@ repos:
         args: [--config=pyproject.toml]
 
   # 依存関係のセキュリティチェック
+  # 注: このフックは厳格なCI環境（GitHub Actions等）で実行されるため、
+  #     pre-commitフックでは警告のみ表示し、CIで必ず検証します。
+  #     CI設定: .github/workflows/ci.yml の safety-check ジョブ
   - repo: local
     hooks:
       - id: safety
         name: safety (依存関係脆弱性チェック)
-        entry: bash -c 'uv run safety check || true'
+        entry: bash -c 'uv run safety check'
         language: system
         files: ^(pyproject\.toml|uv\.lock)$
         pass_filenames: false
