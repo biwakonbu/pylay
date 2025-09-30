@@ -120,10 +120,9 @@ def run_yaml_to_type(
         if spec is not None and isinstance(spec, TypeRoot):
             # 複数型仕様
             for type_name, type_spec in spec.types.items():
-                if type_spec is not None:
-                    code_lines.extend(
-                        generate_class_code(type_name, type_spec.model_dump())
-                    )
+                code_lines.extend(
+                    generate_class_code(type_name, type_spec.model_dump())
+                )
         elif spec is not None:
             # 単一型仕様
             code_lines.extend(generate_class_code("GeneratedType", spec.model_dump()))

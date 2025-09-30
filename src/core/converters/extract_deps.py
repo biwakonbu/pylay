@@ -76,14 +76,14 @@ class DependencyExtractor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _extract_type_annotation(self, annotation_node: ast.AST) -> str | None:
+    def _extract_type_annotation(self, annotation_node: ast.AST | None) -> str | None:
         """
         ASTノードから型アノテーションを抽出します。
         ForwardRef（文字列リテラル）と複雑なジェネリック型を適切に処理します。
         """
         if annotation_node is None:
             return None
-        elif isinstance(annotation_node, ast.Name):
+        if isinstance(annotation_node, ast.Name):
             # シンプルな型名（例: int, str）
             return annotation_node.id
         elif isinstance(annotation_node, ast.Constant) and isinstance(
