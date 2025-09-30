@@ -6,11 +6,14 @@ AST訪問者モジュール
 
 import ast
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.analyzer.exceptions import ASTParseError
 from src.core.schemas.graph_types import GraphNode, GraphEdge, RelationType
+
+# 関数定義の共通型（Python 3.13+）
+FunctionDefLike = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
 
 class DependencyVisitor(ast.NodeVisitor):
@@ -71,6 +74,19 @@ class DependencyVisitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """関数定義を訪問"""
+        self._process_function_def(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """非同期関数定義を訪問"""
+        self._process_function_def(node)
+
+    def _process_function_def(self, node: FunctionDefLike) -> None:
+        """
+        関数定義の共通処理
+
+        Args:
+            node: FunctionDef または AsyncFunctionDef ノード
+        """
         if self.context.in_class_context():
             # メソッドの場合
             self._visit_method_def(node)
@@ -80,11 +96,6 @@ class DependencyVisitor(ast.NodeVisitor):
 
         # 関数内部を走査
         self.generic_visit(node)
-
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        """非同期関数定義を訪問"""
-        # FunctionDefと同様に処理
-        self.visit_FunctionDef(node)  # type: ignore
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """型アノテーション付き代入を訪問"""
@@ -198,7 +209,7 @@ class DependencyVisitor(ast.NodeVisitor):
             )
         self.generic_visit(node)
 
-    def _visit_function_def(self, node: ast.FunctionDef) -> None:
+    def _visit_function_def(self, node: FunctionDefLike) -> None:
         """トップレベル関数定義の処理"""
         func_name = node.name
         func_node = GraphNode(
@@ -208,6 +219,7 @@ class DependencyVisitor(ast.NodeVisitor):
                 "source_file": str(self.context.file_path),
                 "line": node.lineno,
                 "column": getattr(node, "col_offset", 0),
+                "is_async": isinstance(node, ast.AsyncFunctionDef),
             },
         )
         self._add_node(func_node)
@@ -227,7 +239,7 @@ class DependencyVisitor(ast.NodeVisitor):
             if return_type:
                 self._add_edge(func_name, return_type, RelationType.RETURNS, weight=0.8)
 
-    def _visit_method_def(self, node: ast.FunctionDef) -> None:
+    def _visit_method_def(self, node: FunctionDefLike) -> None:
         """メソッド定義の処理"""
         class_name = self.context.current_class
         if not class_name:
@@ -242,6 +254,7 @@ class DependencyVisitor(ast.NodeVisitor):
                 "source_file": str(self.context.file_path),
                 "line": node.lineno,
                 "class_name": class_name,
+                "is_async": isinstance(node, ast.AsyncFunctionDef),
             },
         )
         self._add_node(method_node)
@@ -351,14 +364,23 @@ class TypeAnnotationVisitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """関数定義を訪問"""
+        self._process_function_annotations(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """非同期関数定義を訪問"""
+        self._process_function_annotations(node)
+
+    def _process_function_annotations(self, node: FunctionDefLike) -> None:
+        """
+        関数の型アノテーションを処理
+
+        Args:
+            node: FunctionDef または AsyncFunctionDef ノード
+        """
         for arg in node.args.args:
             if arg.annotation and arg.arg not in self.annotations:
                 self.annotations[arg.arg] = ast.unparse(arg.annotation)
         self.generic_visit(node)
-
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        """非同期関数定義を訪問"""
-        self.visit_FunctionDef(node)  # type: ignore
 
 
 def parse_ast(file_path: Path | str) -> ast.AST:
