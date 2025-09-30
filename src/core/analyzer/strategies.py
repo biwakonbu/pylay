@@ -204,10 +204,40 @@ class NormalAnalysisStrategy(AnalysisStrategy):
 
         # 組み込み型とtyping primitiveを除外するセット
         builtins_and_primitives = {
-            "int", "str", "float", "bool", "bytes", "list", "dict", "set", "tuple",
-            "frozenset", "type", "None", "Any", "Optional", "Union", "Literal",
-            "Final", "ClassVar", "Callable", "TypeVar", "Generic", "Protocol",
-            "TypedDict", "Annotated", "Sequence", "Mapping", "Iterable", "Iterator",
+            "int",
+            "str",
+            "float",
+            "bool",
+            "bytes",
+            "list",
+            "dict",
+            "set",
+            "tuple",
+            "frozenset",
+            "type",
+            "None",
+            "NoneType",
+            "Any",
+            "Optional",
+            "Union",
+            "Literal",
+            "Final",
+            "ClassVar",
+            "Callable",
+            "TypeVar",
+            "Generic",
+            "Protocol",
+            "TypedDict",
+            "Annotated",
+            "Sequence",
+            "Mapping",
+            "Iterable",
+            "Iterator",
+            "List",
+            "Dict",
+            "Set",
+            "Tuple",
+            "FrozenSet",
         }
 
         def extract_from_typing_obj(obj: object) -> None:
@@ -248,7 +278,7 @@ class NormalAnalysisStrategy(AnalysisStrategy):
                     refs.add(node.id)
             elif isinstance(node, ast.Attribute):
                 # ドット区切りの型名（例: module.ClassName）
-                parts = []
+                parts: list[str] = []
                 current: ast.AST = node
                 while isinstance(current, ast.Attribute):
                     parts.insert(0, current.attr)
@@ -276,6 +306,13 @@ class NormalAnalysisStrategy(AnalysisStrategy):
                 # リストやセット内の要素を処理
                 for elt in node.elts:
                     extract_from_ast_node(elt)
+
+        # 前方参照（引用符で囲まれた型）を処理
+        if type_str.startswith("'") and type_str.endswith("'"):
+            inner = type_str[1:-1].strip()
+            if inner and inner not in builtins_and_primitives:
+                refs.add(inner)
+                return sorted(refs)
 
         # まずtyping評価を試みる
         try:
