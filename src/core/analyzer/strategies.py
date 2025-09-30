@@ -9,12 +9,23 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 import logging
 
+try:
+    import networkx as nx
+except ImportError as e:
+    raise ImportError(
+        "NetworkX is required for cycle detection. "
+        "Install it with: pip install networkx"
+    ) from e
+
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.analyzer.models import AnalyzerState, ParseContext, InferenceConfig
 from src.core.analyzer.exceptions import AnalysisError, MypyExecutionError
 
 logger = logging.getLogger(__name__)
+
+# サイクル検出を実行する最大ノード数（大規模グラフでのパフォーマンス劣化を防ぐ）
+MAX_NODES_FOR_CYCLE_DETECTION = 1000
 
 
 class AnalysisStrategy(ABC):
@@ -161,12 +172,12 @@ class NormalAnalysisStrategy(AnalysisStrategy):
             from src.core.schemas.graph_types import GraphNode, RelationType
 
             # mypy推論を実行
-            infer_results = run_mypy_inference(
+            mypy_result = run_mypy_inference(
                 file_path, self.infer_config.mypy_flags, self.infer_config.timeout
             )
 
             # 推論結果をグラフに追加
-            for var_name, infer_result in infer_results.items():
+            for var_name, infer_result in mypy_result.inferred_types.items():
                 # ノード追加
                 if var_name not in self.state.nodes:
                     node = GraphNode(
@@ -399,19 +410,32 @@ class StrictAnalysisStrategy(NormalAnalysisStrategy):
 
     def _detect_cycles(self, graph: TypeDependencyGraph) -> None:
         """循環依存を検出（Strictモードでは警告）"""
-        try:
-            import networkx as nx
-        except ImportError:
+        nx_graph = graph.to_networkx()
+        num_nodes = nx_graph.number_of_nodes()
+
+        # 大規模グラフでのサイクル検出をスキップ
+        if num_nodes > MAX_NODES_FOR_CYCLE_DETECTION:
+            logger.warning(
+                "グラフが大規模すぎるためサイクル検出をスキップします: "
+                "%d ノード（上限: %d）",
+                num_nodes,
+                MAX_NODES_FOR_CYCLE_DETECTION,
+            )
             return
 
-        nx_graph = graph.to_networkx()
+        logger.info("サイクル検出を実行中... (%d ノード)", num_nodes)
         cycles = list(nx.simple_cycles(nx_graph))
+
         if cycles:
-            # Strictモードでは警告を出力（エラーにはしない）
-            print(f"警告: 循環依存が検出されました（{len(cycles)}個）")
-            for i, cycle in enumerate(cycles[:5], 1):  # 最初の5個のみ表示
+            logger.warning("循環依存が検出されました: %d 個", len(cycles))
+            # 最初の5個のみログ出力
+            for i, cycle in enumerate(cycles[:5], 1):
                 cycle_str = " -> ".join(cycle)
-                print(f"  循環{i}: {cycle_str}")
+                logger.warning("  循環 %d: %s", i, cycle_str)
+            if len(cycles) > 5:
+                logger.info("  ... 他 %d 個の循環依存", len(cycles) - 5)
+        else:
+            logger.info("循環依存は検出されませんでした")
 
     def _get_extraction_method(self) -> str:
         return "AST_analysis_with_mypy_strict"
