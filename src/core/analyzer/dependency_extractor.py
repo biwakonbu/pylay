@@ -7,6 +7,7 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 
 from pathlib import Path
 import logging
+from typing import Any
 
 try:
     import networkx as nx
@@ -91,7 +92,7 @@ class DependencyExtractionAnalyzer(Analyzer):
                 self._integrate_mypy(file_path)
 
             # グラフ構築
-            metadata: dict[str, str | int | bool] = {
+            metadata: dict[str, Any] = {
                 "source_file": str(file_path),
                 "extraction_method": "AST_analysis_with_mypy"
                 if self.config.infer_level != "loose"
@@ -110,7 +111,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             if nx:
                 cycles = self._detect_cycles(graph)
                 if cycles:
-                    metadata["cycles"] = cycles  # type: ignore
+                    metadata["cycles"] = cycles
 
             return graph
 
