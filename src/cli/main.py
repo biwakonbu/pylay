@@ -103,7 +103,7 @@ def generate_type_docs(input: str, output: str) -> None:
             # デフォルト出力先の場合はディレクトリを作成
             Path(output).parent.mkdir(parents=True, exist_ok=True)
         with open(output, "w", encoding="utf-8") as f:
-            f.write(docs)
+            f.write(docs or "")
 
         cli_instance.show_success_message(
             "型ドキュメント生成が完了しました",
@@ -134,17 +134,12 @@ def generate_yaml_docs(input: str, output: Optional[str]) -> None:
         output = default_output
 
     try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=cli_instance.console,
-        ) as progress:
-            with open(input, "r", encoding="utf-8") as f:
-                yaml_str = f.read()
+        with open(input, "r", encoding="utf-8") as f:
+            yaml_str = f.read()
 
-            spec = yaml_to_spec(yaml_str)
-            generator = YamlDocGenerator()
-            generator.generate(Path(output), spec=spec)
+        spec = yaml_to_spec(yaml_str)
+        generator = YamlDocGenerator()
+        generator.generate(Path(output), spec=spec)
 
         cli_instance.show_success_message(
             "YAMLドキュメント生成が完了しました",
@@ -171,7 +166,7 @@ def generate_test_catalog(input_dir: str, output: str) -> None:
         # デフォルト出力先の場合はディレクトリを作成
         Path(output).parent.mkdir(parents=True, exist_ok=True)
     with open(output, "w", encoding="utf-8") as f:
-        f.write(catalog)
+        f.write(catalog or "")
     click.echo(f"生成完了: {output}")
 
 
@@ -241,12 +236,7 @@ def convert_to_yaml(input_module: str, output: str) -> None:
     Pythonの型定義をYAML形式に変換します。
     """
     try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=cli_instance.console,
-        ) as progress:
-            yaml_str = extract_types_from_module(Path(input_module))
+        yaml_str = extract_types_from_module(Path(input_module))
 
         if output == "-":
             cli_instance.console.print("[bold green]YAML出力:[/bold green]")
@@ -268,16 +258,11 @@ def convert_to_yaml(input_module: str, output: str) -> None:
 def convert_to_type(input_yaml: str, output_py: Optional[str]) -> None:
     """YAML を Pydantic BaseModel に変換"""
     try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=cli_instance.console,
-        ) as progress:
-            with open(input_yaml, "r", encoding="utf-8") as f:
-                yaml_str = f.read()
+        with open(input_yaml, "r", encoding="utf-8") as f:
+            yaml_str = f.read()
 
-            spec = yaml_to_spec(yaml_str)
-            model_code = f"""from pydantic import BaseModel
+        spec = yaml_to_spec(yaml_str)
+        model_code = f"""from pydantic import BaseModel
 from typing import {", ".join([t.__name__ if hasattr(t, "__name__") else str(t) for t in spec.__class__.__mro__ if t != object])}
 
 # 生成されたPydanticモデル
@@ -325,7 +310,7 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
             task = progress.add_task("🔍 型推論と依存関係抽出中...", total=None)
 
             # 型推論と依存関係抽出を実行
-            graph = extract_dependencies_from_file(Path(input_file))
+            graph = extract_dependencies_from_file(Path(input_file))  # type: ignore[assignment]  # nx.DiGraphとTypeDependencyGraphの互換性
 
             progress.update(task, description="📊 結果を表示中...")
 
@@ -337,14 +322,14 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
 
                 for node in graph.nodes:
                     if node.attributes and "inferred_type" in node.attributes:
-                        table.add_row(node.name, node.attributes["inferred_type"])
+                        table.add_row(node.name, str(node.attributes["inferred_type"]))
                 cli_instance.console.print(table)
 
             cli_instance.console.print("\n[bold green]✅ 依存関係抽出完了[/bold green]")
             cli_instance.console.print(f"ノード数: {len(graph.nodes)}")
             cli_instance.console.print(f"エッジ数: {len(graph.edges)}")
-            if graph.metadata and "cycles" in graph.metadata:
-                cycles_value = graph.metadata["cycles"]
+            if graph.metadata and "cycles" in graph.metadata:  # type: ignore[attr-defined]  # nx.DiGraph互換性
+                cycles_value = graph.metadata["cycles"]  # type: ignore[attr-defined]
                 if cycles_value and isinstance(cycles_value, list):
                     cli_instance.console.print(f"循環数: {len(cycles_value)}")
 
@@ -355,7 +340,7 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
 
                 output_image = f"{input_file}.deps.png"
                 processor = GraphProcessor()
-                processor.visualize_graph(graph, output_image)
+                processor.visualize_graph(graph, output_image)  # type: ignore[arg-type]  # nx.DiGraph互換性
                 cli_instance.console.print(
                     f"📊 依存関係グラフを {output_image} に保存しました"
                 )

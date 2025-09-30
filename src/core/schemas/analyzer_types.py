@@ -9,8 +9,8 @@ from typing import TypedDict, Literal
 from enum import Enum
 from pydantic import BaseModel, Field
 
-# Pydanticモデルを再エクスポート
-from src.core.analyzer.models import InferResult, MypyResult  # noqa: F401
+# Pydanticモデルを再エクスポート（analyzer.models からの型参照用）
+from src.core.analyzer.models import InferResult, MypyResult  # type: ignore[reportUnusedImport]  # noqa: F401
 
 
 class RelationType(str, Enum):

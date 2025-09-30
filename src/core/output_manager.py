@@ -41,9 +41,11 @@ class OutputPathManager:
         Returns:
             YAML出力パス（例: docs/pylay-types/src/cli/main.types.yaml）
         """
-        base_output_dir = self.config.get_absolute_paths(self.project_root)[
-            "output_dir"
-        ]
+        paths = self.config.get_absolute_paths(self.project_root)
+        base_output_dir = paths["output_dir"]
+        assert isinstance(
+            base_output_dir, Path
+        ), "output_dir は Path 型である必要があります"
         relative_path = source_file.relative_to(self.project_root)
 
         # ソースファイルの場所に基づいて出力ディレクトリを決定
@@ -55,7 +57,7 @@ class OutputPathManager:
             parts_to_use = (
                 list(relative_path.parts[1:-1]) if len(relative_path.parts) > 1 else []
             )
-            output_dir = base_output_dir / relative_path.parts[0]
+            output_dir = base_output_dir / relative_path.parts[0]  # type: ignore[reportGeneralTypeIssues]  # 上記でparts非空をチェック済み
             if parts_to_use:
                 output_dir = output_dir / Path(*parts_to_use)
         else:
@@ -118,7 +120,9 @@ class OutputPathManager:
         Returns:
             グラフ出力パス（例: docs/pylay-types/dependency_graph.png）
         """
-        output_dir = self.config.get_absolute_paths(self.project_root)["output_dir"]
+        paths = self.config.get_absolute_paths(self.project_root)
+        output_dir = paths["output_dir"]
+        assert isinstance(output_dir, Path), "output_dir は Path 型である必要があります"
         graph_file = output_dir / filename
         graph_file.parent.mkdir(parents=True, exist_ok=True)
         return graph_file
@@ -130,7 +134,9 @@ class OutputPathManager:
         Returns:
             出力ディレクトリの辞書（"yaml", "markdown", "graph"）
         """
-        base_dir = self.config.get_absolute_paths(self.project_root)["output_dir"]
+        paths = self.config.get_absolute_paths(self.project_root)
+        base_dir = paths["output_dir"]
+        assert isinstance(base_dir, Path), "output_dir は Path 型である必要があります"
         return {
             "yaml": base_dir,
             "markdown": self.config.get_documents_output_dir(self.project_root),

@@ -103,7 +103,7 @@ class PylayConfig(BaseModel):
         """
         return self.model_dump()
 
-    def get_absolute_paths(self, project_root: Path) -> dict[str, list[Path]]:
+    def get_absolute_paths(self, project_root: Path) -> dict[str, list[Path] | Path]:
         """
         相対パスを絶対パスに変換します。
 
@@ -111,7 +111,7 @@ class PylayConfig(BaseModel):
             project_root: プロジェクトルートディレクトリ
 
         Returns:
-            絶対パスの辞書
+            絶対パスの辞書（target_dirs: list[Path], output_dir: Path）
         """
         absolute_target_dirs = [
             (project_root / target_dir).resolve() for target_dir in self.target_dirs

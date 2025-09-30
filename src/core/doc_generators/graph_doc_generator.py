@@ -3,6 +3,8 @@
 TypeDependencyGraphからMarkdownドキュメントを生成。
 ミニマム版：テキストベースの依存リストとテーブル形式。
 """
+# pyright: reportAttributeAccessIssue=false, reportCallIssue=false
+# TODO: GraphNode/GraphEdge/TypeDependencyGraphの実装に合わせてメソッド呼び出しを修正
 
 from pathlib import Path
 from typing import Any, Optional

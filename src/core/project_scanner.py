@@ -36,8 +36,12 @@ class ProjectScanner:
             解析対象のPythonファイルパス
         """
         absolute_paths = self.config.get_absolute_paths(self.project_root)
+        target_dirs = absolute_paths["target_dirs"]
+        assert isinstance(
+            target_dirs, list
+        ), "target_dirs は list[Path] 型である必要があります"
 
-        for target_dir in absolute_paths["target_dirs"]:
+        for target_dir in target_dirs:
             yield from self._scan_directory(target_dir, current_depth=0)
 
     def _scan_directory(
@@ -118,18 +122,24 @@ class ProjectScanner:
             検証結果の辞書
         """
         absolute_paths = self.config.get_absolute_paths(self.project_root)
+        target_dirs_raw = absolute_paths["target_dirs"]
+        assert isinstance(
+            target_dirs_raw, list
+        ), "target_dirs は list[Path] 型である必要があります"
+        target_dirs = target_dirs_raw
+
         validation_result = {
             "valid": True,
             "errors": [],
             "warnings": [],
             "stats": {
-                "target_dirs_count": len(absolute_paths["target_dirs"]),
+                "target_dirs_count": len(target_dirs),
                 "output_dir": str(absolute_paths["output_dir"]),
             },
         }
 
         # 対象ディレクトリの検証
-        for target_dir in absolute_paths["target_dirs"]:
+        for target_dir in target_dirs:
             if not target_dir.exists():
                 validation_result["errors"].append(
                     f"対象ディレクトリが存在しません: {target_dir}"
@@ -142,7 +152,11 @@ class ProjectScanner:
                 validation_result["valid"] = False
 
         # 出力ディレクトリの検証
-        output_dir = absolute_paths["output_dir"]
+        output_dir_raw = absolute_paths["output_dir"]
+        assert isinstance(
+            output_dir_raw, Path
+        ), "output_dir は Path 型である必要があります"
+        output_dir = output_dir_raw
         if not output_dir.exists():
             try:
                 output_dir.mkdir(parents=True, exist_ok=True)

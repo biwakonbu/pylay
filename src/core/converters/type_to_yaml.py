@@ -141,7 +141,7 @@ def _get_class_properties_with_docstrings(cls: type[Any]) -> dict[str, TypeSpecO
             properties[field_name] = field_spec
         except Exception:
             # 型変換に失敗した場合は基本的なTypeSpecを作成
-            properties[field_name] = TypeSpec(
+            properties[field_name] = TypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
                 name=field_name,
                 type="unknown",
                 description=_get_field_docstring(cls, field_name),
@@ -168,11 +168,13 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
         # 基本型またはカスタムクラス
         if typ in {str, int, float, bool}:
             type_str = _get_basic_type_str(typ)
-            return TypeSpec(name=type_name, type=type_str, description=description)
+            return TypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
+                name=type_name, type=type_str, description=description
+            )
         else:
             # カスタムクラスはdict型として扱い、フィールドのdocstringを取得
             properties = _get_class_properties_with_docstrings(typ)
-            return DictTypeSpec(
+            return DictTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
                 name=type_name,
                 type="dict",
                 description=description,
@@ -183,11 +185,13 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
         # Generic[T]型（カスタムGenericサポート）
         if args:
             generic_args = _recurse_generic_args(args)
-            return GenericTypeSpec(
+            return GenericTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
                 name=type_name, params=generic_args, description=description
             )
         else:
-            return GenericTypeSpec(name=type_name, params=[], description=description)
+            return GenericTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
+                name=type_name, params=[], description=description
+            )
 
     elif origin is list:
         # List型は常にtype: "list" として処理
@@ -200,7 +204,7 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
                 bool,
             }:
                 # カスタム型の場合、参照として保持
-                return ListTypeSpec(
+                return ListTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
                     name=type_name,
                     items=_get_type_name(item_type),  # 参照文字列として保持
                     description=description,
@@ -208,14 +212,16 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
             else:
                 # 基本型の場合、TypeSpecとして展開
                 items_spec = type_to_spec(item_type)
-                return ListTypeSpec(
+                return ListTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
                     name=type_name, items=items_spec, description=description
                 )
         else:
             # 型パラメータなし
-            return ListTypeSpec(
+            return ListTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
                 name=type_name,
-                items=TypeSpec(name="any", type="any"),
+                items=TypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
+                    name="any", type="any"
+                ),
                 description=description,
             )
 
@@ -243,16 +249,18 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
                     value_spec = type_to_spec(value_type)
                     dict_properties[_get_type_name(value_type)] = value_spec
 
-                return DictTypeSpec(
+                return DictTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
                     name=type_name, properties=dict_properties, description=description
                 )
             else:
                 # キーがstr以外の場合、簡易的にanyとして扱う
-                return DictTypeSpec(
+                return DictTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
                     name=type_name, properties={}, description=description
                 )
         else:
-            return DictTypeSpec(name=type_name, properties={}, description=description)
+            return DictTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
+                name=type_name, properties={}, description=description
+            )
 
     elif origin is TypingUnion or str(origin) == "<class 'types.UnionType'>":
         # Union型（Union[int, str] など）
@@ -268,18 +276,20 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
                     variant_spec = type_to_spec(arg)
                     variants.append(variant_spec)
 
-            return UnionTypeSpec(
+            return UnionTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
                 name=type_name, variants=variants, description=description
             )
         else:
             union_variants: list[TypeSpecOrRef] = []
-            return UnionTypeSpec(
+            return UnionTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
                 name=type_name, variants=union_variants, description=description
             )
 
     else:
         # 未サポート型
-        return TypeSpec(name=type_name, type="unknown", description=description)
+        return TypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
+            name=type_name, type="unknown", description=description
+        )
 
 
 def type_to_yaml(

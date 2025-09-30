@@ -82,7 +82,7 @@ class ASTDependencyExtractor:
                 # デフォルト設定で TypeInferenceAnalyzer を初期化
                 config = PylayConfig(
                     target_dirs=["src"],
-                    output_dir=Path("docs/output"),
+                    output_dir="docs/output",
                     infer_level="normal",
                     generate_markdown=False,
                     extract_deps=False,

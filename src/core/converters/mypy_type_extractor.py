@@ -10,7 +10,12 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from src.core.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph
+from src.core.schemas.graph_types import (
+    GraphNode,
+    GraphEdge,
+    TypeDependencyGraph,
+    RelationType,
+)
 
 
 class MypyTypeExtractor:
@@ -176,7 +181,7 @@ class MypyTypeExtractor:
                         GraphEdge(
                             source=var_name,
                             target=type_name,
-                            relation_type="references",
+                            relation_type=RelationType.REFERENCES,
                             weight=0.7,  # mypy推論は中程度の信頼性
                             metadata={"inferred_by_mypy": True},
                         )

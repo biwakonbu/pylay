@@ -56,7 +56,7 @@ type TypeSpecOrRef = RefPlaceholder | str | TypeSpec
 class ListTypeSpec(TypeSpec):
     """リスト型の仕様"""
 
-    type: Literal["list"] = "list"
+    type: Literal["list"] = "list"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
     items: Any = Field(..., description="リストの要素型 (参照文字列またはTypeSpec)")
 
     @field_validator("items", mode="before")
@@ -71,7 +71,7 @@ class ListTypeSpec(TypeSpec):
 class DictTypeSpec(TypeSpec):
     """辞書型の仕様（プロパティの型をTypeSpecOrRefに統一）"""
 
-    type: Literal["dict"] = "dict"
+    type: Literal["dict"] = "dict"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
     properties: dict[str, Any] = Field(
         default_factory=dict, description="辞書のプロパティ (参照文字列またはTypeSpec)"
     )
@@ -102,7 +102,7 @@ class UnionTypeSpec(TypeSpec):
     Union型の型仕様を定義します。参照型はTypeSpecOrRefに統一されています。
     """
 
-    type: Literal["union"] = "union"
+    type: Literal["union"] = "union"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
     variants: list[Any] = Field(
         ..., description="Unionのバリアント (参照文字列またはTypeSpec)"
     )
@@ -128,7 +128,7 @@ class GenericTypeSpec(TypeSpec):
     Generic型の型仕様を定義します（例: Generic[T]）。参照型はTypeSpecOrRefに統一されています。
     """
 
-    type: Literal["generic"] = "generic"
+    type: Literal["generic"] = "generic"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
     params: list[Any] = Field(
         ..., description="Genericのパラメータ (参照文字列またはTypeSpec)"
     )
@@ -215,40 +215,6 @@ class TypeRoot(BaseModel):
         return v
 
 
-def _preprocess_refs_for_yaml_parsing(data: dict) -> dict:
-    """YAML解析後の参照文字列をRefPlaceholderに変換"""
-    result: dict[str, Any] = {}
-    for key, value in data.items():
-        if key == "items" and isinstance(value, str):
-            # itemsが参照文字列の場合はRefPlaceholderに変換
-            result[key] = RefPlaceholder(ref_name=value)
-        elif key == "properties" and isinstance(value, dict):
-            # properties内の参照文字列をRefPlaceholderに変換
-            processed_props: dict[str, Any] = {}
-            for prop_key, prop_value in value.items():
-                if isinstance(prop_value, str):
-                    # 参照文字列の場合はRefPlaceholderに変換
-                    processed_props[prop_key] = RefPlaceholder(ref_name=prop_value)
-                else:
-                    # TypeSpecデータの場合はそのまま
-                    processed_props[prop_key] = prop_value
-            result[key] = processed_props
-        elif key == "variants" and isinstance(value, list):
-            # variants内の参照文字列をRefPlaceholderに変換
-            processed_variants: list[Any] = []
-            for variant in value:
-                if isinstance(variant, str):
-                    # 参照文字列の場合はRefPlaceholderに変換
-                    processed_variants.append(RefPlaceholder(ref_name=variant))
-                else:
-                    # TypeSpecデータの場合はそのまま
-                    processed_variants.append(variant)
-            result[key] = processed_variants
-        else:
-            result[key] = value
-    return result
-
-
 def _create_spec_from_data(data: dict, root_key: str | None = None) -> TypeSpec:
     """dictからTypeSpecサブクラスを作成 (内部関数)"""
     # 参照文字列を保持するための前処理
@@ -317,34 +283,6 @@ def _preprocess_refs_for_spec_creation(data: dict) -> dict[str, Any]:
     return result
 
 
-def _create_spec_from_data_preserve_refs(
-    data: dict, root_key: str | None = None
-) -> TypeSpec:
-    """参照文字列を保持したままTypeSpecを作成 (内部関数)"""
-    # 参照文字列を明示的に保持するための特別な処理
-    type_key = data.get("type")
-    if type_key == "list":
-        # itemsが参照文字列の場合はそのまま保持
-        items_value = data.get("items")
-        if isinstance(items_value, str):
-            # 参照文字列の場合はそのまま
-            list_data = data.copy()
-            return ListTypeSpec(**list_data)
-        else:
-            return ListTypeSpec(**data)
-    elif type_key == "dict":
-        # propertiesが参照文字列の場合はそのまま保持
-        return DictTypeSpec(**data)
-    elif type_key == "union":
-        # variantsが参照文字列の場合はそのまま保持
-        return UnionTypeSpec(**data)
-    else:
-        # 基本型: nameをroot_keyから補完（v1.1対応）
-        if root_key:
-            data["name"] = root_key
-        return TypeSpec(**data)
-
-
 # 参照解決のためのコンテキスト
 class TypeContext:
     """型参照解決のためのコンテキスト"""
@@ -359,11 +297,11 @@ class TypeContext:
     def _add_builtin_types(self) -> None:
         """組み込み型をコンテキストに追加"""
         builtin_types = {
-            "str": TypeSpec(name="str", type="str", description="String type"),
-            "int": TypeSpec(name="int", type="int", description="Integer type"),
-            "float": TypeSpec(name="float", type="float", description="Float type"),
-            "bool": TypeSpec(name="bool", type="bool", description="Boolean type"),
-            "Any": TypeSpec(name="Any", type="any", description="Any type"),
+            "str": TypeSpec(name="str", type="str", description="String type"),  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
+            "int": TypeSpec(name="int", type="int", description="Integer type"),  # type: ignore[call-arg]
+            "float": TypeSpec(name="float", type="float", description="Float type"),  # type: ignore[call-arg]
+            "bool": TypeSpec(name="bool", type="bool", description="Boolean type"),  # type: ignore[call-arg]
+            "Any": TypeSpec(name="Any", type="any", description="Any type"),  # type: ignore[call-arg]
         }
         for name, spec in builtin_types.items():
             self.type_map[name] = spec
