@@ -7,6 +7,7 @@ Analyzerインターフェースとファクトリ関数を提供します。
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+from collections.abc import Callable
 
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
@@ -75,14 +76,30 @@ class FullAnalyzer(Analyzer):
             AnalysisError: 解析に失敗した場合
         """
         # 戦略に解析を委譲
-        file_path = self._prepare_input(input_path)
-        return self.strategy.analyze(file_path)
+        file_path, cleanup = self._prepare_input(input_path)
+        try:
+            return self.strategy.analyze(file_path)
+        finally:
+            # 一時ファイルが作成された場合は確実にクリーンアップ
+            cleanup()
 
-    def _prepare_input(self, input_path: Path | str) -> Path:
-        """入力をファイルパスに変換"""
+    def _prepare_input(self, input_path: Path | str) -> tuple[Path, Callable[[], None]]:
+        """
+        入力をファイルパスに変換し、クリーンアップ関数を返します。
+
+        Args:
+            input_path: ファイルパスまたはコード文字列
+
+        Returns:
+            (ファイルパス, クリーンアップ関数) のタプル
+            クリーンアップ関数は一時ファイルを削除します（一時ファイルでない場合は何もしません）
+
+        Raises:
+            ValueError: input_pathが無効な型の場合
+        """
         if isinstance(input_path, str):
             # コード文字列の場合、一時ファイルを作成
-            from src.core.utils.io_helpers import create_temp_file
+            from src.core.utils.io_helpers import create_temp_file, cleanup_temp_file
             from src.core.schemas.analyzer_types import TempFileConfig
 
             temp_config: TempFileConfig = {
@@ -91,9 +108,18 @@ class FullAnalyzer(Analyzer):
                 "mode": "w",
             }
             temp_path = create_temp_file(temp_config)
-            return temp_path
+
+            # クリーンアップ関数を返す
+            def cleanup() -> None:
+                cleanup_temp_file(temp_path)
+
+            return temp_path, cleanup
         elif isinstance(input_path, Path):
-            return input_path
+            # 既存ファイルの場合、何もしないクリーンアップ関数を返す
+            def noop_cleanup() -> None:
+                pass
+
+            return input_path, noop_cleanup
         else:
             raise ValueError("input_path は Path または str でなければなりません")
 

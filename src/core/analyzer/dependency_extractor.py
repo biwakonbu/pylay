@@ -46,9 +46,11 @@ class DependencyExtractionAnalyzer(Analyzer):
             ValueError: 入力が無効な場合
             DependencyExtractionError: 抽出に失敗した場合
         """
+        # 入力を準備
+        temp_path: Path | None = None
         if isinstance(input_path, str):
-            # コード文字列の場合、一時ファイルを作成して解析
-            from src.core.utils.io_helpers import create_temp_file, cleanup_temp_file
+            # コード文字列の場合、一時ファイルを作成
+            from src.core.utils.io_helpers import create_temp_file
             from src.core.schemas.analyzer_types import TempFileConfig
 
             temp_config: TempFileConfig = {
@@ -57,10 +59,7 @@ class DependencyExtractionAnalyzer(Analyzer):
                 "mode": "w",
             }
             temp_path = create_temp_file(temp_config)
-            try:
-                file_path = temp_path
-            finally:
-                pass  # cleanup_temp_file は後で呼ぶ
+            file_path = temp_path
         elif isinstance(input_path, Path):
             file_path = input_path
         else:
@@ -114,7 +113,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             )
         finally:
             # 一時ファイルのクリーンアップ
-            if isinstance(input_path, str):
+            if temp_path is not None:
                 from src.core.utils.io_helpers import cleanup_temp_file
 
                 cleanup_temp_file(temp_path)
