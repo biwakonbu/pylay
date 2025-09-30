@@ -231,7 +231,7 @@ class DependencyExtractionAnalyzer(Analyzer):
 
     def _detect_cycles(self, graph: TypeDependencyGraph) -> list[list[str]]:
         """グラフから循環を検出"""
-        if not nx:
+        if nx is None:
             return []
         nx_graph = graph.to_networkx()
         cycles = list(nx.simple_cycles(nx_graph))

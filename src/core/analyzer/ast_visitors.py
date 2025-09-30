@@ -178,7 +178,7 @@ class DependencyVisitor(ast.NodeVisitor):
 
     def visit_Call(self, node: ast.Call) -> None:
         """関数呼び出しを訪問"""
-        if hasattr(node.func, "id"):
+        if isinstance(node.func, ast.Name):
             func_name = node.func.id
             call_node = GraphNode(
                 name=f"call_{func_name}",
@@ -196,7 +196,7 @@ class DependencyVisitor(ast.NodeVisitor):
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         """属性アクセスを訪問"""
-        if hasattr(node.value, "id") and hasattr(node, "attr"):
+        if isinstance(node.value, ast.Name):
             obj_name = node.value.id
             attr_name = node.attr
 
@@ -289,7 +289,7 @@ class DependencyVisitor(ast.NodeVisitor):
 
     def _visit_attribute_call(self, node: ast.Attribute) -> None:
         """属性を通じた関数呼び出しの処理"""
-        if hasattr(node.value, "id") and hasattr(node, "attr"):
+        if isinstance(node.value, ast.Name):
             obj_name = node.value.id
             method_name = node.attr
 

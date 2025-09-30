@@ -140,7 +140,8 @@ pylay/
 ### 3.2 主要ライブラリ
 - **PyYAML/ruamel.yaml**: YAML形式データの処理
 - **pytest**: テスト実行フレームワーク
-- **mypy**: 型推論と静的型検査
+- **mypy**: 型推論と静的型検査（Python標準的な解釈）
+- **Pyright**: 厳格な型チェック（Microsoft製、VSCode統合）
 - **ast/NetworkX**: 依存関係の抽出とグラフ構造化
 - **Ruff**: 高速なリンターとコードフォーマッター
 - **uv**: Pythonパッケージ管理ツール（推奨）
@@ -151,6 +152,7 @@ pylay/
 - **pre-commit**: コード品質の自動チェック
 - **Makefile**: 統一された開発用コマンド集
 - **VSCode**: 推奨エディタ（タスク設定済み）
+- **型チェック**: mypy + Pyright のダブルチェック体制
 
 ### 3.4 外部サービス
 - なし（スタンドアローン）
@@ -161,6 +163,7 @@ pylay/
 - Python 3.13+
 - [uv](https://github.com/astral-sh/uv)
 - [pre-commit](https://pre-commit.com/)
+- [Node.js](https://nodejs.org/) (pyrightを使用する場合、npx経由で自動インストール可能)
 
 ### 4.2 Pythonランタイム管理ポリシー
 **重要**: OSに直接インストールされたシステムPythonは使用せず、常にuv管理の仮想環境を使用してください。
@@ -212,6 +215,12 @@ Makefile は開発コマンドを統一的に管理するためのツールで�
 - **make type-check**: mypyで型チェックを実行します。
   使用例: `make type-check`
 
+- **make type-check-pyright**: Pyrightで型チェックを実行します（npx経由）。
+  使用例: `make type-check-pyright`
+
+- **make type-check-all**: mypy + Pyrightで型チェックを実行します。
+  使用例: `make type-check-all`
+
 - **make test**: pytestでテストを実行し、カバレッジレポートを生成します。
   使用例: `make test`
 
@@ -221,7 +230,7 @@ Makefile は開発コマンドを統一的に管理するためのツールで�
 - **make coverage**: カバレッジレポートを表示します。
   使用例: `make coverage`
 
-- **make quality-check**: 型チェックとリンターを一括実行します。
+- **make quality-check**: 型チェック（mypy + pyright）とリンターを一括実行します。
   使用例: `make quality-check`
 
 - **make analyze**: pyproject.toml の設定に基づいてプロジェクト全体の型解析とドキュメント生成を実行します。target_dirs で指定されたディレクトリをスキャンし、型情報をYAMLにエクスポート、依存関係を抽出、Markdownドキュメントを生成します。出力は docs/pylay-types/ に documents/ と src/ 等の階層構造で整理されます。
@@ -241,15 +250,21 @@ Makefile は開発コマンドを統一的に管理するためのツールで�
 ### 4.6 VSCode設定
 VSCodeを使用する場合、以下の拡張機能が推奨されます：
 - Python（Microsoft社提供）
+- Pylance（Pyrightベース、推奨型チェッカー）
 - Pylint
 - MyPy Type Checker
 - Prettier
+
+**型チェック設定**:
+- IDE: Pyrightを使用（pyrightconfig.json で設定、standardモード）
+- CLI/CI: mypy + Pyright のダブルチェック（Makefileで統合）
+- 両方を通過することで高い型安全性を保証
 
 ## 5. コーディング規約
 
 ### 5.1 基本原則
 - **日本語**でコメント、ドキュメント、コミットメッセージを記述
-- **型アノテーション完全**: mypyのstrictモードを遵守
+- **型アノテーション完全**: mypy strictモード + Pyright standardモードを遵守
 - **docstring必須**: Google形式で全モジュール/クラス/関数に記述
 - Pythonのコメントは、docstringをGoogle Styleで記述し、内容は日本語で記述する
 - **インポート順序**: standard library → third party → local imports

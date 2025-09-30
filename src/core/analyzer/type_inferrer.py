@@ -47,7 +47,7 @@ from pathlib import Path
 from src.core.analyzer.base import Analyzer
 from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode
 from src.core.analyzer.models import InferResult, MypyResult
-from src.core.analyzer.exceptions import MypyExecutionError, TypeInferenceError
+from src.core.analyzer.exceptions import MypyExecutionError
 
 
 class TypeInferenceAnalyzer(Analyzer):
@@ -496,7 +496,7 @@ def _parse_mypy_output(output: str) -> dict[str, InferResult]:
                     confidence=confidence,
                     line_number=line_num,
                 )
-            except (ValueError, AttributeError) as e:
+            except (ValueError, AttributeError):
                 # パースエラーは無視して次の行に進む
                 # ログ出力が必要な場合はここに追加可能
                 continue

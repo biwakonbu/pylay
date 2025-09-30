@@ -5,7 +5,7 @@ Pydantic BaseModelを活用した型安全な内部状態管理を提供しま�
 """
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 from src.core.schemas.graph_types import GraphNode, GraphEdge
@@ -151,10 +151,15 @@ class InferenceConfig(BaseModel):
         if not isinstance(max_depth, int) or max_depth < 1:
             max_depth = 10
 
+        # infer_levelのバリデーション
+        infer_level = config.infer_level
+        if infer_level not in ("loose", "normal", "strict"):
+            infer_level = "normal"
+
         return cls(
-            infer_level=config.infer_level,
+            infer_level=infer_level,
             max_depth=max_depth,
-            enable_mypy=config.infer_level != "loose",
+            enable_mypy=infer_level != "loose",
         )
 
 
