@@ -50,12 +50,14 @@ class OutputPathManager:
         # target_dirs に含まれるディレクトリの場合は、その構造を模倣
         # target_dirs の値からスラッシュを除去して比較
         normalized_target_dirs = [d.rstrip("/") for d in self.config.target_dirs]
-        if relative_path.parts[0] in normalized_target_dirs:
-            output_dir = (
-                base_output_dir
-                / relative_path.parts[0]
-                / Path(*relative_path.parts[1:-1])
+        if relative_path.parts and relative_path.parts[0] in normalized_target_dirs:
+            # relative_path.parts は tuple なので、Path に変換する際は個別に処理
+            parts_to_use = (
+                list(relative_path.parts[1:-1]) if len(relative_path.parts) > 1 else []
             )
+            output_dir = base_output_dir / relative_path.parts[0]
+            if parts_to_use:
+                output_dir = output_dir / Path(*parts_to_use)
         else:
             output_dir = base_output_dir
 

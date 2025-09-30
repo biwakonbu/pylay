@@ -5,6 +5,8 @@ Analyzerインターフェースとファクトリ関数を提供します。
 解析部分を他のコンポーネントから疎結合に利用するための基盤です。
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
 from collections.abc import Callable

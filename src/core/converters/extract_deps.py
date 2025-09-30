@@ -7,6 +7,7 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 
 import ast
 import importlib
+from pathlib import Path
 import networkx as nx
 from typing import Any
 
@@ -188,17 +189,17 @@ def extract_dependencies_from_code(code: str) -> nx.DiGraph:
     return extractor.get_dependencies()
 
 
-def extract_dependencies_from_file(file_path: str) -> nx.DiGraph:
+def extract_dependencies_from_file(file_path: Path | str) -> nx.DiGraph:
     """
     ファイルから依存関係を抽出します。
 
     Args:
-        file_path: Pythonファイルのパス
+        file_path: Pythonファイルのパス (Path または str)
 
     Returns:
         NetworkXの有向グラフ（依存関係）
     """
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(str(file_path), "r", encoding="utf-8") as f:
         code = f.read()
     return extract_dependencies_from_code(code)
 
@@ -244,7 +245,7 @@ def visualize_dependencies(graph: nx.DiGraph, output_path: str = "deps.png") -> 
     """
     try:
         # 動的importを使ってpydotとgraphviz_layoutをインポート
-        pydot = importlib.import_module("pydot")
+        _pydot = importlib.import_module("pydot")  # pydotが利用可能か確認
         graphviz_layout = importlib.import_module(
             "networkx.drawing.nx_pydot"
         ).graphviz_layout

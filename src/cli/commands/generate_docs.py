@@ -29,7 +29,9 @@ def run_generate_docs(
         spec = yaml_to_spec(yaml_str)
 
         # Handle TypeRoot (multi-type) by using the first type
-        if hasattr(spec, "types") and spec.types:
+        from src.core.schemas.yaml_type_spec import TypeRoot
+
+        if spec is not None and isinstance(spec, TypeRoot) and spec.types:
             spec = next(iter(spec.types.values()))
 
         # Create output directory
@@ -42,14 +44,14 @@ def run_generate_docs(
         if format_type == "single":
             # Single file output
             output_file = output_path / "types.md"
-            generator.generate(output_file, spec=spec)
+            generator.generate(Path(str(output_file)), spec=spec)
         else:
             # Multiple files output (not implemented yet)
             console.print(
                 "[yellow]Multiple file format not yet implemented, using single file[/yellow]"
             )
             output_file = output_path / "types.md"
-            generator.generate(output_file, spec=spec)
+            generator.generate(Path(str(output_file)), spec=spec)
 
         console.print(
             f"[green]Successfully generated documentation to {output_file}[/green]"

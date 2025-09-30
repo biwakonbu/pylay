@@ -38,6 +38,8 @@ mypy の --infer フラグを活用して、未アノテーションのコード
     ...     print(f"{node.name}: {node.attributes.get('inferred_type')}")
 """
 
+from __future__ import annotations
+
 import ast
 import subprocess
 import tempfile

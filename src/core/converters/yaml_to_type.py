@@ -25,8 +25,8 @@ def yaml_to_spec(
     if isinstance(data, dict) and not root_key:
         if "types" in data:
             # 旧形式: 複数型（types: コンテナ使用）
-            types_data = data["types"]
-            # _detect_circular_references_from_data(types_data)
+            _types_data = data["types"]  # 循環参照チェック用に保持
+            # _detect_circular_references_from_data(_types_data)
 
             # 循環参照がないことを確認してからTypeRootを構築
             type_root = TypeRoot(**data)
@@ -71,8 +71,8 @@ def yaml_to_spec(
         raise ValueError("Invalid YAML structure for TypeSpec or TypeRoot")
 
 
-def _detect_circular_references_from_data(types_data: dict[str, Any]) -> None:
-    """生のデータから循環参照を検出"""
+def __detect_circular_references_from_data(types_data: dict[str, Any]) -> None:
+    """生のデータから循環参照を検出（将来の使用のために保持）"""
     # 参照グラフを構築
     ref_graph = {}
     for name, spec_data in types_data.items():
@@ -157,8 +157,8 @@ def _resolve_all_refs(types: dict[str, TypeSpec]) -> dict[str, TypeSpec]:
     return resolved_types
 
 
-def _detect_circular_references(types: dict[str, TypeSpec]) -> None:
-    """循環参照を検出（循環参照を許容するためスキップ）"""
+def __detect_circular_references(types: dict[str, TypeSpec]) -> None:
+    """循環参照を検出（循環参照を許容するためスキップ、将来の使用のために保持）"""
     # 循環参照を許容するため検出をスキップ
     pass
 

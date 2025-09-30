@@ -15,7 +15,6 @@ from ..core.doc_generators.test_catalog_generator import CatalogGenerator
 from ..core.converters.extract_deps import extract_dependencies_from_file
 from ..core.schemas.pylay_config import PylayConfig
 from ..core.output_manager import OutputPathManager
-import mypy.api
 from .commands.project_analyze import project_analyze
 
 
@@ -95,10 +94,10 @@ def generate_type_docs(input: str, output: str) -> None:
             TextColumn("[progress.description]{task.description}"),
             console=cli_instance.console,
         ) as progress:
-            task = progress.add_task("📝 型ドキュメント生成中...", total=None)
+            _task = progress.add_task("📝 型ドキュメント生成中...", total=None)
             generator = LayerDocGenerator()
             docs = generator.generate(Path(input))
-            progress.update(task, description="💾 ファイル出力中...")
+            progress.update(_task, description="💾 ファイル出力中...")
 
         if output == "docs/type_docs.md":
             # デフォルト出力先の場合はディレクトリを作成
@@ -140,14 +139,14 @@ def generate_yaml_docs(input: str, output: Optional[str]) -> None:
             TextColumn("[progress.description]{task.description}"),
             console=cli_instance.console,
         ) as progress:
-            task = progress.add_task("📝 YAMLドキュメント生成中...", total=None)
+            _task = progress.add_task("📝 YAMLドキュメント生成中...", total=None)
 
             with open(input, "r", encoding="utf-8") as f:
                 yaml_str = f.read()
 
             spec = yaml_to_spec(yaml_str)
             generator = YamlDocGenerator()
-            generator.generate(output, spec=spec)
+            generator.generate(Path(output), spec=spec)
 
         cli_instance.show_success_message(
             "YAMLドキュメント生成が完了しました",
@@ -190,7 +189,7 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
     """依存関係グラフを生成 (NetworkX + matplotlib)"""
     click.echo(f"依存グラフ生成: {input_dir} -> {output}")
     try:
-        graph = extract_dependencies_from_file(str(Path(input_dir)))
+        graph = extract_dependencies_from_file(Path(input_dir))
         # matplotlibでグラフを生成
         import matplotlib.pyplot as plt
         import networkx as nx
@@ -249,15 +248,15 @@ def convert_to_yaml(input_module: str, output: str) -> None:
             TextColumn("[progress.description]{task.description}"),
             console=cli_instance.console,
         ) as progress:
-            task = progress.add_task("🔄 型→YAML変換中...", total=None)
+            _task = progress.add_task("🔄 型→YAML変換中...", total=None)
             yaml_str = extract_types_from_module(Path(input_module))
 
         if output == "-":
             cli_instance.console.print("[bold green]YAML出力:[/bold green]")
-            cli_instance.console.print(yaml_str)
+            cli_instance.console.print(yaml_str if yaml_str is not None else "")
         else:
             with open(output, "w") as f:
-                f.write(yaml_str)
+                f.write(yaml_str if yaml_str is not None else "")
             cli_instance.show_success_message(
                 "型→YAML変換が完了しました",
                 {"入力": input_module, "出力": output},
@@ -277,7 +276,7 @@ def convert_to_type(input_yaml: str, output_py: Optional[str]) -> None:
             TextColumn("[progress.description]{task.description}"),
             console=cli_instance.console,
         ) as progress:
-            task = progress.add_task("🔄 YAML→型変換中...", total=None)
+            _task = progress.add_task("🔄 YAML→型変換中...", total=None)
 
             with open(input_yaml, "r", encoding="utf-8") as f:
                 yaml_str = f.read()
@@ -328,12 +327,12 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
             TextColumn("[progress.description]{task.description}"),
             console=cli_instance.console,
         ) as progress:
-            task = progress.add_task("🔍 型推論と依存関係抽出中...", total=None)
+            _task = progress.add_task("🔍 型推論と依存関係抽出中...", total=None)
 
             # 型推論と依存関係抽出を実行
             graph = extract_dependencies_from_file(Path(input_file))
 
-            progress.update(task, description="📊 結果を表示中...")
+            progress.update(_task, description="📊 結果を表示中...")
 
             # 推論された型の情報を表示
             if graph.nodes:
@@ -350,13 +349,13 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
             cli_instance.console.print(f"ノード数: {len(graph.nodes)}")
             cli_instance.console.print(f"エッジ数: {len(graph.edges)}")
             if graph.metadata and "cycles" in graph.metadata:
-                cycles = graph.metadata["cycles"]
-                if cycles:
-                    cli_instance.console.print(f"循環数: {len(cycles)}")
+                cycles_value = graph.metadata["cycles"]
+                if cycles_value and isinstance(cycles_value, list):
+                    cli_instance.console.print(f"循環数: {len(cycles_value)}")
 
             # 視覚化オプション
             if visualize:
-                progress.update(task, description="🎨 視覚化中...")
+                progress.update(_task, description="🎨 視覚化中...")
                 from ..core.analyzer.graph_processor import GraphProcessor
 
                 output_image = f"{input_file}.deps.png"

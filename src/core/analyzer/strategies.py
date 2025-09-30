@@ -5,6 +5,8 @@ AnalysisStrategyの抽象基底クラスと実装を提供します。
 各戦略が依存抽出+型推論+グラフ構築を一括実行します。
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
 import logging
