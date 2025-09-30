@@ -260,11 +260,9 @@ class StrictAnalysisStrategy(NormalAnalysisStrategy):
         try:
             super()._integrate_mypy(file_path)
         except AnalysisError as e:
-            # Strictモードではエラーを伝播
+            # Strictモードではエラーを伝播（元の例外をそのまま再送出）
             logger.error(f"Strictモードでmypy統合に失敗しました ({file_path}): {e}")
-            raise AnalysisError(
-                f"Strictモードでmypy統合に失敗しました: {e}", file_path=str(file_path)
-            ) from e
+            raise
 
     def _detect_cycles(self, graph: TypeDependencyGraph) -> None:
         """循環依存を検出（Strictモードでは警告）"""
