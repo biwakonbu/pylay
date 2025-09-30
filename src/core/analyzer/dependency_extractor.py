@@ -79,7 +79,8 @@ class DependencyExtractionAnalyzer(Analyzer):
 
             # コンテキスト作成
             context = ParseContext(
-                file_path=Path(file_path), module_name=Path(file_path).stem
+                file_path=Path(file_path),
+                module_name=self._compute_module_name(Path(file_path))
             )
 
             # ASTを解析
@@ -125,6 +126,23 @@ class DependencyExtractionAnalyzer(Analyzer):
                 from src.core.utils.io_helpers import cleanup_temp_file
 
                 cleanup_temp_file(temp_path)
+
+    def _compute_module_name(self, file_path: Path) -> str:
+        """ファイルパスから完全修飾モジュール名を計算"""
+        try:
+            # プロジェクトルートを探索
+            project_root = file_path.resolve().parent
+            while project_root != project_root.parent:
+                if (project_root / "pyproject.toml").exists():
+                    break
+                project_root = project_root.parent
+
+            # 相対パスからモジュール名を生成
+            relative_path = file_path.resolve().with_suffix("").relative_to(project_root)
+            return relative_path.as_posix().replace("/", ".")
+        except (ValueError, Exception):
+            # フォールバック: ファイル名のみ
+            return file_path.stem
 
     def _integrate_mypy(self, file_path: Path | str) -> None:
         """mypy統合（型推論結果を追加）"""

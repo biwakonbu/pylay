@@ -53,8 +53,25 @@ class AnalysisStrategy(ABC):
 
     def _create_context(self, file_path: Path) -> ParseContext:
         """解析コンテキストを作成"""
-        module_name = file_path.stem
+        module_name = self._compute_module_name(file_path)
         return ParseContext(file_path=file_path, module_name=module_name)
+
+    def _compute_module_name(self, file_path: Path) -> str:
+        """ファイルパスから完全修飾モジュール名を計算"""
+        try:
+            # プロジェクトルートを探索
+            project_root = file_path.resolve().parent
+            while project_root != project_root.parent:
+                if (project_root / "pyproject.toml").exists():
+                    break
+                project_root = project_root.parent
+
+            # 相対パスからモジュール名を生成
+            relative_path = file_path.resolve().with_suffix("").relative_to(project_root)
+            return relative_path.as_posix().replace("/", ".")
+        except (ValueError, Exception):
+            # フォールバック: ファイル名のみ
+            return file_path.stem
 
     def _build_graph(self, file_path: Path) -> TypeDependencyGraph:
         """状態からグラフを構築"""
