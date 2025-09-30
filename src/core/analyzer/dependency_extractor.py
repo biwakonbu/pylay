@@ -80,7 +80,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             # コンテキスト作成
             context = ParseContext(
                 file_path=Path(file_path),
-                module_name=self._compute_module_name(Path(file_path))
+                module_name=self._compute_module_name(Path(file_path)),
             )
 
             # ASTを解析
@@ -138,11 +138,39 @@ class DependencyExtractionAnalyzer(Analyzer):
                 project_root = project_root.parent
 
             # 相対パスからモジュール名を生成
-            relative_path = file_path.resolve().with_suffix("").relative_to(project_root)
+            relative_path = (
+                file_path.resolve().with_suffix("").relative_to(project_root)
+            )
             return relative_path.as_posix().replace("/", ".")
-        except (ValueError, Exception):
-            # フォールバック: ファイル名のみ
-            return file_path.stem
+        except (ValueError, Exception) as e:
+            # エラーログを出力
+            import logging
+            import hashlib
+
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                f"モジュール名の計算に失敗しました: file_path={file_path}, error={e}"
+            )
+
+            # より一意性の高いフォールバック名を生成
+            try:
+                # 解決済みパスからドット区切り名を生成
+                resolved = file_path.resolve().with_suffix("")
+                fallback_name = resolved.as_posix().replace("/", ".")
+                # 先頭のドットを削除（絶対パスの場合）
+                if fallback_name.startswith("."):
+                    fallback_name = fallback_name[1:]
+                return fallback_name
+            except Exception:
+                # 最終フォールバック: パスの最後の2要素 + ハッシュ
+                resolved_str = str(file_path.resolve())
+                path_hash = hashlib.sha256(resolved_str.encode()).hexdigest()[:8]
+                parts = (
+                    file_path.parts[-2:]
+                    if len(file_path.parts) > 1
+                    else (file_path.stem,)
+                )
+                return f"{'.'.join(parts)}.{path_hash}"
 
     def _integrate_mypy(self, file_path: Path | str) -> None:
         """mypy統合（型推論結果を追加）"""
@@ -200,7 +228,7 @@ class DependencyExtractionAnalyzer(Analyzer):
         refs = []
         try:
             # 型文字列をPythonの式として解析
-            node = ast.parse(type_str, mode='eval')
+            node = ast.parse(type_str, mode="eval")
             for child in ast.walk(node):
                 if isinstance(child, ast.Name) and child.id[0].isupper():
                     refs.append(child.id)
