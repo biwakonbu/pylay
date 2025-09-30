@@ -20,7 +20,7 @@ except ImportError as e:
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.analyzer.models import AnalyzerState, ParseContext, InferenceConfig
-from src.core.analyzer.exceptions import AnalysisError, MypyExecutionError
+from src.core.analyzer.exceptions import AnalysisError
 
 logger = logging.getLogger(__name__)
 
@@ -210,7 +210,7 @@ class NormalAnalysisStrategy(AnalysisStrategy):
                                     weight=0.5,
                                 )
                                 self.state.edges[edge_key] = edge
-        except (MypyExecutionError, AnalysisError) as e:
+        except AnalysisError as e:
             # mypy失敗時はログして続行（Normalモードでは許容）
             logger.warning(f"mypy統合に失敗しました ({file_path}): {e}")
 
@@ -259,7 +259,7 @@ class StrictAnalysisStrategy(NormalAnalysisStrategy):
         """mypy型推論を統合（Strictモード）"""
         try:
             super()._integrate_mypy(file_path)
-        except (MypyExecutionError, AnalysisError) as e:
+        except AnalysisError as e:
             # Strictモードではエラーを伝播
             logger.error(f"Strictモードでmypy統合に失敗しました ({file_path}): {e}")
             raise AnalysisError(
