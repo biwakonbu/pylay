@@ -244,8 +244,7 @@ def visualize_dependencies(graph: nx.DiGraph, output_path: str = "deps.png") -> 
         output_path: 出力画像のパス
     """
     try:
-        # 動的importを使ってpydotとgraphviz_layoutをインポート
-        _pydot = importlib.import_module("pydot")  # pydotが利用可能か確認
+        # 動的importを使ってgraphviz_layoutをインポート
         graphviz_layout = importlib.import_module(
             "networkx.drawing.nx_pydot"
         ).graphviz_layout

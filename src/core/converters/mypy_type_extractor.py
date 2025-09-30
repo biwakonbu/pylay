@@ -33,8 +33,6 @@ class MypyTypeExtractor:
         Returns:
             mypyの型推論結果（JSON形式）
         """
-        _file_path_obj = Path(file_path)  # 型チェック用に保持
-
         # キャッシュチェック
         if file_path in self._mypy_cache:
             return self._mypy_cache[file_path]

@@ -147,10 +147,8 @@ def generate_yaml_docs(spec: TypeSpec, output_dir: str | None = None) -> None:
 
     if isinstance(spec, TypeRoot) and spec.types:
         layer = next(iter(spec.types.keys()))
-        _types = spec.types  # 型情報を保持
     else:
         layer = spec.type
-        _types = {spec.type: spec}  # 型情報を保持
 
     output_path = Path(output_dir) / f"{layer}.md"
     generator.generate(output_path, spec)

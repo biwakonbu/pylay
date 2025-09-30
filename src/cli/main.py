@@ -94,10 +94,10 @@ def generate_type_docs(input: str, output: str) -> None:
             TextColumn("[progress.description]{task.description}"),
             console=cli_instance.console,
         ) as progress:
-            _task = progress.add_task("📝 型ドキュメント生成中...", total=None)
+            task = progress.add_task("📝 型ドキュメント生成中...", total=None)
             generator = LayerDocGenerator()
             docs = generator.generate(Path(input))
-            progress.update(_task, description="💾 ファイル出力中...")
+            progress.update(task, description="💾 ファイル出力中...")
 
         if output == "docs/type_docs.md":
             # デフォルト出力先の場合はディレクトリを作成
@@ -139,8 +139,6 @@ def generate_yaml_docs(input: str, output: Optional[str]) -> None:
             TextColumn("[progress.description]{task.description}"),
             console=cli_instance.console,
         ) as progress:
-            _task = progress.add_task("📝 YAMLドキュメント生成中...", total=None)
-
             with open(input, "r", encoding="utf-8") as f:
                 yaml_str = f.read()
 
@@ -248,7 +246,6 @@ def convert_to_yaml(input_module: str, output: str) -> None:
             TextColumn("[progress.description]{task.description}"),
             console=cli_instance.console,
         ) as progress:
-            _task = progress.add_task("🔄 型→YAML変換中...", total=None)
             yaml_str = extract_types_from_module(Path(input_module))
 
         if output == "-":
@@ -276,8 +273,6 @@ def convert_to_type(input_yaml: str, output_py: Optional[str]) -> None:
             TextColumn("[progress.description]{task.description}"),
             console=cli_instance.console,
         ) as progress:
-            _task = progress.add_task("🔄 YAML→型変換中...", total=None)
-
             with open(input_yaml, "r", encoding="utf-8") as f:
                 yaml_str = f.read()
 
@@ -327,12 +322,12 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
             TextColumn("[progress.description]{task.description}"),
             console=cli_instance.console,
         ) as progress:
-            _task = progress.add_task("🔍 型推論と依存関係抽出中...", total=None)
+            task = progress.add_task("🔍 型推論と依存関係抽出中...", total=None)
 
             # 型推論と依存関係抽出を実行
             graph = extract_dependencies_from_file(Path(input_file))
 
-            progress.update(_task, description="📊 結果を表示中...")
+            progress.update(task, description="📊 結果を表示中...")
 
             # 推論された型の情報を表示
             if graph.nodes:
@@ -355,7 +350,7 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
 
             # 視覚化オプション
             if visualize:
-                progress.update(_task, description="🎨 視覚化中...")
+                progress.update(task, description="🎨 視覚化中...")
                 from ..core.analyzer.graph_processor import GraphProcessor
 
                 output_image = f"{input_file}.deps.png"
