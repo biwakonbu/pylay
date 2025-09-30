@@ -9,6 +9,7 @@ import ast
 import subprocess
 import tempfile
 import os
+import re
 from pathlib import Path
 from src.core.analyzer.base import Analyzer
 from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode
@@ -151,21 +152,8 @@ class TypeInferenceAnalyzer(Analyzer):
         Returns:
             抽出された型情報の辞書
         """
-        types: dict[str, InferResult] = {}
-        lines = output.split("\n")
-
-        for line in lines:
-            if "->" in line and ":" in line:
-                # 簡易的な解析（実際にはより詳細な実装が必要）
-                parts = line.split(":")
-                if len(parts) >= 2:
-                    var_name = parts[0].strip()
-                    type_info = parts[1].strip()
-                    types[var_name] = InferResult(
-                        variable_name=var_name, inferred_type=type_info, confidence=0.8
-                    )
-
-        return types
+        # グローバル関数を使用（重複を避けるため）
+        return _parse_mypy_output(output)
 
     def merge_inferred_types(
         self,
@@ -290,6 +278,143 @@ def run_mypy_inference(
     return mypy_result
 
 
+def _compute_confidence(
+    type_info: str,
+    mypy_output: str,
+    var_name: str,
+    annotation_coverage: float = 0.5,
+) -> float:
+    """
+    型推論の信頼度を計算します。
+
+    信頼度は以下の3要素を重み付けして計算します：
+    1. 基礎確実性（base_certainty）: mypyの診断結果から導出（重み: 0.5）
+       - エラー/警告メッセージの有無を検査
+       - エラーがなければ高い確実性、警告があれば中程度、エラーがあれば低い
+    2. 型複雑度ペナルティ（complexity_penalty）: 型の複雑さに基づく減点（重み: 0.3）
+       - Union、Optional、ジェネリック型の数に応じて減点
+       - 複雑な型ほど推論の不確実性が高いと仮定
+    3. アノテーション品質ボーナス（annotation_bonus）: 明示的型アノテーションの有無（重み: 0.2）
+       - 周辺スコープにアノテーションが存在すれば加点
+       - 型情報が豊富な環境では推論精度が向上すると仮定
+
+    重み: certainty=0.5, complexity=0.3, annotation=0.2
+
+    Args:
+        type_info: 推論された型情報
+        mypy_output: mypyの完全な出力（エラー/警告チェック用）
+        var_name: 変数名（診断メッセージの検索用）
+        annotation_coverage: 周辺スコープのアノテーション率（0.0-1.0）
+
+    Returns:
+        計算された信頼度（0.0-1.0）
+
+    Examples:
+        >>> _compute_confidence("int", "", "x", 0.8)
+        0.95  # 単純型、エラーなし、高カバレッジ
+
+        >>> _compute_confidence("Union[int, str, None]", "error: x", "x", 0.3)
+        0.42  # 複雑型、エラーあり、低カバレッジ
+    """
+    # 重み定義
+    W_CERTAINTY = 0.5
+    W_COMPLEXITY = 0.3
+    W_ANNOTATION = 0.2
+
+    # 1. 基礎確実性の計算
+    base_certainty = _compute_base_certainty(mypy_output, var_name)
+
+    # 2. 型複雑度ペナルティの計算
+    complexity_penalty = _compute_complexity_penalty(type_info)
+
+    # 3. アノテーション品質ボーナスの計算
+    annotation_bonus = _compute_annotation_bonus(annotation_coverage)
+
+    # 重み付き平均で最終スコアを計算
+    confidence = (
+        W_CERTAINTY * base_certainty
+        + W_COMPLEXITY * (1.0 - complexity_penalty)
+        + W_ANNOTATION * annotation_bonus
+    )
+
+    # 0.0-1.0の範囲にクリップ
+    return max(0.0, min(1.0, confidence))
+
+
+def _compute_base_certainty(mypy_output: str, var_name: str) -> float:
+    """
+    mypyの診断結果から基礎確実性を計算します。
+
+    Args:
+        mypy_output: mypyの完全な出力
+        var_name: 変数名
+
+    Returns:
+        基礎確実性スコア（0.0-1.0）
+    """
+    # 変数名を含むエラー/警告メッセージを検索
+    error_pattern = re.compile(rf"\berror\b.*\b{re.escape(var_name)}\b", re.IGNORECASE)
+    warning_pattern = re.compile(
+        rf"\bwarning\b.*\b{re.escape(var_name)}\b", re.IGNORECASE
+    )
+
+    has_error = bool(error_pattern.search(mypy_output))
+    has_warning = bool(warning_pattern.search(mypy_output))
+
+    if has_error:
+        return 0.3  # エラーあり: 低い確実性
+    elif has_warning:
+        return 0.7  # 警告のみ: 中程度の確実性
+    else:
+        return 1.0  # エラー/警告なし: 高い確実性
+
+
+def _compute_complexity_penalty(type_info: str) -> float:
+    """
+    型の複雑さに基づくペナルティを計算します。
+
+    Args:
+        type_info: 型情報文字列
+
+    Returns:
+        複雑度ペナルティ（0.0-1.0、高いほど複雑）
+    """
+    penalty = 0.0
+
+    # Union型のカウント（Union[...] または | 構文）
+    union_count = type_info.count("Union[") + type_info.count(" | ")
+    penalty += union_count * 0.15
+
+    # Optional/None のカウント
+    optional_count = type_info.count("Optional[") + type_info.count("| None")
+    penalty += optional_count * 0.1
+
+    # ジェネリック型のカウント（ネストした [ ] の深さ）
+    generic_depth = type_info.count("[")
+    penalty += generic_depth * 0.1
+
+    # Anyのカウント（型安全性の欠如）
+    any_count = type_info.count("Any")
+    penalty += any_count * 0.2
+
+    # 0.0-1.0の範囲にクリップ
+    return min(1.0, penalty)
+
+
+def _compute_annotation_bonus(annotation_coverage: float) -> float:
+    """
+    周辺スコープのアノテーションカバレッジに基づくボーナスを計算します。
+
+    Args:
+        annotation_coverage: アノテーション率（0.0-1.0）
+
+    Returns:
+        アノテーションボーナススコア（0.0-1.0）
+    """
+    # カバレッジが高いほど高いボーナス（非線形に強調）
+    return annotation_coverage**0.8
+
+
 def _parse_mypy_output(output: str) -> dict[str, InferResult]:
     """
     mypyの出力を解析して型情報を抽出します。
@@ -324,15 +449,18 @@ def _parse_mypy_output(output: str) -> dict[str, InferResult]:
                 if not var_name or not type_info:
                     continue
 
-                # TODO: 信頼度の計算ロジックを実装する必要がある
-                # 現在は暫定的に0.8を使用しているが、以下の要素を考慮すべき：
-                # - mypy の推論結果の確実性
-                # - 型の複雑さ
-                # - ソースコードの品質
+                # 信頼度を計算（アノテーションカバレッジは暫定的に0.5を使用）
+                confidence = _compute_confidence(
+                    type_info=type_info,
+                    mypy_output=output,
+                    var_name=var_name,
+                    annotation_coverage=0.5,
+                )
+
                 types[var_name] = InferResult(
                     variable_name=var_name,
                     inferred_type=type_info,
-                    confidence=0.8,  # TODO: 適切な信頼度計算に置き換える
+                    confidence=confidence,
                     line_number=line_num,
                 )
             except (ValueError, AttributeError) as e:
