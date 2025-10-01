@@ -12,6 +12,9 @@
 
 import ast
 import logging
+
+# ForwardRef: 前方参照の型チェックに使用（179行目）
+# get_args, get_origin: ジェネリック型の解析に使用（159-160行目）
 from typing import ForwardRef, get_args, get_origin
 
 logger = logging.getLogger(__name__)
