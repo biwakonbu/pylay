@@ -6,7 +6,17 @@ TypeDependencyGraph, GraphNode, GraphEdge の定義
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from src.core.schemas.types import (
+    FilePath,
+    GraphMetadata,
+    LineNumber,
+    NodeAttributes,
+    NodeId,
+    QualifiedName,
+    Weight,
+)
 
 
 class RelationType(str, Enum):
@@ -36,13 +46,23 @@ class GraphNode(BaseModel):
         attributes: ノードの追加属性
     """
 
-    id: str | None = None
+    id: NodeId | None = None
     name: str
     node_type: Literal["class", "function", "module"] | str  # 拡張性を考慮
-    qualified_name: str | None = None
-    attributes: dict[str, str | int | float | bool] | None = None
-    source_file: str | None = None  # ソースファイルパス
-    line_number: int | None = None  # ソースコード行番号
+    qualified_name: QualifiedName | None = None
+    attributes: NodeAttributes | None = None
+    source_file: FilePath | None = None  # ソースファイルパス
+    line_number: LineNumber | None = None  # ソースコード行番号
+
+    @field_validator("attributes", mode="before")
+    @classmethod
+    def convert_attributes(cls, v: Any) -> NodeAttributes | None:
+        """dictをNodeAttributesに変換"""
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            return NodeAttributes(custom_data=v)
+        return v
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
@@ -72,12 +92,22 @@ class GraphEdge(BaseModel):
         attributes: エッジの追加属性
     """
 
-    source: str
-    target: str
+    source: NodeId
+    target: NodeId
     relation_type: RelationType
-    weight: float = Field(default=1.0, ge=0.0, le=1.0)  # 0.0から1.0の範囲
-    attributes: dict[str, str | int | float | bool] | None = None
-    metadata: dict[str, Any] | None = None
+    weight: Weight = Field(default=1.0)  # 0.0から1.0の範囲
+    attributes: NodeAttributes | None = None
+    metadata: GraphMetadata | None = None
+
+    @field_validator("attributes", mode="before")
+    @classmethod
+    def convert_attributes(cls, v: Any) -> NodeAttributes | None:
+        """dictをNodeAttributesに変換"""
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            return NodeAttributes(custom_data=v)
+        return v
 
     def is_strong_dependency(self) -> bool:
         """強い依存関係かどうかを判定（weight >= 0.8）"""
@@ -105,8 +135,44 @@ class TypeDependencyGraph(BaseModel):
 
     nodes: list[GraphNode]
     edges: list[GraphEdge]
-    metadata: dict[str, Any] | None = None
+    metadata: GraphMetadata | None = None
     inferred_nodes: list[GraphNode] | None = None  # 推論されたノード
+
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def convert_metadata(cls, v: Any) -> GraphMetadata | None:
+        """dictをGraphMetadataに変換"""
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            # GraphMetadataの既知フィールドを抽出
+            known_fields = {
+                "version",
+                "created_at",
+                "cycles",
+                "statistics",
+                "custom_fields",
+            }
+            metadata_kwargs: dict[str, Any] = {}
+            custom_fields: dict[str, Any] = {}
+
+            for key, value in v.items():
+                if key in known_fields:
+                    metadata_kwargs[key] = value
+                else:
+                    custom_fields[key] = value
+
+            # custom_fieldsがある場合は、既存のcustom_fieldsにマージ
+            if custom_fields:
+                existing_custom = metadata_kwargs.get("custom_fields", {})
+                if isinstance(existing_custom, dict):
+                    existing_custom.update(custom_fields)
+                    metadata_kwargs["custom_fields"] = existing_custom
+                else:
+                    metadata_kwargs["custom_fields"] = custom_fields
+
+            return GraphMetadata(**metadata_kwargs)
+        return v
 
     def add_node(self, node: GraphNode) -> None:
         """ノードを追加"""
@@ -120,15 +186,15 @@ class TypeDependencyGraph(BaseModel):
         ):
             self.edges.append(edge)
 
-    def get_node(self, node_id: str) -> GraphNode | None:
+    def get_node(self, node_id: NodeId) -> GraphNode | None:
         """IDでノードを取得"""
         return next((n for n in self.nodes if n.id == node_id), None)
 
-    def get_edges_from(self, node_id: str) -> list[GraphEdge]:
+    def get_edges_from(self, node_id: NodeId) -> list[GraphEdge]:
         """ノードからのエッジを取得"""
         return [e for e in self.edges if e.source == node_id]
 
-    def get_edges_to(self, node_id: str) -> list[GraphEdge]:
+    def get_edges_to(self, node_id: NodeId) -> list[GraphEdge]:
         """ノードへのエッジを取得"""
         return [e for e in self.edges if e.target == node_id]
 
@@ -160,13 +226,15 @@ class TypeDependencyGraph(BaseModel):
 
         graph = nx.DiGraph()
         for node in self.nodes:
-            graph.add_node(node.id, **(node.attributes or {}))
+            attrs = node.attributes.custom_data if node.attributes else {}
+            graph.add_node(node.id, **attrs)
         for edge in self.edges:
+            attrs = edge.attributes.custom_data if edge.attributes else {}
             graph.add_edge(
                 edge.source,
                 edge.target,
                 relation_type=edge.relation_type,
-                **(edge.attributes or {}),
+                **attrs,
             )
         return graph
 
@@ -187,9 +255,10 @@ class TypeDependencyGraph(BaseModel):
         for node_id, node_attrs in graph.nodes(data=True):
             node_attrs = dict(node_attrs)
             node_type = node_attrs.pop("node_type", "unknown")
+            attributes = NodeAttributes(custom_data=node_attrs) if node_attrs else None
             nodes.append(
                 GraphNode(
-                    id=node_id, name=node_id, node_type=node_type, attributes=node_attrs
+                    id=node_id, name=node_id, node_type=node_type, attributes=attributes
                 )
             )
 
@@ -207,12 +276,13 @@ class TypeDependencyGraph(BaseModel):
             else:
                 relation_type = relation_type_value
 
+            attributes = NodeAttributes(custom_data=edge_attrs) if edge_attrs else None
             edges.append(
                 GraphEdge(
                     source=source,
                     target=target,
                     relation_type=relation_type,
-                    attributes=edge_attrs,
+                    attributes=attributes,
                 )
             )
 

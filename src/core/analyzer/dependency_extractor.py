@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
 
 try:
     import networkx as nx
@@ -96,15 +95,21 @@ class DependencyExtractionAnalyzer(Analyzer):
                 self._integrate_mypy(file_path)
 
             # グラフ構築
-            metadata: dict[str, Any] = {
-                "source_file": str(file_path),
-                "extraction_method": "AST_analysis_with_mypy"
-                if self.config.infer_level != "loose"
-                else "AST_analysis",
-                "node_count": len(self.state.nodes),
-                "edge_count": len(self.state.edges),
-                "mypy_enabled": self.config.infer_level != "loose",
-            }
+            from src.core.schemas.types import GraphMetadata
+
+            metadata = GraphMetadata(
+                statistics={
+                    "node_count": len(self.state.nodes),
+                    "edge_count": len(self.state.edges),
+                },
+                custom_fields={
+                    "source_file": str(file_path),
+                    "extraction_method": "AST_analysis_with_mypy"
+                    if self.config.infer_level != "loose"
+                    else "AST_analysis",
+                    "mypy_enabled": self.config.infer_level != "loose",
+                },
+            )
             graph = TypeDependencyGraph(
                 nodes=list(self.state.nodes.values()),
                 edges=list(self.state.edges.values()),
@@ -115,7 +120,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             if nx:
                 cycles = self._detect_cycles(graph)
                 if cycles:
-                    metadata["cycles"] = cycles
+                    metadata.cycles = cycles
 
             return graph
 

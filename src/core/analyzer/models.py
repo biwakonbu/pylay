@@ -12,6 +12,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from src.core.schemas.graph_types import GraphEdge, GraphNode
 from src.core.schemas.pylay_config import PylayConfig
+from src.core.schemas.types import (
+    ConfidenceScore,
+    FilePath,
+    LineNumber,
+    MaxDepth,
+    ModuleName,
+    TypeName,
+    VariableName,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +39,11 @@ class InferResult(BaseModel):
 
     model_config = ConfigDict(frozen=False, extra="forbid")
 
-    variable_name: str = Field(..., min_length=1)
-    inferred_type: str = Field(..., min_length=1)
-    confidence: float = Field(..., ge=0.0, le=1.0)
-    source_file: str | None = None
-    line_number: int | None = Field(default=None, ge=1)
+    variable_name: VariableName
+    inferred_type: TypeName
+    confidence: ConfidenceScore
+    source_file: FilePath | None = None
+    line_number: LineNumber | None = None
 
     def is_high_confidence(self) -> bool:
         """信頼度が高いか判定（>= 0.8）"""
@@ -95,7 +104,7 @@ class ParseContext(BaseModel):
     model_config = ConfigDict(frozen=False, extra="forbid")
 
     file_path: Path
-    module_name: str = Field(..., min_length=1)
+    module_name: ModuleName
     current_class: str | None = None
     current_function: str | None = None
 
@@ -129,7 +138,7 @@ class InferenceConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     infer_level: Literal["loose", "normal", "strict"] = "normal"
-    max_depth: int = Field(default=10, ge=1, le=100)
+    max_depth: MaxDepth = Field(default=10)
     enable_mypy: bool = True
     mypy_flags: list[str] = Field(
         default_factory=lambda: ["--infer", "--dump-type-stats"]

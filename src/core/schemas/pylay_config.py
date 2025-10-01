@@ -11,6 +11,8 @@ from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
+from src.core.schemas.types import DirectoryPath, InferLevel, MaxDepth
+
 
 class AbsolutePathsDict(TypedDict):
     """get_absolute_pathsの戻り値型定義"""
@@ -27,12 +29,12 @@ class PylayConfig(BaseModel):
     """
 
     # 解析対象ディレクトリ
-    target_dirs: list[str] = Field(
+    target_dirs: list[DirectoryPath] = Field(
         default=["src/"], description="解析対象のディレクトリパス（相対パス）"
     )
 
     # 出力ディレクトリ
-    output_dir: str = Field(
+    output_dir: DirectoryPath = Field(
         default="docs/", description="出力ファイルの保存先ディレクトリ"
     )
 
@@ -45,7 +47,7 @@ class PylayConfig(BaseModel):
     extract_deps: bool = Field(default=True, description="依存関係を抽出するかどうか")
 
     # 型推論レベル
-    infer_level: str = Field(
+    infer_level: InferLevel = Field(
         default="strict", description="型推論の厳密さ（strict, normal, loose）"
     )
 
@@ -65,7 +67,7 @@ class PylayConfig(BaseModel):
     )
 
     # 最大解析深度
-    max_depth: int = Field(default=10, description="再帰解析の最大深度")
+    max_depth: MaxDepth = Field(default=10, description="再帰解析の最大深度")
 
     @classmethod
     def from_pyproject_toml(cls, project_root: Path | None = None) -> "PylayConfig":

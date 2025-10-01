@@ -125,11 +125,17 @@ class TypeInferenceAnalyzer(Analyzer):
             graph.add_node(node)
 
         # メタデータ追加
-        graph.metadata = {
-            "analysis_type": "type_inference",
-            "source_file": str(file_path),
-            "inferred_count": len(merged_types),
-        }
+        from ..schemas.types import GraphMetadata
+
+        graph.metadata = GraphMetadata(
+            custom_fields={
+                "analysis_type": "type_inference",
+                "source_file": str(file_path),
+            },
+            statistics={
+                "inferred_count": len(merged_types),
+            },
+        )
 
         return graph
 

@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from src.core.schemas.types import IndexFilename, LayerFilenameTemplate
+
 from .filesystem import FileSystemInterface, RealFileSystem
 
 
@@ -34,8 +36,8 @@ class TypeDocConfig(GeneratorConfig):
     """型ドキュメントジェネレーターの設定。"""
 
     output_directory: Path = field(default_factory=lambda: Path("docs/types"))
-    index_filename: str = "README.md"
-    layer_filename_template: str = "{layer}.md"
+    index_filename: IndexFilename = "README.md"
+    layer_filename_template: LayerFilenameTemplate = "{layer}.md"
     skip_types: set[str] = field(default_factory=lambda: {"NewType"})
     type_alias_descriptions: dict[str, str] = field(
         default_factory=lambda: {

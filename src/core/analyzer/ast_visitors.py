@@ -368,12 +368,16 @@ class DependencyVisitor(ast.NodeVisitor):
         if source != target:
             edge_key = f"{source}->{target}:{relation}"
             if edge_key not in self.state.edges:
+                from src.core.schemas.types import GraphMetadata
+
                 edge = GraphEdge(
                     source=source,
                     target=target,
                     relation_type=relation,
                     weight=weight,
-                    metadata={"extraction_method": "AST_analysis"},
+                    metadata=GraphMetadata(
+                        custom_fields={"extraction_method": "AST_analysis"}
+                    ),
                 )
                 self.state.edges[edge_key] = edge
 

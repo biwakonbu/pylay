@@ -56,10 +56,12 @@ class GraphDocGenerator(DocumentGenerator):
 
     def _generate_header(self, graph: TypeDependencyGraph) -> None:
         """ヘッダーセクションを生成"""
-        metadata = graph.metadata or {}
-        source_file = metadata.get("source_file", "不明")
-        node_count = metadata.get("node_count", 0)
-        edge_count = metadata.get("edge_count", 0)
+        from ..schemas.types import GraphMetadata
+
+        metadata: GraphMetadata = graph.metadata or GraphMetadata()
+        source_file = metadata.custom_fields.get("source_file", "不明")
+        node_count = metadata.statistics.get("node_count", 0)
+        edge_count = metadata.statistics.get("edge_count", 0)
 
         self.md.heading(1, "型依存関係グラフ")
         self.md.paragraph(f"**ソースファイル**: {source_file}")

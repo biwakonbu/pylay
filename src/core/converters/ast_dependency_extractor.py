@@ -125,19 +125,25 @@ class ASTDependencyExtractor:
                 pass
 
         # グラフを構築
+        from src.core.schemas.types import GraphMetadata
+
         graph = TypeDependencyGraph(
             nodes=list(self.nodes.values()),
             edges=list(self.edges.values()),
-            metadata={
-                "source_file": file_path,
-                "extraction_method": "AST_analysis_with_mypy"
-                if include_mypy
-                else "AST_analysis",
-                "extraction_timestamp": datetime.now().isoformat(),
-                "node_count": len(self.nodes),
-                "edge_count": len(self.edges),
-                "mypy_enabled": include_mypy,
-            },
+            metadata=GraphMetadata(
+                statistics={
+                    "node_count": len(self.nodes),
+                    "edge_count": len(self.edges),
+                },
+                custom_fields={
+                    "source_file": file_path,
+                    "extraction_method": "AST_analysis_with_mypy"
+                    if include_mypy
+                    else "AST_analysis",
+                    "extraction_timestamp": datetime.now().isoformat(),
+                    "mypy_enabled": include_mypy,
+                },
+            ),
         )
 
         return graph
@@ -460,11 +466,15 @@ class ASTDependencyExtractor:
         if source != target and target not in self.visited_nodes:
             self.visited_nodes.add(target)
             edge_key = f"{source}->{target}:{relation}"
+            from src.core.schemas.types import GraphMetadata
+
             edge = GraphEdge(
                 source=source,
                 target=target,
                 relation_type=relation,
                 weight=weight,
-                metadata={"extraction_method": "AST_analysis"},
+                metadata=GraphMetadata(
+                    custom_fields={"extraction_method": "AST_analysis"}
+                ),
             )
             self.edges[edge_key] = edge
