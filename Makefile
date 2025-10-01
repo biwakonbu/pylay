@@ -63,8 +63,9 @@ type-check: ## 型チェック（mypy）
 	@echo "🔍 型チェック中（mypy）..."
 	uv run mypy src/
 
-type-check-pyright: ## 型チェック（pyright）
-	@echo "🔍 型チェック中（pyright）..."
+type-check-pyright: ## 型チェック（pyright via npx）
+	@# pyrightはNode.js製のツールのため、npx経由で実行します
+	@echo "🔍 型チェック中（pyright via npx）..."
 	npx --yes pyright src/
 
 type-check-all: ## 型チェック（mypy + pyright）

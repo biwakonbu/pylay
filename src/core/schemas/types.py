@@ -39,6 +39,9 @@ type FilePath = str
 type ConfidenceScore = float
 """信頼度スコア（0.0〜1.0）"""
 
+# 型推論レベルはanalyzer_types.pyで
+# Literal["loose", "normal", "strict"]として定義されているため、
+# ここでは互換性のためにstr型エイリアスとして定義
 type InferLevel = str
 """型推論レベル（strict, normal, loose）"""
 
@@ -47,6 +50,90 @@ type IndexFilename = str
 
 type LayerFilenameTemplate = str
 """レイヤーファイル名テンプレート"""
+
+type TypeSpecName = str
+"""YAML型仕様の型名"""
+
+type TypeSpecType = str
+"""YAML型仕様の基本型（str, int, float, bool, list, dict, union）"""
+
+type Description = str
+"""説明文"""
+
+type Code = str
+"""ソースコード文字列"""
+
+type FileSuffix = str
+"""ファイル拡張子（例: .py, .txt）"""
+
+type FileOpenMode = str
+"""ファイルオープンモード（w, r, a, b等）"""
+
+type GenerateMarkdownFlag = bool
+"""Markdownドキュメント生成フラグ"""
+
+type ExtractDepsFlag = bool
+"""依存関係抽出フラグ"""
+
+type CleanOutputDirFlag = bool
+"""出力ディレクトリクリーンアップフラグ"""
+
+type Timestamp = str
+"""タイムスタンプ（ISO 8601形式）"""
+
+type Version = str
+"""バージョン文字列"""
+
+type ToolName = str
+"""ツール名（mypy, ruff等）"""
+
+type Severity = str
+"""エラーや警告の重要度"""
+
+type Message = str
+"""エラーメッセージや通知メッセージ"""
+
+type CheckCount = int
+"""チェック回数や統計カウント"""
+
+type NodeCount = int
+"""ノード数"""
+
+type EdgeCount = int
+"""エッジ数"""
+
+type Density = float
+"""グラフの密度"""
+
+type VisualizeFlag = bool
+"""可視化フラグ"""
+
+type EnableMypyFlag = bool
+"""mypy統合の有効化フラグ"""
+
+type Timeout = int
+"""タイムアウト時間（秒）"""
+
+type ClassName = str
+"""クラス名"""
+
+type FunctionName = str
+"""関数名"""
+
+type StdOut = str
+"""標準出力"""
+
+type StdErr = str
+"""標準エラー出力"""
+
+type ReturnCode = int
+"""終了コード"""
+
+type RequiredFlag = bool
+"""必須フラグ（型仕様で必須かどうか）"""
+
+type AdditionalPropertiesFlag = bool
+"""追加プロパティ許可フラグ"""
 
 
 # =============================================================================
@@ -179,8 +266,10 @@ class GraphMetadata(BaseModel):
     primitive型の dict[str, Any] を構造化されたドメイン型に置き換えます。
     """
 
-    version: str = Field(default="1.0", description="グラフのバージョン")
-    created_at: str | None = Field(default=None, description="作成日時（ISO 8601形式）")
+    version: Version = Field(default="1.0", description="グラフのバージョン")
+    created_at: Timestamp | None = Field(
+        default=None, description="作成日時（ISO 8601形式）"
+    )
     cycles: list[list[str]] = Field(
         default_factory=list, description="検出された循環依存のリスト"
     )

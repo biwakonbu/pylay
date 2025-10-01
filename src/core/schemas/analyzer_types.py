@@ -5,8 +5,6 @@ mypy strict準拠のためのTypedDictと型定義を提供します。
 Pydanticモデルは models.py から再エクスポートします。
 """
 
-from typing import Literal, TypedDict
-
 from pydantic import BaseModel, Field
 
 # Pydanticモデルを再エクスポート（analyzer.models からの型参照用）
@@ -14,43 +12,59 @@ from src.core.analyzer.models import InferResult, MypyResult
 
 # RelationTypeはgraph_types.pyに統合（重複排除）
 from src.core.schemas.graph_types import RelationType
+from src.core.schemas.types import (
+    CheckCount,
+    Code,
+    Density,
+    EdgeCount,
+    FileOpenMode,
+    FileSuffix,
+    InferLevel,
+    LineNumber,
+    MaxDepth,
+    Message,
+    NodeCount,
+    Severity,
+    ToolName,
+    VisualizeFlag,
+)
 
 __all__ = ["InferResult", "MypyResult", "RelationType"]
 
 
-class CheckSummary(TypedDict):
+class CheckSummary(BaseModel):
     """analyze_issues.pyのサマリー型"""
 
-    total_checks: int
-    successful_checks: int
-    failed_checks: int
-    checks_with_issues: int
+    total_checks: CheckCount
+    successful_checks: CheckCount
+    failed_checks: CheckCount
+    checks_with_issues: CheckCount
     results: list[dict[str, object]]
 
 
-class MypyError(TypedDict):
+class MypyError(BaseModel):
     """mypyエラーの構造化型"""
 
-    line: int
-    message: str
-    severity: str
+    line: LineNumber
+    message: Message
+    severity: Severity
 
 
-class Issue(TypedDict):
+class Issue(BaseModel):
     """ツール出力のIssue型"""
 
-    tool: str
-    line: int
-    message: str
-    severity: str
+    tool: ToolName
+    line: LineNumber
+    message: Message
+    severity: Severity
 
 
-class GraphMetrics(TypedDict):
+class GraphMetrics(BaseModel):
     """グラフメトリクスの型"""
 
-    node_count: int
-    edge_count: int
-    density: float
+    node_count: NodeCount
+    edge_count: EdgeCount
+    density: Density
     cycles: list[list[str]]
 
 
@@ -63,19 +77,21 @@ class TempFileConfig(BaseModel):
         mode: ファイルオープンモード（デフォルト: "w"）
     """
 
-    code: str = Field(..., description="一時ファイルに書き込むコード内容", min_length=1)
-    suffix: str = Field(default=".py", description="ファイルの拡張子")
-    mode: str = Field(
+    code: Code = Field(
+        ..., description="一時ファイルに書き込むコード内容", min_length=1
+    )
+    suffix: FileSuffix = Field(default=".py", description="ファイルの拡張子")
+    mode: FileOpenMode = Field(
         default="w", description="ファイルオープンモード", pattern="^[wab]\\+?$"
     )
 
 
-class AnalyzerConfig(TypedDict):
+class AnalyzerConfig(BaseModel):
     """Analyzer設定の型（PylayConfig拡張）
 
     Analyzer固有の設定を管理するPylayConfigの拡張クラスです。
     """
 
-    infer_level: Literal["loose", "normal", "strict"]
-    max_depth: int
-    visualize: bool
+    infer_level: InferLevel
+    max_depth: MaxDepth
+    visualize: VisualizeFlag

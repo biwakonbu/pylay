@@ -11,7 +11,14 @@ from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
-from src.core.schemas.types import DirectoryPath, InferLevel, MaxDepth
+from src.core.schemas.types import (
+    CleanOutputDirFlag,
+    DirectoryPath,
+    ExtractDepsFlag,
+    GenerateMarkdownFlag,
+    InferLevel,
+    MaxDepth,
+)
 
 
 class AbsolutePathsDict(TypedDict):
@@ -39,12 +46,14 @@ class PylayConfig(BaseModel):
     )
 
     # ドキュメント生成フラグ
-    generate_markdown: bool = Field(
+    generate_markdown: GenerateMarkdownFlag = Field(
         default=True, description="Markdownドキュメントを生成するかどうか"
     )
 
     # 依存関係抽出フラグ
-    extract_deps: bool = Field(default=True, description="依存関係を抽出するかどうか")
+    extract_deps: ExtractDepsFlag = Field(
+        default=True, description="依存関係を抽出するかどうか"
+    )
 
     # 型推論レベル
     infer_level: InferLevel = Field(
@@ -52,7 +61,7 @@ class PylayConfig(BaseModel):
     )
 
     # 出力ディレクトリクリーンアップフラグ
-    clean_output_dir: bool = Field(
+    clean_output_dir: CleanOutputDirFlag = Field(
         default=True, description="実行時に出力ディレクトリをクリーンアップするかどうか"
     )
 

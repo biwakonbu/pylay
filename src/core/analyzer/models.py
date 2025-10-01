@@ -13,11 +13,18 @@ from pydantic import BaseModel, ConfigDict, Field
 from src.core.schemas.graph_types import GraphEdge, GraphNode
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.types import (
+    ClassName,
     ConfidenceScore,
+    EnableMypyFlag,
     FilePath,
+    FunctionName,
     LineNumber,
     MaxDepth,
     ModuleName,
+    ReturnCode,
+    StdErr,
+    StdOut,
+    Timeout,
     TypeName,
     VariableName,
 )
@@ -105,8 +112,8 @@ class ParseContext(BaseModel):
 
     file_path: Path
     module_name: ModuleName
-    current_class: str | None = None
-    current_function: str | None = None
+    current_class: ClassName | None = None
+    current_function: FunctionName | None = None
 
     def in_class_context(self) -> bool:
         """クラスコンテキスト内か判定"""
@@ -139,11 +146,11 @@ class InferenceConfig(BaseModel):
 
     infer_level: Literal["loose", "normal", "strict"] = "normal"
     max_depth: MaxDepth = Field(default=10)
-    enable_mypy: bool = True
+    enable_mypy: EnableMypyFlag = True
     mypy_flags: list[str] = Field(
         default_factory=lambda: ["--infer", "--dump-type-stats"]
     )
-    timeout: int = Field(default=60, ge=1, le=600)
+    timeout: Timeout = Field(default=60, ge=1, le=600)
 
     def is_strict_mode(self) -> bool:
         """Strictモードか判定"""
@@ -202,9 +209,9 @@ class MypyResult(BaseModel):
 
     model_config = ConfigDict(frozen=False, extra="forbid")
 
-    stdout: str
-    stderr: str
-    return_code: int
+    stdout: StdOut
+    stderr: StdErr
+    return_code: ReturnCode
     inferred_types: dict[str, InferResult] = Field(default_factory=dict)
 
     def is_success(self) -> bool:
