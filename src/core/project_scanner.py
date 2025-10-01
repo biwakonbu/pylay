@@ -145,11 +145,7 @@ class ProjectScanner:
                 validation_result["valid"] = False
 
         # 出力ディレクトリの検証
-        output_dir_raw = absolute_paths["output_dir"]
-        assert isinstance(
-            output_dir_raw, Path
-        ), "output_dir は Path 型である必要があります"
-        output_dir = output_dir_raw
+        output_dir = absolute_paths["output_dir"]
         if not output_dir.exists():
             try:
                 output_dir.mkdir(parents=True, exist_ok=True)

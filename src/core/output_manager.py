@@ -54,7 +54,7 @@ class OutputPathManager:
             parts_to_use = (
                 list(relative_path.parts[1:-1]) if len(relative_path.parts) > 1 else []
             )
-            output_dir = base_output_dir / relative_path.parts[0]  # type: ignore[reportGeneralTypeIssues]  # 上記でparts非空をチェック済み
+            output_dir = base_output_dir / relative_path.parts[0]
             if parts_to_use:
                 output_dir = output_dir / Path(*parts_to_use)
         else:
