@@ -24,7 +24,8 @@ class OutputPathManager:
 
         Args:
             config: pylay設定
-            project_root: プロジェクトルートディレクトリ（デフォルト: カレントディレクトリ）
+            project_root: プロジェクトルートディレクトリ
+                （デフォルト: カレントディレクトリ）
         """
         self.config = config
         self.project_root = project_root or Path.cwd()

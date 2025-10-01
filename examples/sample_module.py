@@ -1,6 +1,5 @@
 """サンプルPythonモジュール"""
 
-
 from pydantic import BaseModel
 
 

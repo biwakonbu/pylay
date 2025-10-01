@@ -142,8 +142,9 @@ class TestCatalogGenerator:
         assert len(test_functions) > 0
 
         function_names = [name for name, _ in test_functions]
-        # Check that we have test functions (some may be class methods, some may be standalone)
-        assert len(function_names) >= 4  # At least the 4 test methods we saw
+        # Check that we have test functions
+        # (some may be class methods, some may be standalone)
+        assert len(function_names) >= 4  # At least the 4 test methods
 
         # Should include class.method format
         assert any("TestGenerateTestDocs." in name for name in function_names)

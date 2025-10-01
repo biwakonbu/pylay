@@ -320,5 +320,6 @@ def create_analysis_strategy(config: PylayConfig) -> AnalysisStrategy:
         return StrictAnalysisStrategy(config)
     else:
         raise ValueError(
-            f"無効なinfer_level: {config.infer_level}。'loose', 'normal', 'strict' のいずれかを指定してください。"
+            f"無効なinfer_level: {config.infer_level}。"
+            "'loose', 'normal', 'strict' のいずれかを指定してください。"
         )

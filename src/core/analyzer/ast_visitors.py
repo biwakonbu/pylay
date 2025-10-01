@@ -327,7 +327,8 @@ class DependencyVisitor(ast.NodeVisitor):
             # ForwardRef（文字列リテラル）
             return [node.value]
         elif isinstance(node, ast.Subscript):
-            # ジェネリック型（例: List[User] → User, Dict[str, List[int]] → [str, List[int]]）
+            # ジェネリック型（例: List[User] → User,
+            # Dict[str, List[int]] → [str, List[int]]）
             # Python 3.9+では複数パラメータはast.Tupleとして表現される
             if isinstance(node.slice, ast.Tuple):
                 # 複数のジェネリック型パラメータ（例: Dict[str, int]）

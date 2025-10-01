@@ -150,7 +150,8 @@ class NetworkXGraphAdapter:
                 print(f"✅ SVGファイルを生成: {svg_path}")
         except FileNotFoundError:
             print(
-                "⚠️  Graphvizのdotコマンドが見つかりません。sudo apt install graphviz を実行してください。"
+                "⚠️  Graphvizのdotコマンドが見つかりません。"
+                "sudo apt install graphviz を実行してください。"
             )
         except subprocess.TimeoutExpired:
             print("⚠️  SVG生成がタイムアウトしました。")

@@ -107,12 +107,14 @@ class LayerDocGenerator(DocumentGenerator):
             actual_output_path = Path(output_path_arg)
         else:
             raise ValueError(
-                "Invalid arguments. Use generate(layer, types, output_path) or generate(output_path, layer=layer, types=types)"
+                "Invalid arguments. Use generate(layer, types, output_path) "
+                "or generate(output_path, layer=layer, types=types)"
             )
 
         if not isinstance(layer, str) or not isinstance(types, (dict, list)):
             raise ValueError(
-                "layer must be str and types must be dict[str, type[Any]] or list[type[Any]]"
+                "layer must be str and types must be "
+                "dict[str, type[Any]] or list[type[Any]]"
             )
 
         # Clear markdown builder
@@ -131,9 +133,8 @@ class LayerDocGenerator(DocumentGenerator):
         content = self.md.build()
         self._write_file(Path(actual_output_path), content)
 
-        print(
-            f"✅ Generated {actual_output_path}: {len(types) if isinstance(types, list) else len(types)} types"
-        )
+        type_count = len(types) if isinstance(types, list) else len(types)
+        print(f"✅ Generated {actual_output_path}: {type_count} types")
 
     def _generate_header(self, layer: str) -> None:
         """Generate document header.
@@ -440,7 +441,8 @@ class IndexDocGenerator(DocumentGenerator):
             )
         else:
             raise ValueError(
-                "Invalid arguments. Use generate(type_registry, output_path) or generate(output_path, type_registry=type_registry)"
+                "Invalid arguments. Use generate(type_registry, output_path) "
+                "or generate(output_path, type_registry=type_registry)"
             )
 
         if not isinstance(type_registry, (dict, defaultdict)):

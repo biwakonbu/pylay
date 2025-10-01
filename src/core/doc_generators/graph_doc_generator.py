@@ -114,8 +114,10 @@ class GraphDocGenerator(DocumentGenerator):
                 else "不明"
             )
             is_external = "✓" if node.is_external() else ""
+            display_name = node.get_display_name()
             self.md.paragraph(
-                f"| {node.get_display_name()} | {node.node_type} | {location} | {is_external} |"
+                f"| {display_name} | {node.node_type} | "
+                f"{location} | {is_external} |"
             )
 
     def _generate_edge_table(self, edges: list[GraphEdge]) -> None:
@@ -132,7 +134,8 @@ class GraphDocGenerator(DocumentGenerator):
             strength = edge.get_dependency_strength()
             is_strong = "✓" if edge.is_strong_dependency() else ""
             self.md.paragraph(
-                f"| {edge.source} | {edge.target} | {edge.relation_type} | {edge.weight} | {strength} {is_strong} |"
+                f"| {edge.source} | {edge.target} | {edge.relation_type} | "
+                f"{edge.weight} | {strength} {is_strong} |"
             )
 
     def _generate_footer(self) -> None:

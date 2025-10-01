@@ -47,7 +47,8 @@ def run_generate_docs(
         else:
             # Multiple files output (not implemented yet)
             console.print(
-                "[yellow]Multiple file format not yet implemented, using single file[/yellow]"
+                "[yellow]Multiple file format not yet implemented, "
+                "using single file[/yellow]"
             )
             output_file = output_path / "types.md"
             generator.generate(output_file, spec=spec)

@@ -124,9 +124,11 @@ class UnionTypeSpec(TypeSpec):
 
 
 class GenericTypeSpec(TypeSpec):
-    """Generic型の仕様（例: Generic[T]）（参照型をTypeSpecOrRefに統一）
+    """
+    Generic型の仕様（例: Generic[T]）（参照型をTypeSpecOrRefに統一）
 
-    Generic型の型仕様を定義します（例: Generic[T]）。参照型はTypeSpecOrRefに統一されています。
+    Generic型の型仕様を定義します（例: Generic[T]）。
+    参照型はTypeSpecOrRefに統一されています。
     """
 
     type: Literal["generic"] = "generic"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化

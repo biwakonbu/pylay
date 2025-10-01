@@ -2,7 +2,8 @@
 """
 依存関係グラフ生成スクリプト。
 Pythonファイルから型依存を抽出し、Markdownドキュメントを生成。
-CLIコマンド: python generate_dependency_graph.py src/module.py --output docs/dependencies/module.md
+CLIコマンド: python generate_dependency_graph.py src/module.py
+            --output docs/dependencies/module.md
 """
 
 import argparse

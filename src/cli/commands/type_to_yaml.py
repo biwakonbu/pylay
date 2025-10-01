@@ -37,9 +37,11 @@ def run_type_to_yaml(
         # モジュール内の全型アノテーションを検索
         types_dict = {}
         for name, obj in module.__dict__.items():
-            # ユーザ定義クラスをフィルタリング: このモジュールで定義されたPydanticモデルまたはEnum
+            # ユーザ定義クラスをフィルタリング:
+            # このモジュールで定義されたPydanticモデルまたはEnum
             if isinstance(obj, type):
-                # Pydanticモデルかどうかをチェック（BaseModelのサブクラスでアノテーションを持つ）
+                # Pydanticモデルかどうかをチェック
+                # （BaseModelのサブクラスでアノテーションを持つ）
                 is_pydantic_model = (
                     hasattr(obj, "__annotations__")
                     and hasattr(obj, "__pydantic_core_schema__")  # Pydantic v2

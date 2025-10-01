@@ -134,7 +134,8 @@ def create_analyzer(config: PylayConfig, mode: str = "full") -> Analyzer:
         return FullAnalyzer(config)
     else:
         raise ValueError(
-            f"無効な解析モード: {mode}. 'types_only', 'deps_only', 'full' のいずれかを指定してください。"
+            f"無効な解析モード: {mode}. "
+            "'types_only', 'deps_only', 'full' のいずれかを指定してください。"
         )
 
 

@@ -138,7 +138,9 @@ class GraphProcessor:
 
         # エッジ追加
         for source, target, edge_data in nx_graph.edges(data=True):
-            edge_label = f"{edge_data.get('relation_type', 'unknown')} ({edge_data.get('weight', 1.0)})"
+            rel_type = edge_data.get("relation_type", "unknown")
+            weight = edge_data.get("weight", 1.0)
+            edge_label = f"{rel_type} ({weight})"
             dot_edge = Edge(
                 source, target, label=edge_label, color="blue", fontcolor="blue"
             )

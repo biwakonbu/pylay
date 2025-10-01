@@ -570,7 +570,8 @@ def test_type_to_spec_function_splitting():
     # assert "Create a new string" in doc
 
     # ハンドラーテスト
-    # basic_spec = _handle_basic_type(str, "TestStr", "テスト文字列")  # 関数が存在しないのでスキップ
+    # basic_spec = _handle_basic_type(str, "TestStr", "テスト文字列")
+    # 関数が存在しないのでスキップ
     # assert basic_spec.type == 'str'
     # assert basic_spec.name == "TestStr"
     # assert basic_spec.description == "テスト文字列"

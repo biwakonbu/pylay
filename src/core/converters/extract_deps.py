@@ -158,7 +158,8 @@ class DependencyExtractor(ast.NodeVisitor):
                     self.graph.add_edge(base_type, type_str, relation_type="generic")
                     self._add_type_dependencies(base_type)
 
-                # 型パラメータの依存関係も追加（例: Dict[str, List[int]] の場合、strとList[int]）
+                # 型パラメータの依存関係も追加
+                # （例: Dict[str, List[int]] の場合、strとList[int]）
                 param_part = type_str[type_str.find("[") + 1 : type_str.rfind("]")]
                 if "," in param_part:
                     # 複数のパラメータ
@@ -306,7 +307,8 @@ def visualize_dependencies(
                 (edge.get_source().strip('"'), edge.get_destination().strip('"'))
             )
             if edge_data:
-                # エッジ属性の正規化: relation_type を優先し、なければ relation にフォールバック
+                # エッジ属性の正規化: relation_type を優先し、
+                # なければ relation にフォールバック
                 relation = edge_data.get("relation_type") or edge_data.get(
                     "relation", ""
                 )
@@ -331,7 +333,8 @@ def visualize_dependencies(
 
     except ImportError as e:
         print(
-            f"Graphviz または pydot がインストールされていないため、視覚化をスキップします: {e}"
+            "Graphviz または pydot がインストールされていないため、"
+            f"視覚化をスキップします: {e}"
         )
     except Exception as e:
         print(f"視覚化中にエラーが発生しました: {e}")

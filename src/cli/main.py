@@ -267,8 +267,13 @@ def convert_to_type(input_yaml: str, output_py: str | None) -> None:
             yaml_str = f.read()
 
         spec = yaml_to_spec(yaml_str)
+        type_names = [
+            t.__name__ if hasattr(t, "__name__") else str(t)
+            for t in spec.__class__.__mro__
+            if t is not object
+        ]
         model_code = f"""from pydantic import BaseModel
-from typing import {", ".join([t.__name__ if hasattr(t, "__name__") else str(t) for t in spec.__class__.__mro__ if t != object])}
+from typing import {", ".join(type_names)}
 
 # 生成されたPydanticモデル
 class GeneratedModel(BaseModel):

@@ -134,7 +134,8 @@ max_depth = 5
                 output_dir = temp_path / "generated_docs"
                 assert output_dir.exists()
 
-                # YAMLファイルは src/ サブディレクトリに生成される（修正後: *.types.yaml）
+                # YAMLファイルは src/ サブディレクトリに生成される
+                # （修正後: *.types.yaml）
                 yaml_files = list(output_dir.glob("**/*.types.yaml"))
                 assert len(yaml_files) > 0
 

@@ -148,7 +148,7 @@ class TypeDependencyGraph(BaseModel):
             "relations": dict(relations),
         }
 
-    def to_networkx(self) -> "nx.DiGraph":  # type: ignore
+    def to_networkx(self) -> "nx.DiGraph":  # type: ignore  # noqa: F821
         """NetworkX DiGraph に変換
 
         TypeDependencyGraphをNetworkX DiGraph形式に変換します。
@@ -171,11 +171,15 @@ class TypeDependencyGraph(BaseModel):
         return graph
 
     @classmethod
-    def from_networkx(cls, graph: "nx.DiGraph") -> "TypeDependencyGraph":  # type: ignore
+    def from_networkx(
+        cls,
+        graph: "nx.DiGraph",  # type: ignore[name-defined]  # noqa: F821
+    ) -> "TypeDependencyGraph":
         """NetworkX DiGraph から構築
 
         NetworkX DiGraphからTypeDependencyGraphを構築します。
         """
+        import networkx as nx  # noqa: F401
 
         nodes = []
         edges = []

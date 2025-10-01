@@ -73,7 +73,8 @@ class PylayConfig(BaseModel):
         pyproject.tomlから設定を読み込みます。
 
         Args:
-            project_root: プロジェクトルートディレクトリ（Noneの場合はカレントディレクトリ）
+            project_root: プロジェクトルートディレクトリ
+                （Noneの場合はカレントディレクトリ）
 
         Returns:
             設定オブジェクト
@@ -133,7 +134,8 @@ class PylayConfig(BaseModel):
 
     def get_output_subdirs(self, project_root: Path) -> dict[str, Path]:
         """
-        出力ディレクトリのサブディレクトリ（types/, documents/ など）の絶対パスを取得します。
+        出力ディレクトリのサブディレクトリ（types/, documents/ など）の
+        絶対パスを取得します。
 
         Args:
             project_root: プロジェクトルートディレクトリ

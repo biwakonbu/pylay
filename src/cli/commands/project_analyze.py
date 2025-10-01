@@ -82,7 +82,8 @@ def project_analyze(
             console.print(f"  グラフ出力: {structure['graph']}")
             console.print()
 
-        # cleanフラグの決定（コマンドラインオプションが優先、未指定の場合は設定値を使用）
+        # cleanフラグの決定
+        # （コマンドラインオプションが優先、未指定の場合は設定値を使用）
         effective_clean = clean or config.clean_output_dir
 
         # dry-runの場合は実際の処理をスキップ
@@ -108,16 +109,21 @@ def project_analyze(
                 console.print(f"  {file_path}")
             return
 
-        # cleanオプションが指定された場合、出力ディレクトリを削除（OutputPathManager 使用）
+        # cleanオプションが指定された場合、出力ディレクトリを削除
+        # （OutputPathManager 使用）
         if effective_clean:
             if verbose:
                 if clean:
                     console.print(
-                        "[yellow]🗑️  --clean オプションにより出力ディレクトリ（docs/pylay-types/全体）を削除します[/yellow]"
+                        "[yellow]🗑️  --clean オプションにより"
+                        "出力ディレクトリ（docs/pylay-types/全体）を削除します"
+                        "[/yellow]"
                     )
                 else:
                     console.print(
-                        "[yellow]🗑️  設定により出力ディレクトリ（docs/pylay-types/全体）を削除します[/yellow]"
+                        "[yellow]🗑️  設定により"
+                        "出力ディレクトリ（docs/pylay-types/全体）を削除します"
+                        "[/yellow]"
                     )
             output_dir = output_manager.get_output_structure()["yaml"]
             if output_dir.exists():
@@ -125,11 +131,13 @@ def project_analyze(
 
                 shutil.rmtree(output_dir)
                 console.print(
-                    f"[yellow]🗑️  出力ディレクトリを削除しました: {output_dir}（src/, documents/ 等含む）[/yellow]"
+                    f"[yellow]🗑️  出力ディレクトリを削除しました: {output_dir}"
+                    "（src/, documents/ 等含む）[/yellow]"
                 )
             else:
                 console.print(
-                    f"[yellow]ℹ️  出力ディレクトリが存在しないため削除をスキップ: {output_dir}[/yellow]"
+                    f"[yellow]ℹ️  出力ディレクトリが存在しないため"
+                    f"削除をスキップ: {output_dir}[/yellow]"
                 )
 
         # プロジェクトスキャナーを作成
@@ -154,7 +162,8 @@ def project_analyze(
 
         if not python_files:
             console.print(
-                "[bold yellow]⚠️  解析対象のPythonファイルが見つかりませんでした[/bold yellow]"
+                "[bold yellow]⚠️  解析対象のPythonファイルが"
+                "見つかりませんでした[/bold yellow]"
             )
             return
 

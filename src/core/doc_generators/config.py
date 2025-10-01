@@ -40,9 +40,11 @@ class TypeDocConfig(GeneratorConfig):
     type_alias_descriptions: dict[str, str] = field(
         default_factory=lambda: {
             "JSONValue": "JSON値: 制約なしのJSON互換データ型（Anyのエイリアス）",
-            "JSONObject": "JSONオブジェクト: 文字列キーと任意の値を持つ辞書型",
-            "RestrictedJSONValue": "制限付きJSON値: 深さ3制限付きのJSONデータ",
-            "RestrictedJSONObject": "制限付きJSONオブジェクト: 制限付きのJSON値を持つ辞書型",
+            "JSONObject": ("JSONオブジェクト: 文字列キーと任意の値を持つ辞書型"),
+            "RestrictedJSONValue": ("制限付きJSON値: 深さ3制限付きのJSONデータ"),
+            "RestrictedJSONObject": (
+                "制限付きJSONオブジェクト: 制限付きのJSON値を持つ辞書型"
+            ),
         }
     )
     layer_methods: dict[str, str] = field(

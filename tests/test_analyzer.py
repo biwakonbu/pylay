@@ -279,7 +279,7 @@ class TestGraphProcessor:
         else:
             # pydotが利用不可の場合はスキップ
             try:
-                import pydot
+                import pydot  # noqa: F401
 
                 processor.visualize_graph(graph, "test.png")
             except (ImportError, FileNotFoundError, OSError):
@@ -339,7 +339,7 @@ def get_user() -> User:
         vis_file = tmp_path / "test.png"
         if processor.nx_available:
             try:
-                import pydot
+                import pydot  # noqa: F401
 
                 processor.visualize_graph(graph, vis_file, format_type="png")
             except (ImportError, FileNotFoundError, OSError):
@@ -415,7 +415,7 @@ class C:
 
         NetworkXが利用できない場合のフォールバック動作をテストします。
         """
-        config = PylayConfig()
+        config = PylayConfig()  # noqa: F841
         from src.core.analyzer.graph_processor import GraphProcessor
 
         processor = GraphProcessor()
@@ -443,7 +443,7 @@ def invalid_syntax(
         analyzer = TypeInferenceAnalyzer(config)
         # mypyが失敗してもエラーなく処理
         with pytest.raises((ValueError, SyntaxError)):
-            graph = analyzer.analyze(test_file)
+            _ = analyzer.analyze(test_file)
 
     def test_large_file_handling(self, tmp_path):
         """大規模ファイルの処理"""
