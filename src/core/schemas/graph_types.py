@@ -179,7 +179,7 @@ class TypeDependencyGraph(BaseModel):
 
         NetworkX DiGraphからTypeDependencyGraphを構築します。
         """
-        import networkx as nx  # noqa: F401
+        import networkx as nx  # noqa: F401  # pyright: ignore[reportUnusedImport]
 
         nodes = []
         edges = []
