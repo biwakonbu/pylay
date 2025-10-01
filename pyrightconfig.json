@@ -45,7 +45,6 @@
     "reportIncompatibleMethodOverride": "error",
     "reportIncompatibleVariableOverride": "error",
     "reportInconsistentConstructor": "error",
-    "reportOverlappingOverloads": "error",
     "reportMissingSuperCall": "none",
     "reportUninitializedInstanceVariable": "none",
     "reportInvalidTypeVarUse": "error",
