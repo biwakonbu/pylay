@@ -14,6 +14,7 @@ from src.core.analyzer.abc_base import Analyzer
 from src.core.analyzer.exceptions import AnalysisError
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
+from src.core.schemas.types import AnalyzerModeList
 
 
 class FullAnalyzer(Analyzer):
@@ -139,7 +140,7 @@ def create_analyzer(config: PylayConfig, mode: str = "full") -> Analyzer:
         )
 
 
-def get_supported_modes() -> list[str]:
+def get_supported_modes() -> AnalyzerModeList:
     """
     サポートされている解析モードのリストを返します。
 

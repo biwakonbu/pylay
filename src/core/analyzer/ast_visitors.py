@@ -10,7 +10,7 @@ from pathlib import Path
 from src.core.analyzer.exceptions import ASTParseError
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.schemas.graph_types import GraphEdge, GraphNode, RelationType
-from src.core.schemas.types import GraphMetadata
+from src.core.schemas.types import GraphMetadata, TypeNameList
 
 # 関数定義の共通型（Python 3.13+）
 type FunctionDefLike = ast.FunctionDef | ast.AsyncFunctionDef
@@ -310,7 +310,7 @@ class DependencyVisitor(ast.NodeVisitor):
                 method_call_node.name, method_name, RelationType.CALLS, weight=0.8
             )
 
-    def _get_type_names_from_ast(self, node: ast.AST) -> list[str]:
+    def _get_type_names_from_ast(self, node: ast.AST) -> TypeNameList:
         """
         ASTノードから型名を抽出（ForwardRef対応、Union型は個別要素を返す）
 
@@ -333,7 +333,7 @@ class DependencyVisitor(ast.NodeVisitor):
             # Python 3.9+では複数パラメータはast.Tupleとして表現される
             if isinstance(node.slice, ast.Tuple):
                 # 複数のジェネリック型パラメータ（例: Dict[str, int]）
-                result: list[str] = []
+                result: TypeNameList = []
                 for elt in node.slice.elts:
                     result.extend(self._get_type_names_from_ast(elt))
                 return result

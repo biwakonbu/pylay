@@ -5,6 +5,8 @@ Markdownドキュメントを簡単に生成するためのBuilderパターン�
 
 from typing import Self
 
+from src.core.schemas.types import MarkdownContentList, TableCellList, TableHeaderList
+
 
 class MarkdownBuilder:
     """Markdownドキュメント構築のための流暢なAPI
@@ -17,7 +19,7 @@ class MarkdownBuilder:
 
         空のMarkdownビルダーを初期化し、コンテンツリストを準備します。
         """
-        self._content: list[str] = []
+        self._content: MarkdownContentList = []
 
     def heading(self, level: int, text: str) -> Self:
         """指定されたレベル（1-6）の見出しを追加する。"""
@@ -71,14 +73,14 @@ class MarkdownBuilder:
         """リンクフォーマットのテキストを返す。"""
         return f"[{text}]({url})"
 
-    def table_header(self, headers: list[str]) -> Self:
+    def table_header(self, headers: TableHeaderList) -> Self:
         """テーブルヘッダー行を追加する。"""
         header_row = "| " + " | ".join(headers) + " |"
         separator_row = "| " + " | ".join("---" for _ in headers) + " |"
         self._content.extend([header_row + "\n", separator_row + "\n"])
         return self
 
-    def table_row(self, cells: list[str]) -> Self:
+    def table_row(self, cells: TableCellList) -> Self:
         """テーブルデータ行を追加する。"""
         row = "| " + " | ".join(cells) + " |"
         self._content.append(row + "\n")

@@ -26,6 +26,7 @@ from src.core.analyzer.exceptions import (
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
+from src.core.schemas.types import CyclePathList, TypeRefList
 
 logger = logging.getLogger(__name__)
 
@@ -227,7 +228,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             # mypy失敗時はログして続行
             logger.warning(f"mypy統合に失敗しました ({file_path}): {e}")
 
-    def _extract_type_refs_from_string(self, type_str: str) -> list[str]:
+    def _extract_type_refs_from_string(self, type_str: str) -> TypeRefList:
         """
         型文字列から型参照を抽出（統合ユーティリティ使用）
 
@@ -246,7 +247,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             type_str, exclude_builtins=True, deduplicate=True
         )
 
-    def _detect_cycles(self, graph: TypeDependencyGraph) -> list[list[str]]:
+    def _detect_cycles(self, graph: TypeDependencyGraph) -> CyclePathList:
         """グラフから循環を検出"""
         if nx is None:
             return []

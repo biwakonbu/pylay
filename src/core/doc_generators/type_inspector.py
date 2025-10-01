@@ -6,11 +6,13 @@ from typing import Any, get_args, get_origin
 
 from pydantic import BaseModel
 
+from src.core.schemas.types import CodeLineList, SkipTypeSet
+
 
 class TypeInspector:
     """型から情報を抽出するためのユーティリティクラス。"""
 
-    def __init__(self, skip_types: set[str] | None = None) -> None:
+    def __init__(self, skip_types: SkipTypeSet | None = None) -> None:
         """型検査器を初期化する。
 
         Args:
@@ -42,7 +44,7 @@ class TypeInspector:
         description_lines = []
         code_blocks = []
         in_code_block = False
-        current_code: list[str] = []
+        current_code: CodeLineList = []
 
         for line in lines:
             line = line.strip()

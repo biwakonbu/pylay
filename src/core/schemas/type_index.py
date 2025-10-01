@@ -8,6 +8,8 @@ Pythonの組み込み型やプロジェクト固有の型をレイヤー別に�
 from collections import defaultdict
 from typing import Any, get_origin
 
+from src.core.schemas.types import LayerNameList, TypeNameList
+
 # 型レジストリ - レイヤー別の型を管理
 TYPE_REGISTRY: dict[str, dict[str, type[Any]]] = defaultdict(dict)
 
@@ -87,7 +89,7 @@ def get_layer_types(layer: str) -> dict[str, type[Any]]:
     return TYPE_REGISTRY.get(layer, {}).copy()
 
 
-def get_all_layers() -> list[str]:
+def get_all_layers() -> LayerNameList:
     """利用可能なすべてのレイヤー名を取得"""
     return list(TYPE_REGISTRY.keys())
 
@@ -97,9 +99,9 @@ def get_registry_stats() -> dict[str, int]:
     return {layer: len(types) for layer, types in TYPE_REGISTRY.items()}
 
 
-def get_available_types_all() -> list[str]:
+def get_available_types_all() -> TypeNameList:
     """すべての利用可能な型名を取得"""
-    all_types: list[str] = []
+    all_types: TypeNameList = []
     for layer_types in TYPE_REGISTRY.values():
         all_types.extend(layer_types.keys())
     return sorted(all_types)

@@ -21,7 +21,14 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.core.schemas.types import ReturnCode, StdErr, StdOut, ToolName
+from src.core.schemas.types import (
+    CommandArgList,
+    Description,
+    ReturnCode,
+    StdErr,
+    StdOut,
+    ToolName,
+)
 
 
 @dataclass
@@ -45,9 +52,9 @@ class ProjectAnalyzer:
 
     def run_command(
         self,
-        cmd: list[str],
-        description: str,
-        expected_exit_codes: list[int] | None = None,
+        cmd: CommandArgList,
+        description: Description,
+        expected_exit_codes: list[ReturnCode] | None = None,
     ) -> CheckResult:
         """
         コマンドを実行し、結果を記録する
