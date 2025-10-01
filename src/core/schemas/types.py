@@ -179,6 +179,9 @@ type MethodName = str
 type MypyFlag = str
 """mypyコマンドラインフラグ（--strict, --no-implicit-optional等）"""
 
+type CyclePath = list[str]
+"""循環依存のパス（ノードIDのリスト）"""
+
 
 # =============================================================================
 # Level 2: Annotated + AfterValidator（制約付き、NewType代替）

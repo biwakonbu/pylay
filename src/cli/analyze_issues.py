@@ -21,16 +21,18 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.core.schemas.types import ReturnCode, StdErr, StdOut, ToolName
+
 
 @dataclass
 class CheckResult:
     """チェック結果を表すデータクラス"""
 
-    name: str
+    name: ToolName
     success: bool
-    output: str
-    error_output: str
-    return_code: int
+    output: StdOut
+    error_output: StdErr
+    return_code: ReturnCode
     has_issues: bool = False
 
 
