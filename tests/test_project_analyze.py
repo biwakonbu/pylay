@@ -78,10 +78,10 @@ max_depth = 5
 """
             (temp_path / "pyproject.toml").write_text(pyproject_content)
 
-            # 仮説1: 設定読み込みの検証
+            # 仮説1: 設定読み込みの検証（末尾スラッシュは自動削除される）
             config = PylayConfig.from_pyproject_toml(temp_path)
-            assert config.target_dirs == ["src/"]
-            assert config.output_dir == "generated_docs/"
+            assert config.target_dirs == ["src"]
+            assert config.output_dir == "generated_docs"
             assert config.exclude_patterns == [
                 "tests/**",
                 "**/*_test.py",
@@ -174,9 +174,9 @@ max_depth = 5
             # 設定を読み込み
             config = PylayConfig.from_pyproject_toml(temp_path)
 
-            # 設定値の検証
-            assert config.target_dirs == ["src/"]
-            assert config.output_dir == "docs/"
+            # 設定値の検証（末尾スラッシュは自動削除される）
+            assert config.target_dirs == ["src"]
+            assert config.output_dir == "docs"
             assert config.generate_markdown is True
             assert config.extract_deps is True
             assert config.infer_level == "strict"

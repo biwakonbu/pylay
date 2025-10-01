@@ -37,12 +37,14 @@ class PylayConfig(BaseModel):
 
     # 解析対象ディレクトリ
     target_dirs: list[DirectoryPath] = Field(
-        default=["src/"], description="解析対象のディレクトリパス（相対パス）"
+        default=["src"],
+        description="解析対象のディレクトリパス（相対パス、末尾スラッシュは自動削除）",
     )
 
     # 出力ディレクトリ
     output_dir: DirectoryPath = Field(
-        default="docs/", description="出力ファイルの保存先ディレクトリ"
+        default="docs",
+        description="出力ファイルの保存先ディレクトリ（末尾スラッシュは自動削除）",
     )
 
     # ドキュメント生成フラグ
@@ -57,7 +59,11 @@ class PylayConfig(BaseModel):
 
     # 型推論レベル
     infer_level: InferLevel = Field(
-        default="strict", description="型推論の厳密さ（strict, normal, loose）"
+        default="normal",
+        description=(
+            "型推論の厳密さ（strict, normal, loose, none）"
+            "- デフォルトは'normal'でバランス型"
+        ),
     )
 
     # 出力ディレクトリクリーンアップフラグ

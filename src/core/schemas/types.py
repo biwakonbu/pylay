@@ -174,16 +174,47 @@ type AdditionalPropertiesFlag = bool
 
 
 def validate_directory_path(v: str) -> str:
-    """ディレクトリパスのバリデーション"""
+    """
+    ディレクトリパスのバリデーション
+
+    - 空文字列チェック
+    - 相対パス正規化（末尾スラッシュ除去、./正規化）
+    - 禁止文字チェック（null byte等）
+
+    Note:
+        存在チェックは行わない（設定時点では未作成の場合があるため）
+        実際の使用時に get_absolute_paths() で絶対パス化と存在確認を行う
+    """
     if not v:
         raise ValueError("ディレクトリパスは空にできません")
-    return v
+
+    # null byteチェック（セキュリティ）
+    if "\0" in v:
+        raise ValueError("ディレクトリパスにnull byteを含むことはできません")
+
+    # 相対パスの正規化（末尾スラッシュ除去、冗長な./ 除去）
+    normalized = v.rstrip("/")
+    if normalized.startswith("./"):
+        normalized = normalized[2:]
+
+    # 空になった場合は "." にフォールバック
+    if not normalized:
+        normalized = "."
+
+    return normalized
 
 
 type DirectoryPath = Annotated[
     str, AfterValidator(validate_directory_path), Field(min_length=1)
 ]
-"""ディレクトリパス（空文字列不可）"""
+"""
+ディレクトリパス（相対パス）
+
+- 空文字列不可
+- 末尾スラッシュは自動削除
+- 禁止文字（null byte等）をチェック
+- 存在チェックは get_absolute_paths() で実施
+"""
 
 
 def validate_max_depth(v: int) -> int:
