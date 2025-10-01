@@ -53,6 +53,7 @@ from src.core.analyzer.abc_base import Analyzer
 from src.core.analyzer.exceptions import MypyExecutionError
 from src.core.analyzer.models import InferResult, MypyResult
 from src.core.schemas.graph_types import GraphNode, TypeDependencyGraph
+from src.core.schemas.types import GraphMetadata
 
 
 class TypeInferenceAnalyzer(Analyzer):
@@ -125,8 +126,6 @@ class TypeInferenceAnalyzer(Analyzer):
             graph.add_node(node)
 
         # メタデータ追加
-        from ..schemas.types import GraphMetadata
-
         graph.metadata = GraphMetadata(
             custom_fields={
                 "analysis_type": "type_inference",
