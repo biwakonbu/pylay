@@ -182,15 +182,24 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
     """依存関係グラフを生成 (NetworkX + matplotlib)"""
     click.echo(f"依存グラフ生成: {input_dir} -> {output}")
     try:
-        graph = extract_dependencies_from_file(Path(input_dir))
+        dep_graph = extract_dependencies_from_file(Path(input_dir))
         # matplotlibでグラフを生成
         import matplotlib.pyplot as plt
         import networkx as nx
 
+        # TypeDependencyGraphからNetworkXグラフに変換
+        nx_graph: nx.DiGraph = nx.DiGraph()
+        for node in dep_graph.nodes:
+            nx_graph.add_node(node.id or node.name, label=node.name)
+        for edge in dep_graph.edges:
+            nx_graph.add_edge(
+                edge.source, edge.target, relation=edge.relation_type.value
+            )
+
         plt.figure(figsize=(12, 8))
-        pos = nx.spring_layout(graph)
+        pos = nx.spring_layout(nx_graph)
         nx.draw(
-            graph,
+            nx_graph,
             pos,
             with_labels=True,
             node_color="lightblue",

@@ -2,8 +2,8 @@
 ForwardRefと循環参照のテスト
 """
 
-import networkx as nx
-from core.converters.extract_deps import extract_dependencies_from_code
+from src.core.converters.extract_deps import extract_dependencies_from_code
+from src.core.schemas.graph_types import TypeDependencyGraph
 
 
 class TestForwardRef:
@@ -27,8 +27,9 @@ class Node:
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
-        assert "Node" in graph.nodes()
+        assert isinstance(graph, TypeDependencyGraph)
+        node_names = [node.name for node in graph.nodes]
+        assert "Node" in node_names
         # ForwardRef "Node" が適切に処理されていることを確認
 
     def test_circular_reference_detection(self):
@@ -47,9 +48,9 @@ class B:
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
+        assert isinstance(graph, TypeDependencyGraph)
         # 循環参照が無限ループを起こさないことを確認
-        assert len(graph.nodes()) > 0
+        assert len(graph.nodes) > 0
 
     def test_union_type_with_forward_ref(self):
         """ForwardRefを含むUnion型のテスト
@@ -69,9 +70,10 @@ class Child:
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
-        assert "Parent" in graph.nodes()
-        assert "Child" in graph.nodes()
+        assert isinstance(graph, TypeDependencyGraph)
+        node_names = [node.name for node in graph.nodes]
+        assert "Parent" in node_names
+        assert "Child" in node_names
 
     def test_no_infinite_loop(self):
         """無限ループが発生しないことを確認"""
@@ -82,6 +84,7 @@ class SelfRef:
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
+        assert isinstance(graph, TypeDependencyGraph)
         # 処理が完了することを確認（無限ループでハングしない）
-        assert "SelfRef" in graph.nodes()
+        node_names = [node.name for node in graph.nodes]
+        assert "SelfRef" in node_names

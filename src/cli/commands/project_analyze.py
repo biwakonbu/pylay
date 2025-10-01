@@ -329,12 +329,12 @@ async def _analyze_file_async(
     if config.extract_deps:
         try:
             dep_graph = extract_dependencies_from_file(file_path)
-            nodes = list(dep_graph.nodes())
-            if nodes:
+            nodes_list = list(dep_graph.nodes)
+            if nodes_list:
                 result["dependencies_found"] = True
 
                 if verbose:
-                    console.print(f"  ✓ 依存関係抽出完了: {len(nodes)} ノード")
+                    console.print(f"  ✓ 依存関係抽出完了: {len(nodes_list)} ノード")
 
         except Exception as e:
             if verbose:

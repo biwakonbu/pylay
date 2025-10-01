@@ -12,8 +12,7 @@
 
 import ast
 import logging
-from collections.abc import Callable  # ALLOWED_TYPING_ATTRS で参照
-from typing import Any, ForwardRef, get_args, get_origin  # ALLOWED_TYPING_ATTRS で参照
+from typing import ForwardRef, get_args, get_origin
 
 logger = logging.getLogger(__name__)
 
