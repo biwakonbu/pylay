@@ -167,6 +167,9 @@ type RequiredFlag = bool
 type AdditionalPropertiesFlag = bool
 """追加プロパティ許可フラグ"""
 
+type GlobPattern = str
+"""Globパターン（例: **/*.py, **/tests/**）"""
+
 
 # =============================================================================
 # Level 2: Annotated + AfterValidator（制約付き、NewType代替）

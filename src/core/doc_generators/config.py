@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from src.core.schemas.types import IndexFilename, LayerFilenameTemplate
+from src.core.schemas.types import GlobPattern, IndexFilename, LayerFilenameTemplate
 
 from .filesystem import FileSystemInterface, RealFileSystem
 
@@ -13,8 +13,8 @@ class GeneratorConfig:
     """ドキュメントジェネレーターの基本設定。"""
 
     output_path: Path = field(default_factory=lambda: Path("docs"))
-    include_patterns: list[str] = field(default_factory=list)
-    exclude_patterns: list[str] = field(default_factory=list)
+    include_patterns: list[GlobPattern] = field(default_factory=list)
+    exclude_patterns: list[GlobPattern] = field(default_factory=list)
 
 
 @dataclass
@@ -25,8 +25,8 @@ class CatalogConfig(GeneratorConfig):
     output_path: Path = field(
         default_factory=lambda: Path("docs/types/test_catalog.md")
     )
-    include_patterns: list[str] = field(default_factory=lambda: ["test_*.py"])
-    exclude_patterns: list[str] = field(
+    include_patterns: list[GlobPattern] = field(default_factory=lambda: ["test_*.py"])
+    exclude_patterns: list[GlobPattern] = field(
         default_factory=lambda: ["__pycache__", "*.pyc"]
     )
 
