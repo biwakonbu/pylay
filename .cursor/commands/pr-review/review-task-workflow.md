@@ -209,6 +209,7 @@ This workflow leverages the full capabilities of the current reviewtask implemen
 Here are examples of actual reviewtask command outputs to demonstrate expected behavior:
 
 **`reviewtask status` output example:**
+
 ```text
 PR Review Tasks Status:
 ┌────────┬──────────────────────────────────────────┬──────────┬──────────┐
@@ -224,6 +225,7 @@ Next recommended task: task-001 (doing - critical priority)
 ```
 
 **`reviewtask show` output example:**
+
 ```text
 Task ID: task-001
 Status: doing
@@ -248,6 +250,7 @@ Verification History:
 ```
 
 **`reviewtask verify` output example:**
+
 ```text
 Running verification checks for task 'task-001'...
 
@@ -259,6 +262,7 @@ You can now safely complete this task with: reviewtask complete task-001
 ```
 
 **`reviewtask complete` output example:**
+
 ```text
 Running verification checks for task 'task-001'...
 Task 'task-001' completed successfully!
