@@ -181,6 +181,7 @@ This workflow leverages the full capabilities of the current reviewtask implemen
 - **Progress Tracking**: Comprehensive status reporting and workflow optimization
 
 ## Important Notes:
+
 - Work only in the current branch
 - Always verify status changes before proceeding
 - Include proper commit message format with task details and comment references
