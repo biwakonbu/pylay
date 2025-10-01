@@ -98,8 +98,20 @@ class DependencyExtractionAnalyzer(Analyzer):
             # グラフ構築
             from src.core.schemas.types import GraphMetadata
 
+            # 循環検出を先に実行（型安全性のため構築時に設定）
+            detected_cycles: list[list[str]] = []
+            if nx:
+                # 仮グラフで循環検出
+                temp_graph = TypeDependencyGraph(
+                    nodes=list(self.state.nodes.values()),
+                    edges=list(self.state.edges.values()),
+                    metadata=GraphMetadata(),  # 空のメタデータ
+                )
+                detected_cycles = self._detect_cycles(temp_graph)
+
             metadata = GraphMetadata(
                 created_at=datetime.now(UTC).isoformat(),
+                cycles=detected_cycles,
                 statistics={
                     "node_count": len(self.state.nodes),
                     "edge_count": len(self.state.edges),
@@ -118,12 +130,6 @@ class DependencyExtractionAnalyzer(Analyzer):
                 edges=list(self.state.edges.values()),
                 metadata=metadata,
             )
-
-            # 循環検出
-            if nx:
-                cycles = self._detect_cycles(graph)
-                if cycles:
-                    metadata.cycles = cycles
 
             return graph
 

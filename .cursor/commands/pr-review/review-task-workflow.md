@@ -157,6 +157,14 @@ The tool includes verification capabilities to ensure task quality before comple
 - **Code Quality**: Lint and format checks (default: `golangci-lint run`, `gofmt -l .`)
 - **Custom Verification**: Project-specific commands based on task type
 
+**Python Project Examples:**
+
+```text
+BUILD:    python -m pip install -e . && python -m pip check
+TEST:     pytest -q
+QUALITY:  ruff check . && ruff format --check . && mypy .
+```
+
 **Task Type Detection:**
 Tasks are automatically categorized for custom verification:
 - `test-task`: Tasks containing "test" or "testing"
