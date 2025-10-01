@@ -63,5 +63,6 @@
     "reportInvalidStubStatement": "error",
     "reportIncompleteStub": "error",
     "reportUnsupportedDunderAll": "warning",
-    "reportUnusedCoroutine": "error"
+    "reportUnusedCoroutine": "error",
+    "reportMissingModuleSource": "none"
 }
