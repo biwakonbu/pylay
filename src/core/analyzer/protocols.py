@@ -7,8 +7,8 @@
 
 from __future__ import annotations
 
-from typing import Protocol
 from pathlib import Path
+from typing import Protocol
 
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig

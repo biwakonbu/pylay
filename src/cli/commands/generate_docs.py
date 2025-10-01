@@ -5,8 +5,8 @@ from pathlib import Path
 
 from rich.console import Console
 
-from src.core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from src.core.converters.yaml_to_type import yaml_to_spec
+from src.core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from src.core.schemas.yaml_type_spec import TypeRoot
 
 
@@ -24,7 +24,7 @@ def run_generate_docs(
 
     try:
         # Load YAML
-        with open(input_file, "r", encoding="utf-8") as f:
+        with open(input_file, encoding="utf-8") as f:
             yaml_str = f.read()
 
         spec = yaml_to_spec(yaml_str)

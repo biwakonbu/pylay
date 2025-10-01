@@ -6,7 +6,7 @@ TypeDependencyGraphを基盤に高度なグラフ操作を実行します。
 """
 
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 try:
     import networkx as nx
@@ -14,10 +14,10 @@ except ImportError:
     nx = None
 
 if TYPE_CHECKING:
-    from pydot import Dot, Node, Edge
+    from pydot import Dot, Edge, Node
 else:
     try:
-        from pydot import Dot, Node, Edge
+        from pydot import Dot, Edge, Node
     except ImportError:
         Dot, Node, Edge = None, None, None  # type: ignore[assignment, misc]
 

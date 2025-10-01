@@ -4,6 +4,7 @@ YAML仕様をPython型に変換するCLIコマンドです。
 """
 
 import sys
+
 from rich.console import Console
 
 from src.core.converters.yaml_to_type import yaml_to_spec
@@ -24,7 +25,7 @@ def run_yaml_to_type(
 
     try:
         # YAMLを読み込み
-        with open(input_file, "r", encoding="utf-8") as f:
+        with open(input_file, encoding="utf-8") as f:
             yaml_str = f.read()
 
         # Python型に変換

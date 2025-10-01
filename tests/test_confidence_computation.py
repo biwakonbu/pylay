@@ -8,11 +8,12 @@
 """
 
 import pytest
+
 from src.core.analyzer.type_inferrer import (
-    _compute_confidence,
+    _compute_annotation_bonus,
     _compute_base_certainty,
     _compute_complexity_penalty,
-    _compute_annotation_bonus,
+    _compute_confidence,
 )
 
 

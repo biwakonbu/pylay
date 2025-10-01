@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import Any
 
 from src.core.schemas.graph_types import (
-    GraphNode,
     GraphEdge,
-    TypeDependencyGraph,
+    GraphNode,
     RelationType,
+    TypeDependencyGraph,
 )
 
 
@@ -49,7 +49,7 @@ class MypyTypeExtractor:
                 mode="w", suffix=".py", delete=False
             ) as temp_file:
                 temp_file_name = temp_file.name
-                with open(file_path, "r", encoding="utf-8") as src_file:
+                with open(file_path, encoding="utf-8") as src_file:
                     temp_file.write(src_file.read())
                     temp_file.flush()
 

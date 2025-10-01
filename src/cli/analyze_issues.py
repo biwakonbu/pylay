@@ -13,13 +13,13 @@ pylay プロジェクトの問題分析スクリプト
 8. 依存関係の脆弱性チェック
 """
 
+import json
+import logging
+import os
 import subprocess
 import sys
-import json
-import os
-import logging
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass

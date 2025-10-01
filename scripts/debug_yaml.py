@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import yaml
+
 from src.core.converters.yaml_to_type import yaml_to_spec
 
 yaml_example = """

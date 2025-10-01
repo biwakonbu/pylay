@@ -1,19 +1,20 @@
 """pylay のコマンドラインインターフェース"""
 
-import click
 from pathlib import Path
+
+import click
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
+from ..core.converters.extract_deps import extract_dependencies_from_file
 from ..core.converters.type_to_yaml import extract_types_from_module
 from ..core.converters.yaml_to_type import yaml_to_spec
+from ..core.doc_generators.test_catalog_generator import CatalogGenerator
 from ..core.doc_generators.type_doc_generator import LayerDocGenerator
 from ..core.doc_generators.yaml_doc_generator import YamlDocGenerator
-from ..core.doc_generators.test_catalog_generator import CatalogGenerator
-from ..core.converters.extract_deps import extract_dependencies_from_file
-from ..core.schemas.pylay_config import PylayConfig
 from ..core.output_manager import OutputPathManager
+from ..core.schemas.pylay_config import PylayConfig
 from .commands.project_analyze import project_analyze
 
 
@@ -133,7 +134,7 @@ def generate_yaml_docs(input: str, output: str | None) -> None:
         output = default_output
 
     try:
-        with open(input, "r", encoding="utf-8") as f:
+        with open(input, encoding="utf-8") as f:
             yaml_str = f.read()
 
         spec = yaml_to_spec(yaml_str)
@@ -262,7 +263,7 @@ def convert_to_yaml(input_module: str, output: str) -> None:
 def convert_to_type(input_yaml: str, output_py: str | None) -> None:
     """YAML を Pydantic BaseModel に変換"""
     try:
-        with open(input_yaml, "r", encoding="utf-8") as f:
+        with open(input_yaml, encoding="utf-8") as f:
             yaml_str = f.read()
 
         spec = yaml_to_spec(yaml_str)

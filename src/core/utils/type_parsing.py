@@ -297,7 +297,7 @@ def validate_type_string(type_str: str) -> tuple[bool, str | None]:
         typing_ns["__builtins__"] = {}
         eval(type_str, typing_ns)  # noqa: S307
         return True, None
-    except (NameError, SyntaxError, AttributeError, TypeError) as e:
+    except (NameError, SyntaxError, AttributeError, TypeError):
         # typing評価失敗の場合はASTパースを試みる
         try:
             ast.parse(type_str, mode="eval")

@@ -9,8 +9,8 @@ import argparse
 from pathlib import Path
 
 from src.core.analyzer.base import create_analyzer
-from src.core.schemas.pylay_config import PylayConfig
 from src.core.analyzer.graph_processor import GraphProcessor
+from src.core.schemas.pylay_config import PylayConfig
 
 
 def generate_dependency_docs(

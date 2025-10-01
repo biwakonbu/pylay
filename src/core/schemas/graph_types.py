@@ -3,9 +3,10 @@
 TypeDependencyGraph, GraphNode, GraphEdge の定義
 """
 
-from typing import Any, Literal
-from pydantic import BaseModel, Field
 from enum import Enum
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
 
 
 class RelationType(str, Enum):

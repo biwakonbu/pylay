@@ -8,8 +8,9 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 import ast
 import importlib
 from pathlib import Path
-import networkx as nx
 from typing import Any
+
+import networkx as nx
 
 from src.core.schemas.graph_types import TypeDependencyGraph
 
@@ -211,7 +212,7 @@ def extract_dependencies_from_file(file_path: Path | str) -> TypeDependencyGraph
     Returns:
         TypeDependencyGraph（依存関係グラフ）
     """
-    with open(str(file_path), "r", encoding="utf-8") as f:
+    with open(str(file_path), encoding="utf-8") as f:
         code = f.read()
     return extract_dependencies_from_code(code)
 

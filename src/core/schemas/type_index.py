@@ -5,9 +5,8 @@
 Pythonの組み込み型やプロジェクト固有の型をレイヤー別に分類・管理する
 """
 
-from typing import Any, get_origin
 from collections import defaultdict
-
+from typing import Any, get_origin
 
 # 型レジストリ - レイヤー別の型を管理
 TYPE_REGISTRY: dict[str, dict[str, type[Any]]] = defaultdict(dict)

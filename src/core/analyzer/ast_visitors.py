@@ -7,9 +7,9 @@ AST訪問者モジュール
 import ast
 from pathlib import Path
 
-from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.analyzer.exceptions import ASTParseError
-from src.core.schemas.graph_types import GraphNode, GraphEdge, RelationType
+from src.core.analyzer.models import AnalyzerState, ParseContext
+from src.core.schemas.graph_types import GraphEdge, GraphNode, RelationType
 
 # 関数定義の共通型（Python 3.13+）
 type FunctionDefLike = ast.FunctionDef | ast.AsyncFunctionDef
@@ -431,10 +431,10 @@ def parse_ast(file_path: Path | str) -> ast.AST:
     """
     file_path = Path(file_path)
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             source_code = f.read()
     except FileNotFoundError:
-        raise ASTParseError(f"ファイルが見つかりません", file_path=str(file_path))
+        raise ASTParseError("ファイルが見つかりません", file_path=str(file_path))
     except UnicodeDecodeError as e:
         raise ASTParseError(
             f"ファイルのエンコーディングエラー: {e}", file_path=str(file_path)

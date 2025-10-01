@@ -5,18 +5,18 @@
 
 from pathlib import Path
 
+from src.core.schemas.pylay_config import PylayConfig
+from src.core.schemas.yaml_type_spec import (
+    DictTypeSpec,
+    ListTypeSpec,
+    RefPlaceholder,
+    TypeSpec,
+    UnionTypeSpec,
+)
+
 from .base import DocumentGenerator
 from .config import TypeDocConfig
 from .markdown_builder import MarkdownBuilder
-
-from src.core.schemas.yaml_type_spec import (
-    TypeSpec,
-    RefPlaceholder,
-    ListTypeSpec,
-    DictTypeSpec,
-    UnionTypeSpec,
-)
-from src.core.schemas.pylay_config import PylayConfig
 
 
 class YamlDocGenerator(DocumentGenerator):

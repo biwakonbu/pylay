@@ -4,10 +4,11 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from src.core.schemas.graph_types import TypeDependencyGraph
+
 from .base import DocumentGenerator
 from .config import TypeDocConfig
 from .type_inspector import TypeInspector
-from src.core.schemas.graph_types import TypeDependencyGraph
 
 
 class LayerDocGenerator(DocumentGenerator):

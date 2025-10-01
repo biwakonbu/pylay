@@ -4,11 +4,12 @@ Pythonの型定義をYAML形式に変換するCLIコマンドです。
 """
 
 import sys
+from enum import Enum
 from pathlib import Path
+
 from rich.console import Console
 
 from src.core.converters.type_to_yaml import types_to_yaml
-from enum import Enum
 
 
 def run_type_to_yaml(

@@ -41,15 +41,16 @@ mypy の --infer フラグを活用して、未アノテーションのコード
 from __future__ import annotations
 
 import ast
-import subprocess
-import tempfile
 import os
 import re
+import subprocess
+import tempfile
 from pathlib import Path
+
 from src.core.analyzer.abc_base import Analyzer
-from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode
-from src.core.analyzer.models import InferResult, MypyResult
 from src.core.analyzer.exceptions import MypyExecutionError
+from src.core.analyzer.models import InferResult, MypyResult
+from src.core.schemas.graph_types import GraphNode, TypeDependencyGraph
 
 
 class TypeInferenceAnalyzer(Analyzer):
@@ -74,9 +75,10 @@ class TypeInferenceAnalyzer(Analyzer):
         """
         if isinstance(input_path, str):
             # コード文字列の場合、一時ファイルを作成
-            from src.core.utils.io_helpers import create_temp_file, cleanup_temp_file
-            from src.core.schemas.analyzer_types import TempFileConfig
             from pydantic import ValidationError
+
+            from src.core.schemas.analyzer_types import TempFileConfig
+            from src.core.utils.io_helpers import cleanup_temp_file, create_temp_file
 
             try:
                 temp_config = TempFileConfig(code=input_path, suffix=".py", mode="w")
@@ -223,7 +225,7 @@ class TypeInferenceAnalyzer(Analyzer):
         Returns:
             推論された型情報の辞書
         """
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             code = f.read()
 
         module_name = Path(file_path).stem
@@ -239,7 +241,7 @@ class TypeInferenceAnalyzer(Analyzer):
         Returns:
             抽出された型アノテーションの辞書
         """
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             tree = ast.parse(f.read())
 
         annotations = {}

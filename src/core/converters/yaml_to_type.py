@@ -1,15 +1,16 @@
 from typing import Any
+
 from ruamel.yaml import YAML
 
 from src.core.schemas.yaml_type_spec import (
-    TypeSpec,
-    RefPlaceholder,
-    ListTypeSpec,
     DictTypeSpec,
-    UnionTypeSpec,
-    TypeRoot,
+    ListTypeSpec,
+    RefPlaceholder,
     TypeContext,
+    TypeRoot,
+    TypeSpec,
     TypeSpecOrRef,
+    UnionTypeSpec,
     _create_spec_from_data,
 )
 

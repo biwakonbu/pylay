@@ -1,5 +1,7 @@
 import inspect
-from typing import Any, get_origin, get_args, Union as TypingUnion, ForwardRef, Generic
+from typing import Any, ForwardRef, Generic, get_args, get_origin
+from typing import Union as TypingUnion
+
 from pydantic import BaseModel
 
 
@@ -18,19 +20,20 @@ def _recursive_dump(obj: Any) -> Any:
         return obj
 
 
-from ruamel.yaml import YAML
 from pathlib import Path
 from typing import Any
 
-from src.core.schemas.yaml_type_spec import (
-    TypeSpec,
-    ListTypeSpec,
-    DictTypeSpec,
-    UnionTypeSpec,
-    GenericTypeSpec,
-    TypeSpecOrRef,
-)
+from ruamel.yaml import YAML
+
 from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.yaml_type_spec import (
+    DictTypeSpec,
+    GenericTypeSpec,
+    ListTypeSpec,
+    TypeSpec,
+    TypeSpecOrRef,
+    UnionTypeSpec,
+)
 
 MAX_DEPTH = 10  # Generic再帰の深さ制限
 
@@ -372,7 +375,7 @@ def extract_types_from_module(module_path: str | Path) -> str | None:
 
     try:
         # AST解析で型定義を抽出
-        with open(module_path, "r", encoding="utf-8") as f:
+        with open(module_path, encoding="utf-8") as f:
             source = f.read()
 
         tree = ast.parse(source)

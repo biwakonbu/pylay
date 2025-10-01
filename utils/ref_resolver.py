@@ -6,12 +6,13 @@ yaml_to_type.py から抽出・モジュール化されたものです。
 """
 
 from typing import Any
+
 from src.core.schemas.yaml_type_spec import (
-    TypeSpec,
-    ListTypeSpec,
     DictTypeSpec,
-    UnionTypeSpec,
+    ListTypeSpec,
     TypeContext,
+    TypeSpec,
+    UnionTypeSpec,
 )
 
 

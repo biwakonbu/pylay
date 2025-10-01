@@ -4,14 +4,14 @@ Python ASTを解析し、型依存グラフを構築するためのコンポー�
 """
 
 import ast
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 from src.core.schemas.graph_types import (
-    GraphNode,
     GraphEdge,
-    TypeDependencyGraph,
+    GraphNode,
     RelationType,
+    TypeDependencyGraph,
 )
 
 
@@ -52,7 +52,7 @@ class ASTDependencyExtractor:
             抽出された依存グラフ
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 source_code = f.read()
         except FileNotFoundError:
             raise ValueError(f"ファイルが見つかりません: {file_path}")
@@ -120,7 +120,7 @@ class ASTDependencyExtractor:
                                         weight=0.5,
                                     )
 
-            except Exception as e:
+            except Exception:
                 # mypy推論失敗時は無視してASTのみ使用
                 pass
 

@@ -1,12 +1,13 @@
+from pathlib import Path
+
 from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.doc_generators.yaml_doc_generator import generate_yaml_docs
 from src.core.schemas.pylay_config import PylayConfig
-from pathlib import Path
 
 
 def generate_yaml_docs_from_file(yaml_file: str, output_dir: str | None = None) -> None:
     """YAMLファイルから型仕様を読み込み、ドキュメント生成"""
-    with open(yaml_file, "r", encoding="utf-8") as f:
+    with open(yaml_file, encoding="utf-8") as f:
         yaml_str = f.read()
 
     spec = yaml_to_spec(yaml_str)
@@ -42,8 +43,8 @@ def generate_yaml_docs_from_file_with_config(
 
 if __name__ == "__main__":
     # サンプルYAMLファイルからドキュメント生成
-    import tempfile
     import os
+    import tempfile
 
     sample_yaml = """
 name: SampleUser
