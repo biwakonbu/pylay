@@ -3,6 +3,8 @@ name: review-task-workflow
 description: Execute PR review tasks systematically using reviewtask
 ---
 
+# Review Task Workflow
+
 You are tasked with executing PR review tasks systematically using the reviewtask tool.
 
 ## Available Commands:
@@ -81,9 +83,11 @@ After completing the initial setup, follow this exact workflow:
       - **Recommended**: `reviewtask complete <task-id>` - Complete with automatic verification
       - **Alternative**: `reviewtask complete <task-id> --skip-verification` - Skip verification if needed
       - **Manual**: `reviewtask update <task-id> done` - Direct status update (no verification)
-   - Commit changes using this message template (adjust language based on `user_language` setting in `.pr-review/config.json`):
-     ```
-     fix: [Clear, concise description of what was fixed or implemented]
+
+6. **Commit Changes**: After successful task completion, commit changes using this message template (adjust language based on `user_language` setting in `.pr-review/config.json`):
+
+   ```text
+   fix: [Clear, concise description of what was fixed or implemented]
 
      **Feedback:** [Brief summary of the issue identified in the review]
      The original review comment pointed out [specific problem/concern]. This issue
@@ -107,9 +111,7 @@ After completing the initial setup, follow this exact workflow:
 
      Comment ID: [source_comment_id]
      Review Comment: https://github.com/[owner]/[repo]/pull/[pr-number]#discussion_r[comment-id]
-     ```
-
-6. **Commit Changes**: After successful task completion, commit with proper message format
+   ```
 
 7. **Continue Workflow**: After committing:
    - Check status again with `reviewtask status`
