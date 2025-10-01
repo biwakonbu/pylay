@@ -170,6 +170,15 @@ type AdditionalPropertiesFlag = bool
 type GlobPattern = str
 """Globパターン（例: **/*.py, **/tests/**）"""
 
+type LayerName = str
+"""レイヤー名（primitives, domain, api, activity等）"""
+
+type MethodName = str
+"""メソッド名（get_primitive, get_domain等）"""
+
+type MypyFlag = str
+"""mypyコマンドラインフラグ（--strict, --no-implicit-optional等）"""
+
 
 # =============================================================================
 # Level 2: Annotated + AfterValidator（制約付き、NewType代替）
