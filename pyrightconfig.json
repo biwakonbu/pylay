@@ -20,6 +20,8 @@
     "typeCheckingMode": "standard",
     "useLibraryCodeForTypes": true,
     "stubPath": "typings",
+    "venvPath": ".",
+    "venv": ".venv",
     "reportMissingImports": "error",
     "reportMissingTypeStubs": "warning",
     "reportImportCycles": "warning",
