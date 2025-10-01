@@ -310,7 +310,7 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
             task = progress.add_task("🔍 型推論と依存関係抽出中...", total=None)
 
             # 型推論と依存関係抽出を実行
-            graph = extract_dependencies_from_file(Path(input_file))  # type: ignore[assignment]  # nx.DiGraphとTypeDependencyGraphの互換性
+            graph = extract_dependencies_from_file(Path(input_file))
 
             progress.update(task, description="📊 結果を表示中...")
 

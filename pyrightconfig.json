@@ -10,6 +10,12 @@
         "**/build",
         "**/*.pyc"
     ],
+    "defineConstant": {
+        "PYDANTIC_V2": true
+    },
+    "plugins": [
+        "pydantic"
+    ],
     "pythonVersion": "3.13",
     "typeCheckingMode": "standard",
     "useLibraryCodeForTypes": true,
@@ -45,6 +51,7 @@
     "reportUnnecessaryIsInstance": "none",
     "reportUnnecessaryCast": "warning",
     "reportUnnecessaryComparison": "warning",
+    "reportCallIssue": true,
     "reportUnknownVariableType": "none",
     "reportUnknownMemberType": "none",
     "reportUnknownArgumentType": "none",

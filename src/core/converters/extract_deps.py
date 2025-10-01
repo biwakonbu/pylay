@@ -11,6 +11,8 @@ from pathlib import Path
 import networkx as nx
 from typing import Any
 
+from src.core.schemas.graph_types import TypeDependencyGraph
+
 
 class DependencyExtractor(ast.NodeVisitor):
     """
@@ -173,7 +175,7 @@ class DependencyExtractor(ast.NodeVisitor):
         return self.graph
 
 
-def extract_dependencies_from_code(code: str) -> nx.DiGraph:
+def extract_dependencies_from_code(code: str) -> TypeDependencyGraph:
     """
     コードから依存関係を抽出します。
 
@@ -181,15 +183,16 @@ def extract_dependencies_from_code(code: str) -> nx.DiGraph:
         code: 解析対象のPythonコード
 
     Returns:
-        NetworkXの有向グラフ（依存関係）
+        TypeDependencyGraph（依存関係グラフ）
     """
     tree = ast.parse(code)
     extractor = DependencyExtractor()
     extractor.visit(tree)
-    return extractor.get_dependencies()
+    nx_graph = extractor.get_dependencies()
+    return TypeDependencyGraph.from_networkx(nx_graph)
 
 
-def extract_dependencies_from_file(file_path: Path | str) -> nx.DiGraph:
+def extract_dependencies_from_file(file_path: Path | str) -> TypeDependencyGraph:
     """
     ファイルから依存関係を抽出します。
 
@@ -197,52 +200,68 @@ def extract_dependencies_from_file(file_path: Path | str) -> nx.DiGraph:
         file_path: Pythonファイルのパス (Path または str)
 
     Returns:
-        NetworkXの有向グラフ（依存関係）
+        TypeDependencyGraph（依存関係グラフ）
     """
     with open(str(file_path), "r", encoding="utf-8") as f:
         code = f.read()
     return extract_dependencies_from_code(code)
 
 
-def convert_graph_to_yaml_spec(graph: nx.DiGraph) -> dict[str, Any]:
+def convert_graph_to_yaml_spec(
+    graph: TypeDependencyGraph | nx.DiGraph,
+) -> dict[str, Any]:
     """
     依存グラフをYAML型仕様に変換します。
 
     Args:
-        graph: 依存関係のNetworkXグラフ
+        graph: 依存関係のグラフ（TypeDependencyGraphまたはNetworkX DiGraph）
 
     Returns:
         YAML型仕様の辞書
     """
+    # TypeDependencyGraphをNetworkX DiGraphに変換
+    if isinstance(graph, TypeDependencyGraph):
+        nx_graph = graph.to_networkx()
+    else:
+        nx_graph = graph
+
     dependencies = {}
 
-    for node in graph.nodes():
-        node_type = graph.nodes[node].get("type", "unknown")
-        predecessors = list(graph.predecessors(node))
-        successors = list(graph.successors(node))
+    for node in nx_graph.nodes():
+        node_type = nx_graph.nodes[node].get("type", "unknown")
+        predecessors = list(nx_graph.predecessors(node))
+        successors = list(nx_graph.successors(node))
 
         dependencies[node] = {
             "type": node_type,
             "depends_on": predecessors,
             "used_by": successors,
             "relations": [
-                graph.edges[edge]["relation"]
-                for edge in graph.in_edges(node)
-                if "relation" in graph.edges[edge]
+                nx_graph.edges[edge]["relation"]
+                for edge in nx_graph.in_edges(node)
+                if "relation" in nx_graph.edges[edge]
             ],
         }
 
     return {"dependencies": dependencies}
 
 
-def visualize_dependencies(graph: nx.DiGraph, output_path: str = "deps.png") -> None:
+def visualize_dependencies(
+    graph: TypeDependencyGraph | nx.DiGraph, output_path: str = "deps.png"
+) -> None:
     """
     依存関係をGraphvizで視覚化します。
 
     Args:
-        graph: 依存関係のNetworkXグラフ
+        graph: 依存関係のグラフ（TypeDependencyGraphまたはNetworkX DiGraph）
         output_path: 出力画像のパス
     """
+    # TypeDependencyGraphをNetworkX DiGraphに変換
+    if isinstance(graph, TypeDependencyGraph):
+        nx_graph = graph.to_networkx()
+    else:
+        nx_graph = graph
+
     try:
         # 動的importを使ってgraphviz_layoutをインポート
         graphviz_layout = importlib.import_module(
@@ -250,12 +269,12 @@ def visualize_dependencies(graph: nx.DiGraph, output_path: str = "deps.png") -> 
         ).graphviz_layout
 
         # NetworkXグラフをpydotグラフに変換
-        pydot_graph = graphviz_layout(graph)
+        pydot_graph = graphviz_layout(nx_graph)
 
         # ノードの色を設定（型によって異なる色）
         for node in pydot_graph.get_nodes():
             node_name = node.get_name().strip('"')
-            node_data = graph.nodes.get(node_name, {})
+            node_data = nx_graph.nodes.get(node_name, {})
             node_type = node_data.get("type", "unknown")
 
             if node_type == "function":
@@ -269,7 +288,7 @@ def visualize_dependencies(graph: nx.DiGraph, output_path: str = "deps.png") -> 
 
         # エッジの色を設定（関係によって異なる色）
         for edge in pydot_graph.get_edges():
-            edge_data = graph.edges.get(
+            edge_data = nx_graph.edges.get(
                 (edge.get_source().strip('"'), edge.get_destination().strip('"'))
             )
             if edge_data:

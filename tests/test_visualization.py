@@ -82,14 +82,17 @@ x: int = 42
 """
         graph = extract_dependencies_from_code(code)
 
+        # TypeDependencyGraph から NetworkX DiGraph に変換
+        nx_graph = graph.to_networkx()
+
         # 必要なノードが存在することを確認
-        assert "MyClass" in graph.nodes()
-        assert "method" in graph.nodes()
-        assert "List" in graph.nodes()
-        assert "List[str]" in graph.nodes()
-        assert "int" in graph.nodes()
-        assert "str" in graph.nodes()
+        assert "MyClass" in nx_graph.nodes()
+        assert "method" in nx_graph.nodes()
+        assert "List" in nx_graph.nodes()
+        assert "List[str]" in nx_graph.nodes()
+        assert "int" in nx_graph.nodes()
+        assert "str" in nx_graph.nodes()
 
         # エッジが存在することを確認
-        assert graph.has_edge("List[str]", "method")
-        assert graph.has_edge("method", "int")
+        assert nx_graph.has_edge("List[str]", "method")
+        assert nx_graph.has_edge("method", "int")
