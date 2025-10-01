@@ -89,9 +89,7 @@ def func(a: int) -> str:
         assert len(graph.nodes) > 0
         # 推論された型を確認
         inferred_nodes = [
-            n
-            for n in graph.nodes
-            if n.attributes and n.attributes.has_key("inferred_type")
+            n for n in graph.nodes if n.attributes and "inferred_type" in n.attributes
         ]
         assert len(inferred_nodes) > 0
 

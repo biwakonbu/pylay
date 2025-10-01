@@ -4,7 +4,7 @@ Python ASTを解析し、型依存グラフを構築するためのコンポー�
 """
 
 import ast
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from src.core.schemas.graph_types import (
@@ -28,6 +28,7 @@ class ASTDependencyExtractor:
         self.edges: dict[str, GraphEdge] = {}
         self.visited_nodes: set[str] = set()
         self._node_cache: dict[str, GraphNode] = {}
+        self.extraction_method: str = "AST_analysis"  # デフォルト値
         self._processing_stack: set[str] = set()  # 循環参照防止
 
     def _reset_state(self) -> None:
@@ -127,24 +128,25 @@ class ASTDependencyExtractor:
         # グラフを構築
         from src.core.schemas.types import GraphMetadata
 
+        extraction_method = "AST_analysis_with_mypy" if include_mypy else "AST_analysis"
         graph = TypeDependencyGraph(
             nodes=list(self.nodes.values()),
             edges=list(self.edges.values()),
             metadata=GraphMetadata(
+                created_at=datetime.now(UTC).isoformat(),
                 statistics={
                     "node_count": len(self.nodes),
                     "edge_count": len(self.edges),
                 },
                 custom_fields={
                     "source_file": file_path,
-                    "extraction_method": "AST_analysis_with_mypy"
-                    if include_mypy
-                    else "AST_analysis",
-                    "extraction_timestamp": datetime.now().isoformat(),
+                    "extraction_method": extraction_method,
                     "mypy_enabled": include_mypy,
                 },
             ),
         )
+        # extraction_methodをインスタンス変数に保存（_add_edgeで使用）
+        self.extraction_method = extraction_method
 
         return graph
 
@@ -474,7 +476,7 @@ class ASTDependencyExtractor:
                 relation_type=relation,
                 weight=weight,
                 metadata=GraphMetadata(
-                    custom_fields={"extraction_method": "AST_analysis"}
+                    custom_fields={"extraction_method": self.extraction_method}
                 ),
             )
             self.edges[edge_key] = edge

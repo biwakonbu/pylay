@@ -8,6 +8,7 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 from pathlib import Path
 
 try:
@@ -108,6 +109,8 @@ class DependencyExtractionAnalyzer(Analyzer):
                     if self.config.infer_level != "loose"
                     else "AST_analysis",
                     "mypy_enabled": self.config.infer_level != "loose",
+                    "created_at": datetime.now(UTC).isoformat(),
+                    "infer_level": self.config.infer_level,
                 },
             )
             graph = TypeDependencyGraph(

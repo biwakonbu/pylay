@@ -109,6 +109,39 @@ class GraphEdge(BaseModel):
             return NodeAttributes(custom_data=v)
         return v
 
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def convert_metadata(cls, v: Any) -> GraphMetadata | None:
+        """dictをGraphMetadataに変換"""
+        if v is None:
+            return None
+        if isinstance(v, dict):
+            from src.core.schemas.types import GraphMetadata
+
+            known_fields = {
+                "version",
+                "created_at",
+                "cycles",
+                "statistics",
+                "custom_fields",
+            }
+            metadata_kwargs: dict[str, Any] = {}
+            custom_fields: dict[str, Any] = {}
+            for key, value in v.items():
+                if key in known_fields:
+                    metadata_kwargs[key] = value
+                else:
+                    custom_fields[key] = value
+            if custom_fields:
+                existing_custom = metadata_kwargs.get("custom_fields", {})
+                if isinstance(existing_custom, dict):
+                    existing_custom.update(custom_fields)
+                    metadata_kwargs["custom_fields"] = existing_custom
+                else:
+                    metadata_kwargs["custom_fields"] = custom_fields
+            return GraphMetadata(**metadata_kwargs)
+        return v
+
     def is_strong_dependency(self) -> bool:
         """強い依存関係かどうかを判定（weight >= 0.8）"""
         return self.weight >= 0.8

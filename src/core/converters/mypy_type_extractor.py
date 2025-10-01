@@ -143,8 +143,8 @@ class MypyTypeExtractor:
                 statistics={
                     **ast_graph.metadata.statistics,
                     "mypy_inference_count": len(additional_nodes),
-                    "total_nodes": len(merged_nodes),
-                    "total_edges": len(merged_edges),
+                    "node_count": len(merged_nodes),
+                    "edge_count": len(merged_edges),
                 },
                 custom_fields={
                     **ast_graph.metadata.custom_fields,
@@ -155,8 +155,8 @@ class MypyTypeExtractor:
             merged_metadata = GraphMetadata(
                 statistics={
                     "mypy_inference_count": len(additional_nodes),
-                    "total_nodes": len(merged_nodes),
-                    "total_edges": len(merged_edges),
+                    "node_count": len(merged_nodes),
+                    "edge_count": len(merged_edges),
                 },
                 custom_fields={
                     "mypy_inferred": True,
