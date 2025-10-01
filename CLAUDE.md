@@ -8,6 +8,14 @@
 - すべての実装/編集/生成タスクは、まず [AGENTS.md](AGENTS.md) のプロジェクト概要、アーキテクチャ、技術スタックを確認してください
 - 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](AGENTS.md) に記載された方法を使用してください
 - コーディング規約、命名規則、テスト指針は [AGENTS.md](AGENTS.md) に厳密に従ってください
+- **型定義ルール**: [docs/typing-rule.md](docs/typing-rule.md) に記載された型定義の4つの核心原則を必ず遵守してください
+  1. primitive型を直接使わず、ドメイン型を定義（`type UserId = str` や `Annotated` を活用）
+  2. Pydanticによる厳密な型定義（3つのレベルを適切に使い分ける）
+     - Level 1: `type` エイリアス（制約なし）
+     - Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
+     - Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
+  3. typing モジュールは最小限に（Python 3.13標準を優先）
+  4. 型と実装を分離（types.py, protocols.py, models.py, services.py）
 - セキュリティ考慮事項、環境変数設定は [AGENTS.md](AGENTS.md) に記載されたポリシーを遵守してください
 - プロジェクトステータス（実装済み/開発予定）を確認し、未実装の機能に対しては「未実装/計画中」と明記してください
 - シェルコマンド実行の制限事項（単一コマンドの実行、環境変数の設定制限）を厳守してください
@@ -129,9 +137,9 @@ pylay/
 ## 3. 技術スタック
 
 ### 3.1 言語/フレームワーク
-- **Python 3.13+** (必須)
-- **Pydantic v2**: バリデーションとデータモデル
-- **typing/collections.abc**: 型抽出と操作（Python 3.9+のビルトイン型を活用）
+- **Python 3.13+** (必須、開発基準)
+- **Pydantic v2**: バリデーションとドメイン型定義
+- **Python 3.13標準型システム**: 組み込み型ジェネリクス、Union型簡潔表記、型パラメータ構文
 
 ### 3.2 主要ライブラリ
 - **PyYAML/ruamel.yaml**: YAML形式データの処理
@@ -270,38 +278,63 @@ _private_method()
 - 引用符スタイル: ダブルクォート
 - 末尾カンマ: 許可（フォーマッタ管理）
 
-### 5.4 型アノテーション
+### 5.4 型定義の詳細
+**型定義の詳細なルールは [docs/typing-rule.md](docs/typing-rule.md) を必ず参照してください。**
+
+本プロジェクトはPython 3.13を開発基準とし、以下の原則を厳守します：
+
+#### 4つの核心原則
+1. **primitive型を直接使わない** → ドメイン型を定義（`type`、`Annotated`、`BaseModel`）
+2. **Pydanticによる厳密な型定義** → 3つのレベルを適切に使い分ける
+   - Level 1: `type` エイリアス（制約なし）
+   - Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
+   - Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
+3. **typing モジュールは最小限** → Python 3.13標準構文を優先
+4. **型と実装を分離** → types.py, protocols.py, models.py, services.py
+
+#### Python 3.13型構文（推奨）
 ```python
-from typing import Any
-from collections.abc import Mapping, Sequence
-from pydantic import BaseModel
+from typing import Annotated
+from pydantic import AfterValidator, Field, BaseModel
 
-class Example(BaseModel):
-    """サンプルクラス"""
+# Level 1: 単純な型エイリアス
+type UserId = str
 
-    name: str  # 必須
-    age: int | None = None  # オプション（Python 3.13+）
-    items: Sequence[Mapping[str, Any]]  # ジェネリック型（Python 3.9+）
+# Level 2: Annotated + AfterValidator（★NewType代替）
+def validate_email(v: str) -> str:
+    if "@" not in v:
+        raise ValueError("無効なメールアドレス")
+    return v
+
+type Email = Annotated[str, AfterValidator(validate_email)]
+
+# Level 3: BaseModel（複雑なドメイン型）
+class User(BaseModel):
+    user_id: UserId
+    email: Email
+
+    def is_valid(self) -> bool:
+        return len(self.user_id) > 0
+
+# ✅ Python 3.13標準構文
+def process(data: str | int | None) -> list[str]:
+    pass
+
+# ✅ 型パラメータ構文（PEP 695）
+class Container[T](BaseModel):
+    items: list[T]
+
+# ✅ type文
+type Point = tuple[float, float]
+
+# ❌ 非推奨
+from typing import Union, Optional, List, NewType
+def process(data: Union[str, int, None]) -> List[str]:
+    pass
+Email = NewType('Email', str)  # Annotated を使用
 ```
 
-### 5.5 Python 3.13+ の型付け機能
-Python 3.13 以降では、標準でより簡潔な型付けが可能です：
-
-```python
-# Union 型の簡潔表記（Python 3.13+）
-def process_data(data: str | int | None) -> str | None:
-    """データを処理する関数"""
-    return str(data) if data is not None else None
-
-# 従来の書き方（Python 3.13 未満）
-from typing import Union
-def process_data_old(data: Union[str, int, None]) -> Union[str, None]:
-    return str(data) if data is not None else None
-```
-
-**注意**: `X | Y` 形式のUnion型表記は、Python 3.10以降で `from __future__ import annotations` を使用することでも利用可能です（例: `def func(x: str | int) -> bool`）。ただし、このプロジェクトがPython 3.13以上を要求するのは、この型構文だけでなく、他の3.13固有機能（例: 拡張された標準ライブラリ、パフォーマンス改善等）を活用するためです。Python 3.10-3.12環境で動作させる場合は、`from __future__ import annotations` の追加を検討してください。
-
-**推奨**: Python 3.13+ の新機能を積極的に活用し、`typing` モジュールの古い形式は避ける。
+**重要**: 型定義の厳密性 = ドキュメント生成の精度
 
 ## 6. テスト指針
 
@@ -495,11 +528,16 @@ export MYPY_INFER_LEVEL=2
 
 ## 13. 参考資料
 
-- [Pydantic ドキュメント](https://docs.pydantic.dev/)
-- [Python 型付け](https://docs.python.org/3/library/typing.html)
-- [mypy ドキュメント](https://mypy.readthedocs.io/en/stable/)
+### プロジェクトドキュメント
+- **[docs/typing-rule.md](docs/typing-rule.md)**: 型定義ルール（必読）
 - [PRD.md](PRD.md): 詳細な製品要件
 - [README.md](README.md): ユーザー向け概要
+
+### 外部リソース
+- [Pydantic ドキュメント](https://docs.pydantic.dev/)
+- [Python 3.13 型ヒント](https://docs.python.org/3.13/library/typing.html)
+- [mypy ドキュメント](https://mypy.readthedocs.io/en/stable/)
+- [PEP 695: Type Parameter Syntax](https://peps.python.org/pep-0695/)
 
 ---
 

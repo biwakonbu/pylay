@@ -1,18 +1,48 @@
 ---
-description: Pythonファイルの型解析、型修正、型アノテーションの追加/修正時に自動適用。Pydantic型システムのベストプラクティスを提供。samidare-genプロジェクト固有のLP生成・Temporalワークフロー型システムを考慮。
+description: Pythonファイルの型解析、型修正、型アノテーションの追加/修正時に自動適用。pylayプロジェクトの型定義ルール（docs/typing-rule.md）に準拠し、Python 3.13標準型システムとPydanticを活用した型安全性を提供。
 alwaysApply: false
 ---
 # Python型アノテーションの近代的ルールと型安全性ガイドライン
 
-## 基本原則
+## ⚠️ 重要: プロジェクト固有の型定義ルール
+
+**このファイルは一般的なPython型アノテーションガイドラインです。**
+**pylayプロジェクト固有の型定義ルールは [docs/typing-rule.md](../../docs/typing-rule.md) を必ず参照してください。**
+
+### pylayプロジェクトの4つの核心原則
+
+1. **個別型をちゃんと定義し、primitive型を直接使わない**
+   - ❌ `str`, `int` → ✅ ドメイン型を定義（`type`、`Annotated`、`BaseModel`）
+
+2. **Pydanticによる厳密な型定義でドメイン型を作成する**
+   - **3つのレベルを適切に使い分ける**：
+     - Level 1: `type` エイリアス（制約なし）
+     - Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
+     - Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
+
+3. **typing モジュールは必要最小限に留める（Python 3.13標準を優先）**
+   - ❌ `Union[X, Y]` → ✅ `X | Y`
+   - ❌ `List[X]` → ✅ `list[X]`
+   - ❌ `TypeVar('T')` + `Generic[T]` → ✅ `class Container[T]`
+   - ❌ `TypeAlias` → ✅ `type Point = tuple[float, float]`
+   - ❌ `NewType` → ✅ `Annotated` + `AfterValidator`
+
+4. **型と実装を分離し、循環参照を防ぐ**
+   - `types.py`: 型定義のみ
+   - `protocols.py`: Protocolインターフェース定義
+   - `models.py`: ドメインモデル（型+軽いロジック）
+   - `services.py`: ビジネスロジック実装
+
+**詳細**: [docs/typing-rule.md](../../docs/typing-rule.md)
+
+---
+
+## 基本原則（一般ガイドライン）
 
 - **型安全性を最優先**: `Any`型や構造化されていない辞書の使用を避ける
-- **近代的な型アノテーション**: Python 3.13+の`X | Y`構文を使用（`Union[X, Y]`禁止）
-- **ドメイン境界の明確化**: プリミティブ型をそのまま使用せず、NewTypeでドメイン境界を明確化
-- **samidare-genプロジェクト固有指針**:
-  - **TypedDict最小化**: パフォーマンスボトルネックや過度な複雑化が発生する場合のみ使用。原則としてPydantic BaseModelを優先
-  - **積極的な独自型定義**: NewTypeやPydanticでLP生成・ワークフロー固有の値の特性を表現する型を積極的に作成
-  - **詳細なdocstring**: 型からドキュメントを自動生成するため、型定義には詳細な説明をdocstringで記述
+- **近代的な型アノテーション**: Python 3.13標準の`X | Y`構文を使用（`Union[X, Y]`禁止）
+- **ドメイン境界の明確化**: プリミティブ型をそのまま使用せず、Pydantic BaseModelでドメイン型を定義
+- **詳細なdocstring**: 型からドキュメントを自動生成するため、型定義には詳細な説明をdocstringで記述
 
 ## Pydantic型システムの活用
 
@@ -201,128 +231,165 @@ class ProductDataclass:
     price: float
 ```
 
-## ドメイン型システム
+## ドメイン型システム（pylayプロジェクト）
 
-### 1. samidare-gen基本ドメイン型（NewType + Pydanticベース）
+**重要**: pylayプロジェクトでは**3つのレベル**を適切に使い分けます：
+- Level 1: `type` エイリアス（制約なし）
+- Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
+- Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
 
-samidare-genプロジェクトでは、LP生成・Temporalワークフロー固有の型を積極的に定義し、値の特性を明確に表現します：
+詳細は [docs/typing-rule.md](../../docs/typing-rule.md) の「型定義の3つのレベル」を参照してください。
+
+### 1. Level 2: Annotated + AfterValidator（推奨：NewType代替）
+
+制約付きの単一値型には `Annotated` + `AfterValidator` を使用します：
 
 ```python
-from typing import NewType, Literal
-from pydantic import BaseModel, Field
+from typing import Annotated
+from pydantic import AfterValidator, Field, BaseModel
 
-# ===============================
-# 識別子型（NewTypeベース）
-# ===============================
+# バリデータ関数の定義
+def validate_module_name(v: str) -> str:
+    """モジュール名のバリデーション"""
+    if not v.islower():
+        raise ValueError("モジュール名は小文字のみで構成してください")
+    if not v.replace("_", "").isalnum():
+        raise ValueError("モジュール名は英数字とアンダースコアのみです")
+    return v
 
-UserId = NewType("UserId", str)
-"""ユーザーID: ユーザーを一意に識別する文字列"""
-ConversionId = NewType("ConversionId", str)
-"""コンバージョンID: LP生成ワークフローの実行を一意に識別する文字列"""
-TemplateId = NewType("TemplateId", str)
-"""テンプレートID: 使用するLPテンプレートを識別する文字列"""
+def validate_type_name(v: str) -> str:
+    """型名のバリデーション"""
+    if not v[0].isupper():
+        raise ValueError("型名は大文字で始まる必要があります")
+    return v
 
-# ===============================
-# コンテンツ型（NewTypeベース）
-# ===============================
+# Annotated型の定義（再利用可能）
+type ModuleName = Annotated[
+    str,
+    AfterValidator(validate_module_name),
+    Field(min_length=1, pattern=r"^[a-z][a-z0-9_]*$", description="Pythonモジュール名")
+]
 
-HTMLContent = NewType("HTMLContent", str)
-"""HTMLコンテンツ: 生成されたHTML文字列"""
-CSSContent = NewType("CSSContent", str)
-"""CSSコンテンツ: 生成されたCSS文字列"""
+type TypeName = Annotated[
+    str,
+    AfterValidator(validate_type_name),
+    Field(min_length=1, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", description="型名")
+]
 
-# ===============================
-# LP生成固有型（NewTypeベース）
-# ===============================
+type YamlPath = Annotated[
+    str,
+    Field(min_length=1, pattern=r"\.ya?ml$", description="YAML型仕様ファイルパス")
+]
 
-LPTitle = NewType("LPTitle", str)
-"""LPタイトル: ランディングページのメインタイトル"""
-SectionType = NewType("SectionType", str)
-"""セクションタイプ: LPのセクション種類"""
-TemplateVariable = NewType("TemplateVariable", str)
-"""テンプレート変数: Jinja2形式の変数"""
-
-# ===============================
-# 列挙・設定型
-# ===============================
-
-LanguageCode = Literal["ja", "en", "zh", "ko"]
-"""言語コード: ISO言語コードの厳密な定義"""
+# Pydantic BaseModelで使用
+class TypeSpec(BaseModel):
+    """型仕様"""
+    name: TypeName  # 自動的にバリデーションされる
+    module: ModuleName
+    yaml_path: YamlPath | None = None
 ```
 
-### 2. Pydanticベースのドメイン型
+### 2. Level 3: BaseModel（複雑なドメイン型のみ）
 
-NewTypeの代わりにPydanticモデルを使用したより強力な型システム：
+複雑なビジネスロジックや複数フィールドを持つドメイン型のみ `BaseModel` を使用します：
 
 ```python
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 
-# 識別子型
-class UserId(BaseModel):
-    """ユーザーID"""
-    value: str = Field(..., pattern=r"^[a-zA-Z0-9_-]{1,50}$")
+class ModuleAnalysisResult(BaseModel):
+    """モジュール解析結果（複雑なドメイン型）"""
+    model_config = ConfigDict(frozen=True)
 
-class ConversionId(BaseModel):
-    """変換ID"""
-    value: str = Field(..., pattern=r"^[a-zA-Z0-9_-]{1,50}$")
+    module_name: ModuleName  # Level 2の型を活用
+    total_lines: int = Field(gt=0)
+    code_lines: int = Field(ge=0)
+    comment_lines: int = Field(ge=0)
 
-# コンテンツ型
-class HTMLContent(BaseModel):
-    """HTMLコンテンツ"""
-    content: str = Field(..., min_length=1)
+    @model_validator(mode="after")
+    def validate_line_counts(self) -> "ModuleAnalysisResult":
+        """不変条件の検証"""
+        if self.total_lines < self.code_lines + self.comment_lines:
+            raise ValueError("行数の整合性エラー")
+        return self
 
-    def __str__(self) -> str:
-        return self.content
+    def is_well_documented(self) -> bool:
+        """適切にドキュメント化されているか判定（ビジネスロジック）"""
+        if self.code_lines == 0:
+            return True
+        return self.comment_lines / self.code_lines >= 0.2
 ```
 
-### 3. 応用ドメイン型
+### 3. Entity（エンティティ）パターン
 
-基本型を組み合わせた複雑なドメイン型：
+識別子を持つドメインオブジェクト：
 
 ```python
 from pydantic import BaseModel, Field
+from typing import Literal, Any
+
+# pylayプロジェクトの既存の型定義例
+class GraphNode(BaseModel):
+    """グラフのノードを表すエンティティ
+
+    Attributes:
+        id: ノードの一意の識別子
+        name: ノードの名前
+        node_type: ノードの種類
+        qualified_name: 完全修飾名
+    """
+    id: str | None = None
+    name: str = Field(..., min_length=1)
+    node_type: Literal["class", "function", "module"] | str
+    qualified_name: str | None = None
+
+    def __init__(self, **data: Any) -> None:
+        super().__init__(**data)
+        if self.id is None:
+            self.id = self.name
+```
+
+### 3. Configuration（設定）パターン
+
+アプリケーション設定を型安全に管理：
+
+```python
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal
 
-class LPGenerationRequest(BaseModel):
-    """LP生成リクエスト"""
-    user_id: UserId
-    template_id: TemplateId
-    target_audience: Literal["general", "business", "creative"]
+class InferenceConfig(BaseModel):
+    """型推論設定の強い型定義
 
-class GenerationResult(BaseModel):
-    """生成結果"""
-    conversion_id: ConversionId
-    status: Literal["pending", "processing", "completed", "failed"]
-    progress: int = Field(..., ge=0, le=100)
+    Attributes:
+        infer_level: 推論レベル
+        max_depth: 最大探索深度
+        enable_mypy: mypy統合を有効化
+        timeout: タイムアウト（秒）
+    """
+    model_config = ConfigDict(frozen=True)  # 設定は不変
+
+    infer_level: Literal["loose", "normal", "strict"] = "normal"
+    max_depth: int = Field(default=10, ge=1, le=100)
+    enable_mypy: bool = True
+    timeout: int = Field(default=60, ge=1, le=600)
 ```
 
-### 4. ワークフロー関連型
+### 4. Enum（列挙型）パターン
 
-Temporalワークフローで使用する型：
+固定された選択肢を型安全に定義：
 
 ```python
-from pydantic import BaseModel, Field
-from typing import Literal
 from enum import Enum
 
-class WorkflowStatus(str, Enum):
-    """ワークフローステータス"""
-    PENDING = "pending"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
+class RelationType(str, Enum):
+    """関係の種類を定義する列挙型"""
 
-class LPGenerationWorkflowInput(BaseModel):
-    """LP生成ワークフローの入力"""
-    conversion_id: ConversionId
-    user_id: UserId
-    priority: int = Field(default=1, ge=1, le=10)
-
-class WorkflowProgress(BaseModel):
-    """ワークフロー進捗"""
-    workflow_id: str
-    status: WorkflowStatus
-    progress_percentage: int = Field(..., ge=0, le=100)
+    DEPENDS_ON = "depends_on"
+    INHERITS_FROM = "inherits_from"
+    IMPLEMENTS = "implements"
+    REFERENCES = "references"
+    USES = "uses"
+    RETURNS = "returns"
+    CALLS = "calls"
 ```
 
 ### 5. エラーハンドリング型
@@ -436,32 +503,33 @@ type SEOSettings = dict[str, str | int | bool]
 type TemplateConfig = dict[str, JSONValue]
 ```
 
-## Pydantic vs TypedDict の使い分け
+## Pydantic vs TypedDict の使い分け（pylayプロジェクト）
 
-### Pydanticを優先的に使用する場合（samidare-gen推奨）
+### Pydanticを優先的に使用する場合（pylay推奨）
 - **外部API接続**: ランタイム検証、複雑なバリデーションが必要
-- **設定管理**: 環境変数からの自動読み込み
-- **データ変換**: 自動的な型変換・シリアライズ
+- **設定管理**: 環境変数からの自動読み込み（pyproject.toml読み込みなど）
+- **データ変換**: 自動的な型変換・シリアライズ（YAML ↔ Python型変換）
 - **ドメインモデル**: ビジネスロジックを含む複雑なモデル
-- **LP生成ワークフロー**: コンテンツ生成、SEO最適化、画像処理などの複雑なデータ構造
-- **Temporalアクティビティ間通信**: 構造化されたデータ交換が必要な場合
-- **JSONシリアライズ**: APIレスポンスや永続化が必要な場合
+- **型仕様定義**: TypeSpec、GraphNode、InferResultなど
+- **JSONシリアライズ**: ドキュメント生成や永続化が必要な場合
 
 ### TypedDictを限定的に使用する場合
 - **軽量な内部データ構造**: パフォーマンスが極めて重要な単純な辞書ベースの構造
-- **既存の辞書互換API**: 既存システムとの互換性維持が必要な場合
-- **プロトタイピング**: 高速な開発が必要な初期段階での構造定義
+- **外部APIレスポンス**: 軽量な型定義が必要な場合
 
 ```python
-# Pydantic - 外部APIからのデータ検証
-class APIUser(BaseModel):
-    id: int
-    name: str = Field(..., min_length=1)
+# ✅ Pydantic - ドメイン型定義（推奨）
+class TypeSpec(BaseModel):
+    """YAML型仕様のPydanticモデル"""
+    name: str | None = None
+    type: str = Field(..., description="基本型")
+    required: bool = True
 
-# TypedDict - 内部データ交換
-class InternalUserProfile(TypedDict, total=False):
-    user_id: int
-    display_name: str
+# ⚠️ TypedDict - 軽量な構造定義（限定的に使用）
+class CheckSummary(TypedDict):
+    """analyze_issues.pyのサマリー型"""
+    total_checks: int
+    successful_checks: int
 ```
 
 ## コレクション型の使用
