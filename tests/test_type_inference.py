@@ -3,8 +3,9 @@
 """
 
 from pathlib import Path
-from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
+
 from src.core.analyzer.models import InferResult
+from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
 from src.core.schemas.pylay_config import PylayConfig
 
 

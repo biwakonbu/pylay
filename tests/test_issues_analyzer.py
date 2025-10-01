@@ -4,10 +4,11 @@ analyze_issues.pyのテスト
 ProjectAnalyzerの各チェック機能をモックでテスト。
 """
 
-import pytest
 from unittest.mock import patch
 
-from src.cli.analyze_issues import ProjectAnalyzer, CheckResult
+import pytest
+
+from src.cli.analyze_issues import CheckResult, ProjectAnalyzer
 
 
 class TestProjectAnalyzer:

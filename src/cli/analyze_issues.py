@@ -13,13 +13,13 @@ pylay プロジェクトの問題分析スクリプト
 8. 依存関係の脆弱性チェック
 """
 
+import json
+import logging
+import os
 import subprocess
 import sys
-import json
-import os
-import logging
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -248,15 +248,14 @@ class ProjectAnalyzer:
         print("📊 分析結果サマリー")
         print("=" * 60)
 
-        print(
-            f"✅ 成功したチェック: {summary['successful_checks']}/{summary['total_checks']}"
-        )
+        successful = summary["successful_checks"]
+        total = summary["total_checks"]
+        print(f"✅ 成功したチェック: {successful}/{total}")
         print(
             f"❌ 失敗したチェック: {summary['failed_checks']}/{summary['total_checks']}"
         )
-        print(
-            f"⚠️ 問題のあるチェック: {summary['checks_with_issues']}/{summary['total_checks']}"
-        )
+        issues = summary["checks_with_issues"]
+        print(f"⚠️ 問題のあるチェック: {issues}/{total}")
 
         print("\n📋 詳細結果:")
         for result in summary["results"]:  # type: ignore
@@ -269,9 +268,9 @@ class ProjectAnalyzer:
             )
             print(f"  {status} {result['name']}")
             if result["has_issues"]:
-                print(
-                    f"    - 出力行数: {result['output_lines']}, エラー行数: {result['error_lines']}"
-                )
+                out_lines = result["output_lines"]
+                err_lines = result["error_lines"]
+                print(f"    - 出力行数: {out_lines}, エラー行数: {err_lines}")
 
         print("\n💡 推奨事項:")
         if summary["failed_checks"] > 0:  # type: ignore

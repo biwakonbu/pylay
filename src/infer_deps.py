@@ -8,6 +8,7 @@ Usage:
 
 import sys
 from pathlib import Path
+
 import yaml
 
 
@@ -29,8 +30,8 @@ def main() -> None:
     # analyzerを使用して解析
     try:
         from src.core.analyzer.base import create_analyzer
-        from src.core.schemas.pylay_config import PylayConfig
         from src.core.analyzer.graph_processor import GraphProcessor
+        from src.core.schemas.pylay_config import PylayConfig
 
         config = PylayConfig()
         analyzer = create_analyzer(config, mode="full")

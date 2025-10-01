@@ -4,17 +4,18 @@ analyzerモジュールのテスト
 型推論、依存抽出、グラフ処理のユニットテストと統合テスト。
 """
 
-import pytest
 import subprocess
 from unittest.mock import patch
 
-from src.core.analyzer.base import Analyzer, create_analyzer, FullAnalyzer
+import pytest
+
+from src.core.analyzer.base import Analyzer, FullAnalyzer, create_analyzer
 from src.core.analyzer.graph_processor import GraphProcessor
 from src.core.schemas.graph_types import (
-    TypeDependencyGraph,
-    GraphNode,
     GraphEdge,
+    GraphNode,
     RelationType,
+    TypeDependencyGraph,
 )
 from src.core.schemas.pylay_config import PylayConfig
 
@@ -278,7 +279,7 @@ class TestGraphProcessor:
         else:
             # pydotが利用不可の場合はスキップ
             try:
-                import pydot
+                import pydot  # noqa: F401
 
                 processor.visualize_graph(graph, "test.png")
             except (ImportError, FileNotFoundError, OSError):
@@ -338,7 +339,7 @@ def get_user() -> User:
         vis_file = tmp_path / "test.png"
         if processor.nx_available:
             try:
-                import pydot
+                import pydot  # noqa: F401
 
                 processor.visualize_graph(graph, vis_file, format_type="png")
             except (ImportError, FileNotFoundError, OSError):
@@ -414,7 +415,7 @@ class C:
 
         NetworkXが利用できない場合のフォールバック動作をテストします。
         """
-        config = PylayConfig()
+        config = PylayConfig()  # noqa: F841
         from src.core.analyzer.graph_processor import GraphProcessor
 
         processor = GraphProcessor()
@@ -442,7 +443,7 @@ def invalid_syntax(
         analyzer = TypeInferenceAnalyzer(config)
         # mypyが失敗してもエラーなく処理
         with pytest.raises((ValueError, SyntaxError)):
-            graph = analyzer.analyze(test_file)
+            _ = analyzer.analyze(test_file)
 
     def test_large_file_handling(self, tmp_path):
         """大規模ファイルの処理"""
@@ -828,8 +829,9 @@ class TestTempFileCleanup:
 
     def test_temp_file_cleanup_on_success(self, tmp_path, monkeypatch):
         """正常終了時に一時ファイルがクリーンアップされることを確認"""
-        from unittest.mock import patch
         import tempfile
+        from unittest.mock import patch
+
         from src.core.analyzer.base import FullAnalyzer
         from src.core.schemas.pylay_config import PylayConfig
 
@@ -865,8 +867,9 @@ y: str = "test"
 
     def test_temp_file_cleanup_on_error(self, tmp_path, monkeypatch):
         """エラー発生時も一時ファイルがクリーンアップされることを確認"""
-        from unittest.mock import patch
         import tempfile
+        from unittest.mock import patch
+
         from src.core.analyzer.base import FullAnalyzer
         from src.core.schemas.pylay_config import PylayConfig
 

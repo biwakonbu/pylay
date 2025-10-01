@@ -40,7 +40,8 @@ class TestGenerateTestDocs:
 
     def test_generate_test_docs_with_no_docstring(self):
         """docstringなしのテスト関数での動作確認"""
-        # 実際のテストファイルで確認（実際のtests/schemas/にはdocstringなしのテストがある）
+        # 実際のテストファイルで確認
+        # （実際のtests/schemas/にはdocstringなしのテストがある）
         generate_test_docs(str(self.output_file))
 
         content = self.output_file.read_text(encoding="utf-8")
@@ -86,7 +87,8 @@ class TestGenerateTestDocsErrorHandling:
 
     def test_generate_test_docs_with_invalid_module(self):
         """無効なモジュールでの動作確認"""
-        # 実際のスクリプトはエラーハンドリングが堅牢なので、ImportErrorを期待するのは適切ではない
+        # 実際のスクリプトはエラーハンドリングが堅牢なので、
+        # ImportErrorを期待するのは適切ではない
         # 代わりに実際の動作をテスト
         generate_test_docs(str(self.output_file))
 

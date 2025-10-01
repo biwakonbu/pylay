@@ -3,9 +3,10 @@
 TypeDependencyGraph, GraphNode, GraphEdge の定義
 """
 
-from typing import Optional, Any, Literal
-from pydantic import BaseModel, Field
 from enum import Enum
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
 
 
 class RelationType(str, Enum):
@@ -35,13 +36,13 @@ class GraphNode(BaseModel):
         attributes: ノードの追加属性
     """
 
-    id: Optional[str] = None
+    id: str | None = None
     name: str
     node_type: Literal["class", "function", "module"] | str  # 拡張性を考慮
-    qualified_name: Optional[str] = None
-    attributes: Optional[dict[str, str | int | float | bool]] = None
-    source_file: Optional[str] = None  # ソースファイルパス
-    line_number: Optional[int] = None  # ソースコード行番号
+    qualified_name: str | None = None
+    attributes: dict[str, str | int | float | bool] | None = None
+    source_file: str | None = None  # ソースファイルパス
+    line_number: int | None = None  # ソースコード行番号
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
@@ -75,8 +76,8 @@ class GraphEdge(BaseModel):
     target: str
     relation_type: RelationType
     weight: float = Field(default=1.0, ge=0.0, le=1.0)  # 0.0から1.0の範囲
-    attributes: Optional[dict[str, str | int | float | bool]] = None
-    metadata: Optional[dict[str, Any]] = None
+    attributes: dict[str, str | int | float | bool] | None = None
+    metadata: dict[str, Any] | None = None
 
     def is_strong_dependency(self) -> bool:
         """強い依存関係かどうかを判定（weight >= 0.8）"""
@@ -104,8 +105,8 @@ class TypeDependencyGraph(BaseModel):
 
     nodes: list[GraphNode]
     edges: list[GraphEdge]
-    metadata: Optional[dict[str, Any]] = None
-    inferred_nodes: Optional[list[GraphNode]] = None  # 推論されたノード
+    metadata: dict[str, Any] | None = None
+    inferred_nodes: list[GraphNode] | None = None  # 推論されたノード
 
     def add_node(self, node: GraphNode) -> None:
         """ノードを追加"""
@@ -119,7 +120,7 @@ class TypeDependencyGraph(BaseModel):
         ):
             self.edges.append(edge)
 
-    def get_node(self, node_id: str) -> Optional[GraphNode]:
+    def get_node(self, node_id: str) -> GraphNode | None:
         """IDでノードを取得"""
         return next((n for n in self.nodes if n.id == node_id), None)
 
@@ -147,7 +148,7 @@ class TypeDependencyGraph(BaseModel):
             "relations": dict(relations),
         }
 
-    def to_networkx(self) -> "nx.DiGraph":  # type: ignore
+    def to_networkx(self) -> "nx.DiGraph":  # type: ignore  # noqa: F821
         """NetworkX DiGraph に変換
 
         TypeDependencyGraphをNetworkX DiGraph形式に変換します。
@@ -170,11 +171,15 @@ class TypeDependencyGraph(BaseModel):
         return graph
 
     @classmethod
-    def from_networkx(cls, graph: "nx.DiGraph") -> "TypeDependencyGraph":  # type: ignore
+    def from_networkx(
+        cls,
+        graph: "nx.DiGraph",  # type: ignore[name-defined]  # noqa: F821
+    ) -> "TypeDependencyGraph":
         """NetworkX DiGraph から構築
 
         NetworkX DiGraphからTypeDependencyGraphを構築します。
         """
+        import networkx as nx  # noqa: F401  # pyright: ignore[reportUnusedImport]
 
         nodes = []
         edges = []

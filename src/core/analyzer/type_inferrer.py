@@ -19,13 +19,15 @@ mypy の --infer フラグを活用して、未アノテーションのコード
    - Any型: 0.2/個
    - ペナルティは最大1.0でキャップ
 
-3. **アノテーション品質ボーナス（annotation_bonus）**: 明示的型アノテーションの有無（重み: 0.2）
+3. **アノテーション品質ボーナス（annotation_bonus）**: 明示的型アノテーションの
+   有無（重み: 0.2）
    - 周辺スコープのアノテーション率を非線形（^0.8）で評価
    - 型情報が豊富な環境では推論精度が向上すると仮定
 
 最終的な信頼度スコアは以下の式で計算されます：
 
-    confidence = 0.5 * base_certainty + 0.3 * (1.0 - complexity_penalty) + 0.2 * annotation_bonus
+    confidence = 0.5 * base_certainty + 0.3 * (1.0 - complexity_penalty)
+                 + 0.2 * annotation_bonus
 
 スコアは0.0-1.0の範囲にクリップされます。
 
@@ -41,15 +43,16 @@ mypy の --infer フラグを活用して、未アノテーションのコード
 from __future__ import annotations
 
 import ast
-import subprocess
-import tempfile
 import os
 import re
+import subprocess
+import tempfile
 from pathlib import Path
+
 from src.core.analyzer.abc_base import Analyzer
-from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode
-from src.core.analyzer.models import InferResult, MypyResult
 from src.core.analyzer.exceptions import MypyExecutionError
+from src.core.analyzer.models import InferResult, MypyResult
+from src.core.schemas.graph_types import GraphNode, TypeDependencyGraph
 
 
 class TypeInferenceAnalyzer(Analyzer):
@@ -74,9 +77,10 @@ class TypeInferenceAnalyzer(Analyzer):
         """
         if isinstance(input_path, str):
             # コード文字列の場合、一時ファイルを作成
-            from src.core.utils.io_helpers import create_temp_file, cleanup_temp_file
-            from src.core.schemas.analyzer_types import TempFileConfig
             from pydantic import ValidationError
+
+            from src.core.schemas.analyzer_types import TempFileConfig
+            from src.core.utils.io_helpers import cleanup_temp_file, create_temp_file
 
             try:
                 temp_config = TempFileConfig(code=input_path, suffix=".py", mode="w")
@@ -223,7 +227,7 @@ class TypeInferenceAnalyzer(Analyzer):
         Returns:
             推論された型情報の辞書
         """
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             code = f.read()
 
         module_name = Path(file_path).stem
@@ -239,7 +243,7 @@ class TypeInferenceAnalyzer(Analyzer):
         Returns:
             抽出された型アノテーションの辞書
         """
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             tree = ast.parse(f.read())
 
         annotations = {}
@@ -325,10 +329,12 @@ def _compute_confidence(
     1. 基礎確実性（base_certainty）: mypyの診断結果から導出（重み: 0.5）
        - エラー/警告メッセージの有無を検査
        - エラーがなければ高い確実性、警告があれば中程度、エラーがあれば低い
-    2. 型複雑度ペナルティ（complexity_penalty）: 型の複雑さに基づく減点（重み: 0.3）
+    2. 型複雑度ペナルティ（complexity_penalty）: 型の複雑さに基づく
+       減点（重み: 0.3）
        - Union、Optional、ジェネリック型の数に応じて減点
        - 複雑な型ほど推論の不確実性が高いと仮定
-    3. アノテーション品質ボーナス（annotation_bonus）: 明示的型アノテーションの有無（重み: 0.2）
+    3. アノテーション品質ボーナス（annotation_bonus）: 明示的型アノテーションの
+       有無（重み: 0.2）
        - 周辺スコープにアノテーションが存在すれば加点
        - 型情報が豊富な環境では推論精度が向上すると仮定
 

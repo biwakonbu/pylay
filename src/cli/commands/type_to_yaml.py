@@ -4,11 +4,12 @@ Pythonの型定義をYAML形式に変換するCLIコマンドです。
 """
 
 import sys
+from enum import Enum
 from pathlib import Path
+
 from rich.console import Console
 
 from src.core.converters.type_to_yaml import types_to_yaml
-from enum import Enum
 
 
 def run_type_to_yaml(
@@ -36,9 +37,11 @@ def run_type_to_yaml(
         # モジュール内の全型アノテーションを検索
         types_dict = {}
         for name, obj in module.__dict__.items():
-            # ユーザ定義クラスをフィルタリング: このモジュールで定義されたPydanticモデルまたはEnum
+            # ユーザ定義クラスをフィルタリング:
+            # このモジュールで定義されたPydanticモデルまたはEnum
             if isinstance(obj, type):
-                # Pydanticモデルかどうかをチェック（BaseModelのサブクラスでアノテーションを持つ）
+                # Pydanticモデルかどうかをチェック
+                # （BaseModelのサブクラスでアノテーションを持つ）
                 is_pydantic_model = (
                     hasattr(obj, "__annotations__")
                     and hasattr(obj, "__pydantic_core_schema__")  # Pydantic v2

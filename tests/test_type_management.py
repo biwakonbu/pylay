@@ -1,10 +1,11 @@
-import pytest
-import tempfile
 import os
+import tempfile
+
+import pytest
 
 from src.core.converters.type_to_yaml import type_to_yaml, types_to_yaml
-from src.core.converters.yaml_to_type import yaml_to_spec, validate_with_spec
-from src.core.schemas.yaml_type_spec import TypeSpec, DictTypeSpec
+from src.core.converters.yaml_to_type import validate_with_spec, yaml_to_spec
+from src.core.schemas.yaml_type_spec import DictTypeSpec, TypeSpec
 
 
 @pytest.fixture
@@ -84,7 +85,7 @@ def test_roundtrip(temp_dir):
 
     md_path = os.path.join(temp_dir, "list.md")
     assert os.path.exists(md_path)
-    with open(md_path, "r") as f:
+    with open(md_path) as f:
         md_content = f.read()
     assert "型仕様: list" in md_content
 
@@ -569,7 +570,8 @@ def test_type_to_spec_function_splitting():
     # assert "Create a new string" in doc
 
     # ハンドラーテスト
-    # basic_spec = _handle_basic_type(str, "TestStr", "テスト文字列")  # 関数が存在しないのでスキップ
+    # basic_spec = _handle_basic_type(str, "TestStr", "テスト文字列")
+    # 関数が存在しないのでスキップ
     # assert basic_spec.type == 'str'
     # assert basic_spec.name == "TestStr"
     # assert basic_spec.description == "テスト文字列"

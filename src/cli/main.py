@@ -1,20 +1,20 @@
 """pylay のコマンドラインインターフェース"""
 
-import click
 from pathlib import Path
-from typing import Optional
+
+import click
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
+from ..core.converters.extract_deps import extract_dependencies_from_file
 from ..core.converters.type_to_yaml import extract_types_from_module
 from ..core.converters.yaml_to_type import yaml_to_spec
+from ..core.doc_generators.test_catalog_generator import CatalogGenerator
 from ..core.doc_generators.type_doc_generator import LayerDocGenerator
 from ..core.doc_generators.yaml_doc_generator import YamlDocGenerator
-from ..core.doc_generators.test_catalog_generator import CatalogGenerator
-from ..core.converters.extract_deps import extract_dependencies_from_file
-from ..core.schemas.pylay_config import PylayConfig
 from ..core.output_manager import OutputPathManager
+from ..core.schemas.pylay_config import PylayConfig
 from .commands.project_analyze import project_analyze
 
 
@@ -52,7 +52,7 @@ cli_instance = PylayCLI()
     "--config", type=click.Path(exists=True), help="設定ファイルのパス (YAML)"
 )
 @click.pass_context
-def cli(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:
+def cli(ctx: click.Context, verbose: bool, config: str | None) -> None:
     """pylay: 型解析、自動型生成、ドキュメント生成ツール
 
     使用例:
@@ -120,7 +120,7 @@ def generate_type_docs(input: str, output: str) -> None:
     type=click.Path(),
     help="出力 Markdown ファイル（デフォルト: 設定ファイルに基づく）",
 )
-def generate_yaml_docs(input: str, output: Optional[str]) -> None:
+def generate_yaml_docs(input: str, output: str | None) -> None:
     """YAML 型仕様から Markdown ドキュメントを生成"""
     try:
         config = PylayConfig.from_pyproject_toml()
@@ -134,7 +134,7 @@ def generate_yaml_docs(input: str, output: Optional[str]) -> None:
         output = default_output
 
     try:
-        with open(input, "r", encoding="utf-8") as f:
+        with open(input, encoding="utf-8") as f:
             yaml_str = f.read()
 
         spec = yaml_to_spec(yaml_str)
@@ -260,15 +260,20 @@ def convert_to_yaml(input_module: str, output: str) -> None:
 @convert.command("to-type")
 @click.argument("input_yaml", type=click.Path(exists=True))
 @click.option("--output-py", type=click.Path(), help="出力 Python コード (BaseModel)")
-def convert_to_type(input_yaml: str, output_py: Optional[str]) -> None:
+def convert_to_type(input_yaml: str, output_py: str | None) -> None:
     """YAML を Pydantic BaseModel に変換"""
     try:
-        with open(input_yaml, "r", encoding="utf-8") as f:
+        with open(input_yaml, encoding="utf-8") as f:
             yaml_str = f.read()
 
         spec = yaml_to_spec(yaml_str)
+        type_names = [
+            t.__name__ if hasattr(t, "__name__") else str(t)
+            for t in spec.__class__.__mro__
+            if t is not object
+        ]
         model_code = f"""from pydantic import BaseModel
-from typing import {", ".join([t.__name__ if hasattr(t, "__name__") else str(t) for t in spec.__class__.__mro__ if t != object])}
+from typing import {", ".join(type_names)}
 
 # 生成されたPydanticモデル
 class GeneratedModel(BaseModel):

@@ -2,10 +2,9 @@
 依存関係抽出機能のテスト
 """
 
-import networkx as nx
 from src.core.converters.extract_deps import (
-    extract_dependencies_from_code,
     convert_graph_to_yaml_spec,
+    extract_dependencies_from_code,
 )
 from src.core.schemas.graph_types import TypeDependencyGraph
 

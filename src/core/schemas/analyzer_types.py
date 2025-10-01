@@ -5,7 +5,8 @@ mypy strict準拠のためのTypedDictと型定義を提供します。
 Pydanticモデルは models.py から再エクスポートします。
 """
 
-from typing import TypedDict, Literal
+from typing import Literal, TypedDict
+
 from pydantic import BaseModel, Field
 
 # Pydanticモデルを再エクスポート（analyzer.models からの型参照用）

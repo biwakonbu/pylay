@@ -8,8 +8,9 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 import ast
 import importlib
 from pathlib import Path
-import networkx as nx
 from typing import Any
+
+import networkx as nx
 
 from src.core.schemas.graph_types import TypeDependencyGraph
 
@@ -157,7 +158,8 @@ class DependencyExtractor(ast.NodeVisitor):
                     self.graph.add_edge(base_type, type_str, relation_type="generic")
                     self._add_type_dependencies(base_type)
 
-                # 型パラメータの依存関係も追加（例: Dict[str, List[int]] の場合、strとList[int]）
+                # 型パラメータの依存関係も追加
+                # （例: Dict[str, List[int]] の場合、strとList[int]）
                 param_part = type_str[type_str.find("[") + 1 : type_str.rfind("]")]
                 if "," in param_part:
                     # 複数のパラメータ
@@ -211,7 +213,7 @@ def extract_dependencies_from_file(file_path: Path | str) -> TypeDependencyGraph
     Returns:
         TypeDependencyGraph（依存関係グラフ）
     """
-    with open(str(file_path), "r", encoding="utf-8") as f:
+    with open(str(file_path), encoding="utf-8") as f:
         code = f.read()
     return extract_dependencies_from_code(code)
 
@@ -305,7 +307,8 @@ def visualize_dependencies(
                 (edge.get_source().strip('"'), edge.get_destination().strip('"'))
             )
             if edge_data:
-                # エッジ属性の正規化: relation_type を優先し、なければ relation にフォールバック
+                # エッジ属性の正規化: relation_type を優先し、
+                # なければ relation にフォールバック
                 relation = edge_data.get("relation_type") or edge_data.get(
                     "relation", ""
                 )
@@ -330,7 +333,8 @@ def visualize_dependencies(
 
     except ImportError as e:
         print(
-            f"Graphviz または pydot がインストールされていないため、視覚化をスキップします: {e}"
+            "Graphviz または pydot がインストールされていないため、"
+            f"視覚化をスキップします: {e}"
         )
     except Exception as e:
         print(f"視覚化中にエラーが発生しました: {e}")

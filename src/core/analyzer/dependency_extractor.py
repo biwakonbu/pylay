@@ -7,8 +7,8 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 
 from __future__ import annotations
 
-from pathlib import Path
 import logging
+from pathlib import Path
 from typing import Any
 
 try:
@@ -17,13 +17,13 @@ except ImportError:
     nx = None
 
 from src.core.analyzer.abc_base import Analyzer
-from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.analyzer.ast_visitors import DependencyVisitor, parse_ast
 from src.core.analyzer.exceptions import (
     DependencyExtractionError,
-    TypeInferenceError,
     MypyExecutionError,
+    TypeInferenceError,
 )
+from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
 
@@ -38,7 +38,7 @@ class DependencyExtractionAnalyzer(Analyzer):
     循環検出を自動実行します。
     """
 
-    def __init__(self, config: "PylayConfig") -> None:
+    def __init__(self, config: PylayConfig) -> None:
         super().__init__(config)
         self.state = AnalyzerState()
 
@@ -60,9 +60,10 @@ class DependencyExtractionAnalyzer(Analyzer):
         temp_path: Path | None = None
         if isinstance(input_path, str):
             # コード文字列の場合、一時ファイルを作成
-            from src.core.utils.io_helpers import create_temp_file
-            from src.core.schemas.analyzer_types import TempFileConfig
             from pydantic import ValidationError
+
+            from src.core.schemas.analyzer_types import TempFileConfig
+            from src.core.utils.io_helpers import create_temp_file
 
             try:
                 temp_config = TempFileConfig(code=input_path, suffix=".py", mode="w")
@@ -146,8 +147,8 @@ class DependencyExtractionAnalyzer(Analyzer):
             return relative_path.as_posix().replace("/", ".")
         except (ValueError, Exception) as e:
             # エラーログを出力
-            import logging
             import hashlib
+            import logging
 
             logger = logging.getLogger(__name__)
             logger.warning(

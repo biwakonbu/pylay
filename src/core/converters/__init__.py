@@ -3,9 +3,9 @@
 """
 
 from .extract_deps import (
+    convert_graph_to_yaml_spec,
     extract_dependencies_from_code,
     extract_dependencies_from_file,
-    convert_graph_to_yaml_spec,
 )
 
 __all__ = [

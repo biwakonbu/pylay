@@ -96,7 +96,8 @@ class TestGenerateTypeDocs:
         ):
             generate_docs(str(self.output_dir))
 
-            # インデックスファイルが作成されたことを確認（モックされているので実際には作成されない）
+            # インデックスファイルが作成されたことを確認
+            # （モックされているので実際には作成されない）
             # このテストはモックが正しく呼び出されることを確認するだけ
             pass
 
@@ -126,7 +127,8 @@ class TestGenerateTypeDocsErrorHandling:
         """無効な出力パスでの動作確認"""
         test_types = {"TestType": str}
 
-        # 無効なパスでもエラーなく処理されることを確認（実際にはディレクトリ作成で失敗するが）
+        # 無効なパスでもエラーなく処理されることを確認
+        # （実際にはディレクトリ作成で失敗するが）
         # 実際の動作はos.makedirsの動作による
         try:
             generate_layer_docs("test", test_types, "/invalid/path")

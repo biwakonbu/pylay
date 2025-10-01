@@ -6,14 +6,13 @@ AST訪問者モジュール
 
 import ast
 from pathlib import Path
-from typing import Optional, Union
 
-from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.analyzer.exceptions import ASTParseError
-from src.core.schemas.graph_types import GraphNode, GraphEdge, RelationType
+from src.core.analyzer.models import AnalyzerState, ParseContext
+from src.core.schemas.graph_types import GraphEdge, GraphNode, RelationType
 
 # 関数定義の共通型（Python 3.13+）
-FunctionDefLike = Union[ast.FunctionDef, ast.AsyncFunctionDef]
+type FunctionDefLike = ast.FunctionDef | ast.AsyncFunctionDef
 
 
 class DependencyVisitor(ast.NodeVisitor):
@@ -328,7 +327,8 @@ class DependencyVisitor(ast.NodeVisitor):
             # ForwardRef（文字列リテラル）
             return [node.value]
         elif isinstance(node, ast.Subscript):
-            # ジェネリック型（例: List[User] → User, Dict[str, List[int]] → [str, List[int]]）
+            # ジェネリック型（例: List[User] → User,
+            # Dict[str, List[int]] → [str, List[int]]）
             # Python 3.9+では複数パラメータはast.Tupleとして表現される
             if isinstance(node.slice, ast.Tuple):
                 # 複数のジェネリック型パラメータ（例: Dict[str, int]）
@@ -346,7 +346,7 @@ class DependencyVisitor(ast.NodeVisitor):
             return left_types + right_types
         return []
 
-    def _get_type_name_from_ast(self, node: ast.AST) -> Optional[str]:
+    def _get_type_name_from_ast(self, node: ast.AST) -> str | None:
         """
         ASTノードから型名を抽出（後方互換性のため残す）
 
@@ -432,10 +432,10 @@ def parse_ast(file_path: Path | str) -> ast.AST:
     """
     file_path = Path(file_path)
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             source_code = f.read()
     except FileNotFoundError:
-        raise ASTParseError(f"ファイルが見つかりません", file_path=str(file_path))
+        raise ASTParseError("ファイルが見つかりません", file_path=str(file_path))
     except UnicodeDecodeError as e:
         raise ASTParseError(
             f"ファイルのエンコーディングエラー: {e}", file_path=str(file_path)

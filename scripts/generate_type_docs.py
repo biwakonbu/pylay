@@ -29,8 +29,8 @@ def generate_layer_docs(
     """
     if output_dir is None:
         try:
-            from src.core.schemas.pylay_config import PylayConfig
             from src.core.output_manager import OutputPathManager
+            from src.core.schemas.pylay_config import PylayConfig
 
             config_pylay = PylayConfig.from_pyproject_toml()
             output_manager = OutputPathManager(config_pylay)
@@ -54,8 +54,8 @@ def generate_index_docs(output_path: str | None = None) -> None:
     """
     if output_path is None:
         try:
-            from src.core.schemas.pylay_config import PylayConfig
             from src.core.output_manager import OutputPathManager
+            from src.core.schemas.pylay_config import PylayConfig
 
             config_pylay = PylayConfig.from_pyproject_toml()
             output_manager = OutputPathManager(config_pylay)

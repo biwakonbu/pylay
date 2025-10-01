@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from src.core.schemas.pylay_config import PylayConfig
 from src.core.output_manager import OutputPathManager
+from src.core.schemas.pylay_config import PylayConfig
 
 
 class TestOutputPathManager:

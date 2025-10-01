@@ -52,7 +52,7 @@ class TestDocGeneratorsIntegration:
     def test_yaml_doc_generator_depth_limit(self):
         """YAMLドキュメント生成の深さ制限テスト"""
         from src.core.doc_generators.yaml_doc_generator import YamlDocGenerator
-        from src.core.schemas.yaml_type_spec import TypeSpec, DictTypeSpec
+        from src.core.schemas.yaml_type_spec import DictTypeSpec, TypeSpec
 
         # 深くネストされた構造を作成
         deep_spec = TypeSpec(name="str", type="str")

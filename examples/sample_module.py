@@ -1,6 +1,5 @@
 """サンプルPythonモジュール"""
 
-from typing import Optional
 from pydantic import BaseModel
 
 
@@ -12,7 +11,7 @@ class User(BaseModel):
 
     id: int
     name: str
-    email: Optional[str] = None
+    email: str | None = None
     age: int | None = None
     tags: list[str] = []
 
@@ -26,5 +25,5 @@ class Product(BaseModel):
     id: int
     name: str
     price: float
-    description: Optional[str] = None
+    description: str | None = None
     category: str

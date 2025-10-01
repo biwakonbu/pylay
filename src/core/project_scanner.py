@@ -6,8 +6,8 @@
 """
 
 import fnmatch
-from pathlib import Path
 from collections.abc import Generator
+from pathlib import Path
 from typing import Any
 
 from .schemas.pylay_config import PylayConfig

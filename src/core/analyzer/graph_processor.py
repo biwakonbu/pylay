@@ -6,7 +6,7 @@ TypeDependencyGraphを基盤に高度なグラフ操作を実行します。
 """
 
 from pathlib import Path
-from typing import Any, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 try:
     import networkx as nx
@@ -14,10 +14,10 @@ except ImportError:
     nx = None
 
 if TYPE_CHECKING:
-    from pydot import Dot, Node, Edge
+    from pydot import Dot, Edge, Node
 else:
     try:
-        from pydot import Dot, Node, Edge
+        from pydot import Dot, Edge, Node
     except ImportError:
         Dot, Node, Edge = None, None, None  # type: ignore[assignment, misc]
 
@@ -93,7 +93,7 @@ class GraphProcessor:
     def visualize_graph(
         self,
         graph: TypeDependencyGraph,
-        output_path: Union[Path, str],
+        output_path: Path | str,
         format_type: str = "png",
         layout: str = "spring",
     ) -> None:
@@ -138,7 +138,9 @@ class GraphProcessor:
 
         # エッジ追加
         for source, target, edge_data in nx_graph.edges(data=True):
-            edge_label = f"{edge_data.get('relation_type', 'unknown')} ({edge_data.get('weight', 1.0)})"
+            rel_type = edge_data.get("relation_type", "unknown")
+            weight = edge_data.get("weight", 1.0)
+            edge_label = f"{rel_type} ({weight})"
             dot_edge = Edge(
                 source, target, label=edge_label, color="blue", fontcolor="blue"
             )
@@ -185,7 +187,7 @@ class GraphProcessor:
         return {"dependencies": dependencies}
 
     def export_graphml(
-        self, graph: TypeDependencyGraph, output_path: Union[Path, str]
+        self, graph: TypeDependencyGraph, output_path: Path | str
     ) -> None:
         """
         グラフをGraphML形式でエクスポートします。
@@ -199,7 +201,7 @@ class GraphProcessor:
         nx_graph = graph.to_networkx()
         nx.write_graphml(nx_graph, str(output_path))
 
-    def import_graphml(self, file_path: Union[Path, str]) -> TypeDependencyGraph:
+    def import_graphml(self, file_path: Path | str) -> TypeDependencyGraph:
         """
         GraphMLファイルからグラフをインポートします。
 

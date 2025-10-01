@@ -12,22 +12,21 @@ from typing import Any
 import click
 from rich.console import Console
 from rich.progress import (
+    BarColumn,
     Progress,
     SpinnerColumn,
     TextColumn,
-    BarColumn,
     TimeRemainingColumn,
 )
 
-from ...core.project_scanner import ProjectScanner
-from ...core.schemas.pylay_config import PylayConfig
-from ...core.output_manager import OutputPathManager
-from ...core.converters.type_to_yaml import extract_types_from_module
 from ...core.analyzer.type_inferrer import TypeInferenceAnalyzer
 from ...core.converters.extract_deps import extract_dependencies_from_file
+from ...core.converters.type_to_yaml import extract_types_from_module
 from ...core.converters.yaml_to_type import yaml_to_spec
 from ...core.doc_generators.yaml_doc_generator import YamlDocGenerator
-
+from ...core.output_manager import OutputPathManager
+from ...core.project_scanner import ProjectScanner
+from ...core.schemas.pylay_config import PylayConfig
 
 console = Console()
 
@@ -71,7 +70,7 @@ def project_analyze(
         output_manager = OutputPathManager(config, project_root)
 
         if verbose:
-            console.print(f"[bold blue]設定読み込み完了:[/bold blue]")
+            console.print("[bold blue]設定読み込み完了:[/bold blue]")
             console.print(f"  対象ディレクトリ: {config.target_dirs}")
             console.print(f"  出力ディレクトリ: {config.output_dir}")
             console.print(f"  Markdown生成: {config.generate_markdown}")
@@ -83,7 +82,8 @@ def project_analyze(
             console.print(f"  グラフ出力: {structure['graph']}")
             console.print()
 
-        # cleanフラグの決定（コマンドラインオプションが優先、未指定の場合は設定値を使用）
+        # cleanフラグの決定
+        # （コマンドラインオプションが優先、未指定の場合は設定値を使用）
         effective_clean = clean or config.clean_output_dir
 
         # dry-runの場合は実際の処理をスキップ
@@ -109,16 +109,21 @@ def project_analyze(
                 console.print(f"  {file_path}")
             return
 
-        # cleanオプションが指定された場合、出力ディレクトリを削除（OutputPathManager 使用）
+        # cleanオプションが指定された場合、出力ディレクトリを削除
+        # （OutputPathManager 使用）
         if effective_clean:
             if verbose:
                 if clean:
                     console.print(
-                        f"[yellow]🗑️  --clean オプションにより出力ディレクトリ（docs/pylay-types/全体）を削除します[/yellow]"
+                        "[yellow]🗑️  --clean オプションにより"
+                        "出力ディレクトリ（docs/pylay-types/全体）を削除します"
+                        "[/yellow]"
                     )
                 else:
                     console.print(
-                        f"[yellow]🗑️  設定により出力ディレクトリ（docs/pylay-types/全体）を削除します[/yellow]"
+                        "[yellow]🗑️  設定により"
+                        "出力ディレクトリ（docs/pylay-types/全体）を削除します"
+                        "[/yellow]"
                     )
             output_dir = output_manager.get_output_structure()["yaml"]
             if output_dir.exists():
@@ -126,11 +131,13 @@ def project_analyze(
 
                 shutil.rmtree(output_dir)
                 console.print(
-                    f"[yellow]🗑️  出力ディレクトリを削除しました: {output_dir}（src/, documents/ 等含む）[/yellow]"
+                    f"[yellow]🗑️  出力ディレクトリを削除しました: {output_dir}"
+                    "（src/, documents/ 等含む）[/yellow]"
                 )
             else:
                 console.print(
-                    f"[yellow]ℹ️  出力ディレクトリが存在しないため削除をスキップ: {output_dir}[/yellow]"
+                    f"[yellow]ℹ️  出力ディレクトリが存在しないため"
+                    f"削除をスキップ: {output_dir}[/yellow]"
                 )
 
         # プロジェクトスキャナーを作成
@@ -155,7 +162,8 @@ def project_analyze(
 
         if not python_files:
             console.print(
-                "[bold yellow]⚠️  解析対象のPythonファイルが見つかりませんでした[/bold yellow]"
+                "[bold yellow]⚠️  解析対象のPythonファイルが"
+                "見つかりませんでした[/bold yellow]"
             )
             return
 
@@ -167,7 +175,7 @@ def project_analyze(
                 console.print(f"  {file_path}")
             return
 
-        console.print(f"[bold green]🚀 プロジェクト解析開始[/bold green]")
+        console.print("[bold green]🚀 プロジェクト解析開始[/bold green]")
         console.print(f"解析対象: {len(python_files)} 個のPythonファイル")
         console.print()
 
@@ -373,7 +381,7 @@ def _output_results(
     """
     structure = output_manager.get_output_structure()
 
-    console.print(f"\n[bold green]✅ 解析完了[/bold green]")
+    console.print("\n[bold green]✅ 解析完了[/bold green]")
     console.print(f"処理ファイル数: {results['files_processed']}")
     console.print(f"型情報抽出: {results['types_extracted']} ファイル")
     console.print(f"依存関係発見: {results['dependencies_found']} ファイル")
@@ -389,7 +397,7 @@ def _output_results(
             for error in results["errors"]:
                 console.print(f"  {error}")
 
-    console.print(f"\n[bold blue]📁 生成ファイル[/bold blue]")
+    console.print("\n[bold blue]📁 生成ファイル[/bold blue]")
     if verbose and results["file_results"]:
         for file_path, file_result in results["file_results"].items():
             outputs = file_result.get("outputs", {})
@@ -398,4 +406,4 @@ def _output_results(
                 for output_type, output_path in outputs.items():
                     console.print(f"    {output_type}: {output_path}")
 
-    console.print(f"\n[dim]プロジェクト解析が完了しました。[/dim]")
+    console.print("\n[dim]プロジェクト解析が完了しました。[/dim]")

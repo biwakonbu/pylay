@@ -3,9 +3,10 @@ NetworkXグラフアダプター。
 TypeDependencyGraphをNetworkX DiGraphに変換し、視覚化やアルゴリズムを適用。
 """
 
-import networkx as nx
-from typing import Any, Optional
 from pathlib import Path
+from typing import Any
+
+import networkx as nx
 
 from core.schemas.graph_types import TypeDependencyGraph
 
@@ -19,7 +20,7 @@ class NetworkXGraphAdapter:
     def __init__(self, graph: TypeDependencyGraph):
         """アダプターを初期化"""
         self.graph = graph
-        self.nx_graph: Optional[nx.DiGraph] = None
+        self.nx_graph: nx.DiGraph | None = None
         self._build_networkx_graph()
 
     def _build_networkx_graph(self) -> None:
@@ -149,7 +150,8 @@ class NetworkXGraphAdapter:
                 print(f"✅ SVGファイルを生成: {svg_path}")
         except FileNotFoundError:
             print(
-                "⚠️  Graphvizのdotコマンドが見つかりません。sudo apt install graphviz を実行してください。"
+                "⚠️  Graphvizのdotコマンドが見つかりません。"
+                "sudo apt install graphviz を実行してください。"
             )
         except subprocess.TimeoutExpired:
             print("⚠️  SVG生成がタイムアウトしました。")
@@ -213,7 +215,7 @@ class NetworkXGraphAdapter:
         return vis_graph
 
     def export_visualization(
-        self, dot_path: Path, svg_path: Optional[Path] = None
+        self, dot_path: Path, svg_path: Path | None = None
     ) -> None:
         """視覚化用グラフをDOTとSVGでエクスポート"""
         vis_graph = self.create_visualization_graph()

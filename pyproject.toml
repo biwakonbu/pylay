@@ -88,10 +88,19 @@ target-version = "py312"
 [tool.ruff.lint]
 # Python 3.12+ 対応の設定
 select = [
-    "UP006",  # Use PEP 585 imports (Python 3.9+)
-    "UP035",  # Use PEP 585 generic types (Python 3.9+)
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "UP",     # pyupgrade (Python 3.9+ modernization)
 ]
-# Python 3.13+ の新機能は使用しない（Python 3.12対応のため）
+
+# Python 3.13標準表記を強制（警告として検出）
+# UP006: typing.List → list, typing.Dict → dict (PEP 585)
+# UP007: Union[X, Y] → X | Y (PEP 604)
+# UP035: typing.List/Dict 等の非推奨インポートを検出
+# UP037: Remove quoted annotations (Python 3.10+)
+# UP045: Optional[X] → X | None (PEP 604)
 
 [build-system]
 requires = ["poetry-core"]

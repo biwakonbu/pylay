@@ -4,8 +4,8 @@ IOヘルパーユーティリティ
 一時ファイル作成やコード処理の共通機能を管理します。
 """
 
-import tempfile
 import os
+import tempfile
 from pathlib import Path
 
 from src.core.schemas.analyzer_types import TempFileConfig
@@ -65,7 +65,7 @@ def read_file_content(file_path: Path) -> str:
         UnicodeDecodeError: エンコーディングエラー
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             return f.read()
     except FileNotFoundError:
         raise FileNotFoundError(f"ファイルが見つかりません: {file_path}")

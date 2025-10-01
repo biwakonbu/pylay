@@ -1,6 +1,20 @@
 import inspect
-from typing import Any, get_origin, get_args, Union as TypingUnion, ForwardRef, Generic
+from pathlib import Path
+from typing import Any, ForwardRef, Generic, get_args, get_origin
+from typing import Union as TypingUnion
+
 from pydantic import BaseModel
+from ruamel.yaml import YAML
+
+from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.yaml_type_spec import (
+    DictTypeSpec,
+    GenericTypeSpec,
+    ListTypeSpec,
+    TypeSpec,
+    TypeSpecOrRef,
+    UnionTypeSpec,
+)
 
 
 def _recursive_dump(obj: Any) -> Any:
@@ -17,20 +31,6 @@ def _recursive_dump(obj: Any) -> Any:
     else:
         return obj
 
-
-from ruamel.yaml import YAML
-from pathlib import Path
-from typing import Any
-
-from src.core.schemas.yaml_type_spec import (
-    TypeSpec,
-    ListTypeSpec,
-    DictTypeSpec,
-    UnionTypeSpec,
-    GenericTypeSpec,
-    TypeSpecOrRef,
-)
-from src.core.schemas.graph_types import TypeDependencyGraph
 
 MAX_DEPTH = 10  # Generic再帰の深さ制限
 
@@ -231,7 +231,7 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
             key_type, value_type = args[0], args[1]
 
             # Dict[str, T] のような場合、propertiesとして扱う
-            if key_type == str:
+            if key_type is str:
                 dict_properties: dict[str, TypeSpecOrRef] = {}
 
                 # 値型がカスタム型の場合、参照として保持
@@ -241,7 +241,8 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
                     float,
                     bool,
                 }:
-                    # 各プロパティの型名をキーとして参照を保持（実際のプロパティ解決は別途）
+                    # 各プロパティの型名をキーとして参照を保持
+                    # （実際のプロパティ解決は別途）
                     dict_properties[_get_type_name(value_type)] = _get_type_name(
                         value_type
                     )
@@ -372,7 +373,7 @@ def extract_types_from_module(module_path: str | Path) -> str | None:
 
     try:
         # AST解析で型定義を抽出
-        with open(module_path, "r", encoding="utf-8") as f:
+        with open(module_path, encoding="utf-8") as f:
             source = f.read()
 
         tree = ast.parse(source)
@@ -406,7 +407,8 @@ def extract_types_from_module(module_path: str | Path) -> str | None:
                     type_definitions[var_name] = {
                         "type": "type_alias",
                         "alias_to": var_type,
-                        "docstring": None,  # AnnAssignにはdocstringがないため、Noneを返す
+                        # AnnAssignにはdocstringがないため、Noneを返す
+                        "docstring": None,
                     }
 
             # 関数定義はスキップ（独自型ではないため）
