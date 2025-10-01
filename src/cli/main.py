@@ -2,7 +2,6 @@
 
 import click
 from pathlib import Path
-from typing import Optional
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
@@ -52,7 +51,7 @@ cli_instance = PylayCLI()
     "--config", type=click.Path(exists=True), help="設定ファイルのパス (YAML)"
 )
 @click.pass_context
-def cli(ctx: click.Context, verbose: bool, config: Optional[str]) -> None:
+def cli(ctx: click.Context, verbose: bool, config: str | None) -> None:
     """pylay: 型解析、自動型生成、ドキュメント生成ツール
 
     使用例:
@@ -120,7 +119,7 @@ def generate_type_docs(input: str, output: str) -> None:
     type=click.Path(),
     help="出力 Markdown ファイル（デフォルト: 設定ファイルに基づく）",
 )
-def generate_yaml_docs(input: str, output: Optional[str]) -> None:
+def generate_yaml_docs(input: str, output: str | None) -> None:
     """YAML 型仕様から Markdown ドキュメントを生成"""
     try:
         config = PylayConfig.from_pyproject_toml()
@@ -260,7 +259,7 @@ def convert_to_yaml(input_module: str, output: str) -> None:
 @convert.command("to-type")
 @click.argument("input_yaml", type=click.Path(exists=True))
 @click.option("--output-py", type=click.Path(), help="出力 Python コード (BaseModel)")
-def convert_to_type(input_yaml: str, output_py: Optional[str]) -> None:
+def convert_to_type(input_yaml: str, output_py: str | None) -> None:
     """YAML を Pydantic BaseModel に変換"""
     try:
         with open(input_yaml, "r", encoding="utf-8") as f:

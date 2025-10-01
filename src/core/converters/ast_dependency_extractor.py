@@ -5,7 +5,6 @@ Python ASTを解析し、型依存グラフを構築するためのコンポー�
 
 import ast
 from pathlib import Path
-from typing import Optional
 from datetime import datetime
 
 from src.core.schemas.graph_types import (
@@ -403,7 +402,7 @@ class ASTDependencyExtractor:
             if annotated_type:
                 self._add_edge(class_name, annotated_type, RelationType.REFERENCES)
 
-    def _get_type_name_from_ast(self, node: ast.AST) -> Optional[str]:
+    def _get_type_name_from_ast(self, node: ast.AST) -> str | None:
         """ASTノードから型名を抽出（ForwardRef対応）"""
         if isinstance(node, ast.Name):
             return str(node.id)
