@@ -12,8 +12,8 @@
 
 import ast
 import logging
-from collections.abc import Callable  # type: ignore[reportUnusedImport]  # ALLOWED_TYPING_ATTRS で参照
-from typing import Any, ForwardRef, get_args, get_origin  # type: ignore[reportUnusedImport]  # ALLOWED_TYPING_ATTRS で参照
+from collections.abc import Callable  # ALLOWED_TYPING_ATTRS で参照
+from typing import Any, ForwardRef, get_args, get_origin  # ALLOWED_TYPING_ATTRS で参照
 
 logger = logging.getLogger(__name__)
 

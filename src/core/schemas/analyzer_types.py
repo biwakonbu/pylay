@@ -10,7 +10,9 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 # Pydanticモデルを再エクスポート（analyzer.models からの型参照用）
-from src.core.analyzer.models import InferResult, MypyResult  # type: ignore[reportUnusedImport]  # noqa: F401
+from src.core.analyzer.models import InferResult, MypyResult
+
+__all__ = ["InferResult", "MypyResult"]
 
 
 class RelationType(str, Enum):
