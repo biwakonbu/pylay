@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from src.core.schemas.graph_types import GraphEdge, GraphNode, TypeDependencyGraph
+from src.core.schemas.types import GraphMetadata
 
 from .base import DocumentGenerator
 from .markdown_builder import MarkdownBuilder
@@ -56,10 +57,10 @@ class GraphDocGenerator(DocumentGenerator):
 
     def _generate_header(self, graph: TypeDependencyGraph) -> None:
         """ヘッダーセクションを生成"""
-        metadata = graph.metadata or {}
-        source_file = metadata.get("source_file", "不明")
-        node_count = metadata.get("node_count", 0)
-        edge_count = metadata.get("edge_count", 0)
+        metadata: GraphMetadata = graph.metadata or GraphMetadata()
+        source_file = metadata.custom_fields.get("source_file", "不明")
+        node_count = len(graph.nodes)
+        edge_count = len(graph.edges)
 
         self.md.heading(1, "型依存関係グラフ")
         self.md.paragraph(f"**ソースファイル**: {source_file}")

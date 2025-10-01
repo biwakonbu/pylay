@@ -19,6 +19,8 @@ except ImportError as e:
         "Install it with: pip install networkx"
     ) from e
 
+from datetime import UTC
+
 from src.core.analyzer.exceptions import AnalysisError
 from src.core.analyzer.models import AnalyzerState, InferenceConfig, ParseContext
 from src.core.schemas.graph_types import TypeDependencyGraph
@@ -90,13 +92,22 @@ class AnalysisStrategy(ABC):
 
     def _build_graph(self, file_path: Path) -> TypeDependencyGraph:
         """状態からグラフを構築"""
-        metadata: dict[str, str | int | bool] = {
-            "source_file": str(file_path),
-            "extraction_method": self._get_extraction_method(),
-            "node_count": len(self.state.nodes),
-            "edge_count": len(self.state.edges),
-            "infer_level": self.infer_config.infer_level,
-        }
+        from datetime import datetime
+
+        from src.core.schemas.types import GraphMetadata
+
+        metadata = GraphMetadata(
+            created_at=datetime.now(UTC).isoformat(),
+            statistics={
+                "node_count": len(self.state.nodes),
+                "edge_count": len(self.state.edges),
+            },
+            custom_fields={
+                "source_file": str(file_path),
+                "extraction_method": self._get_extraction_method(),
+                "infer_level": self.infer_config.infer_level,
+            },
+        )
         return TypeDependencyGraph(
             nodes=list(self.state.nodes.values()),
             edges=list(self.state.edges.values()),

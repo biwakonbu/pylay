@@ -2,6 +2,14 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from src.core.schemas.types import (
+    AdditionalPropertiesFlag,
+    Description,
+    RequiredFlag,
+    TypeSpecName,
+    TypeSpecType,
+)
+
 
 class RefPlaceholder(BaseModel):
     """参照文字列を保持するためのプレースホルダー（Pydantic v2対応強化）"""
@@ -40,14 +48,14 @@ class TypeSpec(BaseModel):
         arbitrary_types_allowed=True
     )  # 遅延型解決はmodel_rebuildで対応
 
-    name: str | None = Field(
+    name: TypeSpecName | None = Field(
         None, description="型の名前 (v1.1ではオプション。参照時は不要)"
     )
-    type: str = Field(
+    type: TypeSpecType = Field(
         ..., description="基本型 (str, int, float, bool, list, dict, union)"
     )
-    description: str | None = Field(None, description="型の説明")
-    required: bool = Field(True, description="必須かどうか")
+    description: Description | None = Field(None, description="型の説明")
+    required: RequiredFlag = Field(True, description="必須かどうか")
 
 
 # 参照解決のための型エイリアス（前方参照用）
@@ -76,7 +84,9 @@ class DictTypeSpec(TypeSpec):
     properties: dict[str, Any] = Field(
         default_factory=dict, description="辞書のプロパティ (参照文字列またはTypeSpec)"
     )
-    additional_properties: bool = Field(False, description="追加プロパティ許可")
+    additional_properties: AdditionalPropertiesFlag = Field(
+        False, description="追加プロパティ許可"
+    )
 
     @field_validator("properties", mode="before")
     @classmethod

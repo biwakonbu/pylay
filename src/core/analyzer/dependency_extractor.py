@@ -8,8 +8,8 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 try:
     import networkx as nx
@@ -96,26 +96,40 @@ class DependencyExtractionAnalyzer(Analyzer):
                 self._integrate_mypy(file_path)
 
             # グラフ構築
-            metadata: dict[str, Any] = {
-                "source_file": str(file_path),
-                "extraction_method": "AST_analysis_with_mypy"
-                if self.config.infer_level != "loose"
-                else "AST_analysis",
-                "node_count": len(self.state.nodes),
-                "edge_count": len(self.state.edges),
-                "mypy_enabled": self.config.infer_level != "loose",
-            }
+            from src.core.schemas.types import GraphMetadata
+
+            # 循環検出を先に実行（型安全性のため構築時に設定）
+            detected_cycles: list[list[str]] = []
+            if nx:
+                # 仮グラフで循環検出
+                temp_graph = TypeDependencyGraph(
+                    nodes=list(self.state.nodes.values()),
+                    edges=list(self.state.edges.values()),
+                    metadata=GraphMetadata(),  # 空のメタデータ
+                )
+                detected_cycles = self._detect_cycles(temp_graph)
+
+            metadata = GraphMetadata(
+                created_at=datetime.now(UTC).isoformat(),
+                cycles=detected_cycles,
+                statistics={
+                    "node_count": len(self.state.nodes),
+                    "edge_count": len(self.state.edges),
+                },
+                custom_fields={
+                    "source_file": str(file_path),
+                    "extraction_method": "AST_analysis_with_mypy"
+                    if self.config.infer_level != "loose"
+                    else "AST_analysis",
+                    "mypy_enabled": self.config.infer_level != "loose",
+                    "infer_level": self.config.infer_level,
+                },
+            )
             graph = TypeDependencyGraph(
                 nodes=list(self.state.nodes.values()),
                 edges=list(self.state.edges.values()),
                 metadata=metadata,
             )
-
-            # 循環検出
-            if nx:
-                cycles = self._detect_cycles(graph)
-                if cycles:
-                    metadata["cycles"] = cycles
 
             return graph
 

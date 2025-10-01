@@ -223,3 +223,6 @@ docs/pylay-types/
 docs/test_catalog.md
 docs/debug_catalog.md
 docs/static-type-index-guide.md
+
+# reviewtask data directory
+.pr-review/

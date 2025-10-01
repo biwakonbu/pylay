@@ -133,15 +133,35 @@ class MypyTypeExtractor:
         merged_edges.extend(additional_edges)
 
         # メタデータを更新
-        merged_metadata = dict(ast_graph.metadata or {})
-        merged_metadata.update(
-            {
-                "mypy_inferred": True,
-                "mypy_inference_count": len(additional_nodes),
-                "total_nodes": len(merged_nodes),
-                "total_edges": len(merged_edges),
-            }
-        )
+        from src.core.schemas.types import GraphMetadata
+
+        if ast_graph.metadata:
+            merged_metadata = GraphMetadata(
+                version=ast_graph.metadata.version,
+                created_at=ast_graph.metadata.created_at,
+                cycles=ast_graph.metadata.cycles,
+                statistics={
+                    **ast_graph.metadata.statistics,
+                    "mypy_inference_count": len(additional_nodes),
+                    "node_count": len(merged_nodes),
+                    "edge_count": len(merged_edges),
+                },
+                custom_fields={
+                    **ast_graph.metadata.custom_fields,
+                    "mypy_inferred": True,
+                },
+            )
+        else:
+            merged_metadata = GraphMetadata(
+                statistics={
+                    "mypy_inference_count": len(additional_nodes),
+                    "node_count": len(merged_nodes),
+                    "edge_count": len(merged_edges),
+                },
+                custom_fields={
+                    "mypy_inferred": True,
+                },
+            )
 
         return TypeDependencyGraph(
             nodes=merged_nodes, edges=merged_edges, metadata=merged_metadata
@@ -177,13 +197,17 @@ class MypyTypeExtractor:
                 # 型名を抽出（簡易的に最初の単語）
                 type_name = str(inferred_type).split("[")[0].split(".")[0]
                 if type_name != var_name:  # 自己参照を避ける
+                    from src.core.schemas.types import GraphMetadata
+
                     edges.append(
                         GraphEdge(
                             source=var_name,
                             target=type_name,
                             relation_type=RelationType.REFERENCES,
                             weight=0.7,  # mypy推論は中程度の信頼性
-                            metadata={"inferred_by_mypy": True},
+                            metadata=GraphMetadata(
+                                custom_fields={"inferred_by_mypy": True}
+                            ),
                         )
                     )
 
