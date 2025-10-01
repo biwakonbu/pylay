@@ -99,6 +99,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             from src.core.schemas.types import GraphMetadata
 
             metadata = GraphMetadata(
+                created_at=datetime.now(UTC).isoformat(),
                 statistics={
                     "node_count": len(self.state.nodes),
                     "edge_count": len(self.state.edges),
@@ -109,7 +110,6 @@ class DependencyExtractionAnalyzer(Analyzer):
                     if self.config.infer_level != "loose"
                     else "AST_analysis",
                     "mypy_enabled": self.config.infer_level != "loose",
-                    "created_at": datetime.now(UTC).isoformat(),
                     "infer_level": self.config.infer_level,
                 },
             )
