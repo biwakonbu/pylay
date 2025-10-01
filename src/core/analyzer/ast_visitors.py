@@ -10,6 +10,7 @@ from pathlib import Path
 from src.core.analyzer.exceptions import ASTParseError
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.schemas.graph_types import GraphEdge, GraphNode, RelationType
+from src.core.schemas.types import GraphMetadata
 
 # 関数定義の共通型（Python 3.13+）
 type FunctionDefLike = ast.FunctionDef | ast.AsyncFunctionDef
@@ -368,8 +369,6 @@ class DependencyVisitor(ast.NodeVisitor):
         if source != target:
             edge_key = f"{source}->{target}:{relation}"
             if edge_key not in self.state.edges:
-                from src.core.schemas.types import GraphMetadata
-
                 edge = GraphEdge(
                     source=source,
                     target=target,
