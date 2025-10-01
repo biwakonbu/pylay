@@ -36,14 +36,14 @@ class DependencyExtractor(ast.NodeVisitor):
             if arg.annotation:
                 arg_type = self._extract_type_annotation(arg.annotation)
                 if arg_type:
-                    self.graph.add_edge(arg_type, func_name, relation="argument")
+                    self.graph.add_edge(arg_type, func_name, relation_type="argument")
                     self._add_type_dependencies(arg_type)
 
         # 戻り値の型依存を追加
         if node.returns:
             return_type = self._extract_type_annotation(node.returns)
             if return_type:
-                self.graph.add_edge(func_name, return_type, relation="return")
+                self.graph.add_edge(func_name, return_type, relation_type="returns")
                 self._add_type_dependencies(return_type)
 
         # 関数本体を処理
@@ -58,7 +58,7 @@ class DependencyExtractor(ast.NodeVisitor):
             var_type = self._extract_type_annotation(node.annotation)
             self.graph.add_node(var_name, type="variable")
             if var_type:
-                self.graph.add_edge(var_type, var_name, relation="assignment")
+                self.graph.add_edge(var_type, var_name, relation_type="assignment")
                 self._add_type_dependencies(var_type)
 
         self.generic_visit(node)
@@ -74,7 +74,7 @@ class DependencyExtractor(ast.NodeVisitor):
         for base in node.bases:
             base_name = self._extract_type_annotation(base)
             if base_name:
-                self.graph.add_edge(base_name, class_name, relation="inheritance")
+                self.graph.add_edge(base_name, class_name, relation_type="inheritance")
 
         self.generic_visit(node)
 
@@ -152,7 +152,7 @@ class DependencyExtractor(ast.NodeVisitor):
                 base_type = type_str.split("[")[0]
                 self.graph.add_node(base_type, type="type")
                 if base_type != type_str:
-                    self.graph.add_edge(base_type, type_str, relation="generic")
+                    self.graph.add_edge(base_type, type_str, relation_type="generic")
                     self._add_type_dependencies(base_type)
 
                 # 型パラメータの依存関係も追加（例: Dict[str, List[int]] の場合、strとList[int]）
@@ -189,6 +189,13 @@ def extract_dependencies_from_code(code: str) -> TypeDependencyGraph:
     extractor = DependencyExtractor()
     extractor.visit(tree)
     nx_graph = extractor.get_dependencies()
+
+    # TypeDependencyGraph.from_networkx() は "relation_type" を期待するため、
+    # "relation" 属性を "relation_type" にコピー
+    for _u, _v, data in nx_graph.edges(data=True):
+        if "relation" in data:
+            data["relation_type"] = data["relation"]
+
     return TypeDependencyGraph.from_networkx(nx_graph)
 
 
@@ -232,15 +239,19 @@ def convert_graph_to_yaml_spec(
         predecessors = list(nx_graph.predecessors(node))
         successors = list(nx_graph.successors(node))
 
+        # エッジ属性の正規化: relation_type を優先し、なければ relation にフォールバック
+        relations = []
+        for edge in nx_graph.in_edges(node):
+            edge_data = nx_graph.edges[edge]
+            relation = edge_data.get("relation_type") or edge_data.get("relation")
+            if relation:
+                relations.append(relation)
+
         dependencies[node] = {
             "type": node_type,
             "depends_on": predecessors,
             "used_by": successors,
-            "relations": [
-                nx_graph.edges[edge]["relation"]
-                for edge in nx_graph.in_edges(node)
-                if "relation" in nx_graph.edges[edge]
-            ],
+            "relations": relations,
         }
 
     return {"dependencies": dependencies}
@@ -292,7 +303,10 @@ def visualize_dependencies(
                 (edge.get_source().strip('"'), edge.get_destination().strip('"'))
             )
             if edge_data:
-                relation = edge_data.get("relation", "")
+                # エッジ属性の正規化: relation_type を優先し、なければ relation にフォールバック
+                relation = edge_data.get("relation_type") or edge_data.get(
+                    "relation", ""
+                )
                 if relation == "argument":
                     edge.set_color("blue")
                 elif relation == "return":

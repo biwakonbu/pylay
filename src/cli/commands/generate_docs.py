@@ -7,6 +7,7 @@ from rich.console import Console
 
 from src.core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from src.core.converters.yaml_to_type import yaml_to_spec
+from src.core.schemas.yaml_type_spec import TypeRoot
 
 
 def run_generate_docs(
@@ -29,8 +30,6 @@ def run_generate_docs(
         spec = yaml_to_spec(yaml_str)
 
         # Handle TypeRoot (multi-type) by using the first type
-        from src.core.schemas.yaml_type_spec import TypeRoot
-
         if spec is not None and isinstance(spec, TypeRoot) and spec.types:
             spec = next(iter(spec.types.values()))
 

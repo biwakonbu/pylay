@@ -14,11 +14,15 @@ class RelationType(str, Enum):
     DEPENDS_ON = "depends_on"
     INHERITS_FROM = "inherits_from"
     INHERITS = "inherits"  # 互換性のために追加
+    INHERITANCE = "inheritance"  # クラス継承
     IMPLEMENTS = "implements"
     REFERENCES = "references"
     USES = "uses"
     RETURNS = "returns"  # 関数戻り値
     CALLS = "calls"  # 関数呼び出し
+    ARGUMENT = "argument"  # 関数引数
+    ASSIGNMENT = "assignment"  # 変数代入
+    GENERIC = "generic"  # ジェネリック型
 
 
 class GraphNode(BaseModel):
@@ -188,7 +192,18 @@ class TypeDependencyGraph(BaseModel):
 
         for source, target, edge_attrs in graph.edges(data=True):
             edge_attrs = dict(edge_attrs)
-            relation_type = edge_attrs.pop("relation_type", "depends_on")
+            relation_type_value = edge_attrs.pop("relation_type", "depends_on")
+
+            # 文字列をRelationTypeに変換
+            if isinstance(relation_type_value, str):
+                try:
+                    relation_type = RelationType(relation_type_value)
+                except ValueError:
+                    # 無効な値の場合はdepends_onにフォールバック
+                    relation_type = RelationType.DEPENDS_ON
+            else:
+                relation_type = relation_type_value
+
             edges.append(
                 GraphEdge(
                     source=source,

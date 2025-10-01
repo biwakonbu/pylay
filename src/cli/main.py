@@ -138,6 +138,8 @@ def generate_yaml_docs(input: str, output: Optional[str]) -> None:
             yaml_str = f.read()
 
         spec = yaml_to_spec(yaml_str)
+        if spec is None:
+            raise ValueError(f"Failed to parse spec from {input}")
         generator = YamlDocGenerator()
         generator.generate(Path(output), spec=spec)
 
@@ -187,14 +189,8 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
         import matplotlib.pyplot as plt
         import networkx as nx
 
-        # TypeDependencyGraphからNetworkXグラフに変換
-        nx_graph: nx.DiGraph = nx.DiGraph()
-        for node in dep_graph.nodes:
-            nx_graph.add_node(node.id or node.name, label=node.name)
-        for edge in dep_graph.edges:
-            nx_graph.add_edge(
-                edge.source, edge.target, relation=edge.relation_type.value
-            )
+        # TypeDependencyGraph.to_networkx() を使用してNetworkXグラフに変換
+        nx_graph = dep_graph.to_networkx()
 
         plt.figure(figsize=(12, 8))
         pos = nx.spring_layout(nx_graph)
@@ -251,7 +247,7 @@ def convert_to_yaml(input_module: str, output: str) -> None:
             cli_instance.console.print("[bold green]YAML出力:[/bold green]")
             cli_instance.console.print(yaml_str if yaml_str is not None else "")
         else:
-            with open(output, "w") as f:
+            with open(output, "w", encoding="utf-8") as f:
                 f.write(yaml_str if yaml_str is not None else "")
             cli_instance.show_success_message(
                 "型→YAML変換が完了しました",
@@ -337,8 +333,8 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
             cli_instance.console.print("\n[bold green]✅ 依存関係抽出完了[/bold green]")
             cli_instance.console.print(f"ノード数: {len(graph.nodes)}")
             cli_instance.console.print(f"エッジ数: {len(graph.edges)}")
-            if graph.metadata and "cycles" in graph.metadata:  # type: ignore[attr-defined]  # nx.DiGraph互換性
-                cycles_value = graph.metadata["cycles"]  # type: ignore[attr-defined]
+            if graph.metadata and "cycles" in graph.metadata:
+                cycles_value = graph.metadata["cycles"]
                 if cycles_value and isinstance(cycles_value, list):
                     cli_instance.console.print(f"循環数: {len(cycles_value)}")
 
@@ -349,7 +345,7 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
 
                 output_image = f"{input_file}.deps.png"
                 processor = GraphProcessor()
-                processor.visualize_graph(graph, output_image)  # type: ignore[arg-type]  # nx.DiGraph互換性
+                processor.visualize_graph(graph, output_image)
                 cli_instance.console.print(
                     f"📊 依存関係グラフを {output_image} に保存しました"
                 )

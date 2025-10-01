@@ -21,6 +21,8 @@ class Analyzer(ABC):
     型推論と依存関係抽出を統一的に扱うインターフェースを提供します。
     """
 
+    config: PylayConfig
+
     def __init__(self, config: PylayConfig) -> None:
         """
         Analyzerを初期化します。
@@ -43,6 +45,6 @@ class Analyzer(ABC):
 
         Raises:
             ValueError: 入力が無効な場合
-            RuntimeError: 解析に失敗した場合
+            AnalysisError: 解析に失敗した場合
         """
         ...

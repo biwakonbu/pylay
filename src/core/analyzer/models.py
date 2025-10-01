@@ -6,7 +6,7 @@ Pydantic BaseModelを活用した型安全な内部状態管理を提供しま�
 
 import logging
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeGuard
 from pydantic import BaseModel, Field, ConfigDict
 
 from src.core.schemas.graph_types import GraphNode, GraphEdge
@@ -156,7 +156,7 @@ class InferenceConfig(BaseModel):
 
         # infer_levelのバリデーション
         infer_level = config.infer_level
-        if infer_level not in ("loose", "normal", "strict"):
+        if not is_valid_infer_level(infer_level):
             logger.warning(
                 f"無効なinfer_level '{infer_level}' が指定されました。"
                 f"デフォルト値 'normal' にフォールバックします。"
@@ -164,11 +164,19 @@ class InferenceConfig(BaseModel):
             )
             infer_level = "normal"
 
+        # 型ガードによって infer_level は Literal["loose", "normal", "strict"] 型
         return cls(
             infer_level=infer_level,
             max_depth=max_depth,
             enable_mypy=infer_level != "loose",
         )
+
+
+def is_valid_infer_level(
+    value: str,
+) -> TypeGuard[Literal["loose", "normal", "strict"]]:
+    """infer_levelが有効な値かチェックする型ガード"""
+    return value in ("loose", "normal", "strict")
 
 
 class MypyResult(BaseModel):

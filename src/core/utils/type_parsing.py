@@ -13,8 +13,9 @@
 import ast
 import logging
 
-# ForwardRef: 前方参照の型チェックに使用（179行目）
-# get_args, get_origin: ジェネリック型の解析に使用（159-160行目）
+# 実行時の型解析処理に使用
+# - get_args, get_origin: ジェネリック型の解析
+# - ForwardRef: 前方参照の型チェック
 from typing import ForwardRef, get_args, get_origin
 
 logger = logging.getLogger(__name__)
@@ -166,7 +167,7 @@ def extract_type_references(
             if origin is not None:
                 # originが型の場合、その名前を抽出
                 if hasattr(origin, "__name__"):
-                    name = origin.__name__
+                    name = getattr(origin, "__name__")
                     if name not in excluded_types:
                         refs.add(name)
 
@@ -175,7 +176,7 @@ def extract_type_references(
                     extract_from_typing_obj(arg)
             # 通常の型オブジェクト
             elif hasattr(obj, "__name__"):
-                name = obj.__name__  # type: ignore[reportAttributeAccessIssue]  # hasattr()でチェック済み
+                name = getattr(obj, "__name__")
                 if name not in excluded_types:
                     refs.add(name)
             # ForwardRef（文字列型参照）

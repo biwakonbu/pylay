@@ -53,11 +53,9 @@ class OutputPathManager:
             len(relative_path.parts) > 0
             and relative_path.parts[0] in normalized_target_dirs
         ):
-            # relative_path.parts は tuple なので、Path に変換する際は個別に処理
+            # relative_path.parts[1:-1] は要素が1つ以下の場合は空リストを返す
             first_part = relative_path.parts[0]
-            parts_to_use = (
-                list(relative_path.parts[1:-1]) if len(relative_path.parts) > 1 else []
-            )
+            parts_to_use = list(relative_path.parts[1:-1])
             output_dir = base_output_dir / first_part
             if parts_to_use:
                 output_dir = output_dir / Path(*parts_to_use)
