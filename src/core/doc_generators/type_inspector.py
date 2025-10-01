@@ -180,7 +180,7 @@ class TypeInspector:
             else:
                 return f"```python\nNewType('{name}', {str(supertype)})\n```"
 
-        origin, args = self.get_type_origin(type_cls)
+        origin, _args = self.get_type_origin(type_cls)
         if origin is not None:
             # TypeAlias
             if hasattr(origin, "__name__"):

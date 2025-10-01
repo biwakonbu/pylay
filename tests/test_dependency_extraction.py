@@ -3,10 +3,11 @@
 """
 
 import networkx as nx
-from core.converters.extract_deps import (
+from src.core.converters.extract_deps import (
     extract_dependencies_from_code,
     convert_graph_to_yaml_spec,
 )
+from src.core.schemas.graph_types import TypeDependencyGraph
 
 
 class TestDependencyExtraction:
@@ -22,7 +23,7 @@ y: int = 5
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
+        assert isinstance(graph, TypeDependencyGraph)
         # ノードとエッジが存在することを確認
         assert len(graph.nodes) > 0
 
@@ -35,7 +36,7 @@ class MyClass:
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
+        assert isinstance(graph, TypeDependencyGraph)
 
     def test_convert_graph_to_yaml_spec(self):
         """グラフからYAML仕様への変換テスト"""
@@ -51,5 +52,5 @@ x: int = 5
     def test_empty_code(self):
         """空のコードに対するテスト"""
         graph = extract_dependencies_from_code("")
-        assert isinstance(graph, nx.DiGraph)
+        assert isinstance(graph, TypeDependencyGraph)
         assert len(graph.nodes) == 0

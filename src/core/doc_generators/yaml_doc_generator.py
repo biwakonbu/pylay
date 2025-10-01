@@ -143,12 +143,12 @@ def generate_yaml_docs(spec: TypeSpec, output_dir: str | None = None) -> None:
     generator = YamlDocGenerator(filesystem=config.filesystem)  # 依存注入
 
     # TypeRoot の場合、最初の型を使用
-    if hasattr(spec, "types") and spec.types:
+    from src.core.schemas.yaml_type_spec import TypeRoot
+
+    if isinstance(spec, TypeRoot) and spec.types:
         layer = next(iter(spec.types.keys()))
-        types = spec.types
     else:
         layer = spec.type
-        types = {spec.type: spec}
 
     output_path = Path(output_dir) / f"{layer}.md"
     generator.generate(output_path, spec)

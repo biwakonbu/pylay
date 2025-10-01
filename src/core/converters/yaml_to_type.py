@@ -25,9 +25,6 @@ def yaml_to_spec(
     if isinstance(data, dict) and not root_key:
         if "types" in data:
             # 旧形式: 複数型（types: コンテナ使用）
-            types_data = data["types"]
-            # _detect_circular_references_from_data(types_data)
-
             # 循環参照がないことを確認してからTypeRootを構築
             type_root = TypeRoot(**data)
             # 参照解決を実行
@@ -71,38 +68,6 @@ def yaml_to_spec(
         raise ValueError("Invalid YAML structure for TypeSpec or TypeRoot")
 
 
-def _detect_circular_references_from_data(types_data: dict[str, Any]) -> None:
-    """生のデータから循環参照を検出"""
-    # 参照グラフを構築
-    ref_graph = {}
-    for name, spec_data in types_data.items():
-        refs = _collect_refs_from_data(spec_data)
-        ref_graph[name] = refs
-
-    # 循環参照を検出（DFS）
-    visited = set()
-    rec_stack = set()
-
-    def has_cycle(node: str) -> bool:
-        visited.add(node)
-        rec_stack.add(node)
-
-        for neighbor in ref_graph.get(node, []):
-            if neighbor not in visited:
-                if has_cycle(neighbor):
-                    return True
-            elif neighbor in rec_stack:
-                return True
-
-        rec_stack.remove(node)
-        return False
-
-    for node in ref_graph:
-        if node not in visited:
-            if has_cycle(node):
-                raise ValueError(f"Circular reference detected involving: {node}")
-
-
 def _collect_refs_from_data(spec_data: Any) -> list[str]:
     """生のデータから参照文字列を収集"""
     refs = []
@@ -140,9 +105,6 @@ def _collect_refs_from_data(spec_data: Any) -> list[str]:
 
 def _resolve_all_refs(types: dict[str, TypeSpec]) -> dict[str, TypeSpec]:
     """すべての参照を解決"""
-    # 循環参照を検出（一時的に無効化）
-    # _detect_circular_references(types)
-
     context = TypeContext()
 
     # すべての型をコンテキストに追加
@@ -155,12 +117,6 @@ def _resolve_all_refs(types: dict[str, TypeSpec]) -> dict[str, TypeSpec]:
         resolved_types[name] = context._resolve_nested_refs(spec)
 
     return resolved_types
-
-
-def _detect_circular_references(types: dict[str, TypeSpec]) -> None:
-    """循環参照を検出（循環参照を許容するためスキップ）"""
-    # 循環参照を許容するため検出をスキップ
-    pass
 
 
 def _collect_refs_from_spec(spec: TypeSpec) -> list[str]:

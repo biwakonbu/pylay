@@ -261,7 +261,9 @@ class TestGraphProcessor:
         assert "A" in yaml_data["dependencies"]
 
     @patch("src.core.analyzer.graph_processor.Dot")
-    def test_visualize_graph(self, mock_dot):
+    @patch("src.core.analyzer.graph_processor.Node")
+    @patch("src.core.analyzer.graph_processor.Edge")
+    def test_visualize_graph(self, mock_edge, mock_node, mock_dot):
         """視覚化（モック）"""
         graph = TypeDependencyGraph(nodes=[], edges=[])
         node = GraphNode(name="A", node_type="class")
@@ -274,8 +276,14 @@ class TestGraphProcessor:
             with pytest.raises(ImportError):
                 processor.visualize_graph(graph, "test.png")
         else:
-            # nx_availableがTrueの場合はモックでテスト
-            processor.visualize_graph(graph, "test.png")
+            # pydotが利用不可の場合はスキップ
+            try:
+                import pydot
+
+                processor.visualize_graph(graph, "test.png")
+            except (ImportError, FileNotFoundError, OSError):
+                # pydot未インストールまたはGraphviz未インストールの場合はスキップ
+                pytest.skip("pydot or Graphviz not installed")
 
     def test_export_graphml(self, tmp_path):
         """GraphMLエクスポート
@@ -329,7 +337,13 @@ def get_user() -> User:
         # 視覚化（オプション）
         vis_file = tmp_path / "test.png"
         if processor.nx_available:
-            processor.visualize_graph(graph, vis_file, format_type="png")
+            try:
+                import pydot
+
+                processor.visualize_graph(graph, vis_file, format_type="png")
+            except (ImportError, FileNotFoundError, OSError):
+                # pydot未インストールまたはGraphviz未インストールの場合はスキップ
+                pytest.skip("pydot or Graphviz not installed")
 
         # メトリクス
         metrics = processor.compute_graph_metrics(graph)

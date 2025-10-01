@@ -6,14 +6,20 @@ TypeDependencyGraphを基盤に高度なグラフ操作を実行します。
 """
 
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Union, TYPE_CHECKING
 
 try:
     import networkx as nx
-    from pydot import Dot, Node, Edge
 except ImportError:
     nx = None
-    Dot, Node, Edge = None, None, None
+
+if TYPE_CHECKING:
+    from pydot import Dot, Node, Edge
+else:
+    try:
+        from pydot import Dot, Node, Edge
+    except ImportError:
+        Dot, Node, Edge = None, None, None  # type: ignore[assignment, misc]
 
 from src.core.schemas.graph_types import TypeDependencyGraph
 
@@ -43,7 +49,7 @@ class GraphProcessor:
         Returns:
             循環パスのリスト（各パスはノード名のリスト）
         """
-        if not self.nx_available:
+        if nx is None:
             return []
         nx_graph = graph.to_networkx()
         cycles = list(nx.simple_cycles(nx_graph))
@@ -59,7 +65,7 @@ class GraphProcessor:
         Returns:
             メトリクスの辞書（ノード数、エッジ数、密度など）
         """
-        if not self.nx_available:
+        if nx is None:
             return {
                 "node_count": len(graph.nodes),
                 "edge_count": len(graph.edges),
@@ -104,22 +110,15 @@ class GraphProcessor:
             ImportError: 必要なライブラリがインストールされていない場合
             ValueError: 無効なformat_typeの場合
         """
-        if not self.nx_available:
+        if nx is None:
             raise ImportError("networkx is required for visualization")
-        if not Dot:
+        if TYPE_CHECKING:
+            # 型チェック時はpydotは常に利用可能
+            pass
+        elif Dot is None or Node is None or Edge is None:  # type: ignore[unreachable]
             raise ImportError("pydot is required for visualization")
 
         nx_graph = graph.to_networkx()
-
-        # レイアウト計算
-        if layout == "spring":
-            pos = nx.spring_layout(nx_graph)
-        elif layout == "circular":
-            pos = nx.circular_layout(nx_graph)
-        elif layout == "random":
-            pos = nx.random_layout(nx_graph)
-        else:
-            pos = nx.spring_layout(nx_graph)  # デフォルト
 
         # Pydotグラフ作成
         dot_graph = Dot(graph_type="digraph", rankdir="TB")
@@ -195,7 +194,7 @@ class GraphProcessor:
             graph: エクスポート対象のTypeDependencyGraph
             output_path: 出力ファイルパス
         """
-        if not self.nx_available:
+        if nx is None:
             raise ImportError("networkx is required for export_graphml")
         nx_graph = graph.to_networkx()
         nx.write_graphml(nx_graph, str(output_path))
@@ -210,7 +209,7 @@ class GraphProcessor:
         Returns:
             インポートされたTypeDependencyGraph
         """
-        if not self.nx_available:
+        if nx is None:
             raise ImportError("networkx is required for import_graphml")
 
         nx_graph = nx.read_graphml(str(file_path))

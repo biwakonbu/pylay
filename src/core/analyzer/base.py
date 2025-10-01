@@ -5,47 +5,15 @@ Analyzerインターフェースとファクトリ関数を提供します。
 解析部分を他のコンポーネントから疎結合に利用するための基盤です。
 """
 
-from abc import ABC, abstractmethod
+from __future__ import annotations
+
 from pathlib import Path
 from collections.abc import Callable
 
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.analyzer.exceptions import AnalysisError
-
-
-class Analyzer(ABC):
-    """
-    解析エンジンの抽象基底クラス
-
-    型推論と依存関係抽出を統一的に扱うインターフェースを提供します。
-    """
-
-    def __init__(self, config: PylayConfig) -> None:
-        """
-        Analyzerを初期化します。
-
-        Args:
-            config: pylayの設定オブジェクト
-        """
-        self.config = config
-
-    @abstractmethod
-    def analyze(self, input_path: Path | str) -> TypeDependencyGraph:
-        """
-        指定された入力から型依存グラフを生成します。
-
-        Args:
-            input_path: 解析対象のファイルパスまたはコード文字列
-
-        Returns:
-            生成された型依存グラフ
-
-        Raises:
-            ValueError: 入力が無効な場合
-            RuntimeError: 解析に失敗した場合
-        """
-        ...
+from src.core.analyzer.abc_base import Analyzer
 
 
 class FullAnalyzer(Analyzer):

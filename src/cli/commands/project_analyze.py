@@ -299,13 +299,15 @@ async def _analyze_file_async(
                     spec = yaml_to_spec(types_yaml)
 
                     # TypeRoot の場合、最初の型を使用
-                    if hasattr(spec, "types") and spec.types:
+                    from src.core.schemas.yaml_type_spec import TypeRoot
+
+                    if spec is not None and isinstance(spec, TypeRoot) and spec.types:
                         spec = next(iter(spec.types.values()))
 
                     md_file = output_manager.get_markdown_path(source_file=file_path)
 
                     generator = YamlDocGenerator()
-                    generator.generate(str(md_file), spec=spec)
+                    generator.generate(md_file, spec=spec)
 
                     result["docs_generated"] = True
                     result["outputs"]["markdown"] = str(md_file)
@@ -326,14 +328,13 @@ async def _analyze_file_async(
     # 依存関係の抽出
     if config.extract_deps:
         try:
-            dep_graph = extract_dependencies_from_file(str(file_path))
-            if dep_graph and len(dep_graph.nodes()) > 0:
+            dep_graph = extract_dependencies_from_file(file_path)
+            nodes_list = list(dep_graph.nodes)
+            if nodes_list:
                 result["dependencies_found"] = True
 
                 if verbose:
-                    console.print(
-                        f"  ✓ 依存関係抽出完了: {len(dep_graph.nodes())} ノード"
-                    )
+                    console.print(f"  ✓ 依存関係抽出完了: {len(nodes_list)} ノード")
 
         except Exception as e:
             if verbose:

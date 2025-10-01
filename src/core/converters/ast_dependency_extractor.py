@@ -82,7 +82,7 @@ class ASTDependencyExtractor:
                 # デフォルト設定で TypeInferenceAnalyzer を初期化
                 config = PylayConfig(
                     target_dirs=["src"],
-                    output_dir=Path("docs/output"),
+                    output_dir="docs/output",
                     infer_level="normal",
                     generate_markdown=False,
                     extract_deps=False,
@@ -266,7 +266,7 @@ class ASTDependencyExtractor:
 
     def _handle_call(self, node: ast.Call, file_path: str) -> None:
         """関数呼び出しから依存を抽出"""
-        if hasattr(node.func, "id"):
+        if isinstance(node.func, ast.Name):
             func_name = node.func.id
             # 関数呼び出しノードを作成（必要に応じて）
             call_node = GraphNode(
@@ -330,7 +330,7 @@ class ASTDependencyExtractor:
 
     def _handle_attribute(self, node: ast.Attribute, file_path: str) -> None:
         """属性アクセスから依存を抽出"""
-        if hasattr(node.value, "id") and hasattr(node, "attr"):
+        if isinstance(node.value, ast.Name):
             obj_name = node.value.id
             attr_name = node.attr
 
@@ -353,7 +353,7 @@ class ASTDependencyExtractor:
 
     def _handle_attribute_call(self, node: ast.Attribute, file_path: str) -> None:
         """属性を通じた関数呼び出しから依存を抽出"""
-        if hasattr(node.value, "id") and hasattr(node, "attr"):
+        if isinstance(node.value, ast.Name):
             obj_name = node.value.id
             method_name = node.attr
 
@@ -381,10 +381,10 @@ class ASTDependencyExtractor:
         """変数代入から依存を抽出"""
         if node.value and isinstance(node.value, ast.Call):
             # 関数呼び出しの検出（簡易版）
-            if hasattr(node.value.func, "id"):
+            if isinstance(node.value.func, ast.Name):
                 func_name = node.value.func.id
                 # 変数名を推定（targets[0]のid）
-                if node.targets and hasattr(node.targets[0], "id"):
+                if node.targets and isinstance(node.targets[0], ast.Name):
                     var_name = node.targets[0].id
                     var_node = GraphNode(
                         name=var_name,
@@ -415,10 +415,12 @@ class ASTDependencyExtractor:
             return node.value
         elif isinstance(node, ast.Subscript):
             # ジェネリック型（例: List[User] → User）
-            if hasattr(node.slice, "id"):  # Python 3.9+
+            if isinstance(node.slice, ast.Name):  # Python 3.9+
                 return str(node.slice.id)
-            elif hasattr(node.slice, "value") and hasattr(node.slice.value, "id"):
-                return str(node.slice.value.id)
+            elif isinstance(node.slice, ast.Constant) and isinstance(
+                node.slice.value, str
+            ):
+                return node.slice.value
         elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
             # Union型（例: str | int、Python 3.10+）
             left_type = self._get_type_name_from_ast(node.left)

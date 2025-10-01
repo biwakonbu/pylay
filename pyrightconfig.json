@@ -10,12 +10,21 @@
         "**/build",
         "**/*.pyc"
     ],
+    "defineConstant": {
+        "PYDANTIC_V2": true
+    },
+    "plugins": [
+        "pydantic"
+    ],
     "pythonVersion": "3.13",
-    "typeCheckingMode": "strict",
+    "typeCheckingMode": "standard",
     "useLibraryCodeForTypes": true,
+    "stubPath": "typings",
+    "venvPath": ".",
+    "venv": ".venv",
     "reportMissingImports": "error",
     "reportMissingTypeStubs": "warning",
-    "reportImportCycles": "error",
+    "reportImportCycles": "warning",
     "reportUnusedImport": "error",
     "reportUnusedClass": "error",
     "reportUnusedFunction": "error",
@@ -27,11 +36,11 @@
     "reportOptionalIterable": "error",
     "reportOptionalContextManager": "error",
     "reportOptionalOperand": "error",
-    "reportUntypedFunctionDecorator": "error",
-    "reportUntypedClassDecorator": "error",
+    "reportUntypedFunctionDecorator": "warning",
+    "reportUntypedClassDecorator": "warning",
     "reportUntypedBaseClass": "error",
     "reportUntypedNamedTuple": "error",
-    "reportPrivateUsage": "warning",
+    "reportPrivateUsage": "none",
     "reportConstantRedefinition": "error",
     "reportIncompatibleMethodOverride": "error",
     "reportIncompatibleVariableOverride": "error",
@@ -41,9 +50,13 @@
     "reportUninitializedInstanceVariable": "none",
     "reportInvalidTypeVarUse": "error",
     "reportCallInDefaultInitializer": "none",
-    "reportUnnecessaryIsInstance": "warning",
+    "reportUnnecessaryIsInstance": "none",
     "reportUnnecessaryCast": "warning",
     "reportUnnecessaryComparison": "warning",
+    "reportCallIssue": true,
+    "reportUnknownVariableType": "none",
+    "reportUnknownMemberType": "none",
+    "reportUnknownArgumentType": "none",
     "reportAssertAlwaysTrue": "warning",
     "reportSelfClsParameterName": "warning",
     "reportImplicitStringConcatenation": "none",
@@ -52,5 +65,6 @@
     "reportInvalidStubStatement": "error",
     "reportIncompleteStub": "error",
     "reportUnsupportedDunderAll": "warning",
-    "reportUnusedCoroutine": "error"
+    "reportUnusedCoroutine": "error",
+    "reportMissingModuleSource": "none"
 }

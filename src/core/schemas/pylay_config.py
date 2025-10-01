@@ -7,9 +7,16 @@ pyproject.toml の [tool.pylay] セクションから設定を読み込み、
 
 import tomllib
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
+
+
+class AbsolutePathsDict(TypedDict):
+    """get_absolute_pathsの戻り値型定義"""
+
+    target_dirs: list[Path]
+    output_dir: Path
 
 
 class PylayConfig(BaseModel):
@@ -103,7 +110,7 @@ class PylayConfig(BaseModel):
         """
         return self.model_dump()
 
-    def get_absolute_paths(self, project_root: Path) -> dict[str, list[Path]]:
+    def get_absolute_paths(self, project_root: Path) -> AbsolutePathsDict:
         """
         相対パスを絶対パスに変換します。
 
@@ -111,7 +118,7 @@ class PylayConfig(BaseModel):
             project_root: プロジェクトルートディレクトリ
 
         Returns:
-            絶対パスの辞書
+            絶対パスの辞書（target_dirs: list[Path], output_dir: Path）
         """
         absolute_target_dirs = [
             (project_root / target_dir).resolve() for target_dir in self.target_dirs

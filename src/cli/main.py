@@ -15,7 +15,6 @@ from ..core.doc_generators.test_catalog_generator import CatalogGenerator
 from ..core.converters.extract_deps import extract_dependencies_from_file
 from ..core.schemas.pylay_config import PylayConfig
 from ..core.output_manager import OutputPathManager
-import mypy.api
 from .commands.project_analyze import project_analyze
 
 
@@ -104,7 +103,7 @@ def generate_type_docs(input: str, output: str) -> None:
             # デフォルト出力先の場合はディレクトリを作成
             Path(output).parent.mkdir(parents=True, exist_ok=True)
         with open(output, "w", encoding="utf-8") as f:
-            f.write(docs)
+            f.write(docs or "")
 
         cli_instance.show_success_message(
             "型ドキュメント生成が完了しました",
@@ -135,19 +134,14 @@ def generate_yaml_docs(input: str, output: Optional[str]) -> None:
         output = default_output
 
     try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=cli_instance.console,
-        ) as progress:
-            task = progress.add_task("📝 YAMLドキュメント生成中...", total=None)
+        with open(input, "r", encoding="utf-8") as f:
+            yaml_str = f.read()
 
-            with open(input, "r", encoding="utf-8") as f:
-                yaml_str = f.read()
-
-            spec = yaml_to_spec(yaml_str)
-            generator = YamlDocGenerator()
-            generator.generate(output, spec=spec)
+        spec = yaml_to_spec(yaml_str)
+        if spec is None:
+            raise ValueError(f"Failed to parse spec from {input}")
+        generator = YamlDocGenerator()
+        generator.generate(Path(output), spec=spec)
 
         cli_instance.show_success_message(
             "YAMLドキュメント生成が完了しました",
@@ -174,7 +168,7 @@ def generate_test_catalog(input_dir: str, output: str) -> None:
         # デフォルト出力先の場合はディレクトリを作成
         Path(output).parent.mkdir(parents=True, exist_ok=True)
     with open(output, "w", encoding="utf-8") as f:
-        f.write(catalog)
+        f.write(catalog or "")
     click.echo(f"生成完了: {output}")
 
 
@@ -190,15 +184,18 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
     """依存関係グラフを生成 (NetworkX + matplotlib)"""
     click.echo(f"依存グラフ生成: {input_dir} -> {output}")
     try:
-        graph = extract_dependencies_from_file(str(Path(input_dir)))
+        dep_graph = extract_dependencies_from_file(Path(input_dir))
         # matplotlibでグラフを生成
         import matplotlib.pyplot as plt
         import networkx as nx
 
+        # TypeDependencyGraph.to_networkx() を使用してNetworkXグラフに変換
+        nx_graph = dep_graph.to_networkx()
+
         plt.figure(figsize=(12, 8))
-        pos = nx.spring_layout(graph)
+        pos = nx.spring_layout(nx_graph)
         nx.draw(
-            graph,
+            nx_graph,
             pos,
             with_labels=True,
             node_color="lightblue",
@@ -244,20 +241,14 @@ def convert_to_yaml(input_module: str, output: str) -> None:
     Pythonの型定義をYAML形式に変換します。
     """
     try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=cli_instance.console,
-        ) as progress:
-            task = progress.add_task("🔄 型→YAML変換中...", total=None)
-            yaml_str = extract_types_from_module(Path(input_module))
+        yaml_str = extract_types_from_module(Path(input_module))
 
         if output == "-":
             cli_instance.console.print("[bold green]YAML出力:[/bold green]")
-            cli_instance.console.print(yaml_str)
+            cli_instance.console.print(yaml_str if yaml_str is not None else "")
         else:
-            with open(output, "w") as f:
-                f.write(yaml_str)
+            with open(output, "w", encoding="utf-8") as f:
+                f.write(yaml_str if yaml_str is not None else "")
             cli_instance.show_success_message(
                 "型→YAML変換が完了しました",
                 {"入力": input_module, "出力": output},
@@ -272,18 +263,11 @@ def convert_to_yaml(input_module: str, output: str) -> None:
 def convert_to_type(input_yaml: str, output_py: Optional[str]) -> None:
     """YAML を Pydantic BaseModel に変換"""
     try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=cli_instance.console,
-        ) as progress:
-            task = progress.add_task("🔄 YAML→型変換中...", total=None)
+        with open(input_yaml, "r", encoding="utf-8") as f:
+            yaml_str = f.read()
 
-            with open(input_yaml, "r", encoding="utf-8") as f:
-                yaml_str = f.read()
-
-            spec = yaml_to_spec(yaml_str)
-            model_code = f"""from pydantic import BaseModel
+        spec = yaml_to_spec(yaml_str)
+        model_code = f"""from pydantic import BaseModel
 from typing import {", ".join([t.__name__ if hasattr(t, "__name__") else str(t) for t in spec.__class__.__mro__ if t != object])}
 
 # 生成されたPydanticモデル
@@ -343,16 +327,16 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
 
                 for node in graph.nodes:
                     if node.attributes and "inferred_type" in node.attributes:
-                        table.add_row(node.name, node.attributes["inferred_type"])
+                        table.add_row(node.name, str(node.attributes["inferred_type"]))
                 cli_instance.console.print(table)
 
             cli_instance.console.print("\n[bold green]✅ 依存関係抽出完了[/bold green]")
             cli_instance.console.print(f"ノード数: {len(graph.nodes)}")
             cli_instance.console.print(f"エッジ数: {len(graph.edges)}")
             if graph.metadata and "cycles" in graph.metadata:
-                cycles = graph.metadata["cycles"]
-                if cycles:
-                    cli_instance.console.print(f"循環数: {len(cycles)}")
+                cycles_value = graph.metadata["cycles"]
+                if cycles_value and isinstance(cycles_value, list):
+                    cli_instance.console.print(f"循環数: {len(cycles_value)}")
 
             # 視覚化オプション
             if visualize:

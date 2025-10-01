@@ -18,6 +18,8 @@ help: ## このMakefileのヘルプを表示
 	@echo "  format             コードを自動フォーマット"
 	@echo "  lint               リンターでコードチェック"
 	@echo "  type-check         型チェック（mypy）"
+	@echo "  type-check-pyright 型チェック（pyright）"
+	@echo "  type-check-all     型チェック（mypy + pyright）"
 	@echo "  quality-check      品質チェック（型 + リンター）"
 	@echo ""
 	@echo "🧪 テスト実行:"
@@ -58,12 +60,21 @@ lint: ## リンターでコードチェック
 	uv run ruff check . --fix
 
 type-check: ## 型チェック（mypy）
-	@echo "🔍 型チェック中..."
+	@echo "🔍 型チェック中（mypy）..."
 	uv run mypy src/
+
+type-check-pyright: ## 型チェック（pyright）
+	@echo "🔍 型チェック中（pyright）..."
+	npx --yes pyright src/
+
+type-check-all: ## 型チェック（mypy + pyright）
+	@echo "🔍 型チェック中（mypy + pyright）..."
+	$(MAKE) type-check
+	$(MAKE) type-check-pyright
 
 quality-check: ## 品質チェック（型チェック + リンター）
 	@echo "🔍 コード品質チェック中..."
-	$(MAKE) type-check
+	$(MAKE) type-check-all
 	$(MAKE) lint
 
 # =============================================================================

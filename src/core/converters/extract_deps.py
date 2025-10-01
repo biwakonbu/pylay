@@ -7,8 +7,11 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 
 import ast
 import importlib
+from pathlib import Path
 import networkx as nx
 from typing import Any
+
+from src.core.schemas.graph_types import TypeDependencyGraph
 
 
 class DependencyExtractor(ast.NodeVisitor):
@@ -33,14 +36,14 @@ class DependencyExtractor(ast.NodeVisitor):
             if arg.annotation:
                 arg_type = self._extract_type_annotation(arg.annotation)
                 if arg_type:
-                    self.graph.add_edge(arg_type, func_name, relation="argument")
+                    self.graph.add_edge(arg_type, func_name, relation_type="argument")
                     self._add_type_dependencies(arg_type)
 
         # 戻り値の型依存を追加
         if node.returns:
             return_type = self._extract_type_annotation(node.returns)
             if return_type:
-                self.graph.add_edge(func_name, return_type, relation="return")
+                self.graph.add_edge(func_name, return_type, relation_type="returns")
                 self._add_type_dependencies(return_type)
 
         # 関数本体を処理
@@ -55,7 +58,7 @@ class DependencyExtractor(ast.NodeVisitor):
             var_type = self._extract_type_annotation(node.annotation)
             self.graph.add_node(var_name, type="variable")
             if var_type:
-                self.graph.add_edge(var_type, var_name, relation="assignment")
+                self.graph.add_edge(var_type, var_name, relation_type="assignment")
                 self._add_type_dependencies(var_type)
 
         self.generic_visit(node)
@@ -71,18 +74,20 @@ class DependencyExtractor(ast.NodeVisitor):
         for base in node.bases:
             base_name = self._extract_type_annotation(base)
             if base_name:
-                self.graph.add_edge(base_name, class_name, relation="inheritance")
+                self.graph.add_edge(
+                    base_name, class_name, relation_type="inherits_from"
+                )
 
         self.generic_visit(node)
 
-    def _extract_type_annotation(self, annotation_node: ast.AST) -> str | None:
+    def _extract_type_annotation(self, annotation_node: ast.AST | None) -> str | None:
         """
         ASTノードから型アノテーションを抽出します。
         ForwardRef（文字列リテラル）と複雑なジェネリック型を適切に処理します。
         """
         if annotation_node is None:
             return None
-        elif isinstance(annotation_node, ast.Name):
+        if isinstance(annotation_node, ast.Name):
             # シンプルな型名（例: int, str）
             return annotation_node.id
         elif isinstance(annotation_node, ast.Constant) and isinstance(
@@ -149,7 +154,7 @@ class DependencyExtractor(ast.NodeVisitor):
                 base_type = type_str.split("[")[0]
                 self.graph.add_node(base_type, type="type")
                 if base_type != type_str:
-                    self.graph.add_edge(base_type, type_str, relation="generic")
+                    self.graph.add_edge(base_type, type_str, relation_type="generic")
                     self._add_type_dependencies(base_type)
 
                 # 型パラメータの依存関係も追加（例: Dict[str, List[int]] の場合、strとList[int]）
@@ -172,7 +177,7 @@ class DependencyExtractor(ast.NodeVisitor):
         return self.graph
 
 
-def extract_dependencies_from_code(code: str) -> nx.DiGraph:
+def extract_dependencies_from_code(code: str) -> TypeDependencyGraph:
     """
     コードから依存関係を抽出します。
 
@@ -180,82 +185,109 @@ def extract_dependencies_from_code(code: str) -> nx.DiGraph:
         code: 解析対象のPythonコード
 
     Returns:
-        NetworkXの有向グラフ（依存関係）
+        TypeDependencyGraph（依存関係グラフ）
     """
     tree = ast.parse(code)
     extractor = DependencyExtractor()
     extractor.visit(tree)
-    return extractor.get_dependencies()
+    nx_graph = extractor.get_dependencies()
+
+    # TypeDependencyGraph.from_networkx() は "relation_type" を期待するため、
+    # "relation" 属性を "relation_type" にコピー
+    for _u, _v, data in nx_graph.edges(data=True):
+        if "relation" in data:
+            data["relation_type"] = data["relation"]
+
+    return TypeDependencyGraph.from_networkx(nx_graph)
 
 
-def extract_dependencies_from_file(file_path: str) -> nx.DiGraph:
+def extract_dependencies_from_file(file_path: Path | str) -> TypeDependencyGraph:
     """
     ファイルから依存関係を抽出します。
 
     Args:
-        file_path: Pythonファイルのパス
+        file_path: Pythonファイルのパス (Path または str)
 
     Returns:
-        NetworkXの有向グラフ（依存関係）
+        TypeDependencyGraph（依存関係グラフ）
     """
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(str(file_path), "r", encoding="utf-8") as f:
         code = f.read()
     return extract_dependencies_from_code(code)
 
 
-def convert_graph_to_yaml_spec(graph: nx.DiGraph) -> dict[str, Any]:
+def convert_graph_to_yaml_spec(
+    graph: TypeDependencyGraph | nx.DiGraph,
+) -> dict[str, Any]:
     """
     依存グラフをYAML型仕様に変換します。
 
     Args:
-        graph: 依存関係のNetworkXグラフ
+        graph: 依存関係のグラフ（TypeDependencyGraphまたはNetworkX DiGraph）
 
     Returns:
         YAML型仕様の辞書
     """
+    # TypeDependencyGraphをNetworkX DiGraphに変換
+    if isinstance(graph, TypeDependencyGraph):
+        nx_graph = graph.to_networkx()
+    else:
+        nx_graph = graph
+
     dependencies = {}
 
-    for node in graph.nodes():
-        node_type = graph.nodes[node].get("type", "unknown")
-        predecessors = list(graph.predecessors(node))
-        successors = list(graph.successors(node))
+    for node in nx_graph.nodes():
+        node_type = nx_graph.nodes[node].get("type", "unknown")
+        predecessors = list(nx_graph.predecessors(node))
+        successors = list(nx_graph.successors(node))
+
+        # エッジ属性の正規化: relation_type を優先し、なければ relation にフォールバック
+        relations = []
+        for edge in nx_graph.in_edges(node):
+            edge_data = nx_graph.edges[edge]
+            relation = edge_data.get("relation_type") or edge_data.get("relation")
+            if relation:
+                relations.append(relation)
 
         dependencies[node] = {
             "type": node_type,
             "depends_on": predecessors,
             "used_by": successors,
-            "relations": [
-                graph.edges[edge]["relation"]
-                for edge in graph.in_edges(node)
-                if "relation" in graph.edges[edge]
-            ],
+            "relations": relations,
         }
 
     return {"dependencies": dependencies}
 
 
-def visualize_dependencies(graph: nx.DiGraph, output_path: str = "deps.png") -> None:
+def visualize_dependencies(
+    graph: TypeDependencyGraph | nx.DiGraph, output_path: str = "deps.png"
+) -> None:
     """
     依存関係をGraphvizで視覚化します。
 
     Args:
-        graph: 依存関係のNetworkXグラフ
+        graph: 依存関係のグラフ（TypeDependencyGraphまたはNetworkX DiGraph）
         output_path: 出力画像のパス
     """
+    # TypeDependencyGraphをNetworkX DiGraphに変換
+    if isinstance(graph, TypeDependencyGraph):
+        nx_graph = graph.to_networkx()
+    else:
+        nx_graph = graph
+
     try:
-        # 動的importを使ってpydotとgraphviz_layoutをインポート
-        pydot = importlib.import_module("pydot")
+        # 動的importを使ってgraphviz_layoutをインポート
         graphviz_layout = importlib.import_module(
             "networkx.drawing.nx_pydot"
         ).graphviz_layout
 
         # NetworkXグラフをpydotグラフに変換
-        pydot_graph = graphviz_layout(graph)
+        pydot_graph = graphviz_layout(nx_graph)
 
         # ノードの色を設定（型によって異なる色）
         for node in pydot_graph.get_nodes():
             node_name = node.get_name().strip('"')
-            node_data = graph.nodes.get(node_name, {})
+            node_data = nx_graph.nodes.get(node_name, {})
             node_type = node_data.get("type", "unknown")
 
             if node_type == "function":
@@ -269,16 +301,19 @@ def visualize_dependencies(graph: nx.DiGraph, output_path: str = "deps.png") -> 
 
         # エッジの色を設定（関係によって異なる色）
         for edge in pydot_graph.get_edges():
-            edge_data = graph.edges.get(
+            edge_data = nx_graph.edges.get(
                 (edge.get_source().strip('"'), edge.get_destination().strip('"'))
             )
             if edge_data:
-                relation = edge_data.get("relation", "")
+                # エッジ属性の正規化: relation_type を優先し、なければ relation にフォールバック
+                relation = edge_data.get("relation_type") or edge_data.get(
+                    "relation", ""
+                )
                 if relation == "argument":
                     edge.set_color("blue")
-                elif relation == "return":
+                elif relation in ("returns", "return"):
                     edge.set_color("green")
-                elif relation == "inheritance":
+                elif relation in ("inherits_from", "inheritance"):
                     edge.set_color("red")
                 elif relation == "generic":
                     edge.set_color("orange")

@@ -12,13 +12,15 @@ class RelationType(str, Enum):
     """関係の種類を定義する列挙型"""
 
     DEPENDS_ON = "depends_on"
-    INHERITS_FROM = "inherits_from"
-    INHERITS = "inherits"  # 互換性のために追加
+    INHERITS_FROM = "inherits_from"  # クラス継承（正規名）
     IMPLEMENTS = "implements"
     REFERENCES = "references"
     USES = "uses"
     RETURNS = "returns"  # 関数戻り値
     CALLS = "calls"  # 関数呼び出し
+    ARGUMENT = "argument"  # 関数引数
+    ASSIGNMENT = "assignment"  # 変数代入
+    GENERIC = "generic"  # ジェネリック型
 
 
 class GraphNode(BaseModel):
@@ -38,6 +40,8 @@ class GraphNode(BaseModel):
     node_type: Literal["class", "function", "module"] | str  # 拡張性を考慮
     qualified_name: Optional[str] = None
     attributes: Optional[dict[str, str | int | float | bool]] = None
+    source_file: Optional[str] = None  # ソースファイルパス
+    line_number: Optional[int] = None  # ソースコード行番号
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)
@@ -49,6 +53,10 @@ class GraphNode(BaseModel):
         if self.qualified_name:
             return not self.qualified_name.startswith("__main__")
         return False
+
+    def get_display_name(self) -> str:
+        """表示用の名前を取得"""
+        return self.qualified_name if self.qualified_name else self.name
 
 
 class GraphEdge(BaseModel):
@@ -73,6 +81,15 @@ class GraphEdge(BaseModel):
     def is_strong_dependency(self) -> bool:
         """強い依存関係かどうかを判定（weight >= 0.8）"""
         return self.weight >= 0.8
+
+    def get_dependency_strength(self) -> str:
+        """依存関係の強さを文字列で取得"""
+        if self.weight >= 0.8:
+            return "強"
+        elif self.weight >= 0.5:
+            return "中"
+        else:
+            return "弱"
 
 
 class TypeDependencyGraph(BaseModel):
@@ -113,6 +130,22 @@ class TypeDependencyGraph(BaseModel):
     def get_edges_to(self, node_id: str) -> list[GraphEdge]:
         """ノードへのエッジを取得"""
         return [e for e in self.edges if e.target == node_id]
+
+    def get_dependency_summary(self) -> dict[str, Any]:
+        """依存関係の統計情報を取得"""
+        from collections import Counter
+
+        node_types = Counter(node.node_type for node in self.nodes)
+        relations = Counter(edge.relation_type.value for edge in self.edges)
+        strong_deps = sum(1 for edge in self.edges if edge.is_strong_dependency())
+
+        return {
+            "node_count": len(self.nodes),
+            "edge_count": len(self.edges),
+            "strong_dependencies": strong_deps,
+            "node_types": dict(node_types),
+            "relations": dict(relations),
+        }
 
     def to_networkx(self) -> "nx.DiGraph":  # type: ignore
         """NetworkX DiGraph に変換
@@ -157,7 +190,18 @@ class TypeDependencyGraph(BaseModel):
 
         for source, target, edge_attrs in graph.edges(data=True):
             edge_attrs = dict(edge_attrs)
-            relation_type = edge_attrs.pop("relation_type", "depends_on")
+            relation_type_value = edge_attrs.pop("relation_type", "depends_on")
+
+            # 文字列をRelationTypeに変換
+            if isinstance(relation_type_value, str):
+                try:
+                    relation_type = RelationType(relation_type_value)
+                except ValueError:
+                    # 無効な値の場合はdepends_onにフォールバック
+                    relation_type = RelationType.DEPENDS_ON
+            else:
+                relation_type = relation_type_value
+
             edges.append(
                 GraphEdge(
                     source=source,

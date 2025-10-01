@@ -38,16 +38,18 @@ mypy の --infer フラグを活用して、未アノテーションのコード
     ...     print(f"{node.name}: {node.attributes.get('inferred_type')}")
 """
 
+from __future__ import annotations
+
 import ast
 import subprocess
 import tempfile
 import os
 import re
 from pathlib import Path
-from src.core.analyzer.base import Analyzer
+from src.core.analyzer.abc_base import Analyzer
 from src.core.schemas.graph_types import TypeDependencyGraph, GraphNode
 from src.core.analyzer.models import InferResult, MypyResult
-from src.core.analyzer.exceptions import MypyExecutionError, TypeInferenceError
+from src.core.analyzer.exceptions import MypyExecutionError
 
 
 class TypeInferenceAnalyzer(Analyzer):
@@ -68,8 +70,7 @@ class TypeInferenceAnalyzer(Analyzer):
             型推論結果を含むTypeDependencyGraph
 
         Raises:
-            ValueError: 入力が無効な場合
-            TypeInferenceError: 推論に失敗した場合
+            ValueError: 入力が無効な場合、またはファイルが存在しない場合
         """
         if isinstance(input_path, str):
             # コード文字列の場合、一時ファイルを作成
@@ -496,7 +497,7 @@ def _parse_mypy_output(output: str) -> dict[str, InferResult]:
                     confidence=confidence,
                     line_number=line_num,
                 )
-            except (ValueError, AttributeError) as e:
+            except (ValueError, AttributeError):
                 # パースエラーは無視して次の行に進む
                 # ログ出力が必要な場合はここに追加可能
                 continue

@@ -2,8 +2,8 @@
 複雑なジェネリック型のテスト
 """
 
-import networkx as nx
-from core.converters.extract_deps import extract_dependencies_from_code
+from src.core.converters.extract_deps import extract_dependencies_from_code
+from src.core.schemas.graph_types import TypeDependencyGraph
 
 
 class TestGenericTypes:
@@ -19,10 +19,11 @@ def process(data: Dict[str, List[int]]) -> Dict[str, str]:
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
-        assert "Dict" in graph.nodes()
-        assert "Dict[str, List[int]]" in graph.nodes()
-        assert "List" in graph.nodes()
+        assert isinstance(graph, TypeDependencyGraph)
+        node_names = [node.name for node in graph.nodes]
+        assert "Dict" in node_names
+        assert "Dict[str, List[int]]" in node_names
+        assert "List" in node_names
 
     def test_union_types(self):
         """Union型のテスト
@@ -37,10 +38,11 @@ def handle(value: Union[str, int]) -> Union[List[str], Dict[str, int]]:
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
-        assert "Union" in graph.nodes()
-        assert "Union[str, int]" in graph.nodes()
-        assert "Union[List[str], Dict[str, int]]" in graph.nodes()
+        assert isinstance(graph, TypeDependencyGraph)
+        node_names = [node.name for node in graph.nodes]
+        assert "Union" in node_names
+        assert "Union[str, int]" in node_names
+        assert "Union[List[str], Dict[str, int]]" in node_names
 
     def test_optional_types(self):
         """Optional型のテスト
@@ -55,9 +57,10 @@ def find(key: str) -> Optional[Dict[str, int]]:
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
-        assert "Optional" in graph.nodes()
-        assert "Optional[Dict[str, int]]" in graph.nodes()
+        assert isinstance(graph, TypeDependencyGraph)
+        node_names = [node.name for node in graph.nodes]
+        assert "Optional" in node_names
+        assert "Optional[Dict[str, int]]" in node_names
 
     def test_complex_nested_types(self):
         """複雑なネストされた型のテスト"""
@@ -68,8 +71,9 @@ data: Dict[str, List[Dict[str, Union[int, str]]]] = {}
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
-        assert "Dict[str, List[Dict[str, Union[int, str]]]]" in graph.nodes()
+        assert isinstance(graph, TypeDependencyGraph)
+        node_names = [node.name for node in graph.nodes]
+        assert "Dict[str, List[Dict[str, Union[int, str]]]]" in node_names
 
     def test_python_310_union_syntax(self):
         """Python 3.10+ のUnion構文（str | int）のテスト
@@ -82,9 +86,10 @@ def combine(a: str | int) -> list[str] | dict[str, int]:
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
-        assert "str | int" in graph.nodes()
-        assert "list[str] | dict[str, int]" in graph.nodes()
+        assert isinstance(graph, TypeDependencyGraph)
+        node_names = [node.name for node in graph.nodes]
+        assert "str | int" in node_names
+        assert "list[str] | dict[str, int]" in node_names
 
     def test_union_in_generic_types(self):
         """Generic型内のUnionテスト（List[str | int]など）
@@ -99,6 +104,7 @@ def process_items(items: List[str | int]) -> List[str]:
 """
         graph = extract_dependencies_from_code(code)
 
-        assert isinstance(graph, nx.DiGraph)
-        assert "List" in graph.nodes()
-        assert "List[str | int]" in graph.nodes()
+        assert isinstance(graph, TypeDependencyGraph)
+        node_names = [node.name for node in graph.nodes]
+        assert "List" in node_names
+        assert "List[str | int]" in node_names

@@ -36,8 +36,9 @@ class ProjectScanner:
             解析対象のPythonファイルパス
         """
         absolute_paths = self.config.get_absolute_paths(self.project_root)
+        target_dirs = absolute_paths["target_dirs"]
 
-        for target_dir in absolute_paths["target_dirs"]:
+        for target_dir in target_dirs:
             yield from self._scan_directory(target_dir, current_depth=0)
 
     def _scan_directory(
@@ -118,18 +119,20 @@ class ProjectScanner:
             検証結果の辞書
         """
         absolute_paths = self.config.get_absolute_paths(self.project_root)
+        target_dirs = absolute_paths["target_dirs"]
+
         validation_result = {
             "valid": True,
             "errors": [],
             "warnings": [],
             "stats": {
-                "target_dirs_count": len(absolute_paths["target_dirs"]),
+                "target_dirs_count": len(target_dirs),
                 "output_dir": str(absolute_paths["output_dir"]),
             },
         }
 
         # 対象ディレクトリの検証
-        for target_dir in absolute_paths["target_dirs"]:
+        for target_dir in target_dirs:
             if not target_dir.exists():
                 validation_result["errors"].append(
                     f"対象ディレクトリが存在しません: {target_dir}"

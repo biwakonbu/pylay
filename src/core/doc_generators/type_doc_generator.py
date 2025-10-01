@@ -113,8 +113,6 @@ class LayerDocGenerator(DocumentGenerator):
             raise ValueError(
                 "layer must be str and types must be dict[str, type[Any]] or list[type[Any]]"
             )
-        if layer is None or types is None:
-            raise ValueError("layer and types parameters are required")
 
         # Clear markdown builder
         self.md.clear()
@@ -446,8 +444,6 @@ class IndexDocGenerator(DocumentGenerator):
 
         if not isinstance(type_registry, (dict, defaultdict)):
             raise ValueError("type_registry must be dict[str, dict[str, type[Any]]]")
-        if type_registry is None:
-            raise ValueError("type_registry parameter is required")
 
         # Clear markdown builder
         self.md.clear()

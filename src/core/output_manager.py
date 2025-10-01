@@ -41,21 +41,24 @@ class OutputPathManager:
         Returns:
             YAML出力パス（例: docs/pylay-types/src/cli/main.types.yaml）
         """
-        base_output_dir = self.config.get_absolute_paths(self.project_root)[
-            "output_dir"
-        ]
+        paths = self.config.get_absolute_paths(self.project_root)
+        base_output_dir = paths["output_dir"]
         relative_path = source_file.relative_to(self.project_root)
 
         # ソースファイルの場所に基づいて出力ディレクトリを決定
         # target_dirs に含まれるディレクトリの場合は、その構造を模倣
         # target_dirs の値からスラッシュを除去して比較
         normalized_target_dirs = [d.rstrip("/") for d in self.config.target_dirs]
-        if relative_path.parts[0] in normalized_target_dirs:
-            output_dir = (
-                base_output_dir
-                / relative_path.parts[0]
-                / Path(*relative_path.parts[1:-1])
-            )
+        if (
+            len(relative_path.parts) > 0
+            and relative_path.parts[0] in normalized_target_dirs
+        ):
+            # relative_path.parts[1:-1] は要素が1つ以下の場合は空リストを返す
+            first_part = relative_path.parts[0]
+            parts_to_use = list(relative_path.parts[1:-1])
+            output_dir = base_output_dir / first_part
+            if parts_to_use:
+                output_dir = output_dir / Path(*parts_to_use)
         else:
             output_dir = base_output_dir
 
@@ -116,7 +119,8 @@ class OutputPathManager:
         Returns:
             グラフ出力パス（例: docs/pylay-types/dependency_graph.png）
         """
-        output_dir = self.config.get_absolute_paths(self.project_root)["output_dir"]
+        paths = self.config.get_absolute_paths(self.project_root)
+        output_dir = paths["output_dir"]
         graph_file = output_dir / filename
         graph_file.parent.mkdir(parents=True, exist_ok=True)
         return graph_file
@@ -128,7 +132,8 @@ class OutputPathManager:
         Returns:
             出力ディレクトリの辞書（"yaml", "markdown", "graph"）
         """
-        base_dir = self.config.get_absolute_paths(self.project_root)["output_dir"]
+        paths = self.config.get_absolute_paths(self.project_root)
+        base_dir = paths["output_dir"]
         return {
             "yaml": base_dir,
             "markdown": self.config.get_documents_output_dir(self.project_root),

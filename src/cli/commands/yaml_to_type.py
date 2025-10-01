@@ -7,6 +7,7 @@ import sys
 from rich.console import Console
 
 from src.core.converters.yaml_to_type import yaml_to_spec
+from src.core.schemas.yaml_type_spec import TypeRoot
 
 
 def run_yaml_to_type(
@@ -116,13 +117,13 @@ def run_yaml_to_type(
             lines.append("")
             return lines
 
-        if hasattr(spec, "types"):
+        if spec is not None and isinstance(spec, TypeRoot):
             # 複数型仕様
             for type_name, type_spec in spec.types.items():
                 code_lines.extend(
                     generate_class_code(type_name, type_spec.model_dump())
                 )
-        else:
+        elif spec is not None:
             # 単一型仕様
             code_lines.extend(generate_class_code("GeneratedType", spec.model_dump()))
 

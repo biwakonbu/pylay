@@ -10,7 +10,12 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from src.core.schemas.graph_types import GraphNode, GraphEdge, TypeDependencyGraph
+from src.core.schemas.graph_types import (
+    GraphNode,
+    GraphEdge,
+    TypeDependencyGraph,
+    RelationType,
+)
 
 
 class MypyTypeExtractor:
@@ -33,17 +38,17 @@ class MypyTypeExtractor:
         Returns:
             mypyの型推論結果（JSON形式）
         """
-        file_path_obj = Path(file_path)
-
         # キャッシュチェック
         if file_path in self._mypy_cache:
             return self._mypy_cache[file_path]
 
+        temp_file_name: str | None = None
         try:
             # 一時ファイルにコピー（mypyが読み取り専用ファイルに対応）
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".py", delete=False
             ) as temp_file:
+                temp_file_name = temp_file.name
                 with open(file_path, "r", encoding="utf-8") as src_file:
                     temp_file.write(src_file.read())
                     temp_file.flush()
@@ -90,8 +95,8 @@ class MypyTypeExtractor:
             return {}
         finally:
             # 一時ファイル削除
-            if "temp_file" in locals():
-                Path(temp_file.name).unlink(missing_ok=True)
+            if temp_file_name is not None:
+                Path(temp_file_name).unlink(missing_ok=True)
 
     def merge_mypy_results(
         self, ast_graph: TypeDependencyGraph, mypy_results: dict[str, Any]
@@ -176,7 +181,7 @@ class MypyTypeExtractor:
                         GraphEdge(
                             source=var_name,
                             target=type_name,
-                            relation_type="references",
+                            relation_type=RelationType.REFERENCES,
                             weight=0.7,  # mypy推論は中程度の信頼性
                             metadata={"inferred_by_mypy": True},
                         )

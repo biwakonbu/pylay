@@ -5,6 +5,8 @@ Python AST を使用してコードを解析し、型依存グラフを構築し
 NetworkX を使用して依存ツリーを作成し、視覚化を可能にします。
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 import logging
 from typing import Any
@@ -14,7 +16,7 @@ try:
 except ImportError:
     nx = None
 
-from src.core.analyzer.base import Analyzer
+from src.core.analyzer.abc_base import Analyzer
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.analyzer.ast_visitors import DependencyVisitor, parse_ast
 from src.core.analyzer.exceptions import (
@@ -231,7 +233,7 @@ class DependencyExtractionAnalyzer(Analyzer):
 
     def _detect_cycles(self, graph: TypeDependencyGraph) -> list[list[str]]:
         """グラフから循環を検出"""
-        if not nx:
+        if nx is None:
             return []
         nx_graph = graph.to_networkx()
         cycles = list(nx.simple_cycles(nx_graph))
