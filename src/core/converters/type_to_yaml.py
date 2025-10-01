@@ -141,7 +141,7 @@ def _get_class_properties_with_docstrings(cls: type[Any]) -> dict[str, TypeSpecO
             properties[field_name] = field_spec
         except Exception:
             # 型変換に失敗した場合は基本的なTypeSpecを作成
-            properties[field_name] = TypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
+            properties[field_name] = TypeSpec(
                 name=field_name,
                 type="unknown",
                 description=_get_field_docstring(cls, field_name),
