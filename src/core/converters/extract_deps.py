@@ -74,7 +74,9 @@ class DependencyExtractor(ast.NodeVisitor):
         for base in node.bases:
             base_name = self._extract_type_annotation(base)
             if base_name:
-                self.graph.add_edge(base_name, class_name, relation_type="inheritance")
+                self.graph.add_edge(
+                    base_name, class_name, relation_type="inherits_from"
+                )
 
         self.generic_visit(node)
 
@@ -309,9 +311,9 @@ def visualize_dependencies(
                 )
                 if relation == "argument":
                     edge.set_color("blue")
-                elif relation == "return":
+                elif relation in ("returns", "return"):
                     edge.set_color("green")
-                elif relation == "inheritance":
+                elif relation in ("inherits_from", "inheritance"):
                     edge.set_color("red")
                 elif relation == "generic":
                     edge.set_color("orange")

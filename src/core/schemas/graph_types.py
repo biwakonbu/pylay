@@ -12,9 +12,7 @@ class RelationType(str, Enum):
     """関係の種類を定義する列挙型"""
 
     DEPENDS_ON = "depends_on"
-    INHERITS_FROM = "inherits_from"
-    INHERITS = "inherits"  # 互換性のために追加
-    INHERITANCE = "inheritance"  # クラス継承
+    INHERITS_FROM = "inherits_from"  # クラス継承（正規名）
     IMPLEMENTS = "implements"
     REFERENCES = "references"
     USES = "uses"
