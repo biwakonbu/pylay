@@ -25,9 +25,9 @@ class TestGraphNode:
         assert node.attributes is None
 
     def test_invalid_node_type(self):
-        """無効なnode_typeでも許容されることをテスト（拡張性）"""
-        node = GraphNode(name="Test", node_type="invalid_type")
-        assert node.node_type == "invalid_type"
+        """unknown node_typeがデフォルトとして機能することをテスト"""
+        node = GraphNode(name="Test", node_type="unknown")
+        assert node.node_type == "unknown"
 
 
 class TestGraphEdge:

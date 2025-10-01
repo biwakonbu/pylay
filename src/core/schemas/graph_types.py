@@ -4,7 +4,7 @@ TypeDependencyGraph, GraphNode, GraphEdge の定義
 """
 
 from enum import Enum
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -14,6 +14,7 @@ from src.core.schemas.types import (
     LineNumber,
     NodeAttributes,
     NodeId,
+    NodeType,
     QualifiedName,
     Weight,
 )
@@ -48,7 +49,7 @@ class GraphNode(BaseModel):
 
     id: NodeId | None = None
     name: str
-    node_type: Literal["class", "function", "module"] | str  # 拡張性を考慮
+    node_type: NodeType  # Literal["class", "function", "module", "unknown"]
     qualified_name: QualifiedName | None = None
     attributes: NodeAttributes | None = None
     source_file: FilePath | None = None  # ソースファイルパス
@@ -260,13 +261,25 @@ class TypeDependencyGraph(BaseModel):
         graph = nx.DiGraph()
         for node in self.nodes:
             attrs = node.attributes.custom_data if node.attributes else {}
-            graph.add_node(node.id, **attrs)
+            # NetworkXはNone値を扱えないので、Noneを除外
+            node_attrs = {
+                "node_type": node.node_type,
+                **attrs,
+            }
+            if node.qualified_name is not None:
+                node_attrs["qualified_name"] = node.qualified_name
+            if node.source_file is not None:
+                node_attrs["pylay_source_file"] = node.source_file
+            if node.line_number is not None:
+                node_attrs["line_number"] = node.line_number
+            graph.add_node(node.id, **node_attrs)
         for edge in self.edges:
             attrs = edge.attributes.custom_data if edge.attributes else {}
             graph.add_edge(
                 edge.source,
                 edge.target,
-                relation_type=edge.relation_type,
+                relation_type=edge.relation_type.value,
+                weight=edge.weight,
                 **attrs,
             )
         return graph
@@ -288,16 +301,26 @@ class TypeDependencyGraph(BaseModel):
         for node_id, node_attrs in graph.nodes(data=True):
             node_attrs = dict(node_attrs)
             node_type = node_attrs.pop("node_type", "unknown")
+            qualified_name = node_attrs.pop("qualified_name", None)
+            source_file = node_attrs.pop("pylay_source_file", None)
+            line_number = node_attrs.pop("line_number", None)
             attributes = NodeAttributes(custom_data=node_attrs) if node_attrs else None
             nodes.append(
                 GraphNode(
-                    id=node_id, name=node_id, node_type=node_type, attributes=attributes
+                    id=node_id,
+                    name=node_id,
+                    node_type=node_type,
+                    qualified_name=qualified_name,
+                    source_file=source_file,
+                    line_number=line_number,
+                    attributes=attributes,
                 )
             )
 
         for source, target, edge_attrs in graph.edges(data=True):
             edge_attrs = dict(edge_attrs)
             relation_type_value = edge_attrs.pop("relation_type", "depends_on")
+            weight_value = edge_attrs.pop("weight", 1.0)
 
             # 文字列をRelationTypeに変換
             if isinstance(relation_type_value, str):
@@ -315,6 +338,7 @@ class TypeDependencyGraph(BaseModel):
                     source=source,
                     target=target,
                     relation_type=relation_type,
+                    weight=weight_value,
                     attributes=attributes,
                 )
             )

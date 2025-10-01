@@ -10,9 +10,9 @@ docs/typing-rule.md の原則1に従い、primitive型を直接使わず、
 - Level 3: BaseModel（複雑なドメイン型・ビジネスロジック）
 """
 
-from typing import Annotated, Any
+from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 # =============================================================================
 # Level 1: type エイリアス（制約なし、単純な意味付け）
@@ -36,20 +36,52 @@ type QualifiedName = str
 type FilePath = str
 """ファイルパス"""
 
-type ConfidenceScore = float
-"""信頼度スコア（0.0〜1.0）"""
+type NodeType = Literal[
+    "class",
+    "function",
+    "module",
+    "method",
+    "variable",
+    "inferred_variable",
+    "imported_symbol",
+    "function_call",
+    "method_call",
+    "attribute_access",
+    "type_alias",
+    "unknown",
+]
+"""ノードタイプ"""
 
-# 型推論レベルはanalyzer_types.pyで
-# Literal["loose", "normal", "strict"]として定義されているため、
-# ここでは互換性のためにstr型エイリアスとして定義
-type InferLevel = str
-"""型推論レベル（strict, normal, loose）"""
+type InferLevel = Literal["strict", "normal", "loose", "none"]
+"""型推論レベル（strict, normal, loose, none）"""
 
-type IndexFilename = str
-"""インデックスファイル名"""
 
-type LayerFilenameTemplate = str
-"""レイヤーファイル名テンプレート"""
+def validate_index_filename(v: str) -> str:
+    """インデックスファイル名のバリデーション"""
+    if not v.endswith(".md"):
+        raise ValueError("インデックスファイル名は.mdで終わる必要があります")
+    return v
+
+
+type IndexFilename = Annotated[str, AfterValidator(validate_index_filename)]
+"""インデックスファイル名（.md拡張子必須）"""
+
+
+def validate_layer_filename_template(v: str) -> str:
+    """レイヤーファイル名テンプレートのバリデーション"""
+    if not v.endswith(".md"):
+        raise ValueError("レイヤーファイル名テンプレートは.mdで終わる必要があります")
+    if "{layer}" not in v:
+        raise ValueError(
+            "レイヤーファイル名テンプレートには{layer}プレースホルダが必要です"
+        )
+    return v
+
+
+type LayerFilenameTemplate = Annotated[
+    str, AfterValidator(validate_layer_filename_template)
+]
+"""レイヤーファイル名テンプレート（.md拡張子と{layer}プレースホルダ必須）"""
 
 type TypeSpecName = str
 """YAML型仕様の型名"""
@@ -175,6 +207,9 @@ def validate_weight(v: float) -> float:
 type Weight = Annotated[float, AfterValidator(validate_weight), Field(ge=0.0, le=1.0)]
 """エッジの重み（0.0〜1.0）"""
 
+type ConfidenceScore = Weight
+"""信頼度スコア（0.0〜1.0）- Weightと同じ制約"""
+
 
 def validate_line_number(v: int) -> int:
     """行番号のバリデーション"""
@@ -200,6 +235,8 @@ class NodeAttributes(BaseModel):
     構造化されたドメイン型に置き換えます。
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     custom_data: dict[str, str | int | float | bool] = Field(
         default_factory=dict, description="カスタム属性データ"
     )
@@ -212,14 +249,14 @@ class NodeAttributes(BaseModel):
     def get_int_value(self, key: str) -> int | None:
         """整数値を取得"""
         value = self.custom_data.get(key)
-        if isinstance(value, int):
+        if isinstance(value, int) and not isinstance(value, bool):
             return value
         return None
 
     def get_float_value(self, key: str) -> float | None:
         """浮動小数点値を取得"""
         value = self.custom_data.get(key)
-        if isinstance(value, int | float):
+        if isinstance(value, int | float) and not isinstance(value, bool):
             return float(value)
         return None
 
@@ -263,20 +300,22 @@ class GraphMetadata(BaseModel):
     """
     グラフのメタデータを表す構造化型
 
-    primitive型の dict[str, Any] を構造化されたドメイン型に置き換えます。
+    primitive型の dict[str, object] を構造化されたドメイン型に置き換えます。
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     version: Version = Field(default="1.0", description="グラフのバージョン")
     created_at: Timestamp | None = Field(
         default=None, description="作成日時（ISO 8601形式）"
     )
-    cycles: list[list[str]] = Field(
+    cycles: list[list[NodeId]] = Field(
         default_factory=list, description="検出された循環依存のリスト"
     )
     statistics: dict[str, int] = Field(
         default_factory=dict, description="統計情報（ノード数、エッジ数など）"
     )
-    custom_fields: dict[str, Any] = Field(
+    custom_fields: dict[str, object] = Field(
         default_factory=dict, description="カスタムフィールド"
     )
 
@@ -296,7 +335,7 @@ class GraphMetadata(BaseModel):
         """統計情報を設定"""
         self.statistics[key] = value
 
-    def get(self, key: str, default: Any = None) -> Any:
+    def get(self, key: str, default: object | None = None) -> object | None:
         """カスタムフィールドから値を取得（dict互換）"""
         return self.custom_fields.get(key, default)
 
@@ -304,7 +343,7 @@ class GraphMetadata(BaseModel):
         """dict互換: in演算子のサポート"""
         return key in self.custom_fields
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> object:
         """dict互換: []演算子のサポート"""
         return self.custom_fields[key]
 
