@@ -10,16 +10,9 @@
         "**/build",
         "**/*.pyc"
     ],
-    "defineConstant": {
-        "PYDANTIC_V2": true
-    },
-    "plugins": [
-        "pydantic"
-    ],
     "pythonVersion": "3.13",
     "typeCheckingMode": "standard",
     "useLibraryCodeForTypes": true,
-    "stubPath": "typings",
     "venvPath": ".",
     "venv": ".venv",
     "reportMissingImports": "error",
