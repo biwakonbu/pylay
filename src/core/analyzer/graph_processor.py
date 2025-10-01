@@ -6,7 +6,7 @@ TypeDependencyGraphを基盤に高度なグラフ操作を実行します。
 """
 
 from pathlib import Path
-from typing import Any, Union, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 try:
     import networkx as nx
@@ -93,7 +93,7 @@ class GraphProcessor:
     def visualize_graph(
         self,
         graph: TypeDependencyGraph,
-        output_path: Union[Path, str],
+        output_path: Path | str,
         format_type: str = "png",
         layout: str = "spring",
     ) -> None:
@@ -185,7 +185,7 @@ class GraphProcessor:
         return {"dependencies": dependencies}
 
     def export_graphml(
-        self, graph: TypeDependencyGraph, output_path: Union[Path, str]
+        self, graph: TypeDependencyGraph, output_path: Path | str
     ) -> None:
         """
         グラフをGraphML形式でエクスポートします。
@@ -199,7 +199,7 @@ class GraphProcessor:
         nx_graph = graph.to_networkx()
         nx.write_graphml(nx_graph, str(output_path))
 
-    def import_graphml(self, file_path: Union[Path, str]) -> TypeDependencyGraph:
+    def import_graphml(self, file_path: Path | str) -> TypeDependencyGraph:
         """
         GraphMLファイルからグラフをインポートします。
 
