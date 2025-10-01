@@ -24,6 +24,7 @@ from src.core.schemas.types import (
     MaxDepth,
     Message,
     NodeCount,
+    NodeId,
     Severity,
     ToolName,
     VisualizeFlag,
@@ -65,7 +66,7 @@ class GraphMetrics(BaseModel):
     node_count: NodeCount
     edge_count: EdgeCount
     density: Density
-    cycles: list[list[str]]
+    cycles: list[list[NodeId]]
 
 
 class TempFileConfig(BaseModel):
