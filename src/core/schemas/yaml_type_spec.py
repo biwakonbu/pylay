@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 
@@ -39,13 +39,13 @@ class TypeSpec(BaseModel):
         arbitrary_types_allowed=True
     )  # 遅延型解決はmodel_rebuildで対応
 
-    name: Optional[str] = Field(
+    name: str | None = Field(
         None, description="型の名前 (v1.1ではオプション。参照時は不要)"
     )
     type: str = Field(
         ..., description="基本型 (str, int, float, bool, list, dict, union)"
     )
-    description: Optional[str] = Field(None, description="型の説明")
+    description: str | None = Field(None, description="型の説明")
     required: bool = Field(True, description="必須かどうか")
 
 

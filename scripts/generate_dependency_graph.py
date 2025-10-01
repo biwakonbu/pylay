@@ -7,7 +7,6 @@ CLIコマンド: python generate_dependency_graph.py src/module.py --output docs
 
 import argparse
 from pathlib import Path
-from typing import Optional
 
 from src.core.analyzer.base import create_analyzer
 from src.core.schemas.pylay_config import PylayConfig
@@ -18,10 +17,10 @@ def generate_dependency_docs(
     input_file: str,
     output_file: str,
     visualize: bool = False,
-    dot_file: Optional[str] = None,
+    dot_file: str | None = None,
     include_mypy: bool = False,
     analyze_graph: bool = False,
-    graphml_file: Optional[str] = None,
+    graphml_file: str | None = None,
 ) -> None:
     """
     Pythonファイルから依存グラフを抽出し、ドキュメントを生成。

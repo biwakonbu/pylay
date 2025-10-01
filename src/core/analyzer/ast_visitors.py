@@ -6,14 +6,13 @@ AST訪問者モジュール
 
 import ast
 from pathlib import Path
-from typing import Optional, Union
 
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.analyzer.exceptions import ASTParseError
 from src.core.schemas.graph_types import GraphNode, GraphEdge, RelationType
 
 # 関数定義の共通型（Python 3.13+）
-FunctionDefLike = Union[ast.FunctionDef, ast.AsyncFunctionDef]
+type FunctionDefLike = ast.FunctionDef | ast.AsyncFunctionDef
 
 
 class DependencyVisitor(ast.NodeVisitor):
@@ -346,7 +345,7 @@ class DependencyVisitor(ast.NodeVisitor):
             return left_types + right_types
         return []
 
-    def _get_type_name_from_ast(self, node: ast.AST) -> Optional[str]:
+    def _get_type_name_from_ast(self, node: ast.AST) -> str | None:
         """
         ASTノードから型名を抽出（後方互換性のため残す）
 

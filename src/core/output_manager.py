@@ -6,7 +6,6 @@ PylayConfig を基に統一的な出力パスを生成します。
 """
 
 from pathlib import Path
-from typing import Optional
 
 from .schemas.pylay_config import PylayConfig
 
@@ -19,7 +18,7 @@ class OutputPathManager:
     依存関係グラフなどの出力パスを生成します。
     """
 
-    def __init__(self, config: PylayConfig, project_root: Optional[Path] = None):
+    def __init__(self, config: PylayConfig, project_root: Path | None = None):
         """
         初期化
 
@@ -69,7 +68,7 @@ class OutputPathManager:
         return yaml_file
 
     def get_markdown_path(
-        self, source_file: Optional[Path] = None, filename: Optional[str] = None
+        self, source_file: Path | None = None, filename: str | None = None
     ) -> Path:
         """
         Markdownドキュメントファイルのパスを生成

@@ -5,7 +5,7 @@ TypeDependencyGraphからMarkdownドキュメントを生成。
 """
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .base import DocumentGenerator
 from .markdown_builder import MarkdownBuilder
@@ -147,7 +147,7 @@ class GraphDocGenerator(DocumentGenerator):
         self,
         output_path: Path,
         graph: TypeDependencyGraph,
-        dot_file: Optional[Path] = None,
+        dot_file: Path | None = None,
     ) -> None:
         """
         視覚化オプション付きで生成（Graphviz統合準備）。

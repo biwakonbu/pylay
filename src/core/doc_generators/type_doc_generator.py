@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .base import DocumentGenerator
 from .config import TypeDocConfig
@@ -62,7 +62,7 @@ class LayerDocGenerator(DocumentGenerator):
         layer: str
         types: dict[str, type[Any]] | list[type[Any]]
         actual_output_path: Path
-        graph: Optional[TypeDependencyGraph] = kwargs.get("graph")
+        graph: TypeDependencyGraph | None = kwargs.get("graph")
 
         if len(args) == 3:
             # テストが期待するAPI: generate(layer, types, output_path)
