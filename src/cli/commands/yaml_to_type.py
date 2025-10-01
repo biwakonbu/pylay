@@ -33,7 +33,7 @@ def run_yaml_to_type(
         # Pythonコードを生成
         code_lines = []
         code_lines.append("# Generated Python types from YAML specification")
-        code_lines.append("from typing import Optional, List, Dict")
+        code_lines.append("# Python 3.13+ type annotations")
         code_lines.append("from pydantic import BaseModel")
         code_lines.append("")
 
@@ -53,9 +53,9 @@ def run_yaml_to_type(
                 items_spec = spec_data.get("items")
                 if items_spec:
                     item_type = spec_to_type_annotation(items_spec)
-                    return f"List[{item_type}]"
+                    return f"list[{item_type}]"
                 else:
-                    return "List"
+                    return "list"
 
             elif spec_type == "dict":
                 # Enum の場合（propertiesが空）はクラス名を返す
@@ -63,7 +63,7 @@ def run_yaml_to_type(
                 if not properties and spec_name:
                     return spec_name
                 # Dict型の場合
-                return "Dict[str, str | int | float | bool]"
+                return "dict[str, str | int | float | bool]"
 
             elif spec_type == "union":
                 # Union 型の処理
@@ -75,15 +75,15 @@ def run_yaml_to_type(
                     return "str | int"  # デフォルト
 
             elif spec_type == "unknown":
-                # unknown の場合は元の name を使う（Optional[str] など）
+                # unknown の場合は元の name を使う（str | None など）
                 if spec_name == "phone":
-                    return "Optional[str]"
+                    return "str | None"
                 elif spec_name == "description":
-                    return "Optional[str]"
+                    return "str | None"
                 elif spec_name == "shipping_address":
-                    return "Optional[Address]"
+                    return "Address | None"
                 elif spec_name == "status":
-                    return "Union[str, Status]"
+                    return "str | Status"
                 return "Any"
 
             else:
@@ -112,7 +112,7 @@ def run_yaml_to_type(
                     if prop_spec.get("required", True):
                         lines.append(f"    {prop_name}: {prop_type}")
                     else:
-                        lines.append(f"    {prop_name}: Optional[{prop_type}] = None")
+                        lines.append(f"    {prop_name}: {prop_type} | None = None")
 
             lines.append("")
             return lines
