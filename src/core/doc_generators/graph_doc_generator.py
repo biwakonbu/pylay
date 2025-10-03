@@ -117,8 +117,7 @@ class GraphDocGenerator(DocumentGenerator):
             is_external = "✓" if node.is_external() else ""
             display_name = node.get_display_name()
             self.md.paragraph(
-                f"| {display_name} | {node.node_type} | "
-                f"{location} | {is_external} |"
+                f"| {display_name} | {node.node_type} | {location} | {is_external} |"
             )
 
     def _generate_edge_table(self, edges: list[GraphEdge]) -> None:

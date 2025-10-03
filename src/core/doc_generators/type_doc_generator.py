@@ -162,7 +162,7 @@ class LayerDocGenerator(DocumentGenerator):
         code_example = (
             "from schemas.core_types import TypeFactory\n\n"
             "# 完全自動成長（レイヤー自動検知）\n"
-            "MyNewType = TypeFactory.get_auto('MyNewType')"
+            "MyCustomType = TypeFactory.get_auto('MyCustomType')"
         )
         self.md.code_block("python", code_example).line_break()
 
@@ -247,15 +247,6 @@ class LayerDocGenerator(DocumentGenerator):
         if not docstring:
             self.md.heading(3, "説明").paragraph(f"{name} 型の定義").line_break()
             return
-
-        # Handle standard NewType documentation
-        if self.inspector.is_standard_newtype_doc(docstring):
-            if name == "NewType":
-                return  # Skip NewType itself
-            else:
-                description = f"{name} - カスタム型定義（型安全性のためのNewType）"
-                self.md.heading(3, "説明").paragraph(description).line_break()
-                return
 
         # Process complex docstrings with code blocks
         description_lines, code_blocks = self.inspector.extract_code_blocks(docstring)

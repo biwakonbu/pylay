@@ -18,7 +18,7 @@ class TypeInspector:
         Args:
             skip_types: 検査時にスキップする型名のセット
         """
-        self.skip_types = skip_types or {"NewType"}
+        self.skip_types = skip_types or set()
 
     def get_docstring(self, type_cls: type[Any]) -> str | None:
         """型クラスからdocstringを取得する。
@@ -93,28 +93,6 @@ class TypeInspector:
             and issubclass(type_cls, BaseModel)
         )
 
-    def is_newtype(self, type_cls: type[Any]) -> bool:
-        """型がNewTypeかどうかを確認する。
-
-        Args:
-            type_cls: 確認する型クラス
-
-        Returns:
-            NewTypeの場合はTrue、それ以外の場合はFalse
-        """
-        return hasattr(type_cls, "__supertype__")
-
-    def get_newtype_supertype(self, type_cls: type[Any]) -> type[Any] | None:
-        """NewTypeのスーパータイプを取得する。
-
-        Args:
-            type_cls: NewTypeクラス
-
-        Returns:
-            スーパータイプが存在する場合はその型、存在しない場合はNone
-        """
-        return getattr(type_cls, "__supertype__", None)
-
     def get_pydantic_schema(self, type_cls: type[Any]) -> dict[str, Any] | None:
         """Pydantic JSONスキーマを取得する。
 
@@ -132,20 +110,6 @@ class TypeInspector:
         except Exception:
             # Handle any schema generation errors
             return None
-
-    def is_standard_newtype_doc(self, docstring: str) -> bool:
-        """docstringが標準的なNewTypeドキュメントかどうかを確認する。
-
-        Args:
-            docstring: 確認するdocstring
-
-        Returns:
-            標準的なNewTypeドキュメントの場合はTrue
-        """
-        return (
-            "NewType creates simple unique types" in docstring
-            or "Usage:: UserId = NewType" in docstring
-        )
 
     def should_skip_type(self, type_name: str) -> bool:
         """型をスキップすべきかどうかを確認する。
@@ -174,13 +138,6 @@ class TypeInspector:
                 return (
                     f"```json\n{json.dumps(schema, indent=2, ensure_ascii=False)}\n```"
                 )
-
-        if self.is_newtype(type_cls):
-            supertype = self.get_newtype_supertype(type_cls)
-            if supertype and hasattr(supertype, "__name__"):
-                return f"```python\nNewType('{name}', {supertype.__name__})\n```"
-            else:
-                return f"```python\nNewType('{name}', {str(supertype)})\n```"
 
         origin, _args = self.get_type_origin(type_cls)
         if origin is not None:

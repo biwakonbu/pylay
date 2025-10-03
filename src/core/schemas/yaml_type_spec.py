@@ -334,7 +334,7 @@ class TypeContext:
     def resolve_ref(
         self, ref: TypeSpecOrRef
     ) -> TypeSpec | RefPlaceholder:  # 循環時はValueErrorを発生
-        """参照を解決してTypeSpecを返す（NewType対応）"""
+        """参照を解決してTypeSpecを返す（Annotated型対応）"""
         if isinstance(ref, RefPlaceholder):
             ref_name = ref.ref_name
             if ref_name in self.resolving:

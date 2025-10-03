@@ -48,8 +48,8 @@ class TestGenerateTypeDocs:
         assert "完全自動成長" in content
         assert "TypeFactory.get_auto" in content
 
-    def test_generate_layer_docs_skip_newtype(self):
-        """NewTypeが正しく除外されることを確認"""
+    def test_generate_layer_docs_with_registry(self):
+        """レジストリからの型ドキュメント生成を確認"""
         # 実際のレジストリを使用してテスト
         from src.core.schemas.type_index import TYPE_REGISTRY
 
@@ -62,7 +62,6 @@ class TestGenerateTypeDocs:
         content = (self.output_dir / "primitives.md").read_text(encoding="utf-8")
         assert "str" in content
         assert "int" in content
-        # NewTypeは自動的に除外されることを確認（skip_typesで設定）
 
     def test_generate_layer_docs_with_typealias_descriptions(self):
         """TypeAlias用の説明が正しく適用されることを確認"""
