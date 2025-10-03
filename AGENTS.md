@@ -235,14 +235,8 @@ Makefile は開発コマンドを統一的に管理するためのツールで�
 - **make lint**: Ruffでコードをチェックし、修正可能な問題を自動修正します。
   使用例: `make lint`
 
-- **make type-check**: mypyで型チェックを実行します。
+- **make type-check**: mypy + Pyrightで型チェックを実行します（一括実行、推奨）。
   使用例: `make type-check`
-
-- **make type-check-pyright**: Pyrightで型チェックを実行します（npx経由）。
-  使用例: `make type-check-pyright`
-
-- **make type-check-all**: mypy + Pyrightで型チェックを実行します。
-  使用例: `make type-check-all`
 
 - **make test**: pytestでテストを実行し、カバレッジレポートを生成します。
   使用例: `make test`
@@ -253,7 +247,7 @@ Makefile は開発コマンドを統一的に管理するためのツールで�
 - **make coverage**: カバレッジレポートを表示します。
   使用例: `make coverage`
 
-- **make quality-check**: 型チェック（mypy + pyright）とリンターを一括実行します。
+- **make quality-check**: 型チェック + リンターを一括実行します。
   使用例: `make quality-check`
 
 - **make analyze**: pyproject.toml の設定に基づいてプロジェクト全体の型解析とドキュメント生成を実行します。target_dirs で指定されたディレクトリをスキャンし、型情報をYAMLにエクスポート、依存関係を抽出、Markdownドキュメントを生成します。出力は docs/pylay-types/ に documents/ と src/ 等の階層構造で整理されます。

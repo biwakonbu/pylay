@@ -120,6 +120,7 @@ dev-dependencies = [
     "interrogate>=1.7.0",
     "safety>=3.2.3",
     "types-pyyaml>=6.0.12.20250915",
+    "pyright>=1.1.406",
 ]
 
 [tool.pytest.ini_options]

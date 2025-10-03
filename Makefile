@@ -17,9 +17,7 @@ help: ## このMakefileのヘルプを表示
 	@echo "🎨 コード品質チェック:"
 	@echo "  format             コードを自動フォーマット"
 	@echo "  lint               リンターでコードチェック"
-	@echo "  type-check         型チェック（mypy）"
-	@echo "  type-check-pyright 型チェック（pyright）"
-	@echo "  type-check-all     型チェック（mypy + pyright）"
+	@echo "  type-check         型チェック（mypy + pyright 一括実行）"
 	@echo "  quality-check      品質チェック（型 + リンター）"
 	@echo ""
 	@echo "🧪 テスト実行:"
@@ -61,23 +59,16 @@ lint: ## リンターでコードチェック
 	@echo "🔍 リンターでコードチェック中..."
 	uv run ruff check . --fix
 
-type-check: ## 型チェック（mypy）
-	@echo "🔍 型チェック中（mypy）..."
-	uv run mypy src/
-
-type-check-pyright: ## 型チェック（pyright via npx）
-	@# pyrightはNode.js製のツールのため、npx経由で実行します
-	@echo "🔍 型チェック中（pyright via npx）..."
-	npx --yes pyright src/
-
-type-check-all: ## 型チェック（mypy + pyright）
+type-check: ## 型チェック（mypy + pyright）
 	@echo "🔍 型チェック中（mypy + pyright）..."
-	$(MAKE) type-check
-	$(MAKE) type-check-pyright
+	@echo "  - mypy..."
+	@uv run mypy src/
+	@echo "  - pyright..."
+	@uv run pyright src/
 
 quality-check: ## 品質チェック（型チェック + リンター）
 	@echo "🔍 コード品質チェック中..."
-	$(MAKE) type-check-all
+	$(MAKE) type-check
 	$(MAKE) lint
 
 # =============================================================================
