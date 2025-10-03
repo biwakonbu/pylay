@@ -3,7 +3,15 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from src.core.schemas.types import IndexFilename, LayerFilenameTemplate
+from src.core.schemas.types import (
+    Description,
+    GlobPattern,
+    IndexFilename,
+    LayerFilenameTemplate,
+    LayerName,
+    MethodName,
+    TypeName,
+)
 
 from .filesystem import FileSystemInterface, RealFileSystem
 
@@ -13,8 +21,8 @@ class GeneratorConfig:
     """ドキュメントジェネレーターの基本設定。"""
 
     output_path: Path = field(default_factory=lambda: Path("docs"))
-    include_patterns: list[str] = field(default_factory=list)
-    exclude_patterns: list[str] = field(default_factory=list)
+    include_patterns: list[GlobPattern] = field(default_factory=list)
+    exclude_patterns: list[GlobPattern] = field(default_factory=list)
 
 
 @dataclass
@@ -25,8 +33,8 @@ class CatalogConfig(GeneratorConfig):
     output_path: Path = field(
         default_factory=lambda: Path("docs/types/test_catalog.md")
     )
-    include_patterns: list[str] = field(default_factory=lambda: ["test_*.py"])
-    exclude_patterns: list[str] = field(
+    include_patterns: list[GlobPattern] = field(default_factory=lambda: ["test_*.py"])
+    exclude_patterns: list[GlobPattern] = field(
         default_factory=lambda: ["__pycache__", "*.pyc"]
     )
 
@@ -38,8 +46,8 @@ class TypeDocConfig(GeneratorConfig):
     output_directory: Path = field(default_factory=lambda: Path("docs/types"))
     index_filename: IndexFilename = "README.md"
     layer_filename_template: LayerFilenameTemplate = "{layer}.md"
-    skip_types: set[str] = field(default_factory=lambda: {"NewType"})
-    type_alias_descriptions: dict[str, str] = field(
+    skip_types: set[TypeName] = field(default_factory=lambda: {"NewType"})
+    type_alias_descriptions: dict[TypeName, Description] = field(
         default_factory=lambda: {
             "JSONValue": "JSON値: 制約なしのJSON互換データ型（Anyのエイリアス）",
             "JSONObject": ("JSONオブジェクト: 文字列キーと任意の値を持つ辞書型"),
@@ -49,7 +57,7 @@ class TypeDocConfig(GeneratorConfig):
             ),
         }
     )
-    layer_methods: dict[str, str] = field(
+    layer_methods: dict[LayerName, MethodName] = field(
         default_factory=lambda: {
             "primitives": "get_primitive",
             "domain": "get_domain",

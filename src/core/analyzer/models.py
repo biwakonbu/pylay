@@ -21,6 +21,7 @@ from src.core.schemas.types import (
     LineNumber,
     MaxDepth,
     ModuleName,
+    MypyFlag,
     ReturnCode,
     StdErr,
     StdOut,
@@ -147,7 +148,7 @@ class InferenceConfig(BaseModel):
     infer_level: Literal["loose", "normal", "strict"] = "normal"
     max_depth: MaxDepth = Field(default=10)
     enable_mypy: EnableMypyFlag = True
-    mypy_flags: list[str] = Field(
+    mypy_flags: list[MypyFlag] = Field(
         default_factory=lambda: ["--infer", "--dump-type-stats"]
     )
     timeout: Timeout = Field(default=60, ge=1, le=600)

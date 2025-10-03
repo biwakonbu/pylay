@@ -2,6 +2,7 @@ from typing import Any
 
 from ruamel.yaml import YAML
 
+from src.core.schemas.types import TypeRefList
 from src.core.schemas.yaml_type_spec import (
     DictTypeSpec,
     ListTypeSpec,
@@ -69,7 +70,7 @@ def yaml_to_spec(
         raise ValueError("Invalid YAML structure for TypeSpec or TypeRoot")
 
 
-def _collect_refs_from_data(spec_data: Any) -> list[str]:
+def _collect_refs_from_data(spec_data: Any) -> TypeRefList:
     """生のデータから参照文字列を収集"""
     refs = []
 
@@ -91,14 +92,14 @@ def _collect_refs_from_data(spec_data: Any) -> list[str]:
                     elif isinstance(variant, dict):
                         # ネストされたvariants内の参照
                         refs.extend(_collect_refs_from_data(variant))
-            elif isinstance(value, (dict, list)):
+            elif isinstance(value, dict | list):
                 # ネストされた構造もチェック
                 refs.extend(_collect_refs_from_data(value))
     elif isinstance(spec_data, list):
         for item in spec_data:
             if isinstance(item, str):
                 refs.append(item)
-            elif isinstance(item, (dict, list)):
+            elif isinstance(item, dict | list):
                 refs.extend(_collect_refs_from_data(item))
 
     return refs
@@ -120,7 +121,7 @@ def _resolve_all_refs(types: dict[str, TypeSpec]) -> dict[str, TypeSpec]:
     return resolved_types
 
 
-def _collect_refs_from_spec(spec: TypeSpec) -> list[str]:
+def _collect_refs_from_spec(spec: TypeSpec) -> TypeRefList:
     """TypeSpecから参照文字列を収集
 
     TypeSpecオブジェクトから参照文字列を収集します。
@@ -199,7 +200,7 @@ def validate_with_spec(
                 return isinstance(data, int)
             elif spec.type == "float":
                 # floatはintも受け入れる（Pythonのfloat()関数と同様）
-                return isinstance(data, (int, float))
+                return isinstance(data, int | float)
             elif spec.type == "bool":
                 return isinstance(data, bool)
             elif spec.type == "any":

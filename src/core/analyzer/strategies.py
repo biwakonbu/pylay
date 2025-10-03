@@ -25,6 +25,7 @@ from src.core.analyzer.exceptions import AnalysisError
 from src.core.analyzer.models import AnalyzerState, InferenceConfig, ParseContext
 from src.core.schemas.graph_types import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
+from src.core.schemas.types import TypeRefList
 
 logger = logging.getLogger(__name__)
 
@@ -227,7 +228,7 @@ class NormalAnalysisStrategy(AnalysisStrategy):
             # mypy失敗時はログして続行（Normalモードでは許容）
             logger.warning(f"mypy統合に失敗しました ({file_path}): {e}")
 
-    def _extract_type_refs(self, type_str: str) -> list[str]:
+    def _extract_type_refs(self, type_str: str) -> TypeRefList:
         """
         型文字列から型参照を抽出（統合ユーティリティ使用）
 

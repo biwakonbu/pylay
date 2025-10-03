@@ -202,7 +202,6 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
             node_size=2000,
             font_size=10,
             font_weight="bold",
-            arrows=True,
             arrowsize=20,
         )
         plt.title("Type Dependencies")

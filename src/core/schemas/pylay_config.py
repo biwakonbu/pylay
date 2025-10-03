@@ -16,6 +16,7 @@ from src.core.schemas.types import (
     DirectoryPath,
     ExtractDepsFlag,
     GenerateMarkdownFlag,
+    GlobPattern,
     InferLevel,
     MaxDepth,
 )
@@ -72,7 +73,7 @@ class PylayConfig(BaseModel):
     )
 
     # 除外パターン
-    exclude_patterns: list[str] = Field(
+    exclude_patterns: list[GlobPattern] = Field(
         default=[
             "**/tests/**",
             "**/*_test.py",

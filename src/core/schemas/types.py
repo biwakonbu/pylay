@@ -167,6 +167,72 @@ type RequiredFlag = bool
 type AdditionalPropertiesFlag = bool
 """追加プロパティ許可フラグ"""
 
+type GlobPattern = str
+"""Globパターン（例: **/*.py, **/tests/**）"""
+
+type LayerName = str
+"""レイヤー名（primitives, domain, api, activity等）"""
+
+type MethodName = str
+"""メソッド名（get_primitive, get_domain等）"""
+
+type MypyFlag = str
+"""mypyコマンドラインフラグ（--strict, --no-implicit-optional等）"""
+
+type AnalyzerMode = str
+"""アナライザーモード（ast, mypy, hybrid等）"""
+
+type CyclePath = list[NodeId]
+"""循環依存のパス（ノードIDのリスト）"""
+
+type CyclePathList = list[list[NodeId]]
+"""循環依存パスのリスト（各パスはノードIDのリスト）"""
+
+type TypeRefList = list[str]
+"""型参照名のリスト（例: ["User", "Post"]）"""
+
+type TypeNameList = list[TypeName]
+"""型名のリスト（TypeNameエイリアスのリスト、プリミティブ型名を表す）"""
+
+type TypeParamList = list[str]
+"""型パラメータのリスト（Generic型の引数）"""
+
+type LayerNameList = list[LayerName]
+"""レイヤー名のリスト（primitives, domain, api等）"""
+
+type AnalyzerModeList = list[AnalyzerMode]
+"""アナライザーモードのリスト"""
+
+type MypyFlagList = list[MypyFlag]
+"""mypyフラグのリスト"""
+
+type CommandArgList = list[str]
+"""コマンドライン引数のリスト"""
+
+type CodeLineList = list[str]
+"""コード行のリスト"""
+
+type MarkdownContentList = list[str]
+"""Markdownコンテンツの文字列リスト"""
+
+type TableHeaderList = list[str]
+"""Markdownテーブルのヘッダーリスト"""
+
+type TableCellList = list[str]
+"""Markdownテーブルのセルリスト"""
+
+type TypePartList = list[str]
+"""型文字列を分割したパーツのリスト"""
+
+type ScopeStack = list[str]
+"""スコープスタック（現在の処理中スコープの階層）"""
+
+type SkipTypeSet = set[TypeName]
+"""スキップする型名の集合"""
+
+type ProcessingNodeSet = set[NodeId]
+"""処理中ノード名の集合（循環参照防止用）"""
+
 
 # =============================================================================
 # Level 2: Annotated + AfterValidator（制約付き、NewType代替）

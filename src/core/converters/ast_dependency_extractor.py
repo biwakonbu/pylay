@@ -13,6 +13,7 @@ from src.core.schemas.graph_types import (
     RelationType,
     TypeDependencyGraph,
 )
+from src.core.schemas.types import NodeId, ProcessingNodeSet, TypeRefList
 
 
 class ASTDependencyExtractor:
@@ -26,10 +27,10 @@ class ASTDependencyExtractor:
         """抽出器を初期化"""
         self.nodes: dict[str, GraphNode] = {}
         self.edges: dict[str, GraphEdge] = {}
-        self.visited_nodes: set[str] = set()
+        self.visited_nodes: set[NodeId] = set()
         self._node_cache: dict[str, GraphNode] = {}
         self.extraction_method: str = "AST_analysis"  # デフォルト値
-        self._processing_stack: set[str] = set()  # 循環参照防止
+        self._processing_stack: ProcessingNodeSet = set()  # 循環参照防止
 
     def _reset_state(self) -> None:
         """抽出状態をリセット"""
@@ -438,7 +439,7 @@ class ASTDependencyExtractor:
         # その他の複雑な型は簡易的にスキップ
         return None
 
-    def _extract_type_refs_from_string(self, type_str: str) -> list[str]:
+    def _extract_type_refs_from_string(self, type_str: str) -> TypeRefList:
         """型文字列から型参照を抽出"""
         refs = []
         # 簡易的な分割（List[str] -> ['List', 'str']）

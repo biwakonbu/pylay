@@ -13,6 +13,7 @@ from typing import Any
 import networkx as nx
 
 from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.types import NodeId, ScopeStack, TypeParamList
 
 
 class DependencyExtractor(ast.NodeVisitor):
@@ -22,8 +23,8 @@ class DependencyExtractor(ast.NodeVisitor):
 
     def __init__(self) -> None:
         self.graph = nx.DiGraph()
-        self.current_scope: list[str] = []
-        self.visited_nodes: set[str] = set()  # 循環参照防止用
+        self.current_scope: ScopeStack = []
+        self.visited_nodes: set[NodeId] = set()  # 循環参照防止用
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """
@@ -121,7 +122,7 @@ class DependencyExtractor(ast.NodeVisitor):
             # その他の場合
             return ast.unparse(annotation_node)
 
-    def _extract_type_params(self, slice_node: ast.AST) -> list[str] | None:
+    def _extract_type_params(self, slice_node: ast.AST) -> TypeParamList | None:
         """
         型パラメータを抽出します。
         """

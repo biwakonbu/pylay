@@ -186,7 +186,7 @@ class GenericTypeSpec(TypeSpec):
 class TypeRoot(BaseModel):
     """YAML型仕様のルートモデル (v1.1構造、循環耐性強化）"""
 
-    types: dict[str, TypeSpec] = Field(
+    types: dict[TypeSpecName, TypeSpec] = Field(
         default_factory=dict, description="型仕様のルート辞書。キー=型名、値=TypeSpec"
     )
 

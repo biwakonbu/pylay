@@ -4,6 +4,8 @@
 解析エラーを構造化して扱うための例外クラスを提供します。
 """
 
+from src.core.schemas.types import CyclePath, FilePath, Message
+
 
 class AnalysisError(Exception):
     """
@@ -12,7 +14,7 @@ class AnalysisError(Exception):
     すべてのアナライザー例外の親クラスです。
     """
 
-    def __init__(self, message: str, file_path: str | None = None) -> None:
+    def __init__(self, message: Message, file_path: FilePath | None = None) -> None:
         """
         解析エラーを初期化します。
 
@@ -153,7 +155,7 @@ class CircularDependencyError(AnalysisError):
     """
 
     def __init__(
-        self, message: str, cycle: list[str], file_path: str | None = None
+        self, message: Message, cycle: CyclePath, file_path: FilePath | None = None
     ) -> None:
         """
         循環依存エラーを初期化します。
