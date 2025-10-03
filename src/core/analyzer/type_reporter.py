@@ -75,8 +75,9 @@ class TypeReporter:
         if report.recommendations:
             self.console.rule("[bold red]推奨事項[/bold red]")
             self.console.print()
-            for rec in report.recommendations:
-                self.console.print(f"  • {rec}")
+            self.console.print(
+                self._create_recommendations_table(report.recommendations)
+            )
             self.console.print()
 
     def generate_upgrade_recommendations_report(
@@ -417,6 +418,31 @@ class TypeReporter:
             "-",
             style="dim",
         )
+
+        return table
+
+    def _create_recommendations_table(self, recommendations: list[str]) -> Table:
+        """推奨事項をRich Tableで作成"""
+        table = Table(show_header=True, header_style="", box=SIMPLE)
+
+        table.add_column("優先度", style="cyan", no_wrap=True)
+        table.add_column("推奨内容", style="yellow", no_wrap=False, overflow="fold")
+
+        for rec in recommendations:
+            # 優先度を判定（警告マークがあるかで判断）
+            if "⚠️" in rec:
+                priority = "高"
+                priority_style = "red"
+                # ⚠️を削除
+                rec = rec.replace("⚠️", "").strip()
+            else:
+                priority = "中"
+                priority_style = "yellow"
+
+            table.add_row(
+                Text(priority, style=priority_style),
+                rec,
+            )
 
         return table
 
