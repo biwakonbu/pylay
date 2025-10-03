@@ -233,6 +233,12 @@ type SkipTypeSet = set[TypeName]
 type ProcessingNodeSet = set[NodeId]
 """処理中ノード名の集合（循環参照防止用）"""
 
+type StatisticsMap = dict[str, int]
+"""統計情報のマップ（ノード数、エッジ数などのキーと整数値のペア）"""
+
+type CheckResultData = dict[str, object]
+"""チェック結果データ（汎用的なキーと値のペア）"""
+
 
 # =============================================================================
 # Level 2: Annotated + AfterValidator（制約付き、NewType代替）
@@ -334,6 +340,8 @@ class NodeAttributes(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    # NOTE: 設計上、汎用的なカスタムデータを格納するため primitive型を維持
+    # ユーザーが自由にキーと値を追加できるよう、動的な型として dict を使用
     custom_data: dict[str, str | int | float | bool] = Field(
         default_factory=dict, description="カスタム属性データ"
     )
@@ -409,9 +417,12 @@ class GraphMetadata(BaseModel):
     cycles: list[list[NodeId]] = Field(
         default_factory=list, description="検出された循環依存のリスト"
     )
-    statistics: dict[str, int] = Field(
+    statistics: StatisticsMap = Field(
         default_factory=dict, description="統計情報（ノード数、エッジ数など）"
     )
+    # NOTE: 設計上、拡張用のカスタムフィールドを格納するため primitive型を維持
+    # プラグインや将来の機能拡張で任意のメタデータを追加できるよう、
+    # 動的な型として dict を使用
     custom_fields: dict[str, object] = Field(
         default_factory=dict, description="カスタムフィールド"
     )

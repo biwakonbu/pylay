@@ -14,6 +14,7 @@ from src.core.analyzer.models import InferResult, MypyResult
 from src.core.schemas.graph_types import RelationType
 from src.core.schemas.types import (
     CheckCount,
+    CheckResultData,
     Code,
     Density,
     EdgeCount,
@@ -40,7 +41,7 @@ class CheckSummary(BaseModel):
     successful_checks: CheckCount
     failed_checks: CheckCount
     checks_with_issues: CheckCount
-    results: list[dict[str, object]]
+    results: list[CheckResultData]
 
 
 class MypyError(BaseModel):

@@ -81,6 +81,8 @@ class DictTypeSpec(TypeSpec):
     """辞書型の仕様（プロパティの型をTypeSpecOrRefに統一）"""
 
     type: Literal["dict"] = "dict"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
+    # NOTE: 設計上、YAML仕様から動的にプロパティを読み込むため primitive型を維持
+    # プロパティのキーと型仕様は実行時に決定されるため、Any型として dict を使用
     properties: dict[str, Any] = Field(
         default_factory=dict, description="辞書のプロパティ (参照文字列またはTypeSpec)"
     )
