@@ -63,7 +63,7 @@
 
 ## 2. アーキテクチャ
 
-### 2.1 ディレクトリ構造
+### 2.1 ディレクトリ構造（現状）
 ```
 pylay/
 ├── src/                    # ソースコード
@@ -74,22 +74,41 @@ pylay/
 │   │       ├── type_to_yaml.py   # 型→YAML変換コマンド
 │   │       └── yaml_to_type.py   # YAML→型変換コマンド
 │   ├── core/              # コア機能
-│   │   ├── converters/    # 型変換機能
+│   │   ├── converters/    # 型変換機能（★types.py未作成）
 │   │   │   ├── type_to_yaml.py   # Python型 → YAML変換
 │   │   │   ├── yaml_to_type.py   # YAML → Python型変換
-│   │   │   └── infer_types.py    # 型推論機能
-│   │   ├── doc_generators/ # ドキュメント生成
+│   │   │   ├── extract_deps.py   # 依存関係抽出
+│   │   │   ├── mypy_type_extractor.py  # mypy型抽出
+│   │   │   └── ast_dependency_extractor.py  # AST依存抽出
+│   │   ├── analyzer/      # 型解析（★types.py未作成、protocols.py/models.pyは存在）
+│   │   │   ├── protocols.py      # Protocolインターフェース
+│   │   │   ├── models.py         # ドメインモデル
+│   │   │   ├── base.py           # 基底クラス
+│   │   │   ├── type_inferrer.py  # 型推論エンジン
+│   │   │   ├── dependency_extractor.py  # 依存抽出
+│   │   │   ├── type_classifier.py  # 型分類
+│   │   │   ├── type_level_analyzer.py  # 型レベル解析
+│   │   │   ├── docstring_analyzer.py  # docstring解析
+│   │   │   └── ... (その他解析関連ファイル)
+│   │   ├── doc_generators/ # ドキュメント生成（★types.py未作成）
 │   │   │   ├── base.py           # 基底クラス
 │   │   │   ├── config.py         # 設定管理
 │   │   │   ├── filesystem.py     # ファイルシステム操作
 │   │   │   ├── markdown_builder.py # Markdown生成
 │   │   │   ├── type_doc_generator.py  # 型ドキュメント生成
 │   │   │   ├── yaml_doc_generator.py  # YAMLドキュメント生成
-│   │   │   └── test_catalog_generator.py # テストカタログ生成
-│   │   ├── schemas/       # 型定義
-│   │   │   ├── yaml_type_spec.py  # YAML型仕様のPydanticモデル
-│   │   │   └── graph_types.py     # グラフ型定義
-│   │   └── extract_deps.py # 依存関係抽出
+│   │   │   ├── graph_doc_generator.py # グラフドキュメント生成
+│   │   │   ├── test_catalog_generator.py # テストカタログ生成
+│   │   │   └── type_inspector.py  # 型インスペクタ
+│   │   ├── schemas/       # 共通型定義（複数モジュールで共有）
+│   │   │   ├── types.py          # 共通ドメイン型
+│   │   │   ├── graph.py          # グラフ型定義
+│   │   │   ├── yaml_spec.py      # YAML型仕様のPydanticモデル
+│   │   │   ├── pylay_config.py   # プロジェクト設定型
+│   │   │   └── type_index.py     # 型インデックス
+│   │   ├── utils/         # ユーティリティ
+│   │   ├── output_manager.py  # 出力管理
+│   │   └── project_scanner.py # プロジェクトスキャナ
 │   ├── tui/               # テキストユーザーインターフェース
 │   │   ├── main.py        # TUIメインモジュール
 │   │   ├── views/         # ビューモジュール
@@ -97,10 +116,12 @@ pylay/
 │   └── infer_deps.py      # 型推論エントリーポイント
 ├── tests/                 # テストコード
 ├── docs/                  # 生成されたドキュメント
+│   └── typing-rule.md     # 型定義ルール（★必読）
 ├── scripts/               # ユーティリティスクリプト
 ├── utils/                 # 補助ツール
 ├── examples/              # 使用例
-├── AGENTS.md              # 開発ガイドライン
+├── AGENTS.md              # 開発ガイドライン（本ファイル）
+├── CLAUDE.md              # Claude Code向けガイドライン
 ├── PRD.md                 # 製品要件定義
 ├── README.md              # プロジェクト説明
 ├── Makefile               # 開発コマンド
@@ -109,6 +130,8 @@ pylay/
 ├── pyrightconfig.json     # Pyright設定
 └── uv.lock               # uv依存関係ロックファイル
 ```
+
+**注**: ★マークは、issue #18で推奨されている構造に未対応の箇所を示します。
 
 ### 2.2 主要コンポーネント
 - **cli/**: コマンドラインインターフェース

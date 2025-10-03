@@ -62,19 +62,28 @@ class TypeLevelAnalyzer:
             type_defs = self.classifier.classify_file(py_file)
             all_type_definitions.extend(type_defs)
 
-        # 統計情報を計算
-        statistics = self.statistics_calculator.calculate(all_type_definitions)
-
-        # ドキュメント推奨を生成
-        docstring_recommendations = self._generate_docstring_recommendations(
+        # 重複を除去（同じ型名の最初の定義のみを保持）
+        unique_type_definitions = self._deduplicate_type_definitions(
             all_type_definitions
         )
 
-        # 型レベルアップ推奨を生成
+        # 統計情報を計算（すべての定義を使用）
+        statistics = self.statistics_calculator.calculate(all_type_definitions)
+
+        # ドキュメント推奨を生成（重複除去後の定義を使用）
+        docstring_recommendations = self._generate_docstring_recommendations(
+            unique_type_definitions
+        )
+
+        # 型レベルアップ推奨を生成（すべての定義を使用して使用回数をカウント）
         upgrade_recommendations: list[UpgradeRecommendation] = []
         if include_upgrade_recommendations:
             upgrade_recommendations = self._generate_upgrade_recommendations(
                 all_type_definitions
+            )
+            # 重複除去
+            upgrade_recommendations = self._deduplicate_upgrade_recommendations(
+                upgrade_recommendations
             )
 
         # 一般的な推奨事項を生成
@@ -85,7 +94,7 @@ class TypeLevelAnalyzer:
 
         return TypeAnalysisReport(
             statistics=statistics,
-            type_definitions=all_type_definitions,
+            type_definitions=unique_type_definitions,
             recommendations=recommendations,
             upgrade_recommendations=upgrade_recommendations,
             docstring_recommendations=docstring_recommendations,
@@ -179,9 +188,13 @@ class TypeLevelAnalyzer:
         """
         recommendations: list[UpgradeRecommendation] = []
 
+        # 使用回数をカウント
+        usage_counts = self._count_type_usage(type_definitions)
+
         for type_def in type_definitions:
-            # 使用回数は未実装なので0
-            rec = self.upgrade_analyzer.analyze(type_def, usage_count=0)
+            # 使用回数を取得
+            usage_count = usage_counts.get(type_def.name, 0)
+            rec = self.upgrade_analyzer.analyze(type_def, usage_count=usage_count)
 
             if rec:
                 recommendations.append(rec)
@@ -251,3 +264,68 @@ class TypeLevelAnalyzer:
             "level2": statistics.level2_ratio - self.target_ratios["level2"],
             "level3": statistics.level3_ratio - self.target_ratios["level3"],
         }
+
+    def _count_type_usage(
+        self, type_definitions: list[TypeDefinition]
+    ) -> dict[str, int]:
+        """型の使用回数をカウント
+
+        Args:
+            type_definitions: 型定義リスト
+
+        Returns:
+            型名 -> 使用回数の辞書
+        """
+        from collections import Counter
+
+        # 型名のカウント（同じ名前が複数回定義されている = 使用されている）
+        type_name_counts = Counter(td.name for td in type_definitions)
+
+        # 使用回数 = 定義回数 - 1（最初の定義を除く）
+        usage_counts = {
+            name: count - 1 for name, count in type_name_counts.items()
+        }
+
+        return usage_counts
+
+    def _deduplicate_type_definitions(
+        self, type_definitions: list[TypeDefinition]
+    ) -> list[TypeDefinition]:
+        """型定義の重複を除去
+
+        Args:
+            type_definitions: 型定義リスト
+
+        Returns:
+            重複除去後の型定義リスト
+        """
+        seen_names: set[str] = set()
+        unique_types: list[TypeDefinition] = []
+
+        for td in type_definitions:
+            if td.name not in seen_names:
+                seen_names.add(td.name)
+                unique_types.append(td)
+
+        return unique_types
+
+    def _deduplicate_upgrade_recommendations(
+        self, recommendations: list[UpgradeRecommendation]
+    ) -> list[UpgradeRecommendation]:
+        """型レベルアップ推奨の重複を除去
+
+        Args:
+            recommendations: 推奨事項リスト
+
+        Returns:
+            重複除去後の推奨事項リスト
+        """
+        seen_names: set[str] = set()
+        unique_recs: list[UpgradeRecommendation] = []
+
+        for rec in recommendations:
+            if rec.type_name not in seen_names:
+                seen_names.add(rec.type_name)
+                unique_recs.append(rec)
+
+        return unique_recs
