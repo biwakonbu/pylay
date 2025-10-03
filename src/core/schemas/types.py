@@ -188,8 +188,8 @@ type CyclePathList = list[list[NodeId]]
 type TypeRefList = list[str]
 """型参照名のリスト（例: ["User", "Post"]）"""
 
-type TypeNameList = list[str]
-"""型名のリスト"""
+type TypeNameList = list[TypeName]
+"""型名のリスト（TypeNameエイリアスのリスト、プリミティブ型名を表す）"""
 
 type TypeParamList = list[str]
 """型パラメータのリスト（Generic型の引数）"""
