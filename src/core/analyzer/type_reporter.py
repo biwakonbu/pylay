@@ -426,7 +426,7 @@ class TypeReporter:
         table = Table(show_header=True, header_style="", box=SIMPLE, width=100)
 
         table.add_column("Priority", style="cyan", no_wrap=True, width=12)
-        table.add_column("Recommendation", style="yellow", no_wrap=False, width=85)
+        table.add_column("Recommendation", no_wrap=False, width=85)
 
         for rec in recommendations:
             # 優先度を判定（警告マークがあるかで判断）
@@ -444,7 +444,7 @@ class TypeReporter:
 
             table.add_row(
                 Text(priority, style=priority_style),
-                formatted_rec,
+                Text(formatted_rec, style=priority_style),
             )
 
         return table
