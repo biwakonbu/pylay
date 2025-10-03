@@ -425,8 +425,8 @@ class TypeReporter:
         """推奨事項をRich Tableで作成"""
         table = Table(show_header=True, header_style="", box=SIMPLE, width=100)
 
-        table.add_column("Priority", style="cyan", no_wrap=True, width=12)
-        table.add_column("Recommendation", no_wrap=False, width=85)
+        table.add_column("優先度", style="cyan", no_wrap=True, width=12)
+        table.add_column("推奨内容", no_wrap=False, width=85)
 
         for rec in recommendations:
             # 優先度を判定（警告マークがあるかで判断）
