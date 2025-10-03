@@ -239,6 +239,12 @@ type StatisticsMap = dict[str, int]
 type CheckResultData = dict[str, object]
 """チェック結果データ（汎用的なキーと値のペア）"""
 
+type NodeAttributeValue = str | int | float | bool
+"""ノード属性の値型（文字列、整数、浮動小数点、真偽値のいずれか）"""
+
+type NodeCustomData = dict[str, NodeAttributeValue]
+"""ノードカスタムデータ（ユーザーが自由に追加できる属性のマップ）"""
+
 
 # =============================================================================
 # Level 2: Annotated + AfterValidator（制約付き、NewType代替）
@@ -340,9 +346,9 @@ class NodeAttributes(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    # NOTE: 設計上、汎用的なカスタムデータを格納するため primitive型を維持
-    # ユーザーが自由にキーと値を追加できるよう、動的な型として dict を使用
-    custom_data: dict[str, str | int | float | bool] = Field(
+    # NOTE: 設計上、汎用的なカスタムデータを格納するためドメイン型エイリアスを使用
+    # ユーザーが自由にキーと値を追加できるよう、NodeCustomData型を使用
+    custom_data: NodeCustomData = Field(
         default_factory=dict, description="カスタム属性データ"
     )
 
