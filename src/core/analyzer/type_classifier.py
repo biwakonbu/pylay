@@ -7,6 +7,7 @@ Pythonソースコードから型定義を検出し、Level 1/2/3に分類しま
 import ast
 import re
 from pathlib import Path
+from typing import Literal
 
 from src.core.analyzer.type_level_models import TypeDefinition
 
@@ -339,9 +340,13 @@ class TypeClassifier:
         """ノードから型定義のコードを抽出"""
         try:
             lines = source_code.splitlines()
-            if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
-                start = node.lineno - 1
-                end = node.end_lineno
+            if (
+                hasattr(node, "lineno")
+                and hasattr(node, "end_lineno")
+                and node.end_lineno is not None  # type: ignore[attr-defined]
+            ):
+                start = node.lineno - 1  # type: ignore[attr-defined]
+                end = node.end_lineno  # type: ignore[attr-defined]
                 return "\n".join(lines[start:end])
         except Exception:
             pass
@@ -352,7 +357,7 @@ class TypeClassifier:
     ) -> str | None:
         """type文のdocstringを抽出"""
         # type文の直後の行からdocstringを探す
-        if hasattr(node, "end_lineno"):
+        if hasattr(node, "end_lineno") and node.end_lineno is not None:
             return self._extract_docstring_near_line(source_code, node.end_lineno + 1)
         return None
 
@@ -396,7 +401,9 @@ class TypeClassifier:
 
         return None
 
-    def _extract_target_level(self, docstring: str | None) -> str | None:
+    def _extract_target_level(
+        self, docstring: str | None
+    ) -> Literal["level1", "level2", "level3"] | None:
         """docstringから@target-levelを抽出
 
         Args:
@@ -411,7 +418,9 @@ class TypeClassifier:
         # @target-level: level1/level2/level3 のパターン
         match = re.search(r"@target-level:\s*(level[123])", docstring)
         if match:
-            return match.group(1)
+            level = match.group(1)
+            if level in ("level1", "level2", "level3"):
+                return level  # type: ignore[return-value]
 
         return None
 

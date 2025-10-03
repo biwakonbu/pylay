@@ -151,6 +151,20 @@ class TypeUpgradeAnalyzer:
             UpgradeRecommendation
         """
         target = type_def.target_level
+        if target is None:
+            # target_levelがNoneの場合は調査推奨
+            return UpgradeRecommendation(
+                type_name=type_def.name,
+                current_level=type_def.level,
+                recommended_level="investigate",
+                confidence=0.5,
+                reasons=["target_levelが指定されていません"],
+                suggested_validator=None,
+                suggested_implementation=None,
+                priority="low",
+                is_downgrade=False,
+            )
+
         current = type_def.level
         is_downgrade = self._is_downgrade(current, target)
 
