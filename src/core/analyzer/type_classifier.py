@@ -150,6 +150,10 @@ class TypeClassifier:
             level = "other"
             category = "class"
 
+        # docstringから制御フィールドを抽出
+        target_level = self._extract_target_level(docstring)
+        keep_as_is = self._extract_keep_as_is(docstring)
+
         return TypeDefinition(
             name=node.name,
             level=level,
@@ -160,6 +164,8 @@ class TypeClassifier:
             docstring=docstring,
             has_docstring=docstring is not None,
             docstring_lines=len(docstring.splitlines()) if docstring else 0,
+            target_level=target_level,
+            keep_as_is=keep_as_is,
         )
 
     def _classify_type_alias(
@@ -197,6 +203,10 @@ class TypeClassifier:
         # docstringを抽出（type文の直後のコメントまたは文字列）
         docstring = self._extract_type_alias_docstring(node, source_code)
 
+        # docstringから制御フィールドを抽出
+        target_level = self._extract_target_level(docstring)
+        keep_as_is = self._extract_keep_as_is(docstring)
+
         return TypeDefinition(
             name=type_name,
             level=level,
@@ -207,6 +217,8 @@ class TypeClassifier:
             docstring=docstring,
             has_docstring=docstring is not None,
             docstring_lines=len(docstring.splitlines()) if docstring else 0,
+            target_level=target_level,
+            keep_as_is=keep_as_is,
         )
 
     def _classify_with_regex(
@@ -347,13 +359,23 @@ class TypeClassifier:
     def _extract_docstring_near_line(
         self, source_code: str, line_number: int
     ) -> str | None:
-        """指定行の近くのdocstringを抽出"""
+        """指定行の近くのdocstringを抽出
+
+        Args:
+            source_code: ソースコード
+            line_number: 検索開始行番号（1始まり、ASTのlinenoと同じ）
+
+        Returns:
+            抽出されたdocstring（見つからない場合はNone）
+        """
         lines = source_code.splitlines()
-        if line_number >= len(lines):
+        # line_numberは1始まりなので、0始まりのインデックスに変換
+        start_index = line_number - 1
+        if start_index >= len(lines):
             return None
 
         # 次の数行を確認
-        for i in range(line_number, min(line_number + 3, len(lines))):
+        for i in range(start_index, min(start_index + 3, len(lines))):
             line = lines[i].strip()
 
             # トリプルクォートで始まる
@@ -373,3 +395,38 @@ class TypeClassifier:
                     docstring_lines.append(lines[j])
 
         return None
+
+    def _extract_target_level(self, docstring: str | None) -> str | None:
+        """docstringから@target-levelを抽出
+
+        Args:
+            docstring: docstring
+
+        Returns:
+            目標レベル（level1/level2/level3）、指定がない場合はNone
+        """
+        if not docstring:
+            return None
+
+        # @target-level: level1/level2/level3 のパターン
+        match = re.search(r"@target-level:\s*(level[123])", docstring)
+        if match:
+            return match.group(1)
+
+        return None
+
+    def _extract_keep_as_is(self, docstring: str | None) -> bool:
+        """docstringから@keep-as-isを抽出
+
+        Args:
+            docstring: docstring
+
+        Returns:
+            @keep-as-is: true の場合True、それ以外False
+        """
+        if not docstring:
+            return False
+
+        # @keep-as-is: true のパターン
+        match = re.search(r"@keep-as-is:\s*(true|True|yes|Yes)", docstring)
+        return match is not None

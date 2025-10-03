@@ -23,22 +23,25 @@ from src.core.analyzer.type_upgrade_analyzer import TypeUpgradeAnalyzer
 class TypeLevelAnalyzer:
     """型定義レベル分析のメインアナライザ"""
 
-    def __init__(self, target_ratios: dict[str, float] | None = None):
+    def __init__(self, threshold_ratios: dict[str, float] | None = None):
         """初期化
 
         Args:
-            target_ratios: 目標比率（デフォルト: 標準的な比率）
+            threshold_ratios: 警告閾値（デフォルト: 推奨閾値）
+                - level1_max: Level 1の上限（これを超えたら警告）
+                - level2_min: Level 2の下限（これを下回ったら警告）
+                - level3_min: Level 3の下限（これを下回ったら警告）
         """
         self.classifier = TypeClassifier()
         self.statistics_calculator = TypeStatisticsCalculator()
         self.docstring_analyzer = DocstringAnalyzer()
         self.upgrade_analyzer = TypeUpgradeAnalyzer()
-        self.reporter = TypeReporter(target_ratios)
+        self.reporter = TypeReporter(threshold_ratios)
 
-        self.target_ratios = target_ratios or {
-            "level1": 0.55,
-            "level2": 0.30,
-            "level3": 0.175,
+        self.threshold_ratios = threshold_ratios or {
+            "level1_max": 0.20,  # Level 1は20%以下が望ましい
+            "level2_min": 0.40,  # Level 2は40%以上が望ましい
+            "level3_min": 0.15,  # Level 3は15%以上が望ましい
         }
 
     def analyze_directory(
@@ -89,8 +92,8 @@ class TypeLevelAnalyzer:
         # 一般的な推奨事項を生成
         recommendations = self._generate_general_recommendations(statistics)
 
-        # 目標との乖離を計算
-        deviation_from_target = self._calculate_deviation(statistics)
+        # 警告閾値との乖離を計算
+        deviation_from_threshold = self._calculate_deviation(statistics)
 
         return TypeAnalysisReport(
             statistics=statistics,
@@ -98,8 +101,8 @@ class TypeLevelAnalyzer:
             recommendations=recommendations,
             upgrade_recommendations=upgrade_recommendations,
             docstring_recommendations=docstring_recommendations,
-            target_ratios=self.target_ratios,
-            deviation_from_target=deviation_from_target,
+            threshold_ratios=self.threshold_ratios,
+            deviation_from_threshold=deviation_from_threshold,
         )
 
     def analyze_file(self, file_path: Path) -> TypeAnalysisReport:
@@ -130,8 +133,8 @@ class TypeLevelAnalyzer:
         # 一般的な推奨事項を生成
         recommendations = self._generate_general_recommendations(statistics)
 
-        # 目標との乖離を計算
-        deviation_from_target = self._calculate_deviation(statistics)
+        # 警告閾値との乖離を計算
+        deviation_from_threshold = self._calculate_deviation(statistics)
 
         return TypeAnalysisReport(
             statistics=statistics,
@@ -139,8 +142,8 @@ class TypeLevelAnalyzer:
             recommendations=recommendations,
             upgrade_recommendations=upgrade_recommendations,
             docstring_recommendations=docstring_recommendations,
-            target_ratios=self.target_ratios,
-            deviation_from_target=deviation_from_target,
+            threshold_ratios=self.threshold_ratios,
+            deviation_from_threshold=deviation_from_threshold,
         )
 
     def _generate_docstring_recommendations(
@@ -220,49 +223,65 @@ class TypeLevelAnalyzer:
         """
         recommendations = []
 
-        # Level 2の比率が低い場合
-        if statistics.level2_ratio < 0.25:
+        # Level 1の比率が高すぎる場合（上限を超えている）
+        level1_max = self.threshold_ratios["level1_max"]
+        if statistics.level1_ratio > level1_max:
             recommendations.append(
-                f"Level 2（Annotated）の比率が{statistics.level2_ratio * 100:.1f}%と低いです。"
-                f"目標の25-35%に近づけるため、バリデーションが必要な型をLevel 2に変換してください。"
+                f"⚠️ Level 1（type エイリアス）の比率が{statistics.level1_ratio * 100:.1f}%と高すぎます。"  # noqa: E501
+                f"推奨上限の{level1_max * 100:.0f}%を超えています。"
+                f"制約が必要な型はLevel 2に昇格させ、不要な型は削除を検討してください。"
             )
 
-        # Level 1の比率が高い場合
-        if statistics.level1_ratio > 0.60:
+        # Level 2の比率が低すぎる場合（下限を下回っている）
+        level2_min = self.threshold_ratios["level2_min"]
+        if statistics.level2_ratio < level2_min:
             recommendations.append(
-                f"Level 1（type エイリアス）の比率が{statistics.level1_ratio * 100:.1f}%と高いです。"
-                f"制約が必要な型はLevel 2に、不要な型は削除を検討してください。"
+                f"⚠️ Level 2（Annotated）の比率が{statistics.level2_ratio * 100:.1f}%と低すぎます。"  # noqa: E501
+                f"推奨下限の{level2_min * 100:.0f}%を下回っています。"
+                f"バリデーションが必要な型をLevel 2に昇格させてください。"
+            )
+
+        # Level 3の比率が低すぎる場合（下限を下回っている）
+        level3_min = self.threshold_ratios["level3_min"]
+        if statistics.level3_ratio < level3_min:
+            recommendations.append(
+                f"⚠️ Level 3（BaseModel）の比率が{statistics.level3_ratio * 100:.1f}%と低すぎます。"  # noqa: E501
+                f"推奨下限の{level3_min * 100:.0f}%を下回っています。"
+                f"複雑なドメイン型をLevel 3に昇格させてください。"
             )
 
         # ドキュメント実装率が低い場合
         if statistics.documentation.implementation_rate < 0.70:
             recommendations.append(
-                f"ドキュメント実装率が{statistics.documentation.implementation_rate * 100:.1f}%と低いです。"
+                f"ドキュメント実装率が{statistics.documentation.implementation_rate * 100:.1f}%と低いです。"  # noqa: E501
                 f"目標の80%以上に近づけるため、docstringを追加してください。"
             )
 
         # ドキュメント詳細度が低い場合
         if statistics.documentation.detail_rate < 0.50:
             recommendations.append(
-                f"ドキュメント詳細度が{statistics.documentation.detail_rate * 100:.1f}%と低いです。"
+                f"ドキュメント詳細度が{statistics.documentation.detail_rate * 100:.1f}%と低いです。"  # noqa: E501
                 f"Attributes、Examples等のセクションを追加してドキュメントを充実させてください。"
             )
 
         return recommendations
 
     def _calculate_deviation(self, statistics: "TypeStatistics") -> dict[str, float]:
-        """目標比率との乖離を計算
+        """警告閾値との乖離を計算
 
         Args:
             statistics: 統計情報
 
         Returns:
-            乖離の辞書
+            乖離の辞書（正の値 = 閾値を超えている、負の値 = 閾値を下回っている）
         """
         return {
-            "level1": statistics.level1_ratio - self.target_ratios["level1"],
-            "level2": statistics.level2_ratio - self.target_ratios["level2"],
-            "level3": statistics.level3_ratio - self.target_ratios["level3"],
+            "level1_max": statistics.level1_ratio
+            - self.threshold_ratios["level1_max"],  # 正 = 上限超過（警告）
+            "level2_min": statistics.level2_ratio
+            - self.threshold_ratios["level2_min"],  # 負 = 下限未満（警告）
+            "level3_min": statistics.level3_ratio
+            - self.threshold_ratios["level3_min"],  # 負 = 下限未満（警告）
         }
 
     def _count_type_usage(
@@ -282,9 +301,7 @@ class TypeLevelAnalyzer:
         type_name_counts = Counter(td.name for td in type_definitions)
 
         # 使用回数 = 定義回数 - 1（最初の定義を除く）
-        usage_counts = {
-            name: count - 1 for name, count in type_name_counts.items()
-        }
+        usage_counts = {name: count - 1 for name, count in type_name_counts.items()}
 
         return usage_counts
 

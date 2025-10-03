@@ -33,7 +33,7 @@ class TypeUpgradeAnalyzer:
     def analyze(
         self, type_def: TypeDefinition, usage_count: int = 0
     ) -> UpgradeRecommendation | None:
-        """型定義を分析し、レベルアップの推奨を返す
+        """型定義を分析し、レベルアップ・ダウンの推奨を返す
 
         Args:
             type_def: 型定義
@@ -42,10 +42,26 @@ class TypeUpgradeAnalyzer:
         Returns:
             UpgradeRecommendation（推奨事項がない場合はNone）
         """
+        # docstringで@keep-as-isが指定されている場合はスキップ
+        if type_def.keep_as_is:
+            return None
+
+        # docstringで目標レベルが指定されている場合は、そのレベルへの推奨
+        if type_def.target_level and type_def.target_level != type_def.level:
+            return self._create_target_level_recommendation(type_def)
+
+        # 通常の分析
         if type_def.level == "level1":
             return self._analyze_level1(type_def, usage_count)
         elif type_def.level == "level2":
-            return self._analyze_level2(type_def, usage_count)
+            result = self._analyze_level2(type_def, usage_count)
+            if result:
+                return result
+            # Level 2からLevel 1へのダウングレード判定
+            return self._analyze_level2_downgrade(type_def, usage_count)
+        elif type_def.level == "level3":
+            # Level 3からLevel 2へのダウングレード判定
+            return self._analyze_level3_downgrade(type_def, usage_count)
 
         return None
 
@@ -61,18 +77,18 @@ class TypeUpgradeAnalyzer:
         Returns:
             UpgradeRecommendation（推奨事項がない場合はNone）
         """
-        # 削除判定
-        deletion_check = self._should_delete_level1(type_def, usage_count)
-        if deletion_check["should_delete"]:
+        # 調査推奨判定（被参照0等）
+        investigation_check = self._should_delete_level1(type_def, usage_count)
+        if investigation_check["confidence"] >= 0.3:
             return UpgradeRecommendation(
                 type_name=type_def.name,
                 current_level=type_def.level,
-                recommended_level="delete",
-                confidence=deletion_check["confidence"],
-                reasons=deletion_check["reasons"],
+                recommended_level="investigate",
+                confidence=investigation_check["confidence"],
+                reasons=investigation_check["reasons"],
                 suggested_validator=None,
                 suggested_implementation=None,
-                priority=deletion_check["priority"],
+                priority=investigation_check["priority"],
             )
 
         # Level 2への昇格判定
@@ -120,11 +136,68 @@ class TypeUpgradeAnalyzer:
         return None
 
     # ========================================
+    # docstringベースの制御
+    # ========================================
+
+    def _create_target_level_recommendation(
+        self, type_def: TypeDefinition
+    ) -> UpgradeRecommendation:
+        """docstringで指定された目標レベルへの推奨を生成
+
+        Args:
+            type_def: 型定義
+
+        Returns:
+            UpgradeRecommendation
+        """
+        target = type_def.target_level
+        current = type_def.level
+        is_downgrade = self._is_downgrade(current, target)
+
+        reasons = [
+            f"docstringで @target-level: {target} が指定されています",
+            f"現在のレベル {current} から {target} への移行を推奨します",
+        ]
+
+        if is_downgrade:
+            reasons.append("レベルダウン: 過剰な実装の可能性があります")
+        else:
+            reasons.append("レベルアップ: より厳密な型定義が推奨されています")
+
+        return UpgradeRecommendation(
+            type_name=type_def.name,
+            current_level=current,
+            recommended_level=target,
+            confidence=1.0,  # docstring指定は確信度最大
+            reasons=reasons,
+            suggested_validator=None,
+            suggested_implementation=None,
+            priority="high",
+            is_downgrade=is_downgrade,
+        )
+
+    def _is_downgrade(self, current: str, target: str) -> bool:
+        """レベルダウンかどうかを判定
+
+        Args:
+            current: 現在のレベル
+            target: 目標レベル
+
+        Returns:
+            レベルダウンの場合True
+        """
+        level_order = {"level1": 1, "level2": 2, "level3": 3}
+        return level_order.get(current, 0) > level_order.get(target, 0)
+
+    # ========================================
     # Level 1 の判定ロジック
     # ========================================
 
     def _should_delete_level1(self, type_def: TypeDefinition, usage_count: int) -> dict:
-        """Level 1の型定義を削除すべきか判定
+        """Level 1の型定義を調査すべきか判定
+
+        このプロジェクトでは個別型の定義を推奨しているため、
+        被参照0の型は「削除」ではなく「調査」対象とする。
 
         Args:
             type_def: 型定義
@@ -136,30 +209,30 @@ class TypeUpgradeAnalyzer:
         reasons = []
         confidence = 0.0
 
-        # bool型のエイリアスは削除推奨
-        if "bool" in type_def.definition.lower():
-            reasons.append("bool型のエイリアスは不要（変数名で十分明確）")
-            confidence += 0.4
-
-        # 使用頻度が低い（1-2箇所）
-        if usage_count <= 2:
-            reasons.append(f"使用箇所が{usage_count}箇所のみで、共通化のメリットがない")
+        # 被参照0の型は調査対象（削除ではない）
+        if usage_count == 0:
+            reasons.append(
+                "定義されているが使用されていません。以下を確認してください："
+            )
+            reasons.append("  1. 実装途中か？")
+            reasons.append("  2. 既存のprimitive型使用箇所を置き換えるべきか？")
+            reasons.append("  3. 設計意図（将来の拡張性等）を確認")
             confidence += 0.3
 
-        # docstringなし
-        if not type_def.has_docstring:
-            reasons.append("docstringがなく、ドキュメント的価値もない")
+            if not type_def.has_docstring:
+                reasons.append("  4. docstringを追加して設計意図を明確にする")
+                confidence += 0.2
+
+        # docstringなしの型は要調査
+        if usage_count > 0 and not type_def.has_docstring:
+            reasons.append("docstringがないため、型の意図が不明確です")
             confidence += 0.2
 
-        # 意味的価値がない（Code = str 等）
-        if self._is_meaningless_alias(type_def):
-            reasons.append("意味的価値がない型エイリアス")
-            confidence += 0.3
-
-        if confidence >= 0.5:
-            priority = "high" if confidence >= 0.8 else "medium"
+        # 判定結果は「調査」であり「削除」ではない
+        if confidence >= 0.3:
+            priority = "medium" if usage_count == 0 else "low"
             return {
-                "should_delete": True,
+                "should_delete": False,  # 削除推奨しない
                 "confidence": min(confidence, 1.0),
                 "reasons": reasons,
                 "priority": priority,
@@ -221,6 +294,99 @@ class TypeUpgradeAnalyzer:
             "reasons": [],
             "priority": "low",
         }
+
+    # ========================================
+    # Level 2 → Level 1 ダウングレード判定
+    # ========================================
+
+    def _analyze_level2_downgrade(
+        self, type_def: TypeDefinition, usage_count: int
+    ) -> UpgradeRecommendation | None:
+        """Level 2からLevel 1へのダウングレード判定
+
+        Args:
+            type_def: 型定義
+            usage_count: 使用回数
+
+        Returns:
+            UpgradeRecommendation（推奨事項がない場合はNone）
+        """
+        reasons = []
+        confidence = 0.0
+
+        # バリデータが実質的に何もしていない（パススルーのみ）
+        if self._is_passthrough_validator(type_def):
+            reasons.append("バリデータが実質的に何も検証していません")
+            reasons.append("Level 1のtype文で十分です")
+            confidence += 0.7
+
+        # 使用回数が極めて少ない（1箇所以下）で、複雑なバリデータもない
+        if usage_count <= 1 and not self._has_complex_validator(type_def):
+            reasons.append("使用箇所が少なく、バリデーション不要の可能性があります")
+            confidence += 0.3
+
+        if confidence >= 0.5:
+            priority = "medium" if confidence >= 0.7 else "low"
+            return UpgradeRecommendation(
+                type_name=type_def.name,
+                current_level=type_def.level,
+                recommended_level="level1",
+                confidence=min(confidence, 1.0),
+                reasons=reasons,
+                suggested_validator=None,
+                suggested_implementation=None,
+                priority=priority,
+                is_downgrade=True,
+            )
+
+        return None
+
+    # ========================================
+    # Level 3 → Level 2 ダウングレード判定
+    # ========================================
+
+    def _analyze_level3_downgrade(
+        self, type_def: TypeDefinition, usage_count: int
+    ) -> UpgradeRecommendation | None:
+        """Level 3からLevel 2へのダウングレード判定
+
+        Args:
+            type_def: 型定義
+            usage_count: 使用回数
+
+        Returns:
+            UpgradeRecommendation（推奨事項がない場合はNone）
+        """
+        reasons = []
+        confidence = 0.0
+
+        # 単一フィールドのみで、ビジネスロジックメソッドがない
+        if self._is_single_field_basemodel(type_def):
+            reasons.append("単一フィールドのみのBaseModelです")
+            reasons.append("Annotated + AfterValidator（Level 2）で十分です")
+            confidence += 0.6
+
+        # メソッドが__str__, __hash__のみ（Value Object的だがシンプル）
+        if self._has_only_utility_methods(type_def):
+            reasons.append("ビジネスロジックメソッドが存在しません")
+            reasons.append("Level 2への簡素化を検討してください")
+            confidence += 0.4
+
+        if confidence >= 0.5:
+            priority = "medium" if confidence >= 0.7 else "low"
+            return UpgradeRecommendation(
+                type_name=type_def.name,
+                current_level=type_def.level,
+                recommended_level="level2",
+                confidence=min(confidence, 1.0),
+                reasons=reasons,
+                suggested_validator=None,
+                suggested_implementation=None,
+                priority=priority,
+                is_downgrade=True,
+            )
+
+        return None
 
     # ========================================
     # Level 2 → Level 3 の判定ロジック
@@ -323,7 +489,71 @@ class TypeUpgradeAnalyzer:
         return {"matched": False, "reasons": [], "confidence": 0.0}
 
     # ========================================
-    # ヘルパーメソッド
+    # ヘルパーメソッド（ダウングレード判定用）
+    # ========================================
+
+    def _is_passthrough_validator(self, type_def: TypeDefinition) -> bool:
+        """バリデータがパススルー（何もしていない）か判定
+
+        Args:
+            type_def: 型定義
+
+        Returns:
+            パススルーの場合True
+        """
+        # "return v" のみで構成されているバリデータ
+        definition = type_def.definition
+        # 簡易判定: "return v" があり、raise/if文がない
+        has_return_v = "return v" in definition
+        has_validation = "raise" in definition or "if " in definition
+        return has_return_v and not has_validation
+
+    def _has_complex_validator(self, type_def: TypeDefinition) -> bool:
+        """複雑なバリデータを持つか判定
+
+        Args:
+            type_def: 型定義
+
+        Returns:
+            複雑なバリデータの場合True
+        """
+        # バリデータ関数の行数が5行以上
+        return self._estimate_validator_complexity(type_def) >= 5
+
+    def _is_single_field_basemodel(self, type_def: TypeDefinition) -> bool:
+        """単一フィールドのみのBaseModelか判定
+
+        Args:
+            type_def: 型定義
+
+        Returns:
+            単一フィールドのみの場合True
+        """
+        # 簡易判定: フィールド定義が1つだけ
+        # "value: str" のようなパターンをカウント
+        field_pattern = r"^\s+\w+:\s+"
+        field_count = len(re.findall(field_pattern, type_def.definition, re.MULTILINE))
+        return field_count == 1
+
+    def _has_only_utility_methods(self, type_def: TypeDefinition) -> bool:
+        """ユーティリティメソッド（__str__, __hash__等）のみか判定
+
+        Args:
+            type_def: 型定義
+
+        Returns:
+            ユーティリティメソッドのみの場合True
+        """
+        # 簡易判定: def が存在し、すべてが__で始まるメソッド
+        method_pattern = r"def\s+(\w+)\("
+        methods = re.findall(method_pattern, type_def.definition)
+        if not methods:
+            return False
+        # すべてのメソッドが__で始まる（ダンダーメソッド）
+        return all(m.startswith("__") for m in methods)
+
+    # ========================================
+    # ヘルパーメソッド（その他）
     # ========================================
 
     def _is_meaningless_alias(self, type_def: TypeDefinition) -> bool:

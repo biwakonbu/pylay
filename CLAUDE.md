@@ -9,7 +9,17 @@
 - 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](AGENTS.md) に記載された方法を使用してください
 - コーディング規約、命名規則、テスト指針は [AGENTS.md](AGENTS.md) に厳密に従ってください
 - **型定義ルール**: [docs/typing-rule.md](docs/typing-rule.md) に記載された型定義の4つの核心原則を必ず遵守してください
-  1. primitive型を直接使わず、ドメイン型を定義（`type UserId = str` や `Annotated` を活用）
+  1. **個別型をちゃんと定義し、primitive型を直接使わない**
+     - `str`, `int` などをそのまま使わず、ドメイン型を定義（`type UserId = str` や `Annotated` を活用）
+     - **プロジェクトの設計思想**: 型を軸にした依存関係の洗い出しと、丁寧な型付けによる設計からの自動実装を目指す
+     - **低レベル放置を好ましくないとする**: Level 1（単純な型エイリアス）の状態で放置されていることは推奨されない
+       - Level 1は一時的な状態であり、適切な制約（Level 2）やビジネスロジック（Level 3）への昇格を検討すべき
+       - 型定義レベルの適切性は状況に応じて自動判断可能（Level 3 ↔ Level 2）
+       - Level 1やその他への判断はdocstringで制御可能（`@target-level: level1`, `@keep-as-is: true`）
+     - **被参照0の型の扱い**: なぜ使われていないか調査し、適切なレベルへの昇格を検討する
+       - 実装途中の可能性 → Level 2/3への昇格を推奨
+       - 認知不足で既存のprimitive型使用箇所が置き換えられていない → 使用箇所を置き換え
+       - 将来の拡張性を考えた設計意図 → docstringで設計意図を明記し、`@keep-as-is: true`で現状維持を宣言
   2. Pydanticによる厳密な型定義（3つのレベルを適切に使い分ける）
      - Level 1: `type` エイリアス（制約なし）
      - Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）

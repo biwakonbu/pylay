@@ -18,16 +18,16 @@ from src.core.analyzer.type_level_models import (
 class TypeReporter:
     """型定義分析レポートを生成するクラス"""
 
-    def __init__(self, target_ratios: dict[str, float] | None = None):
+    def __init__(self, threshold_ratios: dict[str, float] | None = None):
         """初期化
 
         Args:
-            target_ratios: 目標比率（デフォルト: 標準的な比率）
+            threshold_ratios: 警告閾値（デフォルト: 推奨閾値）
         """
-        self.target_ratios = target_ratios or {
-            "level1": 0.55,  # 50-60%の中央値
-            "level2": 0.30,  # 25-35%の中央値
-            "level3": 0.175,  # 15-20%の中央値
+        self.threshold_ratios = threshold_ratios or {
+            "level1_max": 0.20,  # Level 1は20%以下が望ましい
+            "level2_min": 0.40,  # Level 2は40%以上が望ましい
+            "level3_min": 0.15,  # Level 3は15%以上が望ましい
         }
 
     def generate_console_report(self, report: TypeAnalysisReport) -> str:
@@ -48,8 +48,8 @@ class TypeReporter:
         lines.append("📊 統計情報:")
         lines.append(self._format_statistics_table(report.statistics))
 
-        # 理想比率との比較
-        lines.append("\n🎯 理想比率との比較:")
+        # 警告閾値との比較
+        lines.append("\n🎯 警告閾値との比較:")
         lines.append(self._format_deviation_comparison(report))
 
         # ドキュメント品質スコア
@@ -216,16 +216,16 @@ class TypeReporter:
         lines.append("│ レベル                  │ 件数  │ 比率    │")
         lines.append("├─────────────────────────┼───────┼─────────┤")
         lines.append(
-            f"│ Level 1: type エイリアス │ {statistics.level1_count:5} │ {statistics.level1_ratio * 100:6.1f}% │"
+            f"│ Level 1: type エイリアス │ {statistics.level1_count:5} │ {statistics.level1_ratio * 100:6.1f}% │"  # noqa: E501
         )
         lines.append(
-            f"│ Level 2: Annotated      │ {statistics.level2_count:5} │ {statistics.level2_ratio * 100:6.1f}% │"
+            f"│ Level 2: Annotated      │ {statistics.level2_count:5} │ {statistics.level2_ratio * 100:6.1f}% │"  # noqa: E501
         )
         lines.append(
-            f"│ Level 3: BaseModel      │ {statistics.level3_count:5} │ {statistics.level3_ratio * 100:6.1f}% │"
+            f"│ Level 3: BaseModel      │ {statistics.level3_count:5} │ {statistics.level3_ratio * 100:6.1f}% │"  # noqa: E501
         )
         lines.append(
-            f"│ その他: class/dataclass │ {statistics.other_count:5} │ {statistics.other_ratio * 100:6.1f}% │"
+            f"│ その他: class/dataclass │ {statistics.other_count:5} │ {statistics.other_ratio * 100:6.1f}% │"  # noqa: E501
         )
         lines.append("├─────────────────────────┼───────┼─────────┤")
         lines.append(
@@ -235,35 +235,35 @@ class TypeReporter:
         return "\n".join(lines)
 
     def _format_deviation_comparison(self, report: TypeAnalysisReport) -> str:
-        """目標比率との乖離を比較形式でフォーマット"""
+        """警告閾値との乖離を比較形式でフォーマット"""
         lines = []
         stats = report.statistics
 
-        # Level 1の比較
-        l1_dev = report.deviation_from_target.get("level1", 0.0)
-        l1_status = "✅" if abs(l1_dev) < 0.1 else "⚠️"
+        # Level 1の比較（上限チェック）
+        l1_max_dev = report.deviation_from_threshold.get("level1_max", 0.0)
+        l1_status = "✅" if l1_max_dev <= 0 else "⚠️"  # 負 or 0 = OK、正 = 警告
         lines.append(
             f"  Level 1: {stats.level1_ratio * 100:.1f}% "
-            f"(目標: {self.target_ratios['level1'] * 100:.0f}%, "
-            f"差分: {l1_dev * 100:+.1f}%) {l1_status}"
+            f"(上限: {self.threshold_ratios['level1_max'] * 100:.0f}%, "
+            f"差分: {l1_max_dev * 100:+.1f}%) {l1_status}"
         )
 
-        # Level 2の比較
-        l2_dev = report.deviation_from_target.get("level2", 0.0)
-        l2_status = "✅" if abs(l2_dev) < 0.1 else "⚠️"
+        # Level 2の比較（下限チェック）
+        l2_min_dev = report.deviation_from_threshold.get("level2_min", 0.0)
+        l2_status = "✅" if l2_min_dev >= 0 else "⚠️"  # 正 or 0 = OK、負 = 警告
         lines.append(
             f"  Level 2: {stats.level2_ratio * 100:.1f}% "
-            f"(目標: {self.target_ratios['level2'] * 100:.0f}%, "
-            f"差分: {l2_dev * 100:+.1f}%) {l2_status}"
+            f"(下限: {self.threshold_ratios['level2_min'] * 100:.0f}%, "
+            f"差分: {l2_min_dev * 100:+.1f}%) {l2_status}"
         )
 
-        # Level 3の比較
-        l3_dev = report.deviation_from_target.get("level3", 0.0)
-        l3_status = "✅" if abs(l3_dev) < 0.05 else "⚠️"
+        # Level 3の比較（下限チェック）
+        l3_min_dev = report.deviation_from_threshold.get("level3_min", 0.0)
+        l3_status = "✅" if l3_min_dev >= 0 else "⚠️"  # 正 or 0 = OK、負 = 警告
         lines.append(
             f"  Level 3: {stats.level3_ratio * 100:.1f}% "
-            f"(目標: {self.target_ratios['level3'] * 100:.0f}%, "
-            f"差分: {l3_dev * 100:+.1f}%) {l3_status}"
+            f"(下限: {self.threshold_ratios['level3_min'] * 100:.0f}%, "
+            f"差分: {l3_min_dev * 100:+.1f}%) {l3_status}"
         )
 
         return "\n".join(lines)
@@ -280,13 +280,13 @@ class TypeReporter:
         # 実装率
         impl_status = "✅" if doc_stats.implementation_rate >= 0.8 else "⚠️"
         lines.append(
-            f"│ 実装率                  │ {doc_stats.implementation_rate * 100:5.1f}% │   {impl_status}    │"
+            f"│ 実装率                  │ {doc_stats.implementation_rate * 100:5.1f}% │   {impl_status}    │"  # noqa: E501
         )
 
         # 詳細度
         detail_status = "✅" if doc_stats.detail_rate >= 0.5 else "⚠️"
         lines.append(
-            f"│ 詳細度                  │ {doc_stats.detail_rate * 100:5.1f}% │   {detail_status}    │"
+            f"│ 詳細度                  │ {doc_stats.detail_rate * 100:5.1f}% │   {detail_status}    │"  # noqa: E501
         )
 
         # 総合品質スコア
@@ -298,7 +298,7 @@ class TypeReporter:
             else "❌"
         )
         lines.append(
-            f"│ 総合品質スコア          │ {doc_stats.quality_score * 100:5.1f}% │   {quality_status}    │"
+            f"│ 総合品質スコア          │ {doc_stats.quality_score * 100:5.1f}% │   {quality_status}    │"  # noqa: E501
         )
 
         lines.append("└─────────────────────────┴───────┴─────────┘")
@@ -310,15 +310,24 @@ class TypeReporter:
         priority_emoji = {"high": "🔴", "medium": "🟡", "low": "🟢"}
         emoji = priority_emoji.get(rec.priority, "⚪")
 
-        lines.append(
-            f"{emoji} [{rec.priority.upper()}] {rec.type_name} (確信度: {rec.confidence:.2f})"
-        )
-        lines.append(f"  現在: {rec.current_level} → 推奨: {rec.recommended_level}")
+        # 調査推奨の場合は異なる表示
+        if rec.recommended_level == "investigate":
+            lines.append(f"❓ [{rec.priority.upper()}] {rec.type_name} (被参照: 0)")
+            lines.append("  推奨アクション: 調査")
+        else:
+            lines.append(
+                f"{emoji} [{rec.priority.upper()}] {rec.type_name} (確信度: {rec.confidence:.2f})"  # noqa: E501
+            )
+            lines.append(f"  現在: {rec.current_level} → 推奨: {rec.recommended_level}")
 
         if rec.reasons:
-            lines.append("  理由:")
-            for reason in rec.reasons:
-                lines.append(f"    - {reason}")
+            if rec.recommended_level == "investigate":
+                for reason in rec.reasons:
+                    lines.append(f"  {reason}")
+            else:
+                lines.append("  理由:")
+                for reason in rec.reasons:
+                    lines.append(f"    - {reason}")
 
         if rec.suggested_validator:
             lines.append("  推奨バリデータ:")
@@ -362,16 +371,16 @@ class TypeReporter:
         lines.append("| レベル | 件数 | 比率 |")
         lines.append("|--------|------|------|")
         lines.append(
-            f"| Level 1: type エイリアス | {statistics.level1_count} | {statistics.level1_ratio * 100:.1f}% |"
+            f"| Level 1: type エイリアス | {statistics.level1_count} | {statistics.level1_ratio * 100:.1f}% |"  # noqa: E501
         )
         lines.append(
-            f"| Level 2: Annotated | {statistics.level2_count} | {statistics.level2_ratio * 100:.1f}% |"
+            f"| Level 2: Annotated | {statistics.level2_count} | {statistics.level2_ratio * 100:.1f}% |"  # noqa: E501
         )
         lines.append(
-            f"| Level 3: BaseModel | {statistics.level3_count} | {statistics.level3_ratio * 100:.1f}% |"
+            f"| Level 3: BaseModel | {statistics.level3_count} | {statistics.level3_ratio * 100:.1f}% |"  # noqa: E501
         )
         lines.append(
-            f"| その他 | {statistics.other_count} | {statistics.other_ratio * 100:.1f}% |"
+            f"| その他 | {statistics.other_count} | {statistics.other_ratio * 100:.1f}% |"  # noqa: E501
         )
         lines.append(f"| **合計** | **{statistics.total_count}** | **100.0%** |")
         return "\n".join(lines)
@@ -395,7 +404,7 @@ class TypeReporter:
         lines = []
         for rec in recommendations[:10]:  # 最初の10件のみ
             lines.append(
-                f"### {rec.type_name} ({rec.priority.upper()}, 確信度: {rec.confidence:.2f})"
+                f"### {rec.type_name} ({rec.priority.upper()}, 確信度: {rec.confidence:.2f})"  # noqa: E501
             )
             lines.append(
                 f"- 現在: `{rec.current_level}` → 推奨: `{rec.recommended_level}`"

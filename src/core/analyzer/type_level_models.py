@@ -1,7 +1,8 @@
 """
 型定義レベル分析のためのデータ構造
 
-型定義レベル（Level 1/2/3）とドキュメント品質の分析・監視機能で使用されるモデルを定義します。
+Level 1/2/3の型定義とドキュメント品質の分析・監視機能で
+使用されるモデルを定義します。
 """
 
 from typing import Literal
@@ -26,6 +27,9 @@ class TypeDefinition(BaseModel):
         docstring: docstring（存在する場合）
         has_docstring: docstringが存在するか
         docstring_lines: docstringの行数
+        target_level: docstringで指定された目標レベル
+            （@target-level: level1/level2/level3）
+        keep_as_is: 現状維持フラグ（@keep-as-is: trueの場合はレベルアップ推奨しない）
     """
 
     model_config = ConfigDict(frozen=False, extra="forbid")
@@ -39,6 +43,8 @@ class TypeDefinition(BaseModel):
     docstring: str | None = None
     has_docstring: bool = False
     docstring_lines: int = 0
+    target_level: Literal["level1", "level2", "level3"] | None = None
+    keep_as_is: bool = False
 
 
 # ========================================
@@ -182,29 +188,31 @@ class TypeStatistics(BaseModel):
 
 
 class UpgradeRecommendation(BaseModel):
-    """型レベルアップの推奨事項
+    """型レベルアップ・ダウンの推奨事項
 
     Attributes:
         type_name: 型名
         current_level: 現在のレベル
-        recommended_level: 推奨レベル
+        recommended_level: 推奨レベル（level1/level2/level3/investigate）
         confidence: 確信度（0.0-1.0）
         reasons: 推奨理由
         suggested_validator: Level 2への昇格時のバリデータコード
         suggested_implementation: Level 3への昇格時の実装例
         priority: 優先度
+        is_downgrade: レベルダウン推奨の場合True
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     type_name: str
     current_level: Literal["level1", "level2", "level3", "other"]
-    recommended_level: Literal["level1", "level2", "level3", "delete"]
+    recommended_level: Literal["level1", "level2", "level3", "investigate"]
     confidence: float = Field(ge=0.0, le=1.0)
     reasons: list[str]
     suggested_validator: str | None = None
     suggested_implementation: str | None = None
     priority: Literal["high", "medium", "low"]
+    is_downgrade: bool = False
 
 
 # ========================================
@@ -221,8 +229,8 @@ class TypeAnalysisReport(BaseModel):
         recommendations: 一般的な推奨事項
         upgrade_recommendations: 型レベルアップ推奨
         docstring_recommendations: docstring改善推奨
-        target_ratios: 目標比率
-        deviation_from_target: 目標との乖離
+        threshold_ratios: 警告閾値（level1_max/level2_min/level3_min）
+        deviation_from_threshold: 警告閾値との乖離
     """
 
     model_config = ConfigDict(frozen=False, extra="forbid")
@@ -232,5 +240,5 @@ class TypeAnalysisReport(BaseModel):
     recommendations: list[str]
     upgrade_recommendations: list[UpgradeRecommendation]
     docstring_recommendations: list[DocstringRecommendation]
-    target_ratios: dict[str, float]
-    deviation_from_target: dict[str, float]
+    threshold_ratios: dict[str, float]
+    deviation_from_threshold: dict[str, float]
