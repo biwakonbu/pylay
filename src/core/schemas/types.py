@@ -179,6 +179,9 @@ type MethodName = str
 type MypyFlag = str
 """mypyコマンドラインフラグ（--strict, --no-implicit-optional等）"""
 
+type AnalyzerMode = str
+"""アナライザーモード（ast, mypy, hybrid等）"""
+
 type CyclePath = list[NodeId]
 """循環依存のパス（ノードIDのリスト）"""
 
@@ -197,8 +200,8 @@ type TypeParamList = list[str]
 type LayerNameList = list[LayerName]
 """レイヤー名のリスト（primitives, domain, api等）"""
 
-type AnalyzerModeList = list[str]
-"""アナライザーモードのリスト（ast, mypy, hybrid等）"""
+type AnalyzerModeList = list[AnalyzerMode]
+"""アナライザーモードのリスト"""
 
 type MypyFlagList = list[MypyFlag]
 """mypyフラグのリスト"""
