@@ -24,7 +24,7 @@ from src.core.analyzer.exceptions import (
     TypeInferenceError,
 )
 from src.core.analyzer.models import AnalyzerState, ParseContext
-from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.types import CyclePathList, TypeRefList
 
@@ -63,7 +63,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             # コード文字列の場合、一時ファイルを作成
             from pydantic import ValidationError
 
-            from src.core.schemas.analyzer_types import TempFileConfig
+            from src.core.schemas.analyzer import TempFileConfig
             from src.core.utils.io_helpers import create_temp_file
 
             try:
@@ -210,7 +210,7 @@ class DependencyExtractionAnalyzer(Analyzer):
                             )
                             for ref in type_refs:
                                 if ref != node.name:
-                                    from src.core.schemas.graph_types import (
+                                    from src.core.schemas.graph import (
                                         GraphEdge,
                                         RelationType,
                                     )

@@ -1,13 +1,14 @@
 """
-グラフ型定義
-TypeDependencyGraph, GraphNode, GraphEdge の定義
+グラフモデル定義
+
+GraphNode, GraphEdge, TypeDependencyGraph の定義
 """
 
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from src.core.schemas.graph.types import RelationType
 from src.core.schemas.types import (
     FilePath,
     GraphMetadata,
@@ -18,21 +19,6 @@ from src.core.schemas.types import (
     QualifiedName,
     Weight,
 )
-
-
-class RelationType(str, Enum):
-    """関係の種類を定義する列挙型"""
-
-    DEPENDS_ON = "depends_on"
-    INHERITS_FROM = "inherits_from"  # クラス継承（正規名）
-    IMPLEMENTS = "implements"
-    REFERENCES = "references"
-    USES = "uses"
-    RETURNS = "returns"  # 関数戻り値
-    CALLS = "calls"  # 関数呼び出し
-    ARGUMENT = "argument"  # 関数引数
-    ASSIGNMENT = "assignment"  # 変数代入
-    GENERIC = "generic"  # ジェネリック型
 
 
 class GraphNode(BaseModel):
@@ -344,3 +330,10 @@ class TypeDependencyGraph(BaseModel):
             )
 
         return cls(nodes=nodes, edges=edges)
+
+
+__all__ = [
+    "GraphNode",
+    "GraphEdge",
+    "TypeDependencyGraph",
+]

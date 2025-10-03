@@ -9,7 +9,7 @@ from pathlib import Path
 
 from src.core.analyzer.exceptions import ASTParseError
 from src.core.analyzer.models import AnalyzerState, ParseContext
-from src.core.schemas.graph_types import GraphEdge, GraphNode, RelationType
+from src.core.schemas.graph import GraphEdge, GraphNode, RelationType
 from src.core.schemas.types import GraphMetadata, TypeNameList
 
 # 関数定義の共通型（Python 3.13+）

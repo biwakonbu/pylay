@@ -3,7 +3,7 @@ from typing import Any
 from ruamel.yaml import YAML
 
 from src.core.schemas.types import TypeRefList
-from src.core.schemas.yaml_type_spec import (
+from src.core.schemas.yaml_spec import (
     DictTypeSpec,
     ListTypeSpec,
     RefPlaceholder,
@@ -126,7 +126,7 @@ def _collect_refs_from_spec(spec: TypeSpec) -> TypeRefList:
 
     TypeSpecオブジェクトから参照文字列を収集します。
     """
-    from src.core.schemas.yaml_type_spec import RefPlaceholder
+    from src.core.schemas.yaml_spec import RefPlaceholder
 
     refs = []
 

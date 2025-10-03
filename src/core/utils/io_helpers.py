@@ -8,7 +8,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from src.core.schemas.analyzer_types import TempFileConfig
+from src.core.schemas.analyzer import TempFileConfig
 
 
 def create_temp_file(config: TempFileConfig) -> Path:

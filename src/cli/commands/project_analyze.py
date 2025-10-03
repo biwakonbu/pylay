@@ -307,7 +307,7 @@ async def _analyze_file_async(
                     spec = yaml_to_spec(types_yaml)
 
                     # TypeRoot の場合、最初の型を使用
-                    from src.core.schemas.yaml_type_spec import TypeRoot
+                    from src.core.schemas.yaml_spec import TypeRoot
 
                     if spec is not None and isinstance(spec, TypeRoot) and spec.types:
                         spec = next(iter(spec.types.values()))

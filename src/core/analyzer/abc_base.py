@@ -10,7 +10,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
 
 

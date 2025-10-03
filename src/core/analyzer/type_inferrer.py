@@ -52,7 +52,7 @@ from pathlib import Path
 from src.core.analyzer.abc_base import Analyzer
 from src.core.analyzer.exceptions import MypyExecutionError
 from src.core.analyzer.models import InferResult, MypyResult
-from src.core.schemas.graph_types import GraphNode, TypeDependencyGraph
+from src.core.schemas.graph import GraphNode, TypeDependencyGraph
 from src.core.schemas.types import GraphMetadata
 
 
@@ -80,7 +80,7 @@ class TypeInferenceAnalyzer(Analyzer):
             # コード文字列の場合、一時ファイルを作成
             from pydantic import ValidationError
 
-            from src.core.schemas.analyzer_types import TempFileConfig
+            from src.core.schemas.analyzer import TempFileConfig
             from src.core.utils.io_helpers import cleanup_temp_file, create_temp_file
 
             try:

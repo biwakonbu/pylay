@@ -4,7 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.graph import TypeDependencyGraph
 
 from .base import DocumentGenerator
 from .config import TypeDocConfig

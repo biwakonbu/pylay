@@ -10,7 +10,7 @@ from typing import Literal, TypeGuard
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.core.schemas.graph_types import GraphEdge, GraphNode
+from src.core.schemas.graph import GraphEdge, GraphNode
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.types import (
     ClassName,

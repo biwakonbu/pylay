@@ -6,7 +6,7 @@
 from pathlib import Path
 
 from src.core.schemas.pylay_config import PylayConfig
-from src.core.schemas.yaml_type_spec import (
+from src.core.schemas.yaml_spec import (
     DictTypeSpec,
     ListTypeSpec,
     RefPlaceholder,
@@ -42,9 +42,9 @@ class YamlDocGenerator(DocumentGenerator):
             spec = kwargs.get("spec")
         if spec is None:
             raise ValueError("spec parameter is required")
-        from src.core.schemas.yaml_type_spec import TypeRoot
+        from src.core.schemas.yaml_spec import TypeRoot
 
-        if not isinstance(spec, (TypeSpec, TypeRoot)):
+        if not isinstance(spec, TypeSpec | TypeRoot):
             # DictTypeSpec などのサブクラスも許可
             if hasattr(spec, "type") and hasattr(spec, "name"):
                 pass  # TypeSpec 互換のオブジェクト
@@ -143,7 +143,7 @@ def generate_yaml_docs(spec: TypeSpec, output_dir: str | None = None) -> None:
     generator = YamlDocGenerator(filesystem=config.filesystem)  # 依存注入
 
     # TypeRoot の場合、最初の型を使用
-    from src.core.schemas.yaml_type_spec import TypeRoot
+    from src.core.schemas.yaml_spec import TypeRoot
 
     if isinstance(spec, TypeRoot) and spec.types:
         layer = next(iter(spec.types.keys()))

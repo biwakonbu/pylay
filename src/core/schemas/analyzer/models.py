@@ -1,17 +1,11 @@
 """
-アナライザー関連の型定義
+アナライザーモデル定義
 
-mypy strict準拠のためのTypedDictと型定義を提供します。
-Pydanticモデルは models.py から再エクスポートします。
+アナライザー関連のPydanticモデルを定義します。
 """
 
 from pydantic import BaseModel, Field
 
-# Pydanticモデルを再エクスポート（analyzer.models からの型参照用）
-from src.core.analyzer.models import InferResult, MypyResult
-
-# RelationTypeはgraph_types.pyに統合（重複排除）
-from src.core.schemas.graph_types import RelationType
 from src.core.schemas.types import (
     CheckCount,
     CheckResultData,
@@ -30,8 +24,6 @@ from src.core.schemas.types import (
     ToolName,
     VisualizeFlag,
 )
-
-__all__ = ["InferResult", "MypyResult", "RelationType"]
 
 
 class CheckSummary(BaseModel):
@@ -97,3 +89,13 @@ class AnalyzerConfig(BaseModel):
     infer_level: InferLevel
     max_depth: MaxDepth
     visualize: VisualizeFlag
+
+
+__all__ = [
+    "CheckSummary",
+    "MypyError",
+    "Issue",
+    "GraphMetrics",
+    "TempFileConfig",
+    "AnalyzerConfig",
+]
