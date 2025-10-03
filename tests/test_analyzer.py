@@ -11,7 +11,7 @@ import pytest
 
 from src.core.analyzer.base import Analyzer, FullAnalyzer, create_analyzer
 from src.core.analyzer.graph_processor import GraphProcessor
-from src.core.schemas.graph_types import (
+from src.core.schemas.graph import (
     GraphEdge,
     GraphNode,
     RelationType,

@@ -10,24 +10,38 @@ from typing import Literal, TypeGuard
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.core.schemas.graph_types import GraphEdge, GraphNode
+from src.core.schemas.graph import GraphEdge, GraphNode
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.types import (
+    CheckCount,
+    CheckResultData,
     ClassName,
+    Code,
     ConfidenceScore,
+    Density,
+    EdgeCount,
     EnableMypyFlag,
+    FileOpenMode,
     FilePath,
+    FileSuffix,
     FunctionName,
+    InferLevel,
     LineNumber,
     MaxDepth,
+    Message,
     ModuleName,
     MypyFlag,
+    NodeCount,
+    NodeId,
     ReturnCode,
+    Severity,
     StdErr,
     StdOut,
     Timeout,
+    ToolName,
     TypeName,
     VariableName,
+    VisualizeFlag,
 )
 
 logger = logging.getLogger(__name__)
@@ -222,3 +236,68 @@ class MypyResult(BaseModel):
     def has_inferred_types(self) -> bool:
         """推論結果があるか判定"""
         return len(self.inferred_types) > 0
+
+
+class CheckSummary(BaseModel):
+    """analyze_issues.pyのサマリー型"""
+
+    total_checks: CheckCount
+    successful_checks: CheckCount
+    failed_checks: CheckCount
+    checks_with_issues: CheckCount
+    results: list[CheckResultData]
+
+
+class MypyError(BaseModel):
+    """mypyエラーの構造化型"""
+
+    line: LineNumber
+    message: Message
+    severity: Severity
+
+
+class Issue(BaseModel):
+    """ツール出力のIssue型"""
+
+    tool: ToolName
+    line: LineNumber
+    message: Message
+    severity: Severity
+
+
+class GraphMetrics(BaseModel):
+    """グラフメトリクスの型"""
+
+    node_count: NodeCount
+    edge_count: EdgeCount
+    density: Density
+    cycles: list[list[NodeId]]
+
+
+class TempFileConfig(BaseModel):
+    """一時ファイル設定のPydanticモデル
+
+    Attributes:
+        code: 一時ファイルに書き込むコード内容
+        suffix: ファイルの拡張子（デフォルト: ".py"）
+        mode: ファイルオープンモード（デフォルト: "w"）
+    """
+
+    code: Code = Field(
+        ..., description="一時ファイルに書き込むコード内容", min_length=1
+    )
+    suffix: FileSuffix = Field(default=".py", description="ファイルの拡張子")
+    mode: FileOpenMode = Field(
+        default="w", description="ファイルオープンモード", pattern="^[wab]\\+?$"
+    )
+
+
+class AnalyzerConfig(BaseModel):
+    """Analyzer設定の型（PylayConfig拡張）
+
+    Analyzer固有の設定を管理するPylayConfigの拡張クラスです。
+    """
+
+    infer_level: InferLevel
+    max_depth: MaxDepth
+    visualize: VisualizeFlag

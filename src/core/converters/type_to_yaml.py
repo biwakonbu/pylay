@@ -6,8 +6,8 @@ from typing import Union as TypingUnion
 from pydantic import BaseModel
 from ruamel.yaml import YAML
 
-from src.core.schemas.graph_types import TypeDependencyGraph
-from src.core.schemas.yaml_type_spec import (
+from src.core.schemas.graph import TypeDependencyGraph
+from src.core.schemas.yaml_spec import (
     DictTypeSpec,
     GenericTypeSpec,
     ListTypeSpec,
