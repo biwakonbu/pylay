@@ -8,7 +8,7 @@ from typing import Any
 
 import networkx as nx
 
-from core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.graph import TypeDependencyGraph
 
 
 class NetworkXGraphAdapter:

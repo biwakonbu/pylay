@@ -6,7 +6,7 @@ from src.core.converters.extract_deps import (
     convert_graph_to_yaml_spec,
     extract_dependencies_from_code,
 )
-from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.graph import TypeDependencyGraph
 
 
 class TestDependencyExtraction:

@@ -7,7 +7,7 @@ import ast
 from datetime import UTC, datetime
 from pathlib import Path
 
-from src.core.schemas.graph_types import (
+from src.core.schemas.graph import (
     GraphEdge,
     GraphNode,
     RelationType,

@@ -11,7 +11,7 @@ from src.core.converters.extract_deps import (
     extract_dependencies_from_code,
     visualize_dependencies,
 )
-from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.graph import TypeDependencyGraph
 
 
 class TestVisualization:

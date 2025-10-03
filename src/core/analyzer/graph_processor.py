@@ -21,7 +21,7 @@ else:
     except ImportError:
         Dot, Node, Edge = None, None, None  # type: ignore[assignment, misc]
 
-from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.graph import TypeDependencyGraph
 
 
 class GraphProcessor:

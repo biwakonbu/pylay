@@ -5,7 +5,7 @@ import pytest
 
 from src.core.converters.type_to_yaml import type_to_yaml, types_to_yaml
 from src.core.converters.yaml_to_type import validate_with_spec, yaml_to_spec
-from src.core.schemas.yaml_type_spec import DictTypeSpec, TypeSpec
+from src.core.schemas.yaml_spec import DictTypeSpec, TypeSpec
 
 
 @pytest.fixture

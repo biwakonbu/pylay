@@ -6,7 +6,7 @@ GraphNode, GraphEdge, TypeDependencyGraphの基本機能とYAML変換を検証�
 import pytest
 from pydantic import ValidationError
 
-from core.schemas.graph_types import GraphEdge, GraphNode, TypeDependencyGraph
+from src.core.schemas.graph import GraphEdge, GraphNode, TypeDependencyGraph
 
 
 class TestGraphNode:

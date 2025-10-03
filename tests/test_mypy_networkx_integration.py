@@ -68,7 +68,7 @@ class TestNetworkXIntegration:
 
         NetworkXアダプターが正しく作成され、グラフ構造を処理できることを確認します。
         """
-        from core.schemas.graph_types import GraphEdge, GraphNode, TypeDependencyGraph
+        from src.core.schemas.graph import GraphEdge, GraphNode, TypeDependencyGraph
 
         nodes = [
             GraphNode(name="User", node_type="class"),
@@ -92,7 +92,7 @@ class TestNetworkXIntegration:
 
     def test_cycle_detection(self):
         """循環参照検出のテスト"""
-        from core.schemas.graph_types import GraphEdge, GraphNode, TypeDependencyGraph
+        from src.core.schemas.graph import GraphEdge, GraphNode, TypeDependencyGraph
 
         # 循環を含むグラフを作成
         nodes = [
@@ -115,7 +115,7 @@ class TestNetworkXIntegration:
 
     def test_topological_sort(self):
         """トポロジカルソートのテスト"""
-        from core.schemas.graph_types import GraphEdge, GraphNode, TypeDependencyGraph
+        from src.core.schemas.graph import GraphEdge, GraphNode, TypeDependencyGraph
 
         # 非循環グラフを作成
         nodes = [
@@ -143,7 +143,7 @@ class TestNetworkXIntegration:
 
     def test_graph_statistics(self):
         """グラフ統計のテスト"""
-        from core.schemas.graph_types import GraphEdge, GraphNode, TypeDependencyGraph
+        from src.core.schemas.graph import GraphEdge, GraphNode, TypeDependencyGraph
 
         nodes = [
             GraphNode(name="A", node_type="class"),
@@ -166,7 +166,7 @@ class TestNetworkXIntegration:
 
     def test_strong_dependency_subgraph(self):
         """強い依存関係サブグラフのテスト"""
-        from core.schemas.graph_types import GraphEdge, GraphNode, TypeDependencyGraph
+        from src.core.schemas.graph import GraphEdge, GraphNode, TypeDependencyGraph
 
         nodes = [
             GraphNode(name="A", node_type="class"),

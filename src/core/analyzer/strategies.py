@@ -23,7 +23,7 @@ from datetime import UTC
 
 from src.core.analyzer.exceptions import AnalysisError
 from src.core.analyzer.models import AnalyzerState, InferenceConfig, ParseContext
-from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.types import TypeRefList
 
@@ -185,7 +185,7 @@ class NormalAnalysisStrategy(AnalysisStrategy):
         """mypy型推論を統合"""
         try:
             from src.core.analyzer.type_inferrer import run_mypy_inference
-            from src.core.schemas.graph_types import GraphNode, RelationType
+            from src.core.schemas.graph import GraphNode, RelationType
 
             # mypy推論を実行
             mypy_result = run_mypy_inference(
@@ -213,7 +213,7 @@ class NormalAnalysisStrategy(AnalysisStrategy):
                     type_refs = self._extract_type_refs(infer_result.inferred_type)
                     for ref in type_refs:
                         if ref != var_name:
-                            from src.core.schemas.graph_types import GraphEdge
+                            from src.core.schemas.graph import GraphEdge
 
                             edge_key = f"{var_name}->{ref}:REFERENCES"
                             if edge_key not in self.state.edges:

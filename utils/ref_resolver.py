@@ -7,7 +7,7 @@ yaml_to_type.py から抽出・モジュール化されたものです。
 
 from typing import Any
 
-from src.core.schemas.yaml_type_spec import (
+from src.core.schemas.yaml_spec import (
     DictTypeSpec,
     ListTypeSpec,
     TypeContext,
@@ -150,14 +150,14 @@ class RefResolver:
                         elif isinstance(variant, dict):
                             # ネストされたvariants内の参照
                             refs.extend(RefResolver._collect_refs_from_data(variant))
-                elif isinstance(value, (dict, list)):
+                elif isinstance(value, dict | list):
                     # ネストされた構造もチェック
                     refs.extend(RefResolver._collect_refs_from_data(value))
         elif isinstance(spec_data, list):
             for item in spec_data:
                 if isinstance(item, str):
                     refs.append(item)
-                elif isinstance(item, (dict, list)):
+                elif isinstance(item, dict | list):
                     refs.extend(RefResolver._collect_refs_from_data(item))
 
         return refs
@@ -173,7 +173,7 @@ class RefResolver:
         Returns:
             参照文字列のリスト
         """
-        from src.core.schemas.yaml_type_spec import RefPlaceholder
+        from src.core.schemas.yaml_spec import RefPlaceholder
 
         refs = []
 

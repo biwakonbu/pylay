@@ -12,7 +12,7 @@ from typing import Any
 
 import networkx as nx
 
-from src.core.schemas.graph_types import TypeDependencyGraph
+from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.types import NodeId, ScopeStack, TypeParamList
 
 
