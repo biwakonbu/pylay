@@ -16,6 +16,14 @@
      - Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
   3. typing モジュールは最小限に（Python 3.13標準を優先）
   4. 型と実装を分離（types.py, protocols.py, models.py, services.py）
+     - **設計思想**: Djangoのアプリケーション構造のように、各モジュールが独立したパッケージとして完結
+     - **各モジュール構造**: converters/, analyzer/, doc_generators/ は以下の4ファイル構造を目指す
+       - `types.py`: モジュール固有の型定義（Level 1/2を優先）
+       - `protocols.py`: Protocolインターフェース定義
+       - `models.py`: Pydanticモデル（Level 3: BaseModel）
+       - 実装ファイル（type_to_yaml.py等）: ビジネスロジック実装
+     - **依存関係の方向**: 実装 → models.py → types.py、実装 → protocols.py
+     - **schemas/の役割**: 複数モジュールで共有される共通型のみ配置
 - セキュリティ考慮事項、環境変数設定は [AGENTS.md](AGENTS.md) に記載されたポリシーを遵守してください
 - プロジェクトステータス（実装済み/開発予定）を確認し、未実装の機能に対しては「未実装/計画中」と明記してください
 - シェルコマンド実行の制限事項（単一コマンドの実行、環境変数の設定制限）を厳守してください

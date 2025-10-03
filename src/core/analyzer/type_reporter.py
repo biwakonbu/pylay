@@ -216,16 +216,16 @@ class TypeReporter:
         lines.append("│ レベル                  │ 件数  │ 比率    │")
         lines.append("├─────────────────────────┼───────┼─────────┤")
         lines.append(
-            f"│ Level 1: type エイリアス │ {statistics.level1_count:5} │ {statistics.level1_ratio*100:6.1f}% │"
+            f"│ Level 1: type エイリアス │ {statistics.level1_count:5} │ {statistics.level1_ratio * 100:6.1f}% │"
         )
         lines.append(
-            f"│ Level 2: Annotated      │ {statistics.level2_count:5} │ {statistics.level2_ratio*100:6.1f}% │"
+            f"│ Level 2: Annotated      │ {statistics.level2_count:5} │ {statistics.level2_ratio * 100:6.1f}% │"
         )
         lines.append(
-            f"│ Level 3: BaseModel      │ {statistics.level3_count:5} │ {statistics.level3_ratio*100:6.1f}% │"
+            f"│ Level 3: BaseModel      │ {statistics.level3_count:5} │ {statistics.level3_ratio * 100:6.1f}% │"
         )
         lines.append(
-            f"│ その他: class/dataclass │ {statistics.other_count:5} │ {statistics.other_ratio*100:6.1f}% │"
+            f"│ その他: class/dataclass │ {statistics.other_count:5} │ {statistics.other_ratio * 100:6.1f}% │"
         )
         lines.append("├─────────────────────────┼───────┼─────────┤")
         lines.append(
@@ -243,27 +243,27 @@ class TypeReporter:
         l1_dev = report.deviation_from_target.get("level1", 0.0)
         l1_status = "✅" if abs(l1_dev) < 0.1 else "⚠️"
         lines.append(
-            f"  Level 1: {stats.level1_ratio*100:.1f}% "
-            f"(目標: {self.target_ratios['level1']*100:.0f}%, "
-            f"差分: {l1_dev*100:+.1f}%) {l1_status}"
+            f"  Level 1: {stats.level1_ratio * 100:.1f}% "
+            f"(目標: {self.target_ratios['level1'] * 100:.0f}%, "
+            f"差分: {l1_dev * 100:+.1f}%) {l1_status}"
         )
 
         # Level 2の比較
         l2_dev = report.deviation_from_target.get("level2", 0.0)
         l2_status = "✅" if abs(l2_dev) < 0.1 else "⚠️"
         lines.append(
-            f"  Level 2: {stats.level2_ratio*100:.1f}% "
-            f"(目標: {self.target_ratios['level2']*100:.0f}%, "
-            f"差分: {l2_dev*100:+.1f}%) {l2_status}"
+            f"  Level 2: {stats.level2_ratio * 100:.1f}% "
+            f"(目標: {self.target_ratios['level2'] * 100:.0f}%, "
+            f"差分: {l2_dev * 100:+.1f}%) {l2_status}"
         )
 
         # Level 3の比較
         l3_dev = report.deviation_from_target.get("level3", 0.0)
         l3_status = "✅" if abs(l3_dev) < 0.05 else "⚠️"
         lines.append(
-            f"  Level 3: {stats.level3_ratio*100:.1f}% "
-            f"(目標: {self.target_ratios['level3']*100:.0f}%, "
-            f"差分: {l3_dev*100:+.1f}%) {l3_status}"
+            f"  Level 3: {stats.level3_ratio * 100:.1f}% "
+            f"(目標: {self.target_ratios['level3'] * 100:.0f}%, "
+            f"差分: {l3_dev * 100:+.1f}%) {l3_status}"
         )
 
         return "\n".join(lines)
@@ -280,13 +280,13 @@ class TypeReporter:
         # 実装率
         impl_status = "✅" if doc_stats.implementation_rate >= 0.8 else "⚠️"
         lines.append(
-            f"│ 実装率                  │ {doc_stats.implementation_rate*100:5.1f}% │   {impl_status}    │"
+            f"│ 実装率                  │ {doc_stats.implementation_rate * 100:5.1f}% │   {impl_status}    │"
         )
 
         # 詳細度
         detail_status = "✅" if doc_stats.detail_rate >= 0.5 else "⚠️"
         lines.append(
-            f"│ 詳細度                  │ {doc_stats.detail_rate*100:5.1f}% │   {detail_status}    │"
+            f"│ 詳細度                  │ {doc_stats.detail_rate * 100:5.1f}% │   {detail_status}    │"
         )
 
         # 総合品質スコア
@@ -298,7 +298,7 @@ class TypeReporter:
             else "❌"
         )
         lines.append(
-            f"│ 総合品質スコア          │ {doc_stats.quality_score*100:5.1f}% │   {quality_status}    │"
+            f"│ 総合品質スコア          │ {doc_stats.quality_score * 100:5.1f}% │   {quality_status}    │"
         )
 
         lines.append("└─────────────────────────┴───────┴─────────┘")
@@ -362,16 +362,16 @@ class TypeReporter:
         lines.append("| レベル | 件数 | 比率 |")
         lines.append("|--------|------|------|")
         lines.append(
-            f"| Level 1: type エイリアス | {statistics.level1_count} | {statistics.level1_ratio*100:.1f}% |"
+            f"| Level 1: type エイリアス | {statistics.level1_count} | {statistics.level1_ratio * 100:.1f}% |"
         )
         lines.append(
-            f"| Level 2: Annotated | {statistics.level2_count} | {statistics.level2_ratio*100:.1f}% |"
+            f"| Level 2: Annotated | {statistics.level2_count} | {statistics.level2_ratio * 100:.1f}% |"
         )
         lines.append(
-            f"| Level 3: BaseModel | {statistics.level3_count} | {statistics.level3_ratio*100:.1f}% |"
+            f"| Level 3: BaseModel | {statistics.level3_count} | {statistics.level3_ratio * 100:.1f}% |"
         )
         lines.append(
-            f"| その他 | {statistics.other_count} | {statistics.other_ratio*100:.1f}% |"
+            f"| その他 | {statistics.other_count} | {statistics.other_ratio * 100:.1f}% |"
         )
         lines.append(f"| **合計** | **{statistics.total_count}** | **100.0%** |")
         return "\n".join(lines)
@@ -383,9 +383,9 @@ class TypeReporter:
         lines = []
         lines.append("| 指標 | 値 |")
         lines.append("|------|------|")
-        lines.append(f"| 実装率 | {doc_stats.implementation_rate*100:.1f}% |")
-        lines.append(f"| 詳細度 | {doc_stats.detail_rate*100:.1f}% |")
-        lines.append(f"| 総合品質スコア | {doc_stats.quality_score*100:.1f}% |")
+        lines.append(f"| 実装率 | {doc_stats.implementation_rate * 100:.1f}% |")
+        lines.append(f"| 詳細度 | {doc_stats.detail_rate * 100:.1f}% |")
+        lines.append(f"| 総合品質スコア | {doc_stats.quality_score * 100:.1f}% |")
         return "\n".join(lines)
 
     def _format_upgrade_recommendations_markdown(

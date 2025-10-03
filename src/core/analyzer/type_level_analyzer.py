@@ -210,28 +210,28 @@ class TypeLevelAnalyzer:
         # Level 2の比率が低い場合
         if statistics.level2_ratio < 0.25:
             recommendations.append(
-                f"Level 2（Annotated）の比率が{statistics.level2_ratio*100:.1f}%と低いです。"
+                f"Level 2（Annotated）の比率が{statistics.level2_ratio * 100:.1f}%と低いです。"
                 f"目標の25-35%に近づけるため、バリデーションが必要な型をLevel 2に変換してください。"
             )
 
         # Level 1の比率が高い場合
         if statistics.level1_ratio > 0.60:
             recommendations.append(
-                f"Level 1（type エイリアス）の比率が{statistics.level1_ratio*100:.1f}%と高いです。"
+                f"Level 1（type エイリアス）の比率が{statistics.level1_ratio * 100:.1f}%と高いです。"
                 f"制約が必要な型はLevel 2に、不要な型は削除を検討してください。"
             )
 
         # ドキュメント実装率が低い場合
         if statistics.documentation.implementation_rate < 0.70:
             recommendations.append(
-                f"ドキュメント実装率が{statistics.documentation.implementation_rate*100:.1f}%と低いです。"
+                f"ドキュメント実装率が{statistics.documentation.implementation_rate * 100:.1f}%と低いです。"
                 f"目標の80%以上に近づけるため、docstringを追加してください。"
             )
 
         # ドキュメント詳細度が低い場合
         if statistics.documentation.detail_rate < 0.50:
             recommendations.append(
-                f"ドキュメント詳細度が{statistics.documentation.detail_rate*100:.1f}%と低いです。"
+                f"ドキュメント詳細度が{statistics.documentation.detail_rate * 100:.1f}%と低いです。"
                 f"Attributes、Examples等のセクションを追加してドキュメントを充実させてください。"
             )
 
