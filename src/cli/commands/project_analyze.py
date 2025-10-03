@@ -11,6 +11,7 @@ from typing import Any
 
 import click
 from rich.console import Console
+from rich.panel import Panel
 from rich.progress import (
     BarColumn,
     Progress,
@@ -18,6 +19,8 @@ from rich.progress import (
     TextColumn,
     TimeRemainingColumn,
 )
+from rich.table import Table
+from rich.tree import Tree
 
 from ...core.analyzer.type_inferrer import TypeInferenceAnalyzer
 from ...core.converters.extract_deps import extract_dependencies_from_file
@@ -94,9 +97,12 @@ def project_analyze(
             # パスの検証
             validation = scanner.validate_paths()
             if not validation["valid"]:
-                console.print("[bold red]❌ 設定エラー:[/bold red]")
-                for error in validation["errors"]:
-                    console.print(f"  {error}")
+                error_panel = Panel(
+                    "\n".join([f"• {error}" for error in validation["errors"]]),
+                    title="[bold red]❌ 設定エラー[/bold red]",
+                    border_style="red",
+                )
+                console.print(error_panel)
                 return
 
             # 解析対象ファイルの取得
@@ -146,16 +152,21 @@ def project_analyze(
         # パスの検証
         validation = scanner.validate_paths()
         if not validation["valid"]:
-            console.print("[bold red]❌ 設定エラー:[/bold red]")
-            for error in validation["errors"]:
-                console.print(f"  {error}")
+            error_panel = Panel(
+                "\n".join([f"• {error}" for error in validation["errors"]]),
+                title="[bold red]❌ 設定エラー[/bold red]",
+                border_style="red",
+            )
+            console.print(error_panel)
             return
 
         if validation["warnings"]:
-            console.print("[bold yellow]⚠️  警告:[/bold yellow]")
-            for warning in validation["warnings"]:
-                console.print(f"  {warning}")
-            console.print()
+            warning_panel = Panel(
+                "\n".join([f"• {warning}" for warning in validation["warnings"]]),
+                title="[bold yellow]⚠️  警告[/bold yellow]",
+                border_style="yellow",
+            )
+            console.print(warning_panel)
 
         # 解析対象ファイルの取得
         python_files = scanner.get_python_files()
@@ -175,9 +186,14 @@ def project_analyze(
                 console.print(f"  {file_path}")
             return
 
-        console.print("[bold green]🚀 プロジェクト解析開始[/bold green]")
-        console.print(f"解析対象: {len(python_files)} 個のPythonファイル")
-        console.print()
+        # 開始メッセージをPanelで表示
+        start_panel = Panel(
+            f"[bold cyan]解析対象:[/bold cyan] {len(python_files)} 個のPythonファイル\n"
+            f"[bold cyan]出力先:[/bold cyan] {config.output_dir}",
+            title="[bold green]🚀 プロジェクト解析開始[/bold green]",
+            border_style="green",
+        )
+        console.print(start_panel)
 
         # 解析の実行
         results = asyncio.run(
@@ -188,15 +204,31 @@ def project_analyze(
         _output_results(config, results, verbose, output_manager)
 
     except FileNotFoundError as e:
-        console.print(f"[bold red]❌ 設定ファイルエラー:[/bold red] {e}")
+        error_panel = Panel(
+            str(e),
+            title="[bold red]❌ 設定ファイルエラー[/bold red]",
+            border_style="red",
+        )
+        console.print(error_panel)
     except ValueError as e:
-        console.print(f"[bold red]❌ 設定読み込みエラー:[/bold red] {e}")
+        error_panel = Panel(
+            str(e),
+            title="[bold red]❌ 設定読み込みエラー[/bold red]",
+            border_style="red",
+        )
+        console.print(error_panel)
     except Exception as e:
-        console.print(f"[bold red]❌ 予期しないエラー:[/bold red] {e}")
+        error_content = str(e)
         if verbose:
             import traceback
 
-            console.print(traceback.format_exc())
+            error_content += f"\n\n[dim]{traceback.format_exc()}[/dim]"
+        error_panel = Panel(
+            error_content,
+            title="[bold red]❌ 予期しないエラー[/bold red]",
+            border_style="red",
+        )
+        console.print(error_panel)
 
 
 async def _analyze_project_async(
@@ -381,29 +413,54 @@ def _output_results(
     """
     structure = output_manager.get_output_structure()
 
-    console.print("\n[bold green]✅ 解析完了[/bold green]")
-    console.print(f"処理ファイル数: {results['files_processed']}")
-    console.print(f"型情報抽出: {results['types_extracted']} ファイル")
-    console.print(f"依存関係発見: {results['dependencies_found']} ファイル")
-    console.print(f"ドキュメント生成: {results['docs_generated']} ファイル")
-    console.print(f"YAML出力: {structure['yaml']}")
-    console.print(f"Markdown出力: {structure['markdown']}")
+    console.print()
 
+    # 結果サマリーをTableで表示
+    summary_table = Table(
+        title="解析結果サマリー", show_header=True, border_style="green"
+    )
+    summary_table.add_column("項目", style="cyan", no_wrap=True)
+    summary_table.add_column("件数", justify="right", style="green")
+
+    summary_table.add_row("処理ファイル数", str(results["files_processed"]))
+    summary_table.add_row("型情報抽出", f"{results['types_extracted']} ファイル")
+    summary_table.add_row("依存関係発見", f"{results['dependencies_found']} ファイル")
+    summary_table.add_row("ドキュメント生成", f"{results['docs_generated']} ファイル")
+
+    console.print(summary_table)
+    console.print()
+
+    # 出力先情報をPanelで表示
+    output_panel = Panel(
+        f"[bold cyan]YAML出力:[/bold cyan] {structure['yaml']}\n"
+        f"[bold cyan]Markdown出力:[/bold cyan] {structure['markdown']}",
+        title="[bold blue]📁 出力ディレクトリ[/bold blue]",
+        border_style="blue",
+    )
+    console.print(output_panel)
+
+    # エラー情報
     if results["errors"]:
-        console.print(
-            f"\n[bold yellow]⚠️  エラー発生: {len(results['errors'])} 件[/bold yellow]"
+        console.print()
+        error_count = len(results["errors"])
+        error_panel = Panel(
+            "\n".join([f"• {error}" for error in results["errors"]]),
+            title=f"[bold yellow]⚠️  エラー発生: {error_count} 件[/bold yellow]",
+            border_style="yellow",
         )
-        if verbose:
-            for error in results["errors"]:
-                console.print(f"  {error}")
+        console.print(error_panel)
 
-    console.print("\n[bold blue]📁 生成ファイル[/bold blue]")
+    # 詳細ファイルリスト（verbose時）
     if verbose and results["file_results"]:
+        console.print()
+        file_tree = Tree("[bold blue]📄 生成ファイル詳細[/bold blue]")
         for file_path, file_result in results["file_results"].items():
             outputs = file_result.get("outputs", {})
             if outputs:
-                console.print(f"  {Path(file_path).name}:")
+                file_node = file_tree.add(f"[cyan]{Path(file_path).name}[/cyan]")
                 for output_type, output_path in outputs.items():
-                    console.print(f"    {output_type}: {output_path}")
+                    file_node.add(f"[dim]{output_type}:[/dim] {output_path}")
+        console.print(file_tree)
 
-    console.print("\n[dim]プロジェクト解析が完了しました。[/dim]")
+    console.print()
+    console.print("[bold green]✅ プロジェクト解析が完了しました。[/bold green]")

@@ -50,7 +50,9 @@ console = Console()
     "--all-recommendations",
     "-a",
     is_flag=True,
-    help="すべての推奨事項を表示（--recommendations --docstring-recommendations と同等）",
+    help=(
+        "すべての推奨事項を表示（--recommendations --docstring-recommendations と同等）"
+    ),
 )
 def analyze_types(
     target: str | None,

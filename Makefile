@@ -29,6 +29,8 @@ help: ## このMakefileのヘルプを表示
 	@echo ""
 	@echo "🔍 プロジェクト解析:"
 	@echo "  analyze            プロジェクト全体を解析"
+	@echo "  analyze-types      型定義レベルを分析"
+	@echo "  analyze-types-all  詳細な型レベル分析（推奨事項含む）"
 	@echo ""
 	@echo "🧹 クリーンアップ:"
 	@echo "  clean              キャッシュと一時ファイルを削除"
@@ -107,6 +109,14 @@ coverage: test ## カバレッジレポートを開く
 analyze: ## プロジェクト全体を解析
 	@echo "🔍 プロジェクトを解析中..."
 	uv run pylay project-analyze
+
+analyze-types: ## 型定義レベルを分析（デフォルト: src/）
+	@echo "🔍 型定義レベルを分析中..."
+	uv run pylay analyze analyze-types src/
+
+analyze-types-all: ## 全ての推奨事項を含む詳細な型レベル分析
+	@echo "🔍 詳細な型定義レベル分析中..."
+	uv run pylay analyze analyze-types src/ --all-recommendations
 
 # =============================================================================
 # クリーンアップ
