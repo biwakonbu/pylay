@@ -179,7 +179,7 @@ type MethodName = str
 type MypyFlag = str
 """mypyコマンドラインフラグ（--strict, --no-implicit-optional等）"""
 
-type CyclePath = list[str]
+type CyclePath = list[NodeId]
 """循環依存のパス（ノードIDのリスト）"""
 
 type CyclePathList = list[list[NodeId]]
