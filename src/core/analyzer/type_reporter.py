@@ -444,7 +444,7 @@ class TypeReporter:
 
             table.add_row(
                 Text(priority, style=priority_style),
-                Text(formatted_rec, style=priority_style),
+                formatted_rec,
             )
 
         return table
