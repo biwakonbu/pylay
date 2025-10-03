@@ -289,19 +289,21 @@ class TypeLevelAnalyzer:
     ) -> dict[str, int]:
         """型の使用回数をカウント
 
+        現在の実装では、正確な参照解析を行わず、すべての型に最小使用回数（1）を割り当てます。
+        これにより、型が「未使用」と誤判定されることを防ぎます。
+
+        将来的には、AST解析やmypyの型情報を活用して、実際の参照箇所をカウントする
+        実装に置き換えることが望ましいです。
+
         Args:
             type_definitions: 型定義リスト
 
         Returns:
-            型名 -> 使用回数の辞書
+            型名 -> 使用回数の辞書（すべての型に最小値1を設定）
         """
-        from collections import Counter
-
-        # 型名のカウント（同じ名前が複数回定義されている = 使用されている）
-        type_name_counts = Counter(td.name for td in type_definitions)
-
-        # 使用回数 = 定義回数 - 1（最初の定義を除く）
-        usage_counts = {name: count - 1 for name, count in type_name_counts.items()}
+        # すべての型に最小使用回数（1）を設定
+        # これにより、「未使用」と誤判定されることを防ぐ
+        usage_counts = {td.name: 1 for td in type_definitions}
 
         return usage_counts
 
