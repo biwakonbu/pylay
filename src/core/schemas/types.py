@@ -245,6 +245,9 @@ type NodeAttributeValue = str | int | float | bool
 type NodeCustomData = dict[str, NodeAttributeValue]
 """ノードカスタムデータ（ユーザーが自由に追加できる属性のマップ）"""
 
+type CustomFields = dict[str, object]
+"""カスタムフィールド（プラグインや機能拡張で追加される任意のメタデータ）"""
+
 
 # =============================================================================
 # Level 2: Annotated + AfterValidator（制約付き、NewType代替）
@@ -426,10 +429,10 @@ class GraphMetadata(BaseModel):
     statistics: StatisticsMap = Field(
         default_factory=dict, description="統計情報（ノード数、エッジ数など）"
     )
-    # NOTE: 設計上、拡張用のカスタムフィールドを格納するため primitive型を維持
+    # NOTE: 設計上、拡張用のカスタムフィールドを格納するためドメイン型エイリアスを使用
     # プラグインや将来の機能拡張で任意のメタデータを追加できるよう、
-    # 動的な型として dict を使用
-    custom_fields: dict[str, object] = Field(
+    # CustomFields型を使用
+    custom_fields: CustomFields = Field(
         default_factory=dict, description="カスタムフィールド"
     )
 
