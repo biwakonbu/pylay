@@ -227,12 +227,12 @@ class TypeReporter:
 
     def _create_statistics_table(self, statistics: "TypeStatistics") -> Table:
         """統計情報をRich Tableで作成"""
-        table = Table(title="型定義レベル統計", show_header=True)
+        table = Table(title="型定義レベル統計", show_header=True, width=80)
 
-        table.add_column("レベル", style="cyan", no_wrap=True)
-        table.add_column("件数", justify="right", style="green")
-        table.add_column("比率", justify="right")
-        table.add_column("状態", justify="center")
+        table.add_column("レベル", style="cyan", no_wrap=True, width=30)
+        table.add_column("件数", justify="right", style="green", width=10)
+        table.add_column("比率", justify="right", width=10)
+        table.add_column("状態", justify="center", width=10)
 
         # Level 1
         level1_status = "✓" if statistics.level1_ratio <= 0.20 else "✗"
@@ -276,9 +276,9 @@ class TypeReporter:
         # 合計
         table.add_section()
         table.add_row(
-            "[bold]合計[/bold]",
-            f"[bold]{statistics.total_count}[/bold]",
-            "[bold]100.0%[/bold]",
+            "合計",
+            str(statistics.total_count),
+            "100.0%",
             "",
         )
 
@@ -322,11 +322,11 @@ class TypeReporter:
         self, doc_stats: "DocumentationStatistics"
     ) -> Table:
         """ドキュメント品質をRich Tableで作成"""
-        table = Table(show_header=True)
+        table = Table(show_header=True, width=80)
 
-        table.add_column("指標", style="cyan", no_wrap=True)
-        table.add_column("値", justify="right", style="green")
-        table.add_column("評価", justify="center")
+        table.add_column("指標", style="cyan", no_wrap=True, width=30)
+        table.add_column("値", justify="right", style="green", width=20)
+        table.add_column("評価", justify="center", width=10)
 
         # 実装率
         impl_status = "✓" if doc_stats.implementation_rate >= 0.8 else "✗"
@@ -350,8 +350,8 @@ class TypeReporter:
         quality_status = "✓" if doc_stats.quality_score >= 0.6 else "✗"
         quality_style = "green" if doc_stats.quality_score >= 0.6 else "red"
         table.add_row(
-            "[bold]総合品質スコア[/bold]",
-            f"[bold]{doc_stats.quality_score * 100:.1f}%[/bold]",
+            "総合品質スコア",
+            f"{doc_stats.quality_score * 100:.1f}%",
             Text(quality_status, style=quality_style),
         )
 
@@ -359,12 +359,12 @@ class TypeReporter:
 
     def _create_code_quality_table(self, statistics: "TypeStatistics") -> Table:
         """コード品質統計をRich Tableで作成"""
-        table = Table(show_header=True)
+        table = Table(show_header=True, width=80)
 
-        table.add_column("レベル", style="cyan", no_wrap=True)
-        table.add_column("件数", justify="right", style="green")
-        table.add_column("比率", justify="right")
-        table.add_column("状態", justify="center")
+        table.add_column("レベル", style="cyan", no_wrap=True, width=30)
+        table.add_column("件数", justify="right", style="green", width=10)
+        table.add_column("比率", justify="right", width=10)
+        table.add_column("状態", justify="center", width=10)
 
         # Level 0: 非推奨typing使用
         dep_status = "✓" if statistics.deprecated_typing_ratio == 0.0 else "✗"

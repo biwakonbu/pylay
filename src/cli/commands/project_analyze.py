@@ -417,10 +417,10 @@ def _output_results(
 
     # 結果サマリーをTableで表示
     summary_table = Table(
-        title="解析結果サマリー", show_header=True, border_style="green"
+        title="解析結果サマリー", show_header=True, border_style="green", width=80
     )
-    summary_table.add_column("項目", style="cyan", no_wrap=True)
-    summary_table.add_column("件数", justify="right", style="green")
+    summary_table.add_column("項目", style="cyan", no_wrap=True, width=40)
+    summary_table.add_column("件数", justify="right", style="green", width=20)
 
     summary_table.add_row("処理ファイル数", str(results["files_processed"]))
     summary_table.add_row("型情報抽出", f"{results['types_extracted']} ファイル")
