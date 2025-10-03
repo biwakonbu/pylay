@@ -423,28 +423,63 @@ class TypeReporter:
 
     def _create_recommendations_table(self, recommendations: list[str]) -> Table:
         """推奨事項をRich Tableで作成"""
-        table = Table(show_header=True, header_style="", box=SIMPLE)
+        table = Table(show_header=True, header_style="", box=SIMPLE, width=100)
 
-        table.add_column("優先度", style="cyan", no_wrap=True)
-        table.add_column("推奨内容", style="yellow", no_wrap=False, overflow="fold")
+        table.add_column("Priority", style="cyan", no_wrap=True, width=12)
+        table.add_column("Recommendation", style="yellow", no_wrap=False, width=85)
 
         for rec in recommendations:
             # 優先度を判定（警告マークがあるかで判断）
             if "⚠️" in rec:
-                priority = "高"
+                priority = "HIGH"
                 priority_style = "red"
                 # ⚠️を削除
                 rec = rec.replace("⚠️", "").strip()
             else:
-                priority = "中"
+                priority = "MEDIUM"
                 priority_style = "yellow"
+
+            # 長い文章を整形（句点で分割してインデント）
+            formatted_rec = self._format_recommendation_text(rec)
 
             table.add_row(
                 Text(priority, style=priority_style),
-                rec,
+                formatted_rec,
             )
 
         return table
+
+    def _format_recommendation_text(self, text: str) -> str:
+        """推奨事項のテキストを見やすく整形
+
+        長い文章を句点で分割し、インデントを付けて整形する
+        """
+        # 「。」で文を分割
+        sentences = text.split("。")
+        if len(sentences) <= 1:
+            return text
+
+        result = []
+        for i, sentence in enumerate(sentences):
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+
+            if i == 0:
+                # 最初の文はそのまま
+                result.append(sentence + "。")
+            else:
+                # 2文目以降は矢印でインデント
+                arrow = "→ " if i == 1 else "  "
+                result.append(arrow + sentence + "。")
+
+        # 最後の空文を削除
+        result_text = "\n".join(result)
+        # 末尾の余分な句点を削除
+        if result_text.endswith("。。"):
+            result_text = result_text[:-1]
+
+        return result_text
 
     # ========================================
     # 旧フォーマットヘルパー（後方互換性のため保持）
