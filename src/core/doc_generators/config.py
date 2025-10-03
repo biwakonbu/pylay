@@ -46,7 +46,7 @@ class TypeDocConfig(GeneratorConfig):
     output_directory: Path = field(default_factory=lambda: Path("docs/types"))
     index_filename: IndexFilename = "README.md"
     layer_filename_template: LayerFilenameTemplate = "{layer}.md"
-    skip_types: set[TypeName] = field(default_factory=lambda: {"NewType"})
+    skip_types: set[TypeName] = field(default_factory=set)
     type_alias_descriptions: dict[TypeName, Description] = field(
         default_factory=lambda: {
             "JSONValue": "JSON値: 制約なしのJSON互換データ型（Anyのエイリアス）",

@@ -28,16 +28,6 @@ class MockPydanticModel(BaseModel):
     value: int
 
 
-def MockNewType():
-    """Mock NewType for testing."""
-
-    def mock_type(value: str) -> str:
-        return value
-
-    mock_type.__supertype__ = str
-    return mock_type
-
-
 class TestTypeInspector:
     """Test the TypeInspector utility class."""
 
@@ -47,7 +37,7 @@ class TestTypeInspector:
 
     def test_initialization_with_default_skip_types(self) -> None:
         """Test that TypeInspector initializes with default skip types."""
-        assert "NewType" in self.inspector.skip_types
+        assert self.inspector.skip_types == set()
 
     def test_initialization_with_custom_skip_types(self) -> None:
         """Test initialization with custom skip types."""
@@ -121,21 +111,6 @@ class TestTypeInspector:
 
         assert self.inspector.is_pydantic_model(RegularClass) is False
 
-    def test_is_newtype_with_mock_newtype(self):
-        """Test NewType detection with mock NewType."""
-        mock_newtype = MockNewType()
-        assert self.inspector.is_newtype(mock_newtype) is True
-
-    def test_is_newtype_with_regular_type(self):
-        """Test NewType detection with regular type."""
-        assert self.inspector.is_newtype(str) is False
-
-    def test_get_newtype_supertype(self):
-        """Test getting NewType supertype."""
-        mock_newtype = MockNewType()
-        supertype = self.inspector.get_newtype_supertype(mock_newtype)
-        assert supertype is str
-
     def test_get_pydantic_schema(self):
         """Test getting Pydantic JSON schema."""
         schema = self.inspector.get_pydantic_schema(MockPydanticModel)
@@ -154,18 +129,11 @@ class TestTypeInspector:
         schema = self.inspector.get_pydantic_schema(RegularClass)
         assert schema is None
 
-    def test_is_standard_newtype_doc_detection(self):
-        """Test detection of standard NewType documentation."""
-        standard_doc = "NewType creates simple unique types with zero runtime overhead"
-        custom_doc = "This is a custom type for our domain"
-
-        assert self.inspector.is_standard_newtype_doc(standard_doc) is True
-        assert self.inspector.is_standard_newtype_doc(custom_doc) is False
-
     def test_should_skip_type(self):
         """Test type skipping logic."""
-        assert self.inspector.should_skip_type("NewType") is True
         assert self.inspector.should_skip_type("CustomType") is False
+        custom_inspector = TypeInspector(skip_types={"SkipMe"})
+        assert custom_inspector.should_skip_type("SkipMe") is True
 
     def test_format_type_definition_with_pydantic(self):
         """Test formatting Pydantic type definition."""
@@ -176,14 +144,6 @@ class TestTypeInspector:
         assert "```json" in definition
         assert "properties" in definition
         assert "name" in definition
-
-    def test_format_type_definition_with_newtype(self):
-        """Test formatting NewType definition."""
-        mock_newtype = MockNewType()
-        definition = self.inspector.format_type_definition("MockNewType", mock_newtype)
-
-        assert "```python" in definition
-        assert "NewType('MockNewType', str)" in definition
 
     def test_format_type_definition_fallback(self):
         """Test formatting with fallback for unknown types."""

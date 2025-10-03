@@ -476,7 +476,7 @@ if __name__ == "__main__":
     # from typing import List, Dict, Union  # Not needed with built-in types
 
     # テスト型
-    UserId = str  # NewTypeではないが簡易
+    UserId = str  # 簡易的な型エイリアス
     Users = list[dict[str, str]]
     Result = int | str
 
