@@ -417,7 +417,11 @@ def _output_results(
 
     # 結果サマリーをTableで表示
     summary_table = Table(
-        title="解析結果サマリー", show_header=True, border_style="green", width=80
+        title="解析結果サマリー",
+        show_header=True,
+        border_style="green",
+        width=80,
+        header_style="",
     )
     summary_table.add_column("項目", style="cyan", no_wrap=True, width=40)
     summary_table.add_column("件数", justify="right", style="green", width=20)

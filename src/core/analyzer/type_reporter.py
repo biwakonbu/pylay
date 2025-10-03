@@ -227,7 +227,9 @@ class TypeReporter:
 
     def _create_statistics_table(self, statistics: "TypeStatistics") -> Table:
         """統計情報をRich Tableで作成"""
-        table = Table(title="型定義レベル統計", show_header=True, width=80)
+        table = Table(
+            title="型定義レベル統計", show_header=True, width=80, header_style=""
+        )
 
         table.add_column("レベル", style="cyan", no_wrap=True, width=30)
         table.add_column("件数", justify="right", style="green", width=10)
@@ -322,7 +324,7 @@ class TypeReporter:
         self, doc_stats: "DocumentationStatistics"
     ) -> Table:
         """ドキュメント品質をRich Tableで作成"""
-        table = Table(show_header=True, width=80)
+        table = Table(show_header=True, width=80, header_style="")
 
         table.add_column("指標", style="cyan", no_wrap=True, width=30)
         table.add_column("値", justify="right", style="green", width=20)
@@ -359,7 +361,7 @@ class TypeReporter:
 
     def _create_code_quality_table(self, statistics: "TypeStatistics") -> Table:
         """コード品質統計をRich Tableで作成"""
-        table = Table(show_header=True, width=80)
+        table = Table(show_header=True, width=80, header_style="")
 
         table.add_column("レベル", style="cyan", no_wrap=True, width=30)
         table.add_column("件数", justify="right", style="green", width=10)
