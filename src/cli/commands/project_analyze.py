@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import click
+from rich.box import SIMPLE
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (
@@ -422,6 +423,7 @@ def _output_results(
         border_style="green",
         width=80,
         header_style="",
+        box=SIMPLE,
     )
     summary_table.add_column("項目", style="cyan", no_wrap=True, width=40)
     summary_table.add_column("件数", justify="right", style="green", width=20)

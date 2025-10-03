@@ -7,6 +7,7 @@ Richライブラリを使用して、美しいCLI出力を実現します。
 
 import json
 
+from rich.box import SIMPLE
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
@@ -228,7 +229,11 @@ class TypeReporter:
     def _create_statistics_table(self, statistics: "TypeStatistics") -> Table:
         """統計情報をRich Tableで作成"""
         table = Table(
-            title="型定義レベル統計", show_header=True, width=80, header_style=""
+            title="型定義レベル統計",
+            show_header=True,
+            width=80,
+            header_style="",
+            box=SIMPLE,
         )
 
         table.add_column("レベル", style="cyan", no_wrap=True, width=30)
@@ -290,41 +295,57 @@ class TypeReporter:
         """警告閾値との比較を表示"""
         stats = report.statistics
 
+        table = Table(show_header=True, width=80, header_style="", box=SIMPLE)
+
+        table.add_column("レベル", style="cyan", no_wrap=True, width=15)
+        table.add_column("現在値", justify="right", width=10)
+        table.add_column("閾値", justify="right", width=15)
+        table.add_column("差分", justify="right", width=15)
+        table.add_column("状態", justify="center", width=10)
+
         # Level 1
         l1_max_dev = report.deviation_from_threshold.get("level1_max", 0.0)
+        l1_status = "✓" if l1_max_dev <= 0 else "✗"
         l1_style = "green" if l1_max_dev <= 0 else "red"
-        self.console.print(
-            f"  • Level 1: {stats.level1_ratio * 100:.1f}% "
-            f"(上限: {self.threshold_ratios['level1_max'] * 100:.0f}%, "
-            f"差分: {l1_max_dev * 100:+.1f}%) "
-            f"[{l1_style}]{'✓' if l1_max_dev <= 0 else '✗'}[/{l1_style}]"
+        table.add_row(
+            "Level 1",
+            f"{stats.level1_ratio * 100:.1f}%",
+            f"上限 {self.threshold_ratios['level1_max'] * 100:.0f}%",
+            f"{l1_max_dev * 100:+.1f}%",
+            Text(l1_status, style=l1_style),
         )
 
         # Level 2
         l2_min_dev = report.deviation_from_threshold.get("level2_min", 0.0)
+        l2_status = "✓" if l2_min_dev >= 0 else "✗"
         l2_style = "green" if l2_min_dev >= 0 else "red"
-        self.console.print(
-            f"  • Level 2: {stats.level2_ratio * 100:.1f}% "
-            f"(下限: {self.threshold_ratios['level2_min'] * 100:.0f}%, "
-            f"差分: {l2_min_dev * 100:+.1f}%) "
-            f"[{l2_style}]{'✓' if l2_min_dev >= 0 else '✗'}[/{l2_style}]"
+        table.add_row(
+            "Level 2",
+            f"{stats.level2_ratio * 100:.1f}%",
+            f"下限 {self.threshold_ratios['level2_min'] * 100:.0f}%",
+            f"{l2_min_dev * 100:+.1f}%",
+            Text(l2_status, style=l2_style),
         )
 
         # Level 3
         l3_min_dev = report.deviation_from_threshold.get("level3_min", 0.0)
+        l3_status = "✓" if l3_min_dev >= 0 else "✗"
         l3_style = "green" if l3_min_dev >= 0 else "red"
-        self.console.print(
-            f"  • Level 3: {stats.level3_ratio * 100:.1f}% "
-            f"(下限: {self.threshold_ratios['level3_min'] * 100:.0f}%, "
-            f"差分: {l3_min_dev * 100:+.1f}%) "
-            f"[{l3_style}]{'✓' if l3_min_dev >= 0 else '✗'}[/{l3_style}]"
+        table.add_row(
+            "Level 3",
+            f"{stats.level3_ratio * 100:.1f}%",
+            f"下限 {self.threshold_ratios['level3_min'] * 100:.0f}%",
+            f"{l3_min_dev * 100:+.1f}%",
+            Text(l3_status, style=l3_style),
         )
+
+        self.console.print(table)
 
     def _create_documentation_quality_table(
         self, doc_stats: "DocumentationStatistics"
     ) -> Table:
         """ドキュメント品質をRich Tableで作成"""
-        table = Table(show_header=True, width=80, header_style="")
+        table = Table(show_header=True, width=80, header_style="", box=SIMPLE)
 
         table.add_column("指標", style="cyan", no_wrap=True, width=30)
         table.add_column("値", justify="right", style="green", width=20)
@@ -361,7 +382,7 @@ class TypeReporter:
 
     def _create_code_quality_table(self, statistics: "TypeStatistics") -> Table:
         """コード品質統計をRich Tableで作成"""
-        table = Table(show_header=True, width=80, header_style="")
+        table = Table(show_header=True, width=80, header_style="", box=SIMPLE)
 
         table.add_column("レベル", style="cyan", no_wrap=True, width=30)
         table.add_column("件数", justify="right", style="green", width=10)
