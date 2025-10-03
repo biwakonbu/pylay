@@ -15,6 +15,7 @@ from ..core.doc_generators.type_doc_generator import LayerDocGenerator
 from ..core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from ..core.output_manager import OutputPathManager
 from ..core.schemas.pylay_config import PylayConfig
+from .commands.analyze_types import analyze_types
 from .commands.project_analyze import project_analyze
 
 
@@ -302,6 +303,10 @@ cli.add_command(project_analyze)
 @cli.group()
 def analyze() -> None:
     """型解析・依存関係分析コマンド"""
+
+
+# analyze-typesコマンドを登録
+analyze.add_command(analyze_types)
 
 
 @analyze.command("infer-deps")
