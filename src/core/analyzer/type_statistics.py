@@ -4,6 +4,7 @@
 型定義レベルとドキュメント品質の統計情報を計算します。
 """
 
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -52,6 +53,18 @@ class TypeStatisticsCalculator:
         # ドキュメント統計
         documentation = self._calculate_documentation_statistics(type_definitions)
 
+        # primitive型使用統計
+        primitive_usage_count = self._count_primitive_usage(type_definitions)
+        primitive_usage_ratio = (
+            primitive_usage_count / total_count if total_count > 0 else 0.0
+        )
+
+        # 非推奨typing使用統計
+        deprecated_typing_count = self._count_deprecated_typing(type_definitions)
+        deprecated_typing_ratio = (
+            deprecated_typing_count / total_count if total_count > 0 else 0.0
+        )
+
         return TypeStatistics(
             total_count=total_count,
             level1_count=level1_count,
@@ -65,6 +78,10 @@ class TypeStatisticsCalculator:
             by_directory=by_directory,
             by_category=by_category,
             documentation=documentation,
+            primitive_usage_count=primitive_usage_count,
+            deprecated_typing_count=deprecated_typing_count,
+            primitive_usage_ratio=primitive_usage_ratio,
+            deprecated_typing_ratio=deprecated_typing_ratio,
         )
 
     def _empty_statistics(self) -> TypeStatistics:
@@ -212,3 +229,142 @@ class TypeStatisticsCalculator:
                 }
 
         return by_level
+
+    def _count_primitive_usage(self, type_definitions: list[TypeDefinition]) -> int:
+        """primitive型の直接使用をカウント
+
+        Args:
+            type_definitions: 型定義のリスト
+
+        Returns:
+            primitive型を直接使用している型定義の数
+
+        Note:
+            以下は検出対象外（誤検出を避ける）:
+            - BaseModel/dataclassのフィールド定義
+            - Annotated内で使用されている場合
+            - ジェネリック型のパラメータ（list[str]等）は許容
+        """
+        # チェック対象のprimitive型（小文字のみ、大文字は型変数の可能性）
+        primitive_types = {
+            "str",
+            "int",
+            "float",
+            "bool",
+            "bytes",
+        }
+
+        count = 0
+        for td in type_definitions:
+            # BaseModel/dataclassのフィールドは除外
+            if td.level == "level3" or td.category in ["class", "dataclass"]:
+                continue
+
+            # Annotatedを使用している場合は除外
+            if "Annotated" in td.definition or "annotated" in td.definition.lower():
+                continue
+
+            definition = td.definition
+
+            # Level 1（type文）での直接使用を検出
+            if td.level == "level1":
+                # "type UserId = str" のようなパターン
+                for prim in primitive_types:
+                    # 右辺が単純にprimitive型のみの場合を検出
+                    pattern = rf"=\s*{prim}\s*$"
+                    if re.search(pattern, definition, re.IGNORECASE):
+                        count += 1
+                        break
+
+        return count
+
+    def _count_deprecated_typing(self, type_definitions: list[TypeDefinition]) -> int:
+        """非推奨typing使用をカウント
+
+        Args:
+            type_definitions: 型定義のリスト
+
+        Returns:
+            非推奨typing型を使用している型定義の数
+
+        Note:
+            以下は検出対象外（誤検出を避ける）:
+            - コメント内の記述
+            - インポート文のみの記述
+            - docstring内の記述
+        """
+        # 非推奨typing型（Python 3.13で非推奨）
+        deprecated_types = {
+            "Union",
+            "Optional",
+            "List",
+            "Dict",
+            "Set",
+            "Tuple",
+            "FrozenSet",
+            "Deque",
+            "DefaultDict",
+            "OrderedDict",
+            "Counter",
+            "ChainMap",
+            "NewType",
+        }
+
+        count = 0
+        for td in type_definitions:
+            # 型定義の本体をチェック
+            definition = td.definition
+
+            # コメント行、インポート行、docstring内を除外
+            # 実際の型定義行のみを対象とする
+            lines = definition.split("\n")
+            relevant_lines = []
+            in_docstring = False
+            for line in lines:
+                stripped = line.strip()
+
+                # docstringの開始/終了を検出
+                if '"""' in stripped or "'''" in stripped:
+                    # トリプルクォートの数をカウント
+                    triple_quote_count = stripped.count('"""') + stripped.count("'''")
+                    if triple_quote_count % 2 == 1:
+                        in_docstring = not in_docstring
+                    continue
+
+                # docstring内の行はスキップ
+                if in_docstring:
+                    continue
+
+                # コメント行、空行、インポート行を除外
+                if (
+                    not stripped
+                    or stripped.startswith("#")
+                    or stripped.startswith("from ")
+                    or stripped.startswith("import ")
+                    or " # " in stripped  # インラインコメント内も除外
+                ):
+                    continue
+
+                # インラインコメントを削除
+                if "#" in line:
+                    line = line[: line.index("#")]
+
+                relevant_lines.append(line)
+
+            relevant_definition = "\n".join(relevant_lines)
+
+            # 非推奨typing型のパターンを検出
+            for deprecated in deprecated_types:
+                # 型として実際に使用されている場合のみ検出
+                if deprecated == "NewType":
+                    # NewTypeは特殊: "NewType('Name', type)" の形式
+                    pattern = rf"\b{deprecated}\s*\("
+                else:
+                    # その他: "Union[str, int]" や ": Optional[str]"
+                    pattern = rf"\b{deprecated}\s*\["
+
+                if re.search(pattern, relevant_definition):
+                    count += 1
+                    break  # 1つでも見つかればカウント
+
+        return count

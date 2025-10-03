@@ -164,6 +164,10 @@ class TypeStatistics(BaseModel):
         by_directory: ディレクトリ別の統計
         by_category: カテゴリ別の統計
         documentation: ドキュメント統計
+        primitive_usage_count: primitive型の直接使用数
+        deprecated_typing_count: 非推奨typing使用数
+        primitive_usage_ratio: primitive型の直接使用比率
+        deprecated_typing_ratio: 非推奨typing使用比率
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -180,6 +184,10 @@ class TypeStatistics(BaseModel):
     by_directory: dict[str, dict[str, int]]
     by_category: dict[str, int]
     documentation: DocumentationStatistics
+    primitive_usage_count: int = 0
+    deprecated_typing_count: int = 0
+    primitive_usage_ratio: float = Field(default=0.0, ge=0.0, le=1.0)
+    deprecated_typing_ratio: float = Field(default=0.0, ge=0.0, le=1.0)
 
 
 # ========================================

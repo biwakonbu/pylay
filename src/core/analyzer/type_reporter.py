@@ -2,9 +2,14 @@
 型定義分析レポート生成
 
 コンソール、Markdown、JSON形式でレポートを生成します。
+Richライブラリを使用して、美しいCLI出力を実現します。
 """
 
 import json
+
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 
 from src.core.analyzer.type_level_models import (
     DocstringRecommendation,
@@ -16,7 +21,7 @@ from src.core.analyzer.type_level_models import (
 
 
 class TypeReporter:
-    """型定義分析レポートを生成するクラス"""
+    """型定義分析レポートを生成するクラス（Richベース）"""
 
     def __init__(self, threshold_ratios: dict[str, float] | None = None):
         """初期化
@@ -29,42 +34,49 @@ class TypeReporter:
             "level2_min": 0.40,  # Level 2は40%以上が望ましい
             "level3_min": 0.15,  # Level 3は15%以上が望ましい
         }
+        self.console = Console()
 
-    def generate_console_report(self, report: TypeAnalysisReport) -> str:
-        """コンソール用レポートを生成
+    def generate_console_report(self, report: TypeAnalysisReport) -> None:
+        """コンソール用レポートを生成して直接表示
 
         Args:
             report: 型定義分析レポート
-
-        Returns:
-            コンソール出力文字列
         """
-        lines = []
-
         # ヘッダー
-        lines.append("=== 型定義レベル分析レポート ===\n")
+        self.console.rule("[bold cyan]型定義レベル分析レポート[/bold cyan]")
+        self.console.print()
 
         # 統計情報
-        lines.append("📊 統計情報:")
-        lines.append(self._format_statistics_table(report.statistics))
+        self.console.print(self._create_statistics_table(report.statistics))
+        self.console.print()
 
         # 警告閾値との比較
-        lines.append("\n🎯 警告閾値との比較:")
-        lines.append(self._format_deviation_comparison(report))
+        self.console.rule("[bold yellow]警告閾値との比較[/bold yellow]")
+        self.console.print()
+        self._print_deviation_comparison(report)
+        self.console.print()
 
         # ドキュメント品質スコア
-        lines.append("\n📝 ドキュメント品質スコア:")
-        lines.append(
-            self._format_documentation_quality(report.statistics.documentation)
+        self.console.rule("[bold green]ドキュメント品質スコア[/bold green]")
+        self.console.print()
+        self.console.print(
+            self._create_documentation_quality_table(report.statistics.documentation)
         )
+        self.console.print()
+
+        # コード品質統計
+        self.console.rule("[bold magenta]コード品質統計[/bold magenta]")
+        self.console.print()
+        self.console.print(self._create_code_quality_table(report.statistics))
+        self.console.print()
 
         # 推奨事項
         if report.recommendations:
-            lines.append("\n💡 推奨事項:")
+            self.console.rule("[bold red]推奨事項[/bold red]")
+            self.console.print()
             for rec in report.recommendations:
-                lines.append(f"  - {rec}")
-
-        return "\n".join(lines)
+                self.console.print(f"  • {rec}")
+            self.console.print()
 
     def generate_upgrade_recommendations_report(
         self, recommendations: list[UpgradeRecommendation]
@@ -168,6 +180,10 @@ class TypeReporter:
             self._format_documentation_quality_markdown(report.statistics.documentation)
         )
 
+        # コード品質統計
+        lines.append("\n## ⚠️  コード品質統計\n")
+        lines.append(self._format_code_quality_statistics_markdown(report.statistics))
+
         # 推奨事項
         if report.recommendations:
             lines.append("\n## 💡 推奨事項\n")
@@ -206,7 +222,183 @@ class TypeReporter:
         return json.dumps(report.model_dump(), indent=2, ensure_ascii=False)
 
     # ========================================
-    # フォーマットヘルパー
+    # Richベースのフォーマットヘルパー
+    # ========================================
+
+    def _create_statistics_table(self, statistics: "TypeStatistics") -> Table:
+        """統計情報をRich Tableで作成"""
+        table = Table(title="型定義レベル統計", show_header=True)
+
+        table.add_column("レベル", style="cyan", no_wrap=True)
+        table.add_column("件数", justify="right", style="green")
+        table.add_column("比率", justify="right")
+        table.add_column("状態", justify="center")
+
+        # Level 1
+        level1_status = "✓" if statistics.level1_ratio <= 0.20 else "✗"
+        level1_style = "green" if statistics.level1_ratio <= 0.20 else "red"
+        table.add_row(
+            "Level 1: type エイリアス",
+            str(statistics.level1_count),
+            f"{statistics.level1_ratio * 100:.1f}%",
+            Text(level1_status, style=level1_style),
+        )
+
+        # Level 2
+        level2_status = "✓" if statistics.level2_ratio >= 0.40 else "✗"
+        level2_style = "green" if statistics.level2_ratio >= 0.40 else "red"
+        table.add_row(
+            "Level 2: Annotated",
+            str(statistics.level2_count),
+            f"{statistics.level2_ratio * 100:.1f}%",
+            Text(level2_status, style=level2_style),
+        )
+
+        # Level 3
+        level3_status = "✓" if statistics.level3_ratio >= 0.15 else "✗"
+        level3_style = "green" if statistics.level3_ratio >= 0.15 else "red"
+        table.add_row(
+            "Level 3: BaseModel",
+            str(statistics.level3_count),
+            f"{statistics.level3_ratio * 100:.1f}%",
+            Text(level3_status, style=level3_style),
+        )
+
+        # その他
+        table.add_row(
+            "その他: class/dataclass",
+            str(statistics.other_count),
+            f"{statistics.other_ratio * 100:.1f}%",
+            "-",
+            style="dim",
+        )
+
+        # 合計
+        table.add_section()
+        table.add_row(
+            "[bold]合計[/bold]",
+            f"[bold]{statistics.total_count}[/bold]",
+            "[bold]100.0%[/bold]",
+            "",
+        )
+
+        return table
+
+    def _print_deviation_comparison(self, report: TypeAnalysisReport) -> None:
+        """警告閾値との比較を表示"""
+        stats = report.statistics
+
+        # Level 1
+        l1_max_dev = report.deviation_from_threshold.get("level1_max", 0.0)
+        l1_style = "green" if l1_max_dev <= 0 else "red"
+        self.console.print(
+            f"  • Level 1: {stats.level1_ratio * 100:.1f}% "
+            f"(上限: {self.threshold_ratios['level1_max'] * 100:.0f}%, "
+            f"差分: {l1_max_dev * 100:+.1f}%) "
+            f"[{l1_style}]{'✓' if l1_max_dev <= 0 else '✗'}[/{l1_style}]"
+        )
+
+        # Level 2
+        l2_min_dev = report.deviation_from_threshold.get("level2_min", 0.0)
+        l2_style = "green" if l2_min_dev >= 0 else "red"
+        self.console.print(
+            f"  • Level 2: {stats.level2_ratio * 100:.1f}% "
+            f"(下限: {self.threshold_ratios['level2_min'] * 100:.0f}%, "
+            f"差分: {l2_min_dev * 100:+.1f}%) "
+            f"[{l2_style}]{'✓' if l2_min_dev >= 0 else '✗'}[/{l2_style}]"
+        )
+
+        # Level 3
+        l3_min_dev = report.deviation_from_threshold.get("level3_min", 0.0)
+        l3_style = "green" if l3_min_dev >= 0 else "red"
+        self.console.print(
+            f"  • Level 3: {stats.level3_ratio * 100:.1f}% "
+            f"(下限: {self.threshold_ratios['level3_min'] * 100:.0f}%, "
+            f"差分: {l3_min_dev * 100:+.1f}%) "
+            f"[{l3_style}]{'✓' if l3_min_dev >= 0 else '✗'}[/{l3_style}]"
+        )
+
+    def _create_documentation_quality_table(
+        self, doc_stats: "DocumentationStatistics"
+    ) -> Table:
+        """ドキュメント品質をRich Tableで作成"""
+        table = Table(show_header=True)
+
+        table.add_column("指標", style="cyan", no_wrap=True)
+        table.add_column("値", justify="right", style="green")
+        table.add_column("評価", justify="center")
+
+        # 実装率
+        impl_status = "✓" if doc_stats.implementation_rate >= 0.8 else "✗"
+        impl_style = "green" if doc_stats.implementation_rate >= 0.8 else "red"
+        table.add_row(
+            "実装率",
+            f"{doc_stats.implementation_rate * 100:.1f}%",
+            Text(impl_status, style=impl_style),
+        )
+
+        # 詳細度
+        detail_status = "✓" if doc_stats.detail_rate >= 0.5 else "✗"
+        detail_style = "green" if doc_stats.detail_rate >= 0.5 else "red"
+        table.add_row(
+            "詳細度",
+            f"{doc_stats.detail_rate * 100:.1f}%",
+            Text(detail_status, style=detail_style),
+        )
+
+        # 総合品質スコア
+        quality_status = "✓" if doc_stats.quality_score >= 0.6 else "✗"
+        quality_style = "green" if doc_stats.quality_score >= 0.6 else "red"
+        table.add_row(
+            "[bold]総合品質スコア[/bold]",
+            f"[bold]{doc_stats.quality_score * 100:.1f}%[/bold]",
+            Text(quality_status, style=quality_style),
+        )
+
+        return table
+
+    def _create_code_quality_table(self, statistics: "TypeStatistics") -> Table:
+        """コード品質統計をRich Tableで作成"""
+        table = Table(show_header=True)
+
+        table.add_column("レベル", style="cyan", no_wrap=True)
+        table.add_column("件数", justify="right", style="green")
+        table.add_column("比率", justify="right")
+        table.add_column("状態", justify="center")
+
+        # Level 0: 非推奨typing使用
+        dep_status = "✓" if statistics.deprecated_typing_ratio == 0.0 else "✗"
+        dep_style = "green" if statistics.deprecated_typing_ratio == 0.0 else "red"
+        table.add_row(
+            "Level 0: 非推奨typing",
+            str(statistics.deprecated_typing_count),
+            f"{statistics.deprecated_typing_ratio * 100:.1f}%",
+            Text(dep_status, style=dep_style),
+        )
+
+        # Level 1: type エイリアス
+        level1_status = "✓" if statistics.level1_ratio <= 0.20 else "✗"
+        level1_style = "green" if statistics.level1_ratio <= 0.20 else "red"
+        table.add_row(
+            "Level 1: type エイリアス",
+            str(statistics.level1_count),
+            f"{statistics.level1_ratio * 100:.1f}%",
+            Text(level1_status, style=level1_style),
+        )
+
+        # Level 1の内訳: primitive型の直接使用
+        table.add_row(
+            "  └─ primitive型直接使用",
+            str(statistics.primitive_usage_count),
+            f"{statistics.primitive_usage_ratio * 100:.1f}%",
+            "-",
+            style="dim",
+        )
+
+        return table
+
+    # ========================================
+    # 旧フォーマットヘルパー（後方互換性のため保持）
     # ========================================
 
     def _format_statistics_table(self, statistics: "TypeStatistics") -> str:
@@ -232,6 +424,33 @@ class TypeReporter:
             f"│ 合計                    │ {statistics.total_count:5} │ 100.0%  │"
         )
         lines.append("└─────────────────────────┴───────┴─────────┘")
+        return "\n".join(lines)
+
+    def _format_code_quality_statistics(self, statistics: "TypeStatistics") -> str:
+        """コード品質統計をフォーマット"""
+        lines = []
+        lines.append("┌─────────────────────────────────┬───────┬─────────┬──────┐")
+        lines.append("│ レベル                          │ 件数  │ 比率    │ 状態 │")
+        lines.append("├─────────────────────────────────┼───────┼─────────┼──────┤")
+
+        # Level 0: 非推奨typing使用（0%必須）
+        dep_status = "✅" if statistics.deprecated_typing_ratio == 0.0 else "⚠️"  # noqa: E501
+        lines.append(
+            f"│ Level 0: 非推奨typing           │ {statistics.deprecated_typing_count:5} │ {statistics.deprecated_typing_ratio * 100:6.1f}% │ {dep_status}  │"  # noqa: E501
+        )
+
+        # Level 1: type エイリアス（20%以下推奨、primitive型含む）
+        level1_status = "✅" if statistics.level1_ratio <= 0.20 else "⚠️"
+        lines.append(
+            f"│ Level 1: type エイリアス        │ {statistics.level1_count:5} │ {statistics.level1_ratio * 100:6.1f}% │ {level1_status}  │"  # noqa: E501
+        )
+
+        # Level 1の内訳: primitive型の直接使用
+        lines.append(
+            f"│   └─ primitive型直接使用        │ {statistics.primitive_usage_count:5} │ {statistics.primitive_usage_ratio * 100:6.1f}% │      │"  # noqa: E501
+        )
+
+        lines.append("└─────────────────────────────────┴───────┴─────────┴──────┘")
         return "\n".join(lines)
 
     def _format_deviation_comparison(self, report: TypeAnalysisReport) -> str:
@@ -395,6 +614,36 @@ class TypeReporter:
         lines.append(f"| 実装率 | {doc_stats.implementation_rate * 100:.1f}% |")
         lines.append(f"| 詳細度 | {doc_stats.detail_rate * 100:.1f}% |")
         lines.append(f"| 総合品質スコア | {doc_stats.quality_score * 100:.1f}% |")
+        return "\n".join(lines)
+
+    def _format_code_quality_statistics_markdown(
+        self, statistics: "TypeStatistics"
+    ) -> str:
+        """コード品質統計をMarkdown形式でフォーマット"""
+        lines = []
+        lines.append("| レベル | 件数 | 比率 | 状態 |")
+        lines.append("|--------|------|------|------|")
+
+        # Level 0: 非推奨typing使用（0%必須）
+        dep_status = "✅" if statistics.deprecated_typing_ratio == 0.0 else "⚠️"
+        lines.append(
+            f"| Level 0: 非推奨typing | {statistics.deprecated_typing_count} | "
+            f"{statistics.deprecated_typing_ratio * 100:.1f}% | {dep_status} |"
+        )
+
+        # Level 1: type エイリアス（20%以下推奨、primitive型含む）
+        level1_status = "✅" if statistics.level1_ratio <= 0.20 else "⚠️"
+        lines.append(
+            f"| Level 1: type エイリアス | {statistics.level1_count} | "
+            f"{statistics.level1_ratio * 100:.1f}% | {level1_status} |"
+        )
+
+        # Level 1の内訳: primitive型の直接使用
+        lines.append(
+            f"| └─ primitive型直接使用 | {statistics.primitive_usage_count} | "
+            f"{statistics.primitive_usage_ratio * 100:.1f}% | - |"
+        )
+
         return "\n".join(lines)
 
     def _format_upgrade_recommendations_markdown(
