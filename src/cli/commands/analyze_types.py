@@ -126,8 +126,7 @@ def _output_console_report(
         show_docstring_recs: docstring改善推奨を表示するか
     """
     # 基本レポート
-    console_report = analyzer.reporter.generate_console_report(report)
-    console.print(console_report)
+    analyzer.reporter.generate_console_report(report)
 
     # 型レベルアップ推奨
     if show_upgrade_recs and report.upgrade_recommendations:
