@@ -241,6 +241,8 @@ class MypyResult(BaseModel):
 class CheckSummary(BaseModel):
     """analyze_issues.pyのサマリー型"""
 
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     total_checks: CheckCount
     successful_checks: CheckCount
     failed_checks: CheckCount
@@ -251,6 +253,8 @@ class CheckSummary(BaseModel):
 class MypyError(BaseModel):
     """mypyエラーの構造化型"""
 
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     line: LineNumber
     message: Message
     severity: Severity
@@ -258,6 +262,8 @@ class MypyError(BaseModel):
 
 class Issue(BaseModel):
     """ツール出力のIssue型"""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     tool: ToolName
     line: LineNumber
@@ -267,6 +273,8 @@ class Issue(BaseModel):
 
 class GraphMetrics(BaseModel):
     """グラフメトリクスの型"""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     node_count: NodeCount
     edge_count: EdgeCount
@@ -283,6 +291,8 @@ class TempFileConfig(BaseModel):
         mode: ファイルオープンモード（デフォルト: "w"）
     """
 
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
     code: Code = Field(
         ..., description="一時ファイルに書き込むコード内容", min_length=1
     )
@@ -297,6 +307,8 @@ class AnalyzerConfig(BaseModel):
 
     Analyzer固有の設定を管理するPylayConfigの拡張クラスです。
     """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     infer_level: InferLevel
     max_depth: MaxDepth
