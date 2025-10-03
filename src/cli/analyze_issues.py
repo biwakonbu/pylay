@@ -144,7 +144,7 @@ class ProjectAnalyzer:
             "doc_generators/yaml_doc_generator.py",
             "doc_generators/base.py",
             "doc_generators/config.py",
-            "schemas/yaml_type_spec.py",
+            "schemas/yaml_spec.py",
             "schemas/type_index.py",
         ]
         return self.run_command(
