@@ -82,8 +82,13 @@ class DictTypeSpec(TypeSpec):
 
     type: Literal["dict"] = "dict"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
     # NOTE: 設計上、YAML仕様から動的にプロパティを読み込むため Any型を使用
-    # TODO: 将来的にはTypeSpecOrRefに狭める予定（Pydanticバリデーション前の段階で
-    # dictが渡されるため、現状はAnyが必要。バリデータで適切にTypeSpecに変換済み）
+    # TODO(Issue #18, Target: v2.0): TypeSpecOrRefに狭める移行計画
+    #   - 現状: Pydanticバリデーション前の段階でdictが渡されるためAnyが必要
+    #   - 移行方法: Pydantic v2のSerializationInfoを活用して
+    #     バリデーション前後で型を分離
+    #   - トラッキング: Issue #18 (型定義ファイル構造の整理) で
+    #     バリデーション戦略を再設計
+    #   - 担当: 型定義リファクタリングチーム
     properties: dict[str, Any] = Field(
         default_factory=dict, description="辞書のプロパティ (参照文字列またはTypeSpec)"
     )
