@@ -7,6 +7,7 @@
 from pathlib import Path
 
 import click
+import yaml
 from rich.console import Console
 
 from src.core.analyzer.type_level_analyzer import TypeLevelAnalyzer
@@ -54,6 +55,18 @@ console = Console()
         "すべての推奨事項を表示（--recommendations --docstring-recommendations と同等）"
     ),
 )
+@click.option(
+    "--show-details",
+    is_flag=True,
+    default=False,
+    help="問題箇所の詳細（ファイルパス、行番号、コード内容）を表示",
+)
+@click.option(
+    "--export-details",
+    type=click.Path(),
+    default=None,
+    help="問題詳細をYAMLファイルにエクスポート（指定したパスに保存）",
+)
 def analyze_types(
     target: str | None,
     format: str,
@@ -61,6 +74,8 @@ def analyze_types(
     recommendations: bool,
     docstring_recommendations: bool,
     all_recommendations: bool,
+    show_details: bool,
+    export_details: str | None,
 ) -> None:
     """
     型定義レベルとドキュメント品質を分析します。
@@ -90,6 +105,12 @@ def analyze_types(
     # アナライザを初期化
     analyzer = TypeLevelAnalyzer()
 
+    # 対象ディレクトリを決定（詳細表示用）
+    if target_path.is_file():
+        target_dirs = [str(target_path.parent)]
+    else:
+        target_dirs = [str(target_path)]
+
     # 解析を実行
     try:
         if target_path.is_file():
@@ -103,7 +124,12 @@ def analyze_types(
     # レポートを生成
     if format == "console":
         _output_console_report(
-            analyzer, report, recommendations, docstring_recommendations
+            analyzer,
+            report,
+            recommendations,
+            docstring_recommendations,
+            show_details,
+            target_dirs,
         )
     elif format == "markdown":
         _output_markdown_report(
@@ -122,12 +148,18 @@ def analyze_types(
             show_docstring_recs=docstring_recommendations,
         )
 
+    # 詳細情報をYAMLファイルにエクスポート
+    if export_details:
+        _export_details_to_yaml(analyzer, report, export_details, target_dirs)
+
 
 def _output_console_report(
     analyzer: TypeLevelAnalyzer,
     report: TypeAnalysisReport,
     show_upgrade_recs: bool,
     show_docstring_recs: bool,
+    show_details: bool,
+    target_dirs: list[str],
 ) -> None:
     """コンソールにレポートを出力
 
@@ -136,23 +168,16 @@ def _output_console_report(
         report: TypeAnalysisReport
         show_upgrade_recs: 型レベルアップ推奨を表示するか
         show_docstring_recs: docstring改善推奨を表示するか
+        show_details: 詳細情報を表示するか
+        target_dirs: 解析対象ディレクトリ
     """
-    # 基本レポート
-    analyzer.reporter.generate_console_report(report)
+    # 詳細表示用のreporterを初期化
+    from src.core.analyzer.type_reporter import TypeReporter
 
-    # 型レベルアップ推奨
-    if show_upgrade_recs and report.upgrade_recommendations:
-        upgrade_report = analyzer.reporter.generate_upgrade_recommendations_report(
-            report.upgrade_recommendations
-        )
-        console.print(upgrade_report)
+    reporter = TypeReporter(target_dirs=target_dirs)
 
-    # docstring改善推奨
-    if show_docstring_recs and report.docstring_recommendations:
-        docstring_report = analyzer.reporter.generate_docstring_recommendations_report(
-            report.docstring_recommendations
-        )
-        console.print(docstring_report)
+    # 詳細レポートを生成
+    reporter.generate_detailed_report(report, show_details)
 
 
 def _output_markdown_report(
@@ -233,3 +258,106 @@ def _output_json_report(
     else:
         # コンソールに出力
         console.print(json_report)
+
+
+def _export_details_to_yaml(
+    analyzer: TypeLevelAnalyzer,
+    report: TypeAnalysisReport,
+    output_path: str,
+    target_dirs: list[str],
+) -> None:
+    """問題詳細をYAMLファイルにエクスポート
+
+    Args:
+        analyzer: TypeLevelAnalyzer
+        report: TypeAnalysisReport
+        output_path: 出力ファイルパス
+        target_dirs: 解析対象ディレクトリ
+    """
+    from src.core.analyzer.code_locator import CodeLocator
+
+    # CodeLocatorで詳細情報を収集
+    code_locator = CodeLocator([Path(d) for d in target_dirs])
+
+    problem_details = {
+        "problem_details": {
+            "primitive_usage": [
+                {
+                    "file": str(detail.location.file),
+                    "line": detail.location.line,
+                    "column": detail.location.column,
+                    "type": detail.kind,
+                    "primitive_type": detail.primitive_type,
+                    "function_name": detail.function_name,
+                    "class_name": detail.class_name,
+                    "context": {
+                        "before": detail.location.context_before,
+                        "code": detail.location.code,
+                        "after": detail.location.context_after,
+                    },
+                    "suggestion": (
+                        f"primitive型 '{detail.primitive_type}' を使用しています。"
+                        "ドメイン型への移行を検討してください。"
+                    ),
+                }
+                for detail in code_locator.find_primitive_usages()
+            ],
+            "level1_types": [
+                {
+                    "type_name": detail.type_name,
+                    "definition": detail.definition,
+                    "file": str(detail.location.file),
+                    "line": detail.location.line,
+                    "usage_count": detail.usage_count,
+                    "docstring": detail.docstring,
+                    "usage_examples": [
+                        {
+                            "file": str(ex.location.file),
+                            "line": ex.location.line,
+                            "context": ex.context,
+                            "kind": ex.kind,
+                        }
+                        for ex in detail.usage_examples
+                    ],
+                    "recommendation": detail.recommendation,
+                }
+                for detail in code_locator.find_level1_types(report.type_definitions)
+            ],
+            "unused_types": [
+                {
+                    "type_name": detail.type_name,
+                    "definition": detail.definition,
+                    "file": str(detail.location.file),
+                    "line": detail.location.line,
+                    "level": detail.level,
+                    "docstring": detail.docstring,
+                    "reason": detail.reason,
+                    "recommendation": detail.recommendation,
+                }
+                for detail in code_locator.find_unused_types(report.type_definitions)
+            ],
+            "deprecated_typing": [
+                {
+                    "file": str(detail.location.file),
+                    "line": detail.location.line,
+                    "imports": detail.imports,
+                    "context": {
+                        "code": detail.location.code,
+                    },
+                    "suggestion": detail.suggestion,
+                }
+                for detail in code_locator.find_deprecated_typing()
+            ],
+        }
+    }
+
+    # YAMLファイルに書き込み
+    with open(output_path, "w", encoding="utf-8") as f:
+        yaml.dump(
+            problem_details, f, allow_unicode=True, indent=2, default_flow_style=False
+        )
+
+    console.print(
+        f"[bold green]✅ 問題詳細をYAMLファイルにエクスポートしました: "
+        f"{output_path}[/bold green]"
+    )
