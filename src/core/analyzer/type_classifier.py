@@ -106,6 +106,12 @@ class TypeClassifier:
                 if td:
                     type_definitions.append(td)
 
+            # 代入形式のtypeエイリアス（従来構文）
+            elif isinstance(node, ast.Assign):
+                td = self._classify_assign_alias(node, file_path, source_code)
+                if td:
+                    type_definitions.append(td)
+
         return type_definitions
 
     def _classify_class_def(
@@ -203,6 +209,59 @@ class TypeClassifier:
 
         # docstringを抽出（type文の直後のコメントまたは文字列）
         docstring = self._extract_type_alias_docstring(node, source_code)
+
+        # docstringから制御フィールドを抽出
+        target_level = self._extract_target_level(docstring)
+        keep_as_is = self._extract_keep_as_is(docstring)
+
+        return TypeDefinition(
+            name=type_name,
+            level=level,
+            file_path=str(file_path),
+            line_number=node.lineno,
+            definition=definition,
+            category=category,
+            docstring=docstring,
+            has_docstring=docstring is not None,
+            docstring_lines=len(docstring.splitlines()) if docstring else 0,
+            target_level=target_level,
+            keep_as_is=keep_as_is,
+        )
+
+    def _classify_assign_alias(
+        self, node: ast.Assign, file_path: Path, source_code: str
+    ) -> TypeDefinition | None:
+        """代入形式の型エイリアスを分類
+
+        Args:
+            node: Assignノード
+            file_path: ファイルパス
+            source_code: ソースコード
+
+        Returns:
+            TypeDefinition（該当しない場合はNone）
+        """
+        # 単一ターゲットのName代入のみを対象
+        if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+            return None
+
+        type_name = node.targets[0].id
+
+        # 型定義のコードを抽出
+        definition = self._extract_definition(node, source_code)
+
+        # Annotated型かつAfterValidatorを含むか確認
+        is_level2 = self._is_annotated_with_validator(node.value)
+
+        if is_level2:
+            level = "level2"
+            category = "annotated"
+        else:
+            level = "level1"
+            category = "type_alias"
+
+        # docstringを抽出（代入文の直後のコメントまたは文字列）
+        docstring = self._extract_docstring_near_line(source_code, node.lineno + 1)
 
         # docstringから制御フィールドを抽出
         target_level = self._extract_target_level(docstring)
