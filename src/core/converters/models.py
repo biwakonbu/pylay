@@ -38,7 +38,7 @@ class TypeConversionService(BaseModel):
 
     def convert_type_to_yaml(
         self, typ: type[Any], output_file: OutputPath = None, as_root: bool = True
-    ) -> YamlString | dict[str, dict[str, Any]]:
+    ) -> YamlString | dict[str, Any]:
         """
         Python型をYAML文字列に変換します。
 
@@ -78,7 +78,7 @@ class TypeConversionService(BaseModel):
         return TypeSpecModel(
             type=self._get_basic_type_str(typ),
             name=self._get_type_name(typ),
-            description=None,
+            description="",
             required=True,
         )
 
@@ -127,7 +127,7 @@ class YamlProcessingService(BaseModel):
         # 簡易的な実装（実際はより複雑な処理が必要）
         import ruamel.yaml
 
-        yaml_parser = ruamel.yaml.YAML()
+        yaml_parser = ruamel.yaml.YAML(typ="safe")
         data = yaml_parser.load(yaml_str)
 
         if isinstance(data, dict):
@@ -140,8 +140,8 @@ class YamlProcessingService(BaseModel):
             return TypeSpecModel(
                 type=data.get("type", "unknown"),
                 name=root_key or "Unknown",
-                description=None,
-                required=True,
+                description=data.get("description"),
+                required=data.get("required", True),
             )
 
         return data

@@ -51,7 +51,7 @@ class TypeConverterProtocol(Protocol):
     @abstractmethod
     def convert_type_to_yaml(
         self, typ: type[Any], output_file: OutputPath = None, as_root: bool = True
-    ) -> YamlString | dict[str, dict[str, Any]]:
+    ) -> YamlString | dict[str, Any]:
         """
         Python型をYAML文字列に変換します。
 

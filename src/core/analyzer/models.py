@@ -430,7 +430,7 @@ class TypeAnalyzerService(BaseModel):
         args_str = ", ".join(args)
         return f"def {node.name}({args_str}):"
 
-    def _determine_type_level(self, node: ast.AST, category: str) -> str:
+    def _determine_type_level(self, node: ast.AST, category: str) -> TypeLevel:
         """型レベルを判定する内部メソッド"""
         # 簡易的な判定ロジック
         if category == "class":

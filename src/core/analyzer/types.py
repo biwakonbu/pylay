@@ -23,6 +23,13 @@ def _validate_positive_int(v: int) -> int:
     return v
 
 
+def _validate_non_negative_int(v: int) -> int:
+    """非負の整数であることを検証するバリデーター"""
+    if v < 0:
+        raise ValueError(f"非負の整数である必要がありますが、{v}が指定されました")
+    return v
+
+
 def _validate_percentage(v: float) -> float:
     """パーセンテージ値が適切な範囲内であることを検証するバリデーター"""
     if v < 0.0 or v > 1.0:
@@ -52,6 +59,10 @@ type TargetLevel = Literal["level1", "level2", "level3"] | None
 type ValidatedFilePath = Annotated[FilePath, AfterValidator(_validate_file_path)]
 
 type PositiveInt = Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
+
+type NonNegativeInt = Annotated[
+    int, Field(ge=0), AfterValidator(_validate_non_negative_int)
+]
 
 type Percentage = Annotated[
     float, Field(ge=0.0, le=1.0), AfterValidator(_validate_percentage)
@@ -172,8 +183,8 @@ class FileAnalysisResult(BaseModel):
     type_definitions: list[TypeDefinition] = Field(
         default_factory=list, description="検出された型定義のリスト"
     )
-    total_types: PositiveInt = Field(description="型定義の総数")
-    documented_types: PositiveInt = Field(description="ドキュメント付き型定義数")
+    total_types: NonNegativeInt = Field(description="型定義の総数")
+    documented_types: NonNegativeInt = Field(description="ドキュメント付き型定義数")
     analysis_time_ms: float = Field(description="解析時間（ミリ秒）")
     has_errors: bool = Field(description="解析エラーがあるかどうか")
     error_messages: list[str] = Field(

@@ -23,6 +23,13 @@ def _validate_positive_int(v: int) -> int:
     return v
 
 
+def _validate_non_negative_int(v: int) -> int:
+    """非負の整数であることを検証するバリデーター"""
+    if v < 0:
+        raise ValueError(f"非負の整数である必要がありますが、{v}が指定されました")
+    return v
+
+
 def _validate_path_exists(v: str | Path | None) -> str | Path | None:
     """パスが存在することを検証するバリデーター"""
     if v is None:
@@ -31,6 +38,14 @@ def _validate_path_exists(v: str | Path | None) -> str | Path | None:
     if not path.exists():
         raise ValueError(f"パスが存在しません: {v}")
     return v
+
+
+def _validate_output_path(v: str | Path | None) -> str | Path | None:
+    """出力先パスを検証するバリデーター（存在しないパスも許可）"""
+    if v is None:
+        return v
+    # Pathオブジェクトに変換して返すだけ（存在チェックは行わない）
+    return Path(v) if isinstance(v, str) else v
 
 
 # Level 1: 単純な型エイリアス（制約なし）
@@ -42,9 +57,13 @@ type CodeBlock = str
 type MarkdownSection = str
 
 # Level 2: Annotated + AfterValidator（制約付き）
-type ValidatedOutputPath = Annotated[OutputPath, AfterValidator(_validate_path_exists)]
+type ValidatedOutputPath = Annotated[OutputPath, AfterValidator(_validate_output_path)]
 
 type PositiveInt = Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
+
+type NonNegativeInt = Annotated[
+    int, Field(ge=0), AfterValidator(_validate_non_negative_int)
+]
 
 
 class DocumentConfig(BaseModel):
@@ -162,7 +181,7 @@ class GenerationResult(BaseModel):
     )
     generation_time_ms: float = Field(description="生成時間（ミリ秒）")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
-    files_count: PositiveInt = Field(description="生成されたファイル数")
+    files_count: NonNegativeInt = Field(description="生成されたファイル数")
 
     class Config:
         """Pydantic設定"""
@@ -318,8 +337,8 @@ class BatchGenerationResult(BaseModel):
 
     success: bool = Field(description="全体の処理が成功したかどうか")
     total_files: PositiveInt = Field(description="処理対象のファイル総数")
-    successful_files: PositiveInt = Field(description="成功したファイル数")
-    failed_files: PositiveInt = Field(description="失敗したファイル数")
+    successful_files: NonNegativeInt = Field(description="成功したファイル数")
+    failed_files: NonNegativeInt = Field(description="失敗したファイル数")
     total_generation_time_ms: float = Field(description="総生成時間（ミリ秒）")
     results: list[GenerationResult] = Field(
         default_factory=list, description="個別結果のリスト"
