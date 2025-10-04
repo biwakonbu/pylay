@@ -392,9 +392,15 @@ class TypeAnalyzerService(BaseModel):
             # 型レベルの判定（簡易版）
             type_level = self._determine_type_level(node, category)
 
+            # 型レベルを適切に変換
+            if type_level in ("level1", "level2", "level3", "other"):
+                level_value = type_level  # type: ignore[assignment]
+            else:
+                level_value = "other"  # デフォルト値
+
             return TypeDefinition(
                 name=type_name,
-                level=type_level,
+                level=level_value,
                 file_path=str(file_path),
                 line_number=node.lineno,
                 definition=definition,
@@ -571,7 +577,7 @@ class DocstringAnalyzerService(BaseModel):
         )
 
         # レベル別統計の計算
-        by_level: dict[str, dict[str, Any]] = {}
+        by_level: dict[str, dict[str, int]] = {}
         by_format: dict[str, int] = {}
         total_docstring_lines = 0
 
@@ -598,7 +604,7 @@ class DocstringAnalyzerService(BaseModel):
             avg_lines = (
                 stats["lines"] / stats["documented"] if stats["documented"] > 0 else 0.0
             )
-            stats["avg_lines"] = avg_lines
+            stats["avg_lines"] = int(avg_lines)  # int型に変換
 
         avg_docstring_lines = (
             total_docstring_lines / documented_types if documented_types > 0 else 0.0
@@ -763,8 +769,7 @@ class StatisticsCalculatorService(BaseModel):
 
             # 有効なレベル値なので、型アサーションを使用
             assert level_str in valid_levels  # 実行時に確認
-            type_level = level_str  # type: ignore[assignment]
-            result[level] = TypeLevelInfo(
+            result[type_level] = TypeLevelInfo(
                 level=type_level,
                 count=stats["count"],
                 documented_count=stats["documented_count"],

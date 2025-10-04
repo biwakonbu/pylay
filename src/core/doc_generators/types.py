@@ -188,6 +188,7 @@ class TypeInspectionResult(BaseModel):
         default=None, description="Pydanticスキーマ情報"
     )
     inspection_time_ms: float = Field(description="検査時間（ミリ秒）")
+    error_message: str | None = Field(default=None, description="エラーメッセージ")
 
     class Config:
         """Pydantic設定"""

@@ -132,7 +132,7 @@ class TypeInspectorService(BaseModel):
             has_docstring = docstring is not None
 
             # コードブロックの抽出
-            code_blocks, descriptions = self._extract_code_blocks(docstring or "")
+            code_blocks = self._extract_code_blocks(docstring or "")
 
             # Pydanticモデルかどうかのチェック
             is_pydantic_model = self._is_pydantic_model(type_cls)
@@ -168,12 +168,11 @@ class TypeInspectorService(BaseModel):
         """型クラスのdocstringを取得する内部メソッド"""
         return getattr(type_cls, "__doc__", None)
 
-    def _extract_code_blocks(self, docstring: str) -> tuple[list[str], list[str]]:
+    def _extract_code_blocks(self, docstring: str) -> list[str]:
         """docstringからコードブロックを抽出する内部メソッド"""
         # 簡易的な実装（実際はより複雑な処理が必要）
         lines = docstring.split("\n")
         code_blocks: list[str] = []
-        descriptions: list[str] = []
 
         current_block: list[str] = []
         in_code_block = False
@@ -191,7 +190,7 @@ class TypeInspectorService(BaseModel):
             elif in_code_block:
                 current_block.append(line)
 
-        return code_blocks, descriptions
+        return code_blocks
 
     def _is_pydantic_model(self, type_cls: type[Any]) -> bool:
         """Pydanticモデルかどうかをチェックする内部メソッド"""
@@ -467,8 +466,18 @@ class TemplateProcessorService(BaseModel):
         # テンプレートの読み込み
         template_content = self.load_template(template_name)
 
-        # テンプレートの処理
-        processed_content = self.process_template(template_content, variables, config)
+        # テンプレートの処理（DocumentConfigからTemplateConfigを作成）
+        template_config = (
+            TemplateConfig(
+                template_name=config.template_name or "default",
+                variables=variables,
+            )
+            if config
+            else None
+        )
+        processed_content = self.process_template(
+            template_content, variables, template_config
+        )
 
         # ファイル出力
         Path(output_path).write_text(
@@ -501,13 +510,17 @@ class BatchProcessorService(BaseModel):
 
         try:
             # 出力ディレクトリの作成
-            output_dir = Path(config.output_directory)
+            output_dir_path = (
+                str(config.output_directory) if config.output_directory else "."
+            )
+            output_dir = Path(output_dir_path)
             output_dir.mkdir(parents=True, exist_ok=True)
 
             # 各入力ファイルの処理
             for input_path in config.input_paths:
                 try:
-                    input_file = Path(input_path)
+                    input_file_path = str(input_path) if input_path else ""
+                    input_file = Path(input_file_path)
 
                     # 基本的なファイル処理（簡易版）
                     # 実際の実装では各ファイルの種類に応じた処理が必要
@@ -658,7 +671,7 @@ class DocumentationOrchestrator(BaseModel):
         try:
             # 型検査の実行
             inspection_results = []
-            for type_name, type_cls in types.items():
+            for _, type_cls in types.items():
                 result = self.type_inspector.inspect_type(type_cls)
                 inspection_results.append(result)
 

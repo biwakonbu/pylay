@@ -76,8 +76,8 @@ class TypeConversionService(BaseModel):
         from src.core.schemas.yaml_spec import TypeSpec as TypeSpecModel
 
         return TypeSpecModel(
-            name=self._get_type_name(typ),
             type=self._get_basic_type_str(typ),
+            name=self._get_type_name(typ),
         )
 
     def _spec_to_yaml_data(self, spec: TypeSpec, as_root: bool) -> dict[str, Any]:
@@ -136,8 +136,8 @@ class YamlProcessingService(BaseModel):
             from src.core.schemas.yaml_spec import TypeSpec as TypeSpecModel
 
             return TypeSpecModel(
-                name=root_key or "Unknown",
                 type=data.get("type", "unknown"),
+                name=root_key or "Unknown",
             )
 
         return data
@@ -310,7 +310,9 @@ class DependencyProcessingService(BaseModel):
         # 簡易的な実装（実際はより複雑な処理が必要）
         from src.core.converters.extract_deps import visualize_dependencies
 
-        visualize_dependencies(graph, output_path)
+        # OutputPathをstrに変換
+        output_str = str(output_path) if output_path else "deps.png"
+        visualize_dependencies(graph, output_str)
 
 
 class ProcessingResult(BaseModel):
