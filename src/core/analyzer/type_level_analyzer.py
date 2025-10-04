@@ -66,20 +66,26 @@ class TypeLevelAnalyzer:
             type_defs = self.classifier.classify_file(py_file)
             all_type_definitions.extend(type_defs)
 
-        # 重複を除去（同じ型名の最初の定義のみを保持）
+        # 重複を除去（同じファイル・型名・行番号の組み合わせで重複判定）
         unique_type_definitions = self._deduplicate_type_definitions(
             all_type_definitions
         )
 
-        # 統計情報を計算（すべての定義を使用）
+        # 統計情報を計算
+        # 注: all_type_definitionsを使用して、実際の型定義の総数を正確にカウント
+        # 重複除去前のデータを使用することで、統計の精度が向上する
         statistics = self.statistics_calculator.calculate(all_type_definitions)
 
-        # ドキュメント推奨を生成（重複除去後の定義を使用）
+        # ドキュメント推奨を生成
+        # 注: unique_type_definitionsを使用して、同一型の重複推奨を防ぐ
+        # ユーザーに表示する推奨事項は重複除去後のデータを使用する
         docstring_recommendations = self._generate_docstring_recommendations(
             unique_type_definitions
         )
 
-        # 型レベルアップ推奨を生成（すべての定義を使用して使用回数をカウント）
+        # 型レベルアップ推奨を生成
+        # 注: all_type_definitionsを使用して、型の使用回数を正確にカウント
+        # 使用回数のカウントには全ての定義が必要（重複を含む）
         upgrade_recommendations: list[UpgradeRecommendation] = []
         if include_upgrade_recommendations:
             upgrade_recommendations = self._generate_upgrade_recommendations(
@@ -228,7 +234,8 @@ class TypeLevelAnalyzer:
         level1_max = self.threshold_ratios["level1_max"]
         if statistics.level1_ratio > level1_max:
             recommendations.append(
-                f"⚠️ Level 1（type エイリアス）の比率が{statistics.level1_ratio * 100:.1f}%と高すぎます。"  # noqa: E501
+                f"⚠️ Level 1（type エイリアス）の比率が"
+                f"{statistics.level1_ratio * 100:.1f}%と高すぎます。"
                 f"推奨上限の{level1_max * 100:.0f}%を超えています。"
                 f"制約が必要な型はLevel 2に昇格させ、不要な型は削除を検討してください。"
             )
@@ -237,7 +244,8 @@ class TypeLevelAnalyzer:
         level2_min = self.threshold_ratios["level2_min"]
         if statistics.level2_ratio < level2_min:
             recommendations.append(
-                f"⚠️ Level 2（Annotated）の比率が{statistics.level2_ratio * 100:.1f}%と低すぎます。"  # noqa: E501
+                f"⚠️ Level 2（Annotated）の比率が"
+                f"{statistics.level2_ratio * 100:.1f}%と低すぎます。"
                 f"推奨下限の{level2_min * 100:.0f}%を下回っています。"
                 f"バリデーションが必要な型をLevel 2に昇格させてください。"
             )
@@ -246,7 +254,8 @@ class TypeLevelAnalyzer:
         level3_min = self.threshold_ratios["level3_min"]
         if statistics.level3_ratio < level3_min:
             recommendations.append(
-                f"⚠️ Level 3（BaseModel）の比率が{statistics.level3_ratio * 100:.1f}%と低すぎます。"  # noqa: E501
+                f"⚠️ Level 3（BaseModel）の比率が"
+                f"{statistics.level3_ratio * 100:.1f}%と低すぎます。"
                 f"推奨下限の{level3_min * 100:.0f}%を下回っています。"
                 f"複雑なドメイン型をLevel 3に昇格させてください。"
             )
@@ -254,14 +263,16 @@ class TypeLevelAnalyzer:
         # ドキュメント実装率が低い場合
         if statistics.documentation.implementation_rate < 0.70:
             recommendations.append(
-                f"ドキュメント実装率が{statistics.documentation.implementation_rate * 100:.1f}%と低いです。"  # noqa: E501
+                f"ドキュメント実装率が"
+                f"{statistics.documentation.implementation_rate * 100:.1f}%と低いです。"
                 f"目標の80%以上に近づけるため、docstringを追加してください。"
             )
 
         # ドキュメント詳細度が低い場合
         if statistics.documentation.detail_rate < 0.50:
             recommendations.append(
-                f"ドキュメント詳細度が{statistics.documentation.detail_rate * 100:.1f}%と低いです。"  # noqa: E501
+                f"ドキュメント詳細度が"
+                f"{statistics.documentation.detail_rate * 100:.1f}%と低いです。"
                 f"Attributes、Examples等のセクションを追加してドキュメントを充実させてください。"
             )
 
@@ -396,8 +407,8 @@ class TypeLevelAnalyzer:
 class _TypeReferenceCounter(ast.NodeVisitor):
     """型参照をカウントするAST Visitor
 
-    関数の引数・戻り値、変数アノテーション、クラスフィールドなどで
-    使用される型名をカウントします。
+    関数の引数・戻り値、変数アノテーション、クラスのベースクラス、
+    クラスフィールドなどで使用される型名をカウントします。
     """
 
     def __init__(self, type_names: set[str]):
@@ -440,6 +451,15 @@ class _TypeReferenceCounter(ast.NodeVisitor):
         if node.annotation:
             self._count_annotation(node.annotation)
 
+        self.generic_visit(node)
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """クラス定義を訪問（ベースクラスの型参照をカウント）"""
+        # ベースクラスをカウント（例: class MyModel(BaseModel)のBaseModel）
+        for base in node.bases:
+            self._count_annotation(base)
+
+        # クラス本体内のアノテーションをカウント
         self.generic_visit(node)
 
     def _count_annotation(self, annotation: ast.expr) -> None:

@@ -62,36 +62,44 @@ class TypeReporter:
 
         Args:
             report: 型定義分析レポート
+
+        Note:
+            Pydanticモデルで必須フィールドが保証されているが、
+            防御的プログラミングとして空データのチェックを実施
         """
         # ヘッダー
         self.console.rule("[bold cyan]型定義レベル分析レポート[/bold cyan]")
         self.console.print()
 
-        # 統計情報
-        self.console.print(self._create_statistics_table(report.statistics))
-        self.console.print()
+        # 統計情報（必須フィールド、常に表示）
+        if report.statistics:
+            self.console.print(self._create_statistics_table(report.statistics))
+            self.console.print()
 
-        # 警告閾値との比較
-        self.console.rule("[bold yellow]警告閾値との比較[/bold yellow]")
-        self.console.print()
-        self._print_deviation_comparison(report)
-        self.console.print()
+            # 警告閾値との比較
+            self.console.rule("[bold yellow]警告閾値との比較[/bold yellow]")
+            self.console.print()
+            self._print_deviation_comparison(report)
+            self.console.print()
 
-        # ドキュメント品質スコア
-        self.console.rule("[bold green]ドキュメント品質スコア[/bold green]")
-        self.console.print()
-        self.console.print(
-            self._create_documentation_quality_table(report.statistics.documentation)
-        )
-        self.console.print()
+            # ドキュメント品質スコア
+            if report.statistics.documentation:
+                self.console.rule("[bold green]ドキュメント品質スコア[/bold green]")
+                self.console.print()
+                self.console.print(
+                    self._create_documentation_quality_table(
+                        report.statistics.documentation
+                    )
+                )
+                self.console.print()
 
-        # コード品質統計
-        self.console.rule("[bold magenta]コード品質統計[/bold magenta]")
-        self.console.print()
-        self.console.print(self._create_code_quality_table(report.statistics))
-        self.console.print()
+            # コード品質統計
+            self.console.rule("[bold magenta]コード品質統計[/bold magenta]")
+            self.console.print()
+            self.console.print(self._create_code_quality_table(report.statistics))
+            self.console.print()
 
-        # 推奨事項
+        # 推奨事項（空リストの場合はスキップ）
         if report.recommendations:
             self.console.rule("[bold red]推奨事項[/bold red]")
             self.console.print()
@@ -485,17 +493,13 @@ class TypeReporter:
 
         長い文章を句点で分割し、インデントを付けて整形する
         """
-        # 「。」で文を分割
-        sentences = text.split("。")
+        # 「。」で文を分割（空文字列を除外）
+        sentences = [s.strip() for s in text.split("。") if s.strip()]
         if len(sentences) <= 1:
-            return text
+            return text if text.endswith("。") else text + "。"
 
         result = []
         for i, sentence in enumerate(sentences):
-            sentence = sentence.strip()
-            if not sentence:
-                continue
-
             if i == 0:
                 # 最初の文はそのまま
                 result.append(sentence + "。")
@@ -504,13 +508,7 @@ class TypeReporter:
                 arrow = "→ " if i == 1 else "  "
                 result.append(arrow + sentence + "。")
 
-        # 最後の空文を削除
-        result_text = "\n".join(result)
-        # 末尾の余分な句点を削除
-        if result_text.endswith("。。"):
-            result_text = result_text[:-1]
-
-        return result_text
+        return "\n".join(result)
 
     # ========================================
     # 旧フォーマットヘルパー（後方互換性のため保持）
