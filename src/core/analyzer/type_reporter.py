@@ -401,8 +401,9 @@ class TypeReporter:
         )
 
         # Level 1: type エイリアス
-        level1_status = "✓" if statistics.level1_ratio <= 0.20 else "✗"
-        level1_style = "green" if statistics.level1_ratio <= 0.20 else "red"
+        level1_limit = self.threshold_ratios["level1_max"]
+        level1_status = "✓" if statistics.level1_ratio <= level1_limit else "✗"
+        level1_style = "green" if statistics.level1_ratio <= level1_limit else "red"
         table.add_row(
             "Level 1: type エイリアス",
             str(statistics.level1_count),
