@@ -5,6 +5,7 @@
 """
 
 import re
+from typing import Any
 
 from src.core.analyzer.type_level_models import TypeDefinition, UpgradeRecommendation
 
@@ -217,7 +218,9 @@ class TypeUpgradeAnalyzer:
     # Level 1 の判定ロジック
     # ========================================
 
-    def _should_delete_level1(self, type_def: TypeDefinition, usage_count: int) -> dict:
+    def _should_delete_level1(
+        self, type_def: TypeDefinition, usage_count: int
+    ) -> dict[str, Any]:
         """Level 1の型定義を調査すべきか判定
 
         このプロジェクトでは個別型の定義を推奨しているため、
@@ -271,7 +274,7 @@ class TypeUpgradeAnalyzer:
 
     def _should_upgrade_to_level2(
         self, type_def: TypeDefinition, usage_count: int
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Level 1からLevel 2への昇格判定
 
         Args:
@@ -422,7 +425,7 @@ class TypeUpgradeAnalyzer:
 
     def _should_upgrade_to_level3(
         self, type_def: TypeDefinition, usage_count: int
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Level 2からLevel 3への昇格判定
 
         Args:
@@ -469,7 +472,7 @@ class TypeUpgradeAnalyzer:
     # パターンベースの判定
     # ========================================
 
-    def _detect_pattern_based_upgrade(self, type_def: TypeDefinition) -> dict:
+    def _detect_pattern_based_upgrade(self, type_def: TypeDefinition) -> dict[str, Any]:
         """パターンベースの判定
 
         Args:
