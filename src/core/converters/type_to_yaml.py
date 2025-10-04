@@ -70,7 +70,7 @@ def _get_type_name(typ: type[Any]) -> str:
     return str(typ)
 
 
-def _recurse_generic_args(args: tuple, depth: int = 0) -> list[TypeSpecOrRef]:
+def _recurse_generic_args(args: tuple[Any, ...], depth: int = 0) -> list[TypeSpecOrRef]:
     """再帰的にGeneric引数を展開（深さ制限付き）"""
     if depth > MAX_DEPTH:
         raise RecursionError(f"Generic型の深さが{MAX_DEPTH}を超えました")
@@ -296,7 +296,7 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
 
 def type_to_yaml(
     typ: type[Any], output_file: str | None = None, as_root: bool = True
-) -> str | dict[str, dict]:
+) -> str | dict[str, dict[str, Any]]:
     """型をYAML文字列に変換、またはファイル出力 (v1.1対応)"""
     spec = type_to_spec(typ)
 
