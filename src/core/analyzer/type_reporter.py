@@ -38,18 +38,22 @@ class TypeReporter:
                 - detail_rate: ドキュメント詳細度の下限
                 - quality_score: ドキュメント総合品質スコアの下限
         """
-        self.threshold_ratios = threshold_ratios or {
+        base_type_thresholds = {
             "level1_max": 0.20,  # Level 1は20%以下が望ましい
             "level2_min": 0.40,  # Level 2は40%以上が望ましい
             "level3_min": 0.15,  # Level 3は15%以上が望ましい
         }
-        # ドキュメント品質閾値（threshold_ratiosから取得、なければデフォルト値）
-        self.doc_thresholds = {
-            "implementation_rate": self.threshold_ratios.get(
-                "implementation_rate", 0.8
-            ),
-            "detail_rate": self.threshold_ratios.get("detail_rate", 0.5),
-            "quality_score": self.threshold_ratios.get("quality_score", 0.6),
+        base_doc_thresholds = {
+            "implementation_rate": 0.8,  # 実装率は80%以上が望ましい
+            "detail_rate": 0.5,  # 詳細度は50%以上が望ましい
+            "quality_score": 0.6,  # 総合品質スコアは60%以上が望ましい
+        }
+        provided = threshold_ratios or {}
+        self.threshold_ratios = base_type_thresholds | {
+            key: provided[key] for key in base_type_thresholds if key in provided
+        }
+        self.doc_thresholds = base_doc_thresholds | {
+            key: provided[key] for key in base_doc_thresholds if key in provided
         }
         self.console = Console()
 
