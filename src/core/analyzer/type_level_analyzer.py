@@ -72,9 +72,7 @@ class TypeLevelAnalyzer:
         )
 
         # 統計情報を計算
-        # 注: all_type_definitionsを使用して、実際の型定義の総数を正確にカウント
-        # 重複除去前のデータを使用することで、統計の精度が向上する
-        statistics = self.statistics_calculator.calculate(all_type_definitions)
+        statistics = self.statistics_calculator.calculate(unique_type_definitions)
 
         # ドキュメント推奨を生成
         # 注: unique_type_definitionsを使用して、同一型の重複推奨を防ぐ
