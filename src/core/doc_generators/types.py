@@ -30,16 +30,6 @@ def _validate_non_negative_int(v: int) -> int:
     return v
 
 
-def _validate_path_exists(v: str | Path | None) -> str | Path | None:
-    """パスが存在することを検証するバリデーター"""
-    if v is None:
-        return v
-    path = Path(v)
-    if not path.exists():
-        raise ValueError(f"パスが存在しません: {v}")
-    return v
-
-
 def _validate_output_path(v: str | Path | None) -> str | Path | None:
     """出力先パスを検証するバリデーター（存在しないパスも許可）"""
     if v is None:
