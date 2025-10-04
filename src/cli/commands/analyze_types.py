@@ -106,9 +106,21 @@ def analyze_types(
             analyzer, report, recommendations, docstring_recommendations
         )
     elif format == "markdown":
-        _output_markdown_report(analyzer, report, output)
+        _output_markdown_report(
+            analyzer,
+            report,
+            output,
+            show_upgrade_recs=recommendations,
+            show_docstring_recs=docstring_recommendations,
+        )
     elif format == "json":
-        _output_json_report(analyzer, report, output)
+        _output_json_report(
+            analyzer,
+            report,
+            output,
+            show_upgrade_recs=recommendations,
+            show_docstring_recs=docstring_recommendations,
+        )
 
 
 def _output_console_report(
@@ -144,7 +156,12 @@ def _output_console_report(
 
 
 def _output_markdown_report(
-    analyzer: TypeLevelAnalyzer, report: TypeAnalysisReport, output_path: str | None
+    analyzer: TypeLevelAnalyzer,
+    report: TypeAnalysisReport,
+    output_path: str | None,
+    *,
+    show_upgrade_recs: bool,
+    show_docstring_recs: bool,
 ) -> None:
     """Markdownレポートを出力
 
@@ -152,8 +169,19 @@ def _output_markdown_report(
         analyzer: TypeLevelAnalyzer
         report: TypeAnalysisReport
         output_path: 出力ファイルパス
+        show_upgrade_recs: 型レベルアップ推奨を表示するか
+        show_docstring_recs: docstring改善推奨を表示するか
     """
-    markdown_report = analyzer.reporter.generate_markdown_report(report)
+    # フィルタリング用にレポートをコピー
+    render_report = report
+    if not show_upgrade_recs or not show_docstring_recs:
+        render_report = report.model_copy(deep=True)
+        if not show_upgrade_recs:
+            render_report.upgrade_recommendations = []
+        if not show_docstring_recs:
+            render_report.docstring_recommendations = []
+
+    markdown_report = analyzer.reporter.generate_markdown_report(render_report)
 
     if output_path:
         # ファイルに書き込み
@@ -168,7 +196,12 @@ def _output_markdown_report(
 
 
 def _output_json_report(
-    analyzer: TypeLevelAnalyzer, report: TypeAnalysisReport, output_path: str | None
+    analyzer: TypeLevelAnalyzer,
+    report: TypeAnalysisReport,
+    output_path: str | None,
+    *,
+    show_upgrade_recs: bool,
+    show_docstring_recs: bool,
 ) -> None:
     """JSONレポートを出力
 
@@ -176,8 +209,19 @@ def _output_json_report(
         analyzer: TypeLevelAnalyzer
         report: TypeAnalysisReport
         output_path: 出力ファイルパス
+        show_upgrade_recs: 型レベルアップ推奨を表示するか
+        show_docstring_recs: docstring改善推奨を表示するか
     """
-    json_report = analyzer.reporter.generate_json_report(report)
+    # フィルタリング用にレポートをコピー
+    render_report = report
+    if not show_upgrade_recs or not show_docstring_recs:
+        render_report = report.model_copy(deep=True)
+        if not show_upgrade_recs:
+            render_report.upgrade_recommendations = []
+        if not show_docstring_recs:
+            render_report.docstring_recommendations = []
+
+    json_report = analyzer.reporter.generate_json_report(render_report)
 
     if output_path:
         # ファイルに書き込み
