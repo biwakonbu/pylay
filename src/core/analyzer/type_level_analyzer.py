@@ -462,6 +462,18 @@ class _TypeReferenceCounter(ast.NodeVisitor):
         # クラス本体内のアノテーションをカウント
         self.generic_visit(node)
 
+    def visit_TypeAlias(self, node: ast.TypeAlias) -> None:
+        """型エイリアス定義を訪問（Python 3.12+ type文）
+
+        型エイリアスの値部分に含まれる型参照をカウントします。
+        例: type CyclePath = list[NodeId] の NodeId をカウント
+        """
+        # 型エイリアスの値部分をカウント
+        self._count_annotation(node.value)
+
+        # 子ノードを訪問
+        self.generic_visit(node)
+
     def _count_annotation(self, annotation: ast.expr) -> None:
         """型アノテーションから型名を抽出してカウント
 
