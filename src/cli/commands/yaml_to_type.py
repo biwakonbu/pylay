@@ -4,8 +4,19 @@ YAML仕様をPython型に変換するCLIコマンドです。
 """
 
 import sys
+from pathlib import Path
 
+from rich.box import SIMPLE
 from rich.console import Console
+from rich.panel import Panel
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
+from rich.table import Table
 
 from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.schemas.yaml_spec import TypeRoot
@@ -24,12 +35,27 @@ def run_yaml_to_type(
     console = Console()
 
     try:
+        # 処理開始時のPanel表示
+        input_path = Path(input_file)
+        output_path = Path(output_file)
+
+        start_panel = Panel(
+            f"[bold cyan]入力ファイル:[/bold cyan] {input_path.name}\n"
+            f"[bold cyan]出力ファイル:[/bold cyan] {output_path}\n"
+            f"[bold cyan]ルートキー:[/bold cyan] {root_key or '自動設定'}",
+            title="[bold green]🚀 YAMLから型変換開始[/bold green]",
+            border_style="green",
+        )
+        console.print(start_panel)
+
         # YAMLを読み込み
-        with open(input_file, encoding="utf-8") as f:
-            yaml_str = f.read()
+        with console.status("[bold green]YAMLファイル読み込み中..."):
+            with open(input_file, encoding="utf-8") as f:
+                yaml_str = f.read()
 
         # Python型に変換
-        spec = yaml_to_spec(yaml_str, root_key)
+        with console.status("[bold green]型情報解析中..."):
+            spec = yaml_to_spec(yaml_str, root_key)
 
         # Pythonコードを生成
         code_lines = []
@@ -118,24 +144,79 @@ def run_yaml_to_type(
             lines.append("")
             return lines
 
-        if spec is not None and isinstance(spec, TypeRoot):
-            # 複数型仕様
-            for type_name, type_spec in spec.types.items():
+        # コード生成中のプログレス表示
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TimeRemainingColumn(),
+            console=console,
+            transient=True,
+        ) as progress:
+            task = progress.add_task("Pythonコード生成中...", total=1)
+
+            if spec is not None and isinstance(spec, TypeRoot):
+                # 複数型仕様
+                for type_name, type_spec in spec.types.items():
+                    code_lines.extend(
+                        generate_class_code(type_name, type_spec.model_dump())
+                    )
+            elif spec is not None:
+                # 単一型仕様
                 code_lines.extend(
-                    generate_class_code(type_name, type_spec.model_dump())
+                    generate_class_code("GeneratedType", spec.model_dump())
                 )
-        elif spec is not None:
-            # 単一型仕様
-            code_lines.extend(generate_class_code("GeneratedType", spec.model_dump()))
+
+            progress.advance(task)
 
         # ファイルに書き込み
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write("\n".join(code_lines))
+        with console.status("[bold green]ファイル出力中..."):
+            with open(output_file, "w", encoding="utf-8") as f:
+                f.write("\n".join(code_lines))
 
-        console.print(
-            f"[green]Successfully generated Python types to {output_file}[/green]"
+        # 結果表示用のTable
+        result_table = Table(
+            title="変換結果サマリー",
+            show_header=True,
+            border_style="green",
+            width=80,
+            header_style="",
+            box=SIMPLE,
         )
+        result_table.add_column("項目", style="cyan", no_wrap=True, width=40)
+        result_table.add_column("結果", style="green", justify="right", width=30)
+
+        result_table.add_row("入力ファイル", input_path.name)
+        result_table.add_row("出力ファイル", output_path.name)
+
+        # 型情報をカウントして表示
+        type_count = 0
+        if spec is not None and isinstance(spec, TypeRoot):
+            type_count = len(spec.types)
+        elif spec is not None:
+            type_count = 1
+
+        result_table.add_row("生成型数", f"{type_count} 個")
+        result_table.add_row("コード行数", f"{len(code_lines)} 行")
+
+        console.print(result_table)
+
+        # 完了メッセージのPanel
+        complete_panel = Panel(
+            f"[bold green]✅ YAMLから型への変換が完了しました[/bold green]\n\n"
+            f"[bold cyan]出力ファイル:[/bold cyan] {output_path}\n"
+            f"[bold cyan]生成型数:[/bold cyan] {type_count} 個",
+            title="[bold green]🎉 処理完了[/bold green]",
+            border_style="green",
+        )
+        console.print(complete_panel)
 
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        # エラーメッセージのPanel
+        error_panel = Panel(
+            f"[red]エラー: {e}[/red]",
+            title="[bold red]❌ 処理エラー[/bold red]",
+            border_style="red",
+        )
+        console.print(error_panel)
         sys.exit(1)
