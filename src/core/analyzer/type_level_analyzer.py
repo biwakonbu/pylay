@@ -312,18 +312,23 @@ class TypeLevelAnalyzer:
     ) -> list[TypeDefinition]:
         """型定義の重複を除去
 
+        ファイルパス、型名、行番号の組み合わせで重複判定を行います。
+        これにより、異なるモジュールに存在する同名の型（例: foo.User と bar.User）が
+        誤って除外されることを防ぎます。
+
         Args:
             type_definitions: 型定義リスト
 
         Returns:
             重複除去後の型定義リスト
         """
-        seen_names: set[str] = set()
+        seen_keys: set[tuple[str, str, int]] = set()
         unique_types: list[TypeDefinition] = []
 
         for td in type_definitions:
-            if td.name not in seen_names:
-                seen_names.add(td.name)
+            key = (td.file_path, td.name, td.line_number)
+            if key not in seen_keys:
+                seen_keys.add(key)
                 unique_types.append(td)
 
         return unique_types
