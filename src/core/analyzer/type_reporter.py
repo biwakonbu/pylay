@@ -31,11 +31,23 @@ class TypeReporter:
 
         Args:
             threshold_ratios: 警告閾値（デフォルト: 推奨閾値）
+                - level1_max: Level 1の上限
+                - level2_min: Level 2の下限
+                - level3_min: Level 3の下限
+                - implementation_rate: ドキュメント実装率の下限
+                - detail_rate: ドキュメント詳細度の下限
+                - quality_score: ドキュメント総合品質スコアの下限
         """
         self.threshold_ratios = threshold_ratios or {
             "level1_max": 0.20,  # Level 1は20%以下が望ましい
             "level2_min": 0.40,  # Level 2は40%以上が望ましい
             "level3_min": 0.15,  # Level 3は15%以上が望ましい
+        }
+        # ドキュメント品質閾値
+        self.doc_thresholds = {
+            "implementation_rate": 0.8,  # 実装率は80%以上が望ましい
+            "detail_rate": 0.5,  # 詳細度は50%以上が望ましい
+            "quality_score": 0.6,  # 総合品質スコアは60%以上が望ましい
         }
         self.console = Console()
 
@@ -358,8 +370,11 @@ class TypeReporter:
         table.add_column("評価", justify="center", width=10)
 
         # 実装率
-        impl_status = "✓" if doc_stats.implementation_rate >= 0.8 else "✗"
-        impl_style = "green" if doc_stats.implementation_rate >= 0.8 else "red"
+        impl_threshold = self.doc_thresholds["implementation_rate"]
+        impl_status = "✓" if doc_stats.implementation_rate >= impl_threshold else "✗"
+        impl_style = (
+            "green" if doc_stats.implementation_rate >= impl_threshold else "red"
+        )
         table.add_row(
             "実装率",
             f"{doc_stats.implementation_rate * 100:.1f}%",
@@ -367,8 +382,9 @@ class TypeReporter:
         )
 
         # 詳細度
-        detail_status = "✓" if doc_stats.detail_rate >= 0.5 else "✗"
-        detail_style = "green" if doc_stats.detail_rate >= 0.5 else "red"
+        detail_threshold = self.doc_thresholds["detail_rate"]
+        detail_status = "✓" if doc_stats.detail_rate >= detail_threshold else "✗"
+        detail_style = "green" if doc_stats.detail_rate >= detail_threshold else "red"
         table.add_row(
             "詳細度",
             f"{doc_stats.detail_rate * 100:.1f}%",
@@ -376,8 +392,11 @@ class TypeReporter:
         )
 
         # 総合品質スコア
-        quality_status = "✓" if doc_stats.quality_score >= 0.6 else "✗"
-        quality_style = "green" if doc_stats.quality_score >= 0.6 else "red"
+        quality_threshold = self.doc_thresholds["quality_score"]
+        quality_status = "✓" if doc_stats.quality_score >= quality_threshold else "✗"
+        quality_style = (
+            "green" if doc_stats.quality_score >= quality_threshold else "red"
+        )
         table.add_row(
             "総合品質スコア",
             f"{doc_stats.quality_score * 100:.1f}%",
@@ -586,13 +605,15 @@ class TypeReporter:
         lines.append("├─────────────────────────┼───────┼─────────┤")
 
         # 実装率
-        impl_status = "✅" if doc_stats.implementation_rate >= 0.8 else "⚠️"
+        impl_threshold = self.doc_thresholds["implementation_rate"]
+        impl_status = "✅" if doc_stats.implementation_rate >= impl_threshold else "⚠️"
         lines.append(
             f"│ 実装率                  │ {doc_stats.implementation_rate * 100:5.1f}% │   {impl_status}    │"  # noqa: E501
         )
 
         # 詳細度
-        detail_status = "✅" if doc_stats.detail_rate >= 0.5 else "⚠️"
+        detail_threshold = self.doc_thresholds["detail_rate"]
+        detail_status = "✅" if doc_stats.detail_rate >= detail_threshold else "⚠️"
         lines.append(
             f"│ 詳細度                  │ {doc_stats.detail_rate * 100:5.1f}% │   {detail_status}    │"  # noqa: E501
         )
