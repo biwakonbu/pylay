@@ -3,7 +3,17 @@
 import sys
 from pathlib import Path
 
+from rich.box import SIMPLE
 from rich.console import Console
+from rich.panel import Panel
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
+from rich.table import Table
 
 from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.doc_generators.yaml_doc_generator import YamlDocGenerator
@@ -23,18 +33,33 @@ def run_generate_docs(
     console = Console()
 
     try:
-        # Load YAML
-        with open(input_file, encoding="utf-8") as f:
-            yaml_str = f.read()
+        # 処理開始時のPanel表示
+        input_path = Path(input_file)
+        output_path = Path(output_dir)
 
-        spec = yaml_to_spec(yaml_str)
+        start_panel = Panel(
+            f"[bold cyan]入力ファイル:[/bold cyan] {input_path.name}\n"
+            f"[bold cyan]出力ディレクトリ:[/bold cyan] {output_path}\n"
+            f"[bold cyan]フォーマット:[/bold cyan] {format_type}",
+            title="[bold green]🚀 ドキュメント生成開始[/bold green]",
+            border_style="green",
+        )
+        console.print(start_panel)
+
+        # YAMLファイル読み込み
+        with console.status("[bold green]YAMLファイル読み込み中..."):
+            with open(input_file, encoding="utf-8") as f:
+                yaml_str = f.read()
+
+        # YAMLパース
+        with console.status("[bold green]型情報解析中..."):
+            spec = yaml_to_spec(yaml_str)
 
         # Handle TypeRoot (multi-type) by using the first type
         if spec is not None and isinstance(spec, TypeRoot) and spec.types:
             spec = next(iter(spec.types.values()))
 
         # Create output directory
-        output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 
         # Generate documentation
@@ -43,20 +68,63 @@ def run_generate_docs(
         if format_type == "single":
             # Single file output
             output_file = output_path / "types.md"
-            generator.generate(output_file, spec=spec)
+
+            # ドキュメント生成中のプログレス表示
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TimeRemainingColumn(),
+                console=console,
+                transient=True,
+            ) as progress:
+                task = progress.add_task("ドキュメント生成中...", total=1)
+                generator.generate(output_file, spec=spec)
+                progress.advance(task)
+
         else:
             # Multiple files output (not implemented yet)
+            console.rule("[bold yellow]警告[/bold yellow]")
             console.print(
-                "[yellow]Multiple file format not yet implemented, "
-                "using single file[/yellow]"
+                "[yellow]複数ファイル形式は未実装のため、単一ファイル形式を使用します[/yellow]"
             )
             output_file = output_path / "types.md"
             generator.generate(output_file, spec=spec)
 
-        console.print(
-            f"[green]Successfully generated documentation to {output_file}[/green]"
+        # 結果表示用のTable
+        result_table = Table(
+            title="生成結果サマリー",
+            show_header=True,
+            border_style="green",
+            width=80,
+            header_style="",
+            box=SIMPLE,
         )
+        result_table.add_column("項目", style="cyan", no_wrap=True, width=40)
+        result_table.add_column("結果", style="green", justify="right", width=30)
+
+        result_table.add_row("入力ファイル", input_path.name)
+        result_table.add_row("出力ファイル", output_file.name)
+        result_table.add_row("出力ディレクトリ", str(output_path))
+        result_table.add_row("生成形式", format_type)
+
+        console.print(result_table)
+
+        # 完了メッセージのPanel
+        complete_panel = Panel(
+            f"[bold green]✅ ドキュメント生成が完了しました[/bold green]\n\n"
+            f"[bold cyan]出力ファイル:[/bold cyan] {output_file}",
+            title="[bold green]🎉 処理完了[/bold green]",
+            border_style="green",
+        )
+        console.print(complete_panel)
 
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        # エラーメッセージのPanel
+        error_panel = Panel(
+            f"[red]エラー: {e}[/red]",
+            title="[bold red]❌ 処理エラー[/bold red]",
+            border_style="red",
+        )
+        console.print(error_panel)
         sys.exit(1)
