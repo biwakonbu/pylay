@@ -406,11 +406,8 @@ class _TypeReferenceCounter(ast.NodeVisitor):
         Args:
             type_names: カウント対象の型名の集合
         """
-        import ast
-
         self.type_names = type_names
         self.reference_counts: dict[str, int] = {name: 0 for name in type_names}
-        self.ast = ast
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """関数定義を訪問（引数・戻り値の型アノテーション）"""
@@ -452,14 +449,14 @@ class _TypeReferenceCounter(ast.NodeVisitor):
             annotation: 型アノテーションのASTノード
         """
         # Name ノード (例: UserId)
-        if isinstance(annotation, self.ast.Name):
+        if isinstance(annotation, ast.Name):
             if annotation.id in self.type_names:
                 self.reference_counts[annotation.id] += 1
 
         # Subscript ノード (例: list[UserId], Annotated[str, ...])
-        elif isinstance(annotation, self.ast.Subscript):
+        elif isinstance(annotation, ast.Subscript):
             # ベース型をチェック (例: list, Annotated)
-            if isinstance(annotation.value, self.ast.Name):
+            if isinstance(annotation.value, ast.Name):
                 if annotation.value.id in self.type_names:
                     self.reference_counts[annotation.value.id] += 1
 
@@ -476,26 +473,26 @@ class _TypeReferenceCounter(ast.NodeVisitor):
         Args:
             node: 走査対象のASTノード
         """
-        if isinstance(node, self.ast.Name):
+        if isinstance(node, ast.Name):
             if node.id in self.type_names:
                 self.reference_counts[node.id] += 1
 
-        elif isinstance(node, self.ast.Subscript):
-            if isinstance(node.value, self.ast.Name):
+        elif isinstance(node, ast.Subscript):
+            if isinstance(node.value, ast.Name):
                 if node.value.id in self.type_names:
                     self.reference_counts[node.value.id] += 1
             self._count_annotation_recursive(node.slice)
 
-        elif isinstance(node, self.ast.Tuple):
+        elif isinstance(node, ast.Tuple):
             for elt in node.elts:
                 self._count_annotation_recursive(elt)
 
-        elif isinstance(node, self.ast.List):
+        elif isinstance(node, ast.List):
             for elt in node.elts:
                 self._count_annotation_recursive(elt)
 
         # BinOp (例: int | str の Union型)
-        elif isinstance(node, self.ast.BinOp):
+        elif isinstance(node, ast.BinOp):
             self._count_annotation_recursive(node.left)
             self._count_annotation_recursive(node.right)
 
