@@ -13,6 +13,8 @@ Python の type hint と docstrings を利用した types <-> docs 間の透過�
 - Pythonの型オブジェクトをYAML形式の型仕様に変換
 - YAML型仕様からPydantic BaseModelとしてパース・バリデーション
 - YAML型仕様からMarkdownドキュメントを自動生成
+- **型定義レベル分析・監視機能**（Level 1/2/3の自動分類と昇格/降格推奨）
+- **ドキュメント品質分析**（docstring実装率、詳細度、総合スコア算出）
 - **高度な型推論と依存関係抽出**（mypy + ASTハイブリッド + NetworkXグラフ分析）
 - 型 <-> YAML <-> 型 <-> Markdownのラウンドトリップ変換
 - **プロジェクト全体解析**（pyproject.toml設定駆動 + 循環依存検出）
@@ -107,6 +109,30 @@ pylay convert to-yaml --input src/core/schemas/yaml_type_spec.py --output types.
 
 # YAMLをPydantic BaseModelに変換
 pylay convert to-type --input types.yaml --output-py model.py
+```
+
+### 型定義レベル分析
+```bash
+# ファイルの型定義レベルを分析
+pylay analyze-types --file src/core/schemas/types.py
+
+# ディレクトリ全体を分析
+pylay analyze-types --directory src/core/analyzer/
+
+# カスタム閾値を指定して分析
+pylay analyze-types --file src/core/schemas/types.py \
+  --level1-max 0.15 \
+  --level2-min 0.50 \
+  --level3-min 0.20
+
+# 型レベルアップ推奨を含めて分析
+pylay analyze-types --directory src/core/analyzer/ --recommendations
+
+# JSON形式で出力
+pylay analyze-types --file src/core/schemas/types.py --format json --output type_analysis.json
+
+# Markdown形式で出力
+pylay analyze-types --directory src/ --format markdown --output docs/type_analysis.md
 ```
 
 ### プロジェクト全体解析
