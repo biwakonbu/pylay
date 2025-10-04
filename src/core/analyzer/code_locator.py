@@ -221,7 +221,7 @@ class CodeLocator:
 
             # コード位置情報を取得
             context_before, code, context_after = self._extract_context(
-                type_def.file_path, type_def.line_number
+                Path(type_def.file_path), type_def.line_number
             )
             location = CodeLocation(
                 file=Path(type_def.file_path),
@@ -386,7 +386,7 @@ class CodeLocator:
 
             # コード位置情報を取得
             context_before, code, context_after = self._extract_context(
-                type_def.file_path, type_def.line_number
+                Path(type_def.file_path), type_def.line_number
             )
             location = CodeLocation(
                 file=Path(type_def.file_path),
@@ -646,7 +646,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
             "__bytes__",
         }
 
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+    def visit_FunctionDef(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """関数定義を訪問"""
         # 除外対象の関数はスキップ
         if node.name in self.excluded_functions:

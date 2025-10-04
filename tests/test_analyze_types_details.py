@@ -51,6 +51,7 @@ class TestAnalyzeTypesDetails:
         assert args[5] is True  # show_stats (デフォルトTrue)
         assert args[6] == ["src"]  # target_dirs
 
+    @patch("src.cli.commands.analyze_types.TypeLevelAnalyzer")
     @patch("src.cli.commands.analyze_types._output_console_report")
     def test_no_stats_option(self, mock_output_console, mock_analyzer_class):
         """--no-statsオプションのテスト"""
@@ -207,7 +208,7 @@ class TestConsoleReportDetails:
         )
 
         # TypeReporterが正しい引数で初期化されていることを確認
-        mock_reporter_class.assert_called_once_with(target_dirs=[Path("src")])
+        mock_reporter_class.assert_called_once_with(target_dirs=["src"])
 
         # generate_detailed_reportが呼ばれていることを確認
         mock_reporter.generate_detailed_report.assert_called_once_with(
