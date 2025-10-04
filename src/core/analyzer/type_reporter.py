@@ -8,12 +8,20 @@ Richライブラリを使用して、美しいCLI出力を実現します。
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from rich.box import SIMPLE
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
+from src.core.analyzer.code_locator import (
+    CodeLocator,
+    DeprecatedTypingDetail,
+    Level1TypeDetail,
+    PrimitiveUsageDetail,
+    UnusedTypeDetail,
+)
 from src.core.analyzer.type_level_models import (
     DocstringRecommendation,
     DocumentationStatistics,
@@ -26,7 +34,11 @@ from src.core.analyzer.type_level_models import (
 class TypeReporter:
     """型定義分析レポートを生成するクラス（Richベース）"""
 
-    def __init__(self, threshold_ratios: dict[str, float] | None = None):
+    def __init__(
+        self,
+        threshold_ratios: dict[str, float] | None = None,
+        target_dirs: list[str] | None = None,
+    ):
         """初期化
 
         Args:
@@ -37,6 +49,7 @@ class TypeReporter:
                 - implementation_rate: ドキュメント実装率の下限
                 - detail_rate: ドキュメント詳細度の下限
                 - quality_score: ドキュメント総合品質スコアの下限
+            target_dirs: 解析対象ディレクトリ（詳細レポート生成時に使用）
 
         Note:
             上記以外のキーが含まれている場合は無視されます。
@@ -60,8 +73,12 @@ class TypeReporter:
             key: provided[key] for key in base_doc_thresholds if key in provided
         }
         self.console = Console()
+        self.target_dirs = [Path(d) for d in (target_dirs or ["."])]
+        self.code_locator = CodeLocator(self.target_dirs)
 
-    def generate_console_report(self, report: TypeAnalysisReport) -> None:
+    def generate_console_report(
+        self, report: TypeAnalysisReport, show_stats: bool = True
+    ) -> None:
         """コンソール用レポートを生成して直接表示
 
         Args:
@@ -75,8 +92,8 @@ class TypeReporter:
         self.console.rule("[bold cyan]型定義レベル分析レポート[/bold cyan]")
         self.console.print()
 
-        # 統計情報（必須フィールド、常に表示）
-        if report.statistics:
+        # 統計情報（オプションで表示制御）
+        if show_stats and report.statistics:
             self.console.print(self._create_statistics_table(report.statistics))
             self.console.print()
 
@@ -795,6 +812,238 @@ class TypeReporter:
                     lines.append(f"  - {reason}")
             lines.append("")
         return "\n".join(lines)
+
+    def generate_detailed_report(
+        self,
+        report: TypeAnalysisReport,
+        show_details: bool = False,
+        show_stats: bool = True,
+    ) -> None:
+        """詳細レポートをコンソールに出力
+
+        Args:
+            report: 型分析レポート
+            show_details: 詳細情報を表示するかどうか
+        """
+        if not show_details:
+            # 通常のレポートのみ出力
+            self.generate_console_report(report, show_stats)
+            return
+
+        # 基本レポート
+        self.generate_console_report(report, show_stats)
+
+        # 詳細情報の収集
+        primitive_details = self.code_locator.find_primitive_usages()
+        level1_details = self.code_locator.find_level1_types(
+            list(report.type_definitions)
+        )
+        unused_details = self.code_locator.find_unused_types(
+            list(report.type_definitions)
+        )
+        deprecated_details = self.code_locator.find_deprecated_typing()
+
+        # 詳細レポートの出力
+        if primitive_details:
+            self.console.print()
+            self.console.rule("[bold red]🔍 問題詳細: Primitive型の直接使用[/bold red]")
+            self.console.print()
+            self.console.print(self._create_primitive_usage_table(primitive_details))
+
+        if level1_details:
+            self.console.print()
+            self.console.rule("[bold yellow]🔍 問題詳細: Level 1型の放置[/bold yellow]")
+            self.console.print()
+            self.console.print(self._create_level1_types_table(level1_details))
+
+        if unused_details:
+            self.console.print()
+            self.console.rule(
+                "[bold magenta]🔍 問題詳細: 被参照0の型定義[/bold magenta]"
+            )
+            self.console.print()
+            self.console.print(self._create_unused_types_table(unused_details))
+
+        if deprecated_details:
+            self.console.print()
+            self.console.rule("[bold cyan]🔍 問題詳細: 非推奨typing使用[/bold cyan]")
+            self.console.print()
+            self.console.print(self._create_deprecated_typing_table(deprecated_details))
+
+    def _create_primitive_usage_table(
+        self, details: list[PrimitiveUsageDetail]
+    ) -> Table:
+        """Primitive型使用の詳細テーブルを生成"""
+        table = Table(
+            title="Primitive型の直接使用",
+            show_header=True,
+            width=120,
+            header_style="",
+            box=SIMPLE,
+        )
+
+        table.add_column("ファイル", style="cyan", no_wrap=True, width=25)
+        table.add_column("行", justify="right", style="green", width=5)
+        table.add_column("種類", justify="center", width=12)
+        table.add_column("型", justify="center", width=8)
+        table.add_column("コード", no_wrap=False, width=65)
+
+        for detail in details[:50]:  # 最大50件まで表示
+            # ファイル名を短く表示
+            file_name = detail.location.file.name
+            if len(file_name) > 24:
+                file_name = "..." + file_name[-21:]
+
+            # コードを整形
+            code = detail.location.code.strip()
+            if len(code) > 60:
+                code = code[:57] + "..."
+
+            table.add_row(
+                file_name,
+                str(detail.location.line),
+                detail.kind.replace("function_", "")
+                .replace("return_", "戻り値")
+                .replace("class_", ""),
+                detail.primitive_type,
+                code,
+                style="red" if detail.kind == "function_argument" else "yellow",
+            )
+
+        return table
+
+    def _create_level1_types_table(self, details: list[Level1TypeDetail]) -> Table:
+        """Level 1型の詳細テーブルを生成"""
+        table = Table(
+            title="Level 1型の放置",
+            show_header=True,
+            width=120,
+            header_style="",
+            box=SIMPLE,
+        )
+
+        table.add_column("型定義", style="cyan", no_wrap=True, width=25)
+        table.add_column("ファイル", style="blue", no_wrap=True, width=20)
+        table.add_column("行", justify="right", style="green", width=5)
+        table.add_column("使用回数", justify="right", width=8)
+        table.add_column("推奨", no_wrap=False, width=60)
+
+        for detail in details[:30]:  # 最大30件まで表示
+            # 型名を短く表示
+            type_name = detail.type_name
+            if len(type_name) > 24:
+                type_name = type_name[:21] + "..."
+
+            # ファイル名を短く表示
+            file_name = detail.location.file.name
+            if len(file_name) > 19:
+                file_name = "..." + file_name[-16:]
+
+            # 推奨事項を短く表示
+            recommendation = detail.recommendation
+            if len(recommendation) > 55:
+                recommendation = recommendation[:52] + "..."
+
+            table.add_row(
+                type_name,
+                file_name,
+                str(detail.location.line),
+                str(detail.usage_count),
+                recommendation,
+                style="yellow",
+            )
+
+        return table
+
+    def _create_unused_types_table(self, details: list[UnusedTypeDetail]) -> Table:
+        """被参照0型の詳細テーブルを生成"""
+        table = Table(
+            title="被参照0の型定義",
+            show_header=True,
+            width=120,
+            header_style="",
+            box=SIMPLE,
+        )
+
+        table.add_column("型定義", style="cyan", no_wrap=True, width=25)
+        table.add_column("ファイル", style="blue", no_wrap=True, width=20)
+        table.add_column("行", justify="right", style="green", width=5)
+        table.add_column("レベル", justify="center", width=8)
+        table.add_column("推奨", no_wrap=False, width=60)
+
+        for detail in details[:30]:  # 最大30件まで表示
+            # 型名を短く表示
+            type_name = detail.type_name
+            if len(type_name) > 24:
+                type_name = type_name[:21] + "..."
+
+            # ファイル名を短く表示
+            file_name = detail.location.file.name
+            if len(file_name) > 19:
+                file_name = "..." + file_name[-16:]
+
+            # 推奨事項を短く表示
+            recommendation = detail.recommendation
+            if len(recommendation) > 55:
+                recommendation = recommendation[:52] + "..."
+
+            table.add_row(
+                type_name,
+                file_name,
+                str(detail.location.line),
+                detail.level,
+                recommendation,
+                style="magenta",
+            )
+
+        return table
+
+    def _create_deprecated_typing_table(
+        self, details: list[DeprecatedTypingDetail]
+    ) -> Table:
+        """非推奨typing使用の詳細テーブルを生成"""
+        table = Table(
+            title="非推奨typing使用",
+            show_header=True,
+            width=120,
+            header_style="",
+            box=SIMPLE,
+        )
+
+        table.add_column("ファイル", style="cyan", no_wrap=True, width=25)
+        table.add_column("行", justify="right", style="green", width=5)
+        table.add_column("非推奨型", justify="center", width=15)
+        table.add_column("推奨代替", justify="center", width=15)
+        table.add_column("コード", no_wrap=False, width=60)
+
+        for detail in details[:30]:  # 最大30件まで表示
+            # ファイル名を短く表示
+            file_name = detail.location.file.name
+            if len(file_name) > 24:
+                file_name = "..." + file_name[-21:]
+
+            # コードを整形
+            code = detail.location.code.strip()
+            if len(code) > 55:
+                code = code[:52] + "..."
+
+            # import情報をまとめて表示
+            deprecated_types = [imp["deprecated"] for imp in detail.imports]
+            recommended_types = [imp["recommended"] for imp in detail.imports]
+
+            dep_str = ", ".join(deprecated_types)
+            rec_str = ", ".join(recommended_types)
+
+            table.add_row(
+                file_name,
+                str(detail.location.line),
+                dep_str,
+                rec_str,
+                code,
+                style="cyan",
+            )
+
+        return table
 
     def _format_docstring_recommendations_markdown(
         self, recommendations: list[DocstringRecommendation]
