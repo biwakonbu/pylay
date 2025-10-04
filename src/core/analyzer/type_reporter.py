@@ -528,7 +528,8 @@ class TypeReporter:
         )
 
         # Level 1: type エイリアス（20%以下推奨、primitive型含む）
-        level1_status = "✅" if statistics.level1_ratio <= 0.20 else "⚠️"
+        level1_limit = self.threshold_ratios["level1_max"]
+        level1_status = "✅" if statistics.level1_ratio <= level1_limit else "⚠️"
         lines.append(
             f"│ Level 1: type エイリアス        │ {statistics.level1_count:5} │ {statistics.level1_ratio * 100:6.1f}% │ {level1_status}  │"  # noqa: E501
         )
@@ -720,7 +721,8 @@ class TypeReporter:
         )
 
         # Level 1: type エイリアス（20%以下推奨、primitive型含む）
-        level1_status = "✅" if statistics.level1_ratio <= 0.20 else "⚠️"
+        level1_limit = self.threshold_ratios["level1_max"]
+        level1_status = "✅" if statistics.level1_ratio <= level1_limit else "⚠️"
         lines.append(
             f"| Level 1: type エイリアス | {statistics.level1_count} | "
             f"{statistics.level1_ratio * 100:.1f}% | {level1_status} |"
