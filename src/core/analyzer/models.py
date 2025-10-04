@@ -47,6 +47,7 @@ from .types import (
     AnalysisConfig,
     DocumentationStatistics,
     FileAnalysisResult,
+    FormatStyle,
     ProjectAnalysisResult,
     QualityMetrics,
     TypeDefinition,
@@ -577,8 +578,8 @@ class DocstringAnalyzerService(BaseModel):
         )
 
         # レベル別統計の計算
-        by_level: dict[str, dict[str, int]] = {}
-        by_format: dict[str, int] = {}
+        by_level: dict[TypeLevel, dict[str, int]] = {}
+        by_format: dict[FormatStyle, int] = {}
         total_docstring_lines = 0
 
         for td in type_definitions:
@@ -593,7 +594,7 @@ class DocstringAnalyzerService(BaseModel):
                 by_level[td.level]["lines"] += td.docstring_lines
 
                 # フォーマット別統計（簡易版）
-                format_key = "google"  # デフォルト値
+                format_key: FormatStyle = "google"  # デフォルト値
                 if format_key not in by_format:
                     by_format[format_key] = 0
                 by_format[format_key] += 1
@@ -716,7 +717,7 @@ class StatisticsCalculatorService(BaseModel):
 
     def calculate_level_statistics(
         self, type_definitions: list[TypeDefinition]
-    ) -> dict[str, TypeLevelInfo]:
+    ) -> dict[TypeLevel, TypeLevelInfo]:
         """
         レベル別の統計情報を計算します。
 
@@ -757,7 +758,7 @@ class StatisticsCalculatorService(BaseModel):
                 level_stats[level]["keep_as_is_count"] += 1
 
         # TypeLevelInfoオブジェクトの作成
-        result: dict[str, TypeLevelInfo] = {}
+        result: dict[TypeLevel, TypeLevelInfo] = {}
         for level_str, stats in level_stats.items():
             # 型レベル文字列を明示的に扱う
             type_level: TypeLevel = level_str  # type: ignore[assignment]

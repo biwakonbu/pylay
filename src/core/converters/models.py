@@ -78,6 +78,8 @@ class TypeConversionService(BaseModel):
         return TypeSpecModel(
             type=self._get_basic_type_str(typ),
             name=self._get_type_name(typ),
+            description=None,
+            required=True,
         )
 
     def _spec_to_yaml_data(self, spec: TypeSpec, as_root: bool) -> dict[str, Any]:
@@ -138,6 +140,8 @@ class YamlProcessingService(BaseModel):
             return TypeSpecModel(
                 type=data.get("type", "unknown"),
                 name=root_key or "Unknown",
+                description=None,
+                required=True,
             )
 
         return data
