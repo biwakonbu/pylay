@@ -955,6 +955,12 @@ class TypeUsageVisitor(ast.NodeVisitor):
         self.usages: list[TypeUsageExample] = []
         self.lines = source_code.splitlines()
 
+    def generic_visit(self, node: ast.AST) -> None:
+        """ASTトラバーサル中に各子ノードに親ノードを設定"""
+        for child in ast.iter_child_nodes(node):
+            setattr(child, "_parent", node)
+        super().generic_visit(node)
+
     def visit_Name(self, node: ast.Name) -> None:
         """名前ノードを訪問"""
         if node.id == self.target_type:

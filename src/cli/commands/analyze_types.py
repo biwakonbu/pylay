@@ -187,6 +187,23 @@ def _output_console_report(
     # 詳細レポートを生成
     reporter.generate_detailed_report(report, show_details, show_stats)
 
+    # 推奨事項を条件付きで表示
+    if show_upgrade_recs and report.upgrade_recommendations:
+        console.print()
+        console.print(
+            reporter.generate_upgrade_recommendations_report(
+                report.upgrade_recommendations
+            )
+        )
+
+    if show_docstring_recs and report.docstring_recommendations:
+        console.print()
+        console.print(
+            reporter.generate_docstring_recommendations_report(
+                report.docstring_recommendations
+            )
+        )
+
 
 def _output_markdown_report(
     analyzer: TypeLevelAnalyzer,
