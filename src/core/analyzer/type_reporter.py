@@ -243,8 +243,9 @@ class TypeReporter:
         table.add_column("状態", justify="center", width=10)
 
         # Level 1
-        level1_status = "✓" if statistics.level1_ratio <= 0.20 else "✗"
-        level1_style = "green" if statistics.level1_ratio <= 0.20 else "red"
+        level1_limit = self.threshold_ratios["level1_max"]
+        level1_status = "✓" if statistics.level1_ratio <= level1_limit else "✗"
+        level1_style = "green" if statistics.level1_ratio <= level1_limit else "red"
         table.add_row(
             "Level 1: type エイリアス",
             str(statistics.level1_count),
@@ -253,8 +254,9 @@ class TypeReporter:
         )
 
         # Level 2
-        level2_status = "✓" if statistics.level2_ratio >= 0.40 else "✗"
-        level2_style = "green" if statistics.level2_ratio >= 0.40 else "red"
+        level2_limit = self.threshold_ratios["level2_min"]
+        level2_status = "✓" if statistics.level2_ratio >= level2_limit else "✗"
+        level2_style = "green" if statistics.level2_ratio >= level2_limit else "red"
         table.add_row(
             "Level 2: Annotated",
             str(statistics.level2_count),
@@ -263,8 +265,9 @@ class TypeReporter:
         )
 
         # Level 3
-        level3_status = "✓" if statistics.level3_ratio >= 0.15 else "✗"
-        level3_style = "green" if statistics.level3_ratio >= 0.15 else "red"
+        level3_limit = self.threshold_ratios["level3_min"]
+        level3_status = "✓" if statistics.level3_ratio >= level3_limit else "✗"
+        level3_style = "green" if statistics.level3_ratio >= level3_limit else "red"
         table.add_row(
             "Level 3: BaseModel",
             str(statistics.level3_count),
