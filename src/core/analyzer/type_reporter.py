@@ -619,11 +619,12 @@ class TypeReporter:
         )
 
         # 総合品質スコア
+        quality_threshold = self.doc_thresholds["quality_score"]
         quality_status = (
             "✅"
-            if doc_stats.quality_score >= 0.4
+            if doc_stats.quality_score >= quality_threshold
             else "⚠️"
-            if doc_stats.quality_score >= 0.2
+            if doc_stats.quality_score >= quality_threshold * 0.5
             else "❌"
         )
         lines.append(
