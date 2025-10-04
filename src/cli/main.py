@@ -306,6 +306,8 @@ def analyze() -> None:
 
 
 # analyze-typesコマンドを登録
+# トップレベルにも登録して `pylay analyze-types` で呼び出せるようにする
+cli.add_command(analyze_types)
 analyze.add_command(analyze_types)
 
 
