@@ -200,6 +200,8 @@ class UpgradeRecommendation(BaseModel):
 
     Attributes:
         type_name: 型名
+        file_path: ファイルパス
+        line_number: 行番号
         current_level: 現在のレベル
         recommended_level: 推奨レベル（level1/level2/level3/investigate）
         confidence: 確信度（0.0-1.0）
@@ -213,6 +215,8 @@ class UpgradeRecommendation(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     type_name: str
+    file_path: str
+    line_number: int
     current_level: Literal["level1", "level2", "level3", "other"]
     recommended_level: Literal["level1", "level2", "level3", "investigate"]
     confidence: float = Field(ge=0.0, le=1.0)

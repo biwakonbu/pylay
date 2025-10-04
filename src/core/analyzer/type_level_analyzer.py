@@ -338,18 +338,22 @@ class TypeLevelAnalyzer:
     ) -> list[UpgradeRecommendation]:
         """型レベルアップ推奨の重複を除去
 
+        ファイルパス、型名、行番号の組み合わせで重複判定を行います。
+        これにより、異なるファイルに存在する同名の型の推奨が誤って除外されることを防ぎます。
+
         Args:
             recommendations: 推奨事項リスト
 
         Returns:
             重複除去後の推奨事項リスト
         """
-        seen_names: set[str] = set()
+        seen_keys: set[tuple[str, str, int]] = set()
         unique_recs: list[UpgradeRecommendation] = []
 
         for rec in recommendations:
-            if rec.type_name not in seen_names:
-                seen_names.add(rec.type_name)
+            key = (rec.file_path, rec.type_name, rec.line_number)
+            if key not in seen_keys:
+                seen_keys.add(key)
                 unique_recs.append(rec)
 
         return unique_recs

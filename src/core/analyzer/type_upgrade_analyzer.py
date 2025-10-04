@@ -82,6 +82,8 @@ class TypeUpgradeAnalyzer:
         if investigation_check["confidence"] >= 0.3:
             return UpgradeRecommendation(
                 type_name=type_def.name,
+                file_path=type_def.file_path,
+                line_number=type_def.line_number,
                 current_level=type_def.level,
                 recommended_level="investigate",
                 confidence=investigation_check["confidence"],
@@ -96,6 +98,8 @@ class TypeUpgradeAnalyzer:
         if upgrade_check["should_upgrade"]:
             return UpgradeRecommendation(
                 type_name=type_def.name,
+                file_path=type_def.file_path,
+                line_number=type_def.line_number,
                 current_level=type_def.level,
                 recommended_level="level2",
                 confidence=upgrade_check["confidence"],
@@ -124,6 +128,8 @@ class TypeUpgradeAnalyzer:
         if upgrade_check["should_upgrade"]:
             return UpgradeRecommendation(
                 type_name=type_def.name,
+                file_path=type_def.file_path,
+                line_number=type_def.line_number,
                 current_level=type_def.level,
                 recommended_level="level3",
                 confidence=upgrade_check["confidence"],
@@ -155,6 +161,8 @@ class TypeUpgradeAnalyzer:
             # target_levelがNoneの場合は調査推奨
             return UpgradeRecommendation(
                 type_name=type_def.name,
+                file_path=type_def.file_path,
+                line_number=type_def.line_number,
                 current_level=type_def.level,
                 recommended_level="investigate",
                 confidence=0.5,
@@ -180,6 +188,8 @@ class TypeUpgradeAnalyzer:
 
         return UpgradeRecommendation(
             type_name=type_def.name,
+            file_path=type_def.file_path,
+            line_number=type_def.line_number,
             current_level=current,
             recommended_level=target,
             confidence=1.0,  # docstring指定は確信度最大
@@ -343,6 +353,8 @@ class TypeUpgradeAnalyzer:
             priority = "medium" if confidence >= 0.7 else "low"
             return UpgradeRecommendation(
                 type_name=type_def.name,
+                file_path=type_def.file_path,
+                line_number=type_def.line_number,
                 current_level=type_def.level,
                 recommended_level="level1",
                 confidence=min(confidence, 1.0),
@@ -390,6 +402,8 @@ class TypeUpgradeAnalyzer:
             priority = "medium" if confidence >= 0.7 else "low"
             return UpgradeRecommendation(
                 type_name=type_def.name,
+                file_path=type_def.file_path,
+                line_number=type_def.line_number,
                 current_level=type_def.level,
                 recommended_level="level2",
                 confidence=min(confidence, 1.0),
