@@ -4,6 +4,7 @@
 すべての分析機能を統合し、型定義レベルとドキュメント品質の分析を実行します。
 """
 
+import ast
 from pathlib import Path
 
 from src.core.analyzer.docstring_analyzer import DocstringAnalyzer
@@ -289,21 +290,54 @@ class TypeLevelAnalyzer:
     ) -> dict[str, int]:
         """型の使用回数をカウント
 
-        現在の実装では、正確な参照解析を行わず、すべての型に最小使用回数（1）を割り当てます。
-        これにより、型が「未使用」と誤判定されることを防ぎます。
-
-        将来的には、AST解析やmypyの型情報を活用して、実際の参照箇所をカウントする
-        実装に置き換えることが望ましいです。
+        AST解析を使用して、実際の型参照箇所をカウントします。
+        - 関数の引数・戻り値の型アノテーション
+        - 変数の型アノテーション
+        - Annotated, BaseModelのフィールド型
+        などを参照としてカウントします。
 
         Args:
             type_definitions: 型定義リスト
 
         Returns:
-            型名 -> 使用回数の辞書（すべての型に最小値1を設定）
+            型名 -> 使用回数の辞書
         """
-        # すべての型に最小使用回数（1）を設定
-        # これにより、「未使用」と誤判定されることを防ぐ
-        usage_counts = {td.name: 1 for td in type_definitions}
+        import ast
+
+        # 型名の集合を作成
+        type_names = {td.name for td in type_definitions}
+
+        # ファイルパスごとにグループ化
+        files_to_analyze: dict[str, list[str]] = {}
+        for td in type_definitions:
+            if td.file_path not in files_to_analyze:
+                files_to_analyze[td.file_path] = []
+            # 対象の型名を記録（重複を避ける）
+            if td.name not in files_to_analyze[td.file_path]:
+                files_to_analyze[td.file_path].append(td.name)
+
+        # 使用回数を初期化（定義のみの場合は0）
+        usage_counts: dict[str, int] = {name: 0 for name in type_names}
+
+        # 各ファイルをAST解析して参照をカウント
+        for file_path_str in files_to_analyze:
+            file_path = Path(file_path_str)
+            try:
+                with open(file_path, encoding="utf-8") as f:
+                    source_code = f.read()
+                tree = ast.parse(source_code)
+
+                # 型参照をカウント
+                visitor = _TypeReferenceCounter(type_names)
+                visitor.visit(tree)
+
+                # カウント結果をマージ
+                for type_name, count in visitor.reference_counts.items():
+                    usage_counts[type_name] += count
+
+            except (SyntaxError, FileNotFoundError):
+                # パースエラーやファイルが見つからない場合は無視
+                pass
 
         return usage_counts
 
@@ -357,3 +391,112 @@ class TypeLevelAnalyzer:
                 unique_recs.append(rec)
 
         return unique_recs
+
+
+class _TypeReferenceCounter(ast.NodeVisitor):
+    """型参照をカウントするAST Visitor
+
+    関数の引数・戻り値、変数アノテーション、クラスフィールドなどで
+    使用される型名をカウントします。
+    """
+
+    def __init__(self, type_names: set[str]):
+        """初期化
+
+        Args:
+            type_names: カウント対象の型名の集合
+        """
+        import ast
+
+        self.type_names = type_names
+        self.reference_counts: dict[str, int] = {name: 0 for name in type_names}
+        self.ast = ast
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """関数定義を訪問（引数・戻り値の型アノテーション）"""
+        # 引数の型アノテーション
+        for arg in node.args.args:
+            if arg.annotation:
+                self._count_annotation(arg.annotation)
+
+        # 戻り値の型アノテーション
+        if node.returns:
+            self._count_annotation(node.returns)
+
+        # 子ノードを訪問
+        self.generic_visit(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """非同期関数定義を訪問"""
+        # FunctionDefと同様の処理
+        for arg in node.args.args:
+            if arg.annotation:
+                self._count_annotation(arg.annotation)
+
+        if node.returns:
+            self._count_annotation(node.returns)
+
+        self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        """変数の型アノテーション付き代入を訪問"""
+        if node.annotation:
+            self._count_annotation(node.annotation)
+
+        self.generic_visit(node)
+
+    def _count_annotation(self, annotation: ast.expr) -> None:
+        """型アノテーションから型名を抽出してカウント
+
+        Args:
+            annotation: 型アノテーションのASTノード
+        """
+        # Name ノード (例: UserId)
+        if isinstance(annotation, self.ast.Name):
+            if annotation.id in self.type_names:
+                self.reference_counts[annotation.id] += 1
+
+        # Subscript ノード (例: list[UserId], Annotated[str, ...])
+        elif isinstance(annotation, self.ast.Subscript):
+            # ベース型をチェック (例: list, Annotated)
+            if isinstance(annotation.value, self.ast.Name):
+                if annotation.value.id in self.type_names:
+                    self.reference_counts[annotation.value.id] += 1
+
+            # インデックス部分を再帰的にチェック
+            self._count_annotation_recursive(annotation.slice)
+
+        # その他の複雑な型 (Union, Tuple など)
+        else:
+            self._count_annotation_recursive(annotation)
+
+    def _count_annotation_recursive(self, node: ast.expr) -> None:
+        """型アノテーション内を再帰的に走査
+
+        Args:
+            node: 走査対象のASTノード
+        """
+        if isinstance(node, self.ast.Name):
+            if node.id in self.type_names:
+                self.reference_counts[node.id] += 1
+
+        elif isinstance(node, self.ast.Subscript):
+            if isinstance(node.value, self.ast.Name):
+                if node.value.id in self.type_names:
+                    self.reference_counts[node.value.id] += 1
+            self._count_annotation_recursive(node.slice)
+
+        elif isinstance(node, self.ast.Tuple):
+            for elt in node.elts:
+                self._count_annotation_recursive(elt)
+
+        elif isinstance(node, self.ast.List):
+            for elt in node.elts:
+                self._count_annotation_recursive(elt)
+
+        # BinOp (例: int | str の Union型)
+        elif isinstance(node, self.ast.BinOp):
+            self._count_annotation_recursive(node.left)
+            self._count_annotation_recursive(node.right)
+
+        # Constant, Attribute などは型名ではないのでスキップ
