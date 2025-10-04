@@ -8,6 +8,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+from src.core.analyzer.docstring_analyzer import DocstringAnalyzer
 from src.core.analyzer.type_level_models import (
     DocumentationStatistics,
     TypeDefinition,
@@ -17,6 +18,10 @@ from src.core.analyzer.type_level_models import (
 
 class TypeStatisticsCalculator:
     """型定義の統計情報を計算するクラス"""
+
+    def __init__(self) -> None:
+        """初期化"""
+        self.docstring_analyzer = DocstringAnalyzer()
 
     def calculate(self, type_definitions: list[TypeDefinition]) -> TypeStatistics:
         """統計情報を計算
@@ -172,13 +177,18 @@ class TypeStatisticsCalculator:
         # レベル別のdocstring統計
         by_level = self._calculate_documentation_by_level(type_definitions)
 
-        # フォーマット別のdocstring数（現時点では未実装）
+        # フォーマット別のdocstring数を計算
         by_format: dict[str, int] = {
             "google": 0,
             "numpy": 0,
             "restructured": 0,
             "unknown": 0,
         }
+        for td in type_definitions:
+            if not td.has_docstring or not td.docstring:
+                continue
+            detail = self.docstring_analyzer.analyze_docstring(td.docstring)
+            by_format[detail.format_style] += 1
 
         return DocumentationStatistics(
             total_types=total_types,
