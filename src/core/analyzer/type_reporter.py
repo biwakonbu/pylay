@@ -5,6 +5,8 @@
 Richライブラリを使用して、美しいCLI出力を実現します。
 """
 
+from __future__ import annotations
+
 import json
 
 from rich.box import SIMPLE
@@ -227,7 +229,7 @@ class TypeReporter:
     # Richベースのフォーマットヘルパー
     # ========================================
 
-    def _create_statistics_table(self, statistics: "TypeStatistics") -> Table:
+    def _create_statistics_table(self, statistics: TypeStatistics) -> Table:
         """統計情報をRich Tableで作成"""
         table = Table(
             title="型定義レベル統計",
@@ -346,7 +348,7 @@ class TypeReporter:
         self.console.print(table)
 
     def _create_documentation_quality_table(
-        self, doc_stats: "DocumentationStatistics"
+        self, doc_stats: DocumentationStatistics
     ) -> Table:
         """ドキュメント品質をRich Tableで作成"""
         table = Table(show_header=True, width=80, header_style="", box=SIMPLE)
@@ -384,7 +386,7 @@ class TypeReporter:
 
         return table
 
-    def _create_code_quality_table(self, statistics: "TypeStatistics") -> Table:
+    def _create_code_quality_table(self, statistics: TypeStatistics) -> Table:
         """コード品質統計をRich Tableで作成"""
         table = Table(show_header=True, width=80, header_style="", box=SIMPLE)
 
@@ -489,7 +491,7 @@ class TypeReporter:
     # 旧フォーマットヘルパー（後方互換性のため保持）
     # ========================================
 
-    def _format_statistics_table(self, statistics: "TypeStatistics") -> str:
+    def _format_statistics_table(self, statistics: TypeStatistics) -> str:
         """統計情報をテーブル形式でフォーマット"""
         lines = []
         lines.append("┌─────────────────────────┬───────┬─────────┐")
@@ -514,7 +516,7 @@ class TypeReporter:
         lines.append("└─────────────────────────┴───────┴─────────┘")
         return "\n".join(lines)
 
-    def _format_code_quality_statistics(self, statistics: "TypeStatistics") -> str:
+    def _format_code_quality_statistics(self, statistics: TypeStatistics) -> str:
         """コード品質統計をフォーマット"""
         lines = []
         lines.append("┌─────────────────────────────────┬───────┬─────────┬──────┐")
@@ -576,9 +578,7 @@ class TypeReporter:
 
         return "\n".join(lines)
 
-    def _format_documentation_quality(
-        self, doc_stats: "DocumentationStatistics"
-    ) -> str:
+    def _format_documentation_quality(self, doc_stats: DocumentationStatistics) -> str:
         """ドキュメント品質をフォーマット"""
         lines = []
         lines.append("┌─────────────────────────┬───────┬─────────┐")
@@ -673,7 +673,7 @@ class TypeReporter:
         lines.append("")  # 空行
         return "\n".join(lines)
 
-    def _format_statistics_markdown(self, statistics: "TypeStatistics") -> str:
+    def _format_statistics_markdown(self, statistics: TypeStatistics) -> str:
         """統計情報をMarkdown形式でフォーマット"""
         lines = []
         lines.append("| レベル | 件数 | 比率 |")
@@ -694,7 +694,7 @@ class TypeReporter:
         return "\n".join(lines)
 
     def _format_documentation_quality_markdown(
-        self, doc_stats: "DocumentationStatistics"
+        self, doc_stats: DocumentationStatistics
     ) -> str:
         """ドキュメント品質をMarkdown形式でフォーマット"""
         lines = []
@@ -706,7 +706,7 @@ class TypeReporter:
         return "\n".join(lines)
 
     def _format_code_quality_statistics_markdown(
-        self, statistics: "TypeStatistics"
+        self, statistics: TypeStatistics
     ) -> str:
         """コード品質統計をMarkdown形式でフォーマット"""
         lines = []
