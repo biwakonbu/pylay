@@ -43,11 +43,13 @@ class TypeReporter:
             "level2_min": 0.40,  # Level 2は40%以上が望ましい
             "level3_min": 0.15,  # Level 3は15%以上が望ましい
         }
-        # ドキュメント品質閾値
+        # ドキュメント品質閾値（threshold_ratiosから取得、なければデフォルト値）
         self.doc_thresholds = {
-            "implementation_rate": 0.8,  # 実装率は80%以上が望ましい
-            "detail_rate": 0.5,  # 詳細度は50%以上が望ましい
-            "quality_score": 0.6,  # 総合品質スコアは60%以上が望ましい
+            "implementation_rate": self.threshold_ratios.get(
+                "implementation_rate", 0.8
+            ),
+            "detail_rate": self.threshold_ratios.get("detail_rate", 0.5),
+            "quality_score": self.threshold_ratios.get("quality_score", 0.6),
         }
         self.console = Console()
 
