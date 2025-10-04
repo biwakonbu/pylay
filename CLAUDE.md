@@ -9,13 +9,31 @@
 - 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](AGENTS.md) に記載された方法を使用してください
 - コーディング規約、命名規則、テスト指針は [AGENTS.md](AGENTS.md) に厳密に従ってください
 - **型定義ルール**: [docs/typing-rule.md](docs/typing-rule.md) に記載された型定義の4つの核心原則を必ず遵守してください
-  1. primitive型を直接使わず、ドメイン型を定義（`type UserId = str` や `Annotated` を活用）
+  1. **個別型をちゃんと定義し、primitive型を直接使わない**
+     - `str`, `int` などをそのまま使わず、ドメイン型を定義（`type UserId = str` や `Annotated` を活用）
+     - **プロジェクトの設計思想**: 型を軸にした依存関係の洗い出しと、丁寧な型付けによる設計からの自動実装を目指す
+     - **低レベル放置を好ましくないとする**: Level 1（単純な型エイリアス）の状態で放置されていることは推奨されない
+       - Level 1は一時的な状態であり、適切な制約（Level 2）やビジネスロジック（Level 3）への昇格を検討すべき
+       - 型定義レベルの適切性は状況に応じて自動判断可能（Level 3 ↔ Level 2）
+       - Level 1やその他への判断はdocstringで制御可能（`@target-level: level1`, `@keep-as-is: true`）
+     - **被参照0の型の扱い**: なぜ使われていないか調査し、適切なレベルへの昇格を検討する
+       - 実装途中の可能性 → Level 2/3への昇格を推奨
+       - 認知不足で既存のprimitive型使用箇所が置き換えられていない → 使用箇所を置き換え
+       - 将来の拡張性を考えた設計意図 → docstringで設計意図を明記し、`@keep-as-is: true`で現状維持を宣言
   2. Pydanticによる厳密な型定義（3つのレベルを適切に使い分ける）
      - Level 1: `type` エイリアス（制約なし）
      - Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
      - Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
   3. typing モジュールは最小限に（Python 3.13標準を優先）
   4. 型と実装を分離（types.py, protocols.py, models.py, services.py）
+     - **設計思想**: Djangoのアプリケーション構造のように、各モジュールが独立したパッケージとして完結
+     - **各モジュール構造**: converters/, analyzer/, doc_generators/ は以下の4ファイル構造を目指す
+       - `types.py`: モジュール固有の型定義（Level 1/2を優先）
+       - `protocols.py`: Protocolインターフェース定義
+       - `models.py`: Pydanticモデル（Level 3: BaseModel）
+       - 実装ファイル（type_to_yaml.py等）: ビジネスロジック実装
+     - **依存関係の方向**: 実装 → models.py → types.py、実装 → protocols.py
+     - **schemas/の役割**: 複数モジュールで共有される共通型のみ配置
 - セキュリティ考慮事項、環境変数設定は [AGENTS.md](AGENTS.md) に記載されたポリシーを遵守してください
 - プロジェクトステータス（実装済み/開発予定）を確認し、未実装の機能に対しては「未実装/計画中」と明記してください
 - シェルコマンド実行の制限事項（単一コマンドの実行、環境変数の設定制限）を厳守してください
@@ -55,7 +73,7 @@
 
 ## 2. アーキテクチャ
 
-### 2.1 ディレクトリ構造
+### 2.1 ディレクトリ構造（現状）
 ```
 pylay/
 ├── src/                    # ソースコード
@@ -66,22 +84,41 @@ pylay/
 │   │       ├── type_to_yaml.py   # 型→YAML変換コマンド
 │   │       └── yaml_to_type.py   # YAML→型変換コマンド
 │   ├── core/              # コア機能
-│   │   ├── converters/    # 型変換機能
+│   │   ├── converters/    # 型変換機能（★types.py未作成）
 │   │   │   ├── type_to_yaml.py   # Python型 → YAML変換
 │   │   │   ├── yaml_to_type.py   # YAML → Python型変換
-│   │   │   └── infer_types.py    # 型推論機能
-│   │   ├── doc_generators/ # ドキュメント生成
+│   │   │   ├── extract_deps.py   # 依存関係抽出
+│   │   │   ├── mypy_type_extractor.py  # mypy型抽出
+│   │   │   └── ast_dependency_extractor.py  # AST依存抽出
+│   │   ├── analyzer/      # 型解析（★types.py未作成、protocols.py/models.pyは存在）
+│   │   │   ├── protocols.py      # Protocolインターフェース
+│   │   │   ├── models.py         # ドメインモデル
+│   │   │   ├── base.py           # 基底クラス
+│   │   │   ├── type_inferrer.py  # 型推論エンジン
+│   │   │   ├── dependency_extractor.py  # 依存抽出
+│   │   │   ├── type_classifier.py  # 型分類
+│   │   │   ├── type_level_analyzer.py  # 型レベル解析
+│   │   │   ├── docstring_analyzer.py  # docstring解析
+│   │   │   └── ... (その他解析関連ファイル)
+│   │   ├── doc_generators/ # ドキュメント生成（★types.py未作成）
 │   │   │   ├── base.py           # 基底クラス
 │   │   │   ├── config.py         # 設定管理
 │   │   │   ├── filesystem.py     # ファイルシステム操作
 │   │   │   ├── markdown_builder.py # Markdown生成
 │   │   │   ├── type_doc_generator.py  # 型ドキュメント生成
 │   │   │   ├── yaml_doc_generator.py  # YAMLドキュメント生成
-│   │   │   └── test_catalog_generator.py # テストカタログ生成
-│   │   ├── schemas/       # 型定義
-│   │   │   ├── yaml_type_spec.py  # YAML型仕様のPydanticモデル
-│   │   │   └── graph_types.py     # グラフ型定義
-│   │   └── extract_deps.py # 依存関係抽出
+│   │   │   ├── graph_doc_generator.py # グラフドキュメント生成
+│   │   │   ├── test_catalog_generator.py # テストカタログ生成
+│   │   │   └── type_inspector.py  # 型インスペクタ
+│   │   ├── schemas/       # 共通型定義（複数モジュールで共有）
+│   │   │   ├── types.py          # 共通ドメイン型
+│   │   │   ├── graph.py          # グラフ型定義
+│   │   │   ├── yaml_spec.py      # YAML型仕様のPydanticモデル
+│   │   │   ├── pylay_config.py   # プロジェクト設定型
+│   │   │   └── type_index.py     # 型インデックス
+│   │   ├── utils/         # ユーティリティ
+│   │   ├── output_manager.py  # 出力管理
+│   │   └── project_scanner.py # プロジェクトスキャナ
 │   ├── tui/               # テキストユーザーインターフェース
 │   │   ├── main.py        # TUIメインモジュール
 │   │   ├── views/         # ビューモジュール
@@ -89,10 +126,12 @@ pylay/
 │   └── infer_deps.py      # 型推論エントリーポイント
 ├── tests/                 # テストコード
 ├── docs/                  # 生成されたドキュメント
+│   └── typing-rule.md     # 型定義ルール（★必読）
 ├── scripts/               # ユーティリティスクリプト
 ├── utils/                 # 補助ツール
 ├── examples/              # 使用例
-├── AGENTS.md              # 開発ガイドライン
+├── AGENTS.md              # 開発ガイドライン（本ファイル）
+├── CLAUDE.md              # Claude Code向けガイドライン
 ├── PRD.md                 # 製品要件定義
 ├── README.md              # プロジェクト説明
 ├── Makefile               # 開発コマンド
@@ -101,6 +140,8 @@ pylay/
 ├── pyrightconfig.json     # Pyright設定
 └── uv.lock               # uv依存関係ロックファイル
 ```
+
+**注**: ★マークは、issue #18で推奨されている構造に未対応の箇所を示します。
 
 ### 2.2 主要コンポーネント
 - **cli/**: コマンドラインインターフェース
@@ -213,8 +254,9 @@ Makefile は開発コマンドを統一的に管理するためのツールで�
 - **make lint**: Ruffでコードをチェックし、修正可能な問題を自動修正します。
   使用例: `make lint`
 
-- **make type-check**: mypyで型チェックを実行します。
+- **make type-check**: mypy + Pyrightで型チェックを実行します（一括実行、推奨）。
   使用例: `make type-check`
+  **重要**: 個別実行（mypy単独、pyright単独）は不要です。常にこのコマンドを使用してください。
 
 - **make test**: pytestでテストを実行し、カバレッジレポートを生成します。
   使用例: `make test`
@@ -225,7 +267,7 @@ Makefile は開発コマンドを統一的に管理するためのツールで�
 - **make coverage**: カバレッジレポートを表示します。
   使用例: `make coverage`
 
-- **make quality-check**: 型チェックとリンターを一括実行します。
+- **make quality-check**: 型チェック + リンターを一括実行します。
   使用例: `make quality-check`
 
 - **make analyze**: pyproject.toml の設定に基づいてプロジェクト全体の型解析とドキュメント生成を実行します。target_dirs で指定されたディレクトリをスキャンし、型情報をYAMLにエクスポート、依存関係を抽出、Markdownドキュメントを生成します。出力は docs/pylay-types/ に documents/ と src/ 等の階層構造で整理されます。

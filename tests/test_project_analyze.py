@@ -128,7 +128,7 @@ max_depth = 5
 
                 assert result.exit_code == 0
                 assert "プロジェクト解析開始" in result.output
-                assert "解析完了" in result.output
+                assert "プロジェクト解析が完了しました" in result.output
 
                 # 生成ファイルの確認
                 output_dir = temp_path / "generated_docs"
@@ -360,7 +360,7 @@ extract_deps = true
                 # 結果の検証
                 assert result.exit_code == 0
                 assert "プロジェクト解析開始" in result.output
-                assert "解析完了" in result.output
+                assert "プロジェクト解析が完了しました" in result.output
 
                 # 生成ファイルの確認（出力ディレクトリが作成される）
                 docs_dir = temp_path / "docs"
