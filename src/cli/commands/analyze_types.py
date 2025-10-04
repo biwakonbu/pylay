@@ -301,88 +301,105 @@ def _export_details_to_yaml(
     """
     from src.core.analyzer.code_locator import CodeLocator
 
-    # CodeLocatorで詳細情報を収集
-    code_locator = CodeLocator([Path(d) for d in target_dirs])
+    try:
+        # CodeLocatorで詳細情報を収集
+        code_locator = CodeLocator([Path(d) for d in target_dirs])
 
-    problem_details = {
-        "problem_details": {
-            "primitive_usage": [
-                {
-                    "file": str(detail.location.file),
-                    "line": detail.location.line,
-                    "column": detail.location.column,
-                    "type": detail.kind,
-                    "primitive_type": detail.primitive_type,
-                    "function_name": detail.function_name,
-                    "class_name": detail.class_name,
-                    "context": {
-                        "before": detail.location.context_before,
-                        "code": detail.location.code,
-                        "after": detail.location.context_after,
-                    },
-                    "suggestion": (
-                        f"primitive型 '{detail.primitive_type}' を使用しています。"
-                        "ドメイン型への移行を検討してください。"
-                    ),
-                }
-                for detail in code_locator.find_primitive_usages()
-            ],
-            "level1_types": [
-                {
-                    "type_name": detail.type_name,
-                    "definition": detail.definition,
-                    "file": str(detail.location.file),
-                    "line": detail.location.line,
-                    "usage_count": detail.usage_count,
-                    "docstring": detail.docstring,
-                    "usage_examples": [
-                        {
-                            "file": str(ex.location.file),
-                            "line": ex.location.line,
-                            "context": ex.context,
-                            "kind": ex.kind,
-                        }
-                        for ex in detail.usage_examples
-                    ],
-                    "recommendation": detail.recommendation,
-                }
-                for detail in code_locator.find_level1_types(report.type_definitions)
-            ],
-            "unused_types": [
-                {
-                    "type_name": detail.type_name,
-                    "definition": detail.definition,
-                    "file": str(detail.location.file),
-                    "line": detail.location.line,
-                    "level": detail.level,
-                    "docstring": detail.docstring,
-                    "reason": detail.reason,
-                    "recommendation": detail.recommendation,
-                }
-                for detail in code_locator.find_unused_types(report.type_definitions)
-            ],
-            "deprecated_typing": [
-                {
-                    "file": str(detail.location.file),
-                    "line": detail.location.line,
-                    "imports": detail.imports,
-                    "context": {
-                        "code": detail.location.code,
-                    },
-                    "suggestion": detail.suggestion,
-                }
-                for detail in code_locator.find_deprecated_typing()
-            ],
+        problem_details = {
+            "problem_details": {
+                "primitive_usage": [
+                    {
+                        "file": str(detail.location.file),
+                        "line": detail.location.line,
+                        "column": detail.location.column,
+                        "type": detail.kind,
+                        "primitive_type": detail.primitive_type,
+                        "function_name": detail.function_name,
+                        "class_name": detail.class_name,
+                        "context": {
+                            "before": detail.location.context_before,
+                            "code": detail.location.code,
+                            "after": detail.location.context_after,
+                        },
+                        "suggestion": (
+                            f"primitive型 '{detail.primitive_type}' を使用しています。"
+                            "ドメイン型への移行を検討してください。"
+                        ),
+                    }
+                    for detail in code_locator.find_primitive_usages()
+                ],
+                "level1_types": [
+                    {
+                        "type_name": detail.type_name,
+                        "definition": detail.definition,
+                        "file": str(detail.location.file),
+                        "line": detail.location.line,
+                        "usage_count": detail.usage_count,
+                        "docstring": detail.docstring,
+                        "usage_examples": [
+                            {
+                                "file": str(ex.location.file),
+                                "line": ex.location.line,
+                                "context": ex.context,
+                                "kind": ex.kind,
+                            }
+                            for ex in detail.usage_examples
+                        ],
+                        "recommendation": detail.recommendation,
+                    }
+                    for detail in code_locator.find_level1_types(
+                        report.type_definitions
+                    )
+                ],
+                "unused_types": [
+                    {
+                        "type_name": detail.type_name,
+                        "definition": detail.definition,
+                        "file": str(detail.location.file),
+                        "line": detail.location.line,
+                        "level": detail.level,
+                        "docstring": detail.docstring,
+                        "reason": detail.reason,
+                        "recommendation": detail.recommendation,
+                    }
+                    for detail in code_locator.find_unused_types(
+                        report.type_definitions
+                    )
+                ],
+                "deprecated_typing": [
+                    {
+                        "file": str(detail.location.file),
+                        "line": detail.location.line,
+                        "imports": detail.imports,
+                        "context": {
+                            "code": detail.location.code,
+                        },
+                        "suggestion": detail.suggestion,
+                    }
+                    for detail in code_locator.find_deprecated_typing()
+                ],
+            }
         }
-    }
 
-    # YAMLファイルに書き込み
-    with open(output_path, "w", encoding="utf-8") as f:
-        yaml.dump(
-            problem_details, f, allow_unicode=True, indent=2, default_flow_style=False
+        # YAMLファイルに書き込み
+        with open(output_path, "w", encoding="utf-8") as f:
+            yaml.dump(
+                problem_details,
+                f,
+                allow_unicode=True,
+                indent=2,
+                default_flow_style=False,
+            )
+
+        console.print(
+            f"[bold green]✅ 問題詳細をYAMLファイルにエクスポートしました: "
+            f"{output_path}[/bold green]"
         )
-
-    console.print(
-        f"[bold green]✅ 問題詳細をYAMLファイルにエクスポートしました: "
-        f"{output_path}[/bold green]"
-    )
+    except OSError as e:
+        console.print(
+            f"[bold red]エラー: YAMLファイルの書き込みに失敗しました: {e}[/bold red]"
+        )
+    except yaml.YAMLError as e:
+        console.print(
+            f"[bold red]エラー: YAMLシリアライゼーションに失敗しました: {e}[/bold red]"
+        )
