@@ -4,8 +4,9 @@
 指定されたファイルに対して基本的なコードレビューを実行します。
 """
 
-import click
 from pathlib import Path
+
+import click
 from rich.console import Console
 
 from ...core.review.providers.claudecode import create_claude_review_provider
@@ -15,9 +16,7 @@ console = Console()
 
 @click.command("review")
 @click.argument("target", type=click.Path(exists=True))
-@click.option(
-    "--verbose", "-v", is_flag=True, help="詳細なログを出力"
-)
+@click.option("--verbose", "-v", is_flag=True, help="詳細なログを出力")
 def review(target: str, verbose: bool) -> None:
     """
     指定されたファイルに対してコードレビューを実行します。
@@ -49,6 +48,7 @@ def review(target: str, verbose: bool) -> None:
         console.print(f"[red]レビュー中にエラーが発生しました: {e}[/red]")
         if verbose:
             import traceback
+
             console.print(traceback.format_exc())
 
 
@@ -68,7 +68,7 @@ def _display_results(comments: list, verbose: bool) -> None:
             "error": "red",
             "warning": "yellow",
             "info": "blue",
-            "suggestion": "cyan"
+            "suggestion": "cyan",
         }.get(comment.severity, "white")
 
         console.print(
