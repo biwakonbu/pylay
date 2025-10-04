@@ -37,6 +37,10 @@ class TypeReporter:
                 - implementation_rate: ドキュメント実装率の下限
                 - detail_rate: ドキュメント詳細度の下限
                 - quality_score: ドキュメント総合品質スコアの下限
+
+        Note:
+            上記以外のキーが含まれている場合は無視されます。
+            これは前方互換性を保つための仕様です。
         """
         base_type_thresholds = {
             "level1_max": 0.20,  # Level 1は20%以下が望ましい
@@ -492,12 +496,23 @@ class TypeReporter:
         """推奨事項のテキストを見やすく整形
 
         長い文章を句点で分割し、インデントを付けて整形する
+
+        Args:
+            text: 整形対象のテキスト
+
+        Returns:
+            整形済みのテキスト（複数文の場合は改行とインデント付き）
         """
         # 「。」で文を分割（空文字列を除外）
         sentences = [s.strip() for s in text.split("。") if s.strip()]
-        if len(sentences) <= 1:
+
+        # 単一文または空の場合
+        if not sentences:
+            return text
+        if len(sentences) == 1:
             return text if text.endswith("。") else text + "。"
 
+        # 複数文の場合は整形
         result = []
         for i, sentence in enumerate(sentences):
             if i == 0:
