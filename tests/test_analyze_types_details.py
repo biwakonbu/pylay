@@ -48,7 +48,36 @@ class TestAnalyzeTypesDetails:
         assert args[0] == mock_analyzer  # analyzer
         assert args[1] == mock_report  # report
         assert args[4] is True  # show_details
-        assert args[5] == ["src"]  # target_dirs
+        assert args[5] is True  # show_stats (デフォルトTrue)
+        assert args[6] == ["src"]  # target_dirs
+
+    @patch("src.cli.commands.analyze_types._output_console_report")
+    def test_no_stats_option(self, mock_output_console, mock_analyzer_class):
+        """--no-statsオプションのテスト"""
+        # モックアナライザーの設定
+        mock_analyzer = Mock()
+        mock_analyzer_class.return_value = mock_analyzer
+
+        # モックレポートの設定
+        mock_report = Mock(spec=TypeAnalysisReport)
+        mock_report.statistics = Mock(spec=TypeStatistics)
+        mock_report.type_definitions = []
+        mock_analyzer.analyze_directory.return_value = mock_report
+
+        # CLI実行
+        result = self.runner.invoke(analyze_types, ["src", "--no-stats"])
+
+        # コマンドが正常終了することを確認
+        assert result.exit_code == 0
+
+        # _output_console_reportが正しい引数で呼ばれていることを確認
+        mock_output_console.assert_called_once()
+        args = mock_output_console.call_args[0]
+        assert args[0] == mock_analyzer  # analyzer
+        assert args[1] == mock_report  # report
+        assert args[4] is False  # show_details (デフォルトFalse)
+        assert args[5] is False  # show_stats (False)
+        assert args[6] == ["src"]  # target_dirs
 
     def test_export_details_yaml_structure(self):
         """YAMLエクスポートの構造テスト"""
@@ -173,14 +202,16 @@ class TestConsoleReportDetails:
         mock_report = Mock()
 
         # テスト実行
-        _output_console_report(mock_analyzer, mock_report, False, False, True, ["src"])
+        _output_console_report(
+            mock_analyzer, mock_report, False, False, True, True, ["src"]
+        )
 
         # TypeReporterが正しい引数で初期化されていることを確認
         mock_reporter_class.assert_called_once_with(target_dirs=[Path("src")])
 
         # generate_detailed_reportが呼ばれていることを確認
         mock_reporter.generate_detailed_report.assert_called_once_with(
-            mock_report, True
+            mock_report, True, True
         )
 
     @patch("src.core.analyzer.type_reporter.TypeReporter")
@@ -197,9 +228,11 @@ class TestConsoleReportDetails:
         mock_report = Mock()
 
         # テスト実行（show_details=False）
-        _output_console_report(mock_analyzer, mock_report, False, False, False, ["src"])
+        _output_console_report(
+            mock_analyzer, mock_report, False, False, False, True, ["src"]
+        )
 
         # generate_detailed_reportがFalseで呼ばれていることを確認
         mock_reporter.generate_detailed_report.assert_called_once_with(
-            mock_report, False
+            mock_report, False, True
         )

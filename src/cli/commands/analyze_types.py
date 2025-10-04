@@ -67,6 +67,11 @@ console = Console()
     default=None,
     help="問題詳細をYAMLファイルにエクスポート（指定したパスに保存）",
 )
+@click.option(
+    "--show-stats/--no-stats",
+    default=True,
+    help="型レベル統計情報を表示するかどうか（デフォルト: 表示）",
+)
 def analyze_types(
     target: str | None,
     format: str,
@@ -76,6 +81,7 @@ def analyze_types(
     all_recommendations: bool,
     show_details: bool,
     export_details: str | None,
+    show_stats: bool,
 ) -> None:
     """
     型定義レベルとドキュメント品質を分析します。
@@ -129,6 +135,7 @@ def analyze_types(
             recommendations,
             docstring_recommendations,
             show_details,
+            show_stats,
             target_dirs,
         )
     elif format == "markdown":
@@ -159,6 +166,7 @@ def _output_console_report(
     show_upgrade_recs: bool,
     show_docstring_recs: bool,
     show_details: bool,
+    show_stats: bool,
     target_dirs: list[str],
 ) -> None:
     """コンソールにレポートを出力
@@ -177,7 +185,7 @@ def _output_console_report(
     reporter = TypeReporter(target_dirs=target_dirs)
 
     # 詳細レポートを生成
-    reporter.generate_detailed_report(report, show_details)
+    reporter.generate_detailed_report(report, show_details, show_stats)
 
 
 def _output_markdown_report(

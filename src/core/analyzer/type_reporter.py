@@ -76,7 +76,9 @@ class TypeReporter:
         self.target_dirs = [Path(d) for d in (target_dirs or ["."])]
         self.code_locator = CodeLocator(self.target_dirs)
 
-    def generate_console_report(self, report: TypeAnalysisReport) -> None:
+    def generate_console_report(
+        self, report: TypeAnalysisReport, show_stats: bool = True
+    ) -> None:
         """コンソール用レポートを生成して直接表示
 
         Args:
@@ -90,8 +92,8 @@ class TypeReporter:
         self.console.rule("[bold cyan]型定義レベル分析レポート[/bold cyan]")
         self.console.print()
 
-        # 統計情報（必須フィールド、常に表示）
-        if report.statistics:
+        # 統計情報（オプションで表示制御）
+        if show_stats and report.statistics:
             self.console.print(self._create_statistics_table(report.statistics))
             self.console.print()
 
@@ -812,7 +814,10 @@ class TypeReporter:
         return "\n".join(lines)
 
     def generate_detailed_report(
-        self, report: TypeAnalysisReport, show_details: bool = False
+        self,
+        report: TypeAnalysisReport,
+        show_details: bool = False,
+        show_stats: bool = True,
     ) -> None:
         """詳細レポートをコンソールに出力
 
@@ -822,11 +827,11 @@ class TypeReporter:
         """
         if not show_details:
             # 通常のレポートのみ出力
-            self.generate_console_report(report)
+            self.generate_console_report(report, show_stats)
             return
 
         # 基本レポート
-        self.generate_console_report(report)
+        self.generate_console_report(report, show_stats)
 
         # 詳細情報の収集
         primitive_details = self.code_locator.find_primitive_usages()
