@@ -128,14 +128,16 @@ class DocumentationStatistics(BaseModel):
     このクラスは、プロジェクト全体のドキュメント統計を保持します。
     """
 
-    total_types: PositiveInt = Field(description="型定義の総数")
-    documented_types: PositiveInt = Field(description="docstringが存在する型の数")
-    undocumented_types: PositiveInt = Field(description="docstringが存在しない型の数")
+    total_types: NonNegativeInt = Field(description="型定義の総数")
+    documented_types: NonNegativeInt = Field(description="docstringが存在する型の数")
+    undocumented_types: NonNegativeInt = Field(
+        description="docstringが存在しない型の数"
+    )
     implementation_rate: Percentage = Field(description="実装率（0.0-1.0）")
-    minimal_docstrings: PositiveInt = Field(
+    minimal_docstrings: NonNegativeInt = Field(
         description="最低限のdocstring（1行のみ）の数"
     )
-    detailed_docstrings: PositiveInt = Field(description="詳細なdocstringの数")
+    detailed_docstrings: NonNegativeInt = Field(description="詳細なdocstringの数")
     detail_rate: Percentage = Field(description="詳細度率（0.0-1.0）")
     avg_docstring_lines: float = Field(description="平均docstring行数")
     quality_score: Percentage = Field(description="総合品質スコア（実装率 × 詳細度）")
