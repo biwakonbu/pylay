@@ -64,6 +64,9 @@ def run_type_to_yaml(
         # モジュール内の全型アノテーションを検索
         types_dict = {}
 
+        # モジュール内のアイテム数を取得
+        module_items = list(module.__dict__.items())
+
         # 型抽出中のプログレス表示
         with Progress(
             SpinnerColumn(),
@@ -73,9 +76,9 @@ def run_type_to_yaml(
             console=console,
             transient=True,
         ) as progress:
-            task = progress.add_task("型定義を検索中...", total=1)
+            task = progress.add_task("型定義を検索中...", total=len(module_items))
 
-            for name, obj in module.__dict__.items():
+            for name, obj in module_items:
                 # ユーザ定義クラスをフィルタリング:
                 # このモジュールで定義されたPydanticモデルまたはEnum
                 if isinstance(obj, type):
@@ -97,7 +100,7 @@ def run_type_to_yaml(
                             )
                             console.print(f"[dim]詳細: {e}[/dim]")
 
-            progress.advance(task)
+                progress.advance(task)
 
         if not types_dict:
             console.rule("[bold red]エラー[/bold red]")
