@@ -112,7 +112,7 @@ class DocstringDetail(BaseModel):
     has_returns: bool = Field(description="Returnsセクションが存在するか")
     has_examples: bool = Field(description="Examplesセクションが存在するか")
     format_style: FormatStyle = Field(description="docstringフォーマット")
-    line_count: PositiveInt = Field(description="docstringの行数")
+    line_count: NonNegativeInt = Field(description="docstringの行数")
     detail_score: Percentage = Field(description="詳細度スコア（0.0-1.0）")
 
     class Config:
