@@ -130,7 +130,7 @@ class YamlConverterProtocol(Protocol):
     @abstractmethod
     def generate_pydantic_model(
         self, spec: TypeSpec, model_name: str = "DynamicModel"
-    ) -> str:
+    ) -> CodeString:
         """
         TypeSpecからPydanticモデルコードを生成します。
 
