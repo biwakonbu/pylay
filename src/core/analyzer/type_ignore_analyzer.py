@@ -15,6 +15,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.types import FilePath, LineNumber
 
 # 優先度の型定義
@@ -106,6 +107,9 @@ class TypeIgnoreAnalyzer:
         """
         プロジェクト全体の type: ignore を分析
 
+        pyproject.toml の [tool.pylay] exclude_patterns 設定を使用して
+        不要なファイル（.venv, tests, __pycache__ 等）を除外します。
+
         Args:
             project_path: プロジェクトのルートパス
 
@@ -115,15 +119,109 @@ class TypeIgnoreAnalyzer:
         project_path = Path(project_path)
         all_issues = []
 
-        # Pythonファイルを再帰的に検索
+        # pyproject.tomlから除外パターンを読み込み
+        try:
+            config = PylayConfig.from_pyproject_toml(project_path)
+            exclude_patterns = config.exclude_patterns
+        except (FileNotFoundError, ValueError):
+            # pyproject.tomlが見つからない場合はデフォルトの除外パターンを使用
+            exclude_patterns = [
+                "**/tests/**",
+                "**/*_test.py",
+                "**/__pycache__/**",
+                "**/.venv/**",
+                "**/node_modules/**",
+                "**/dist/**",
+                "**/build/**",
+            ]
+
+        # Pythonファイルを再帰的に検索（除外パターンでフィルタリング）
+        analyzed_count = 0
+        excluded_count = 0
         for py_file in project_path.rglob("*.py"):
+            # 除外パターンに一致するかチェック
+            if self._should_exclude(py_file, project_path, exclude_patterns):
+                excluded_count += 1
+                continue
+
+            analyzed_count += 1
             try:
                 issues = self.analyze_file(py_file)
                 all_issues.extend(issues)
             except Exception as e:
                 print(f"警告: {py_file} の解析中にエラー: {e}")
 
+        import sys
+
+        print(
+            f"解析対象: {analyzed_count}ファイル, 除外: {excluded_count}ファイル",
+            file=sys.stderr,
+        )
+
         return all_issues
+
+    def _should_exclude(
+        self, file_path: Path, project_root: Path, patterns: list[str]
+    ) -> bool:
+        """
+        ファイルが除外パターンに一致するかチェック
+
+        Args:
+            file_path: チェック対象のファイルパス
+            project_root: プロジェクトルート
+            patterns: 除外パターンのリスト
+
+        Returns:
+            除外すべき場合True
+        """
+        try:
+            # プロジェクトルートからの相対パスを取得
+            rel_path = file_path.relative_to(project_root)
+        except ValueError:
+            # プロジェクト外のファイルは除外
+            return True
+
+        # POSIX形式のパス文字列に変換
+        rel_path_str = rel_path.as_posix()
+
+        # 各パターンに対してマッチングをチェック
+        import fnmatch
+
+        for pattern in patterns:
+            # パターンを簡易的に処理
+            if pattern.startswith("**/"):
+                # **/pattern のケース
+                suffix = pattern[3:]
+                if suffix.endswith("/**"):
+                    # **/tests/** -> tests/ を含むパス
+                    dir_name = suffix[:-3]
+                    if f"/{dir_name}/" in rel_path_str or rel_path_str.startswith(
+                        dir_name + "/"
+                    ):
+                        return True
+                elif "/" not in suffix:
+                    # **/__pycache__ -> __pycache__ をパスの一部として含む
+                    if (
+                        f"/{suffix}/" in rel_path_str
+                        or rel_path_str.startswith(suffix + "/")
+                        or rel_path_str == suffix
+                    ):
+                        return True
+                else:
+                    # **/*_test.py -> _test.py で終わるファイル
+                    if fnmatch.fnmatch(rel_path_str.split("/")[-1], suffix):
+                        return True
+            elif pattern.endswith("/**"):
+                # tests/** -> tests/ で始まるパス
+                prefix = pattern[:-3]
+                if rel_path_str.startswith(prefix + "/") or rel_path_str == prefix:
+                    return True
+            else:
+                # 通常のパターン（ワイルドカード含む）
+                if fnmatch.fnmatch(rel_path_str, pattern):
+                    return True
+
+        return False
 
     def generate_summary(self, issues: list[TypeIgnoreIssue]) -> TypeIgnoreSummary:
         """
@@ -193,24 +291,8 @@ class TypeIgnoreAnalyzer:
         errors = []
 
         # mypyを実行（uvが利用可能ならuv経由、なければ直接実行）
-        try:
-            # まずuvの存在確認
-            uv_result = subprocess.run(
-                ["uv", "--version"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-            )
-            if uv_result.returncode == 0:
-                # uvが存在する場合はuv経由で実行
-                cmd = ["uv", "run", "mypy", "--no-error-summary", str(file_path)]
-            else:
-                # uvが失敗した場合はmypyを直接実行
-                cmd = ["mypy", "--no-error-summary", str(file_path)]
-        except FileNotFoundError:
-            # uvコマンドが見つからない場合はmypyを直接実行
-            cmd = ["mypy", "--no-error-summary", str(file_path)]
-
+        # まずuv経由でmypyを実行
+        cmd = ["uv", "run", "mypy", "--no-error-summary", str(file_path)]
         try:
             result = subprocess.run(
                 cmd,
@@ -219,16 +301,27 @@ class TypeIgnoreAnalyzer:
                 timeout=30,
             )
             errors.extend(self._parse_mypy_output(result.stdout + result.stderr))
+        except FileNotFoundError:
+            # uvコマンドが見つからない場合はmypyを直接実行
+            cmd_fallback = ["mypy", "--no-error-summary", str(file_path)]
+            try:
+                result = subprocess.run(
+                    cmd_fallback,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                errors.extend(self._parse_mypy_output(result.stdout + result.stderr))
+            except FileNotFoundError:
+                # mypy自体が見つからない場合は警告を出す
+                import sys
+
+                print(
+                    "警告: mypyが見つかりません。型エラー情報を取得できません。",
+                    file=sys.stderr,
+                )
         except subprocess.TimeoutExpired:
             pass
-        except FileNotFoundError:
-            # mypy自体が見つからない場合は警告を出す
-            import sys
-
-            print(
-                "警告: mypyが見つかりません。型エラー情報を取得できません。",
-                file=sys.stderr,
-            )
 
         # キャッシュに保存
         self._type_error_cache[cache_key] = errors
