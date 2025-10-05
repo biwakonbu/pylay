@@ -260,10 +260,20 @@ class TypeIgnoreAnalyzer:
         # コードコンテキストを取得
         code_context = self._get_code_context(file_path, line_num)
 
-        # 該当行の型エラーを検索
-        matching_errors = [
-            err for err in type_errors if int(err.get("line", "0")) == line_num
-        ]
+        # 該当行の型エラーを検索（ファイルパスとseverity=errorも確認）
+        resolved_file_path = file_path.resolve()
+        matching_errors: list[dict[str, str]] = []
+        for err in type_errors:
+            if err.get("severity") != "error":
+                continue
+            err_file = err.get("file")
+            if not err_file:
+                continue
+            if Path(err_file).resolve() != resolved_file_path:
+                continue
+            if int(err.get("line", "0")) != line_num:
+                continue
+            matching_errors.append(err)
 
         # 原因と詳細を特定
         if matching_errors:
