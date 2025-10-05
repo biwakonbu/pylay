@@ -9,6 +9,14 @@ from pathlib import Path
 import click
 import yaml
 from rich.console import Console
+from rich.panel import Panel
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
 
 from src.core.analyzer.type_level_analyzer import TypeLevelAnalyzer
 from src.core.analyzer.type_level_models import TypeAnalysisReport
@@ -105,8 +113,21 @@ def analyze_types(
         recommendations = True
         docstring_recommendations = True
 
-    console.print("[bold blue]🔍 型定義レベル分析を開始します...[/bold blue]")
-    console.print(f"対象: {target_path}\n")
+    # 処理開始時のPanel表示
+    rec_text = "オン" if recommendations else "オフ"
+    doc_rec_text = "オン" if docstring_recommendations else "オフ"
+    panel_content = (
+        f"[bold cyan]解析対象:[/bold cyan] {target_path}\n"
+        f"[bold cyan]出力形式:[/bold cyan] {format}\n"
+        f"[bold cyan]型レベル推奨:[/bold cyan] {rec_text}\n"
+        f"[bold cyan]docstring推奨:[/bold cyan] {doc_rec_text}"
+    )
+    start_panel = Panel(
+        panel_content,
+        title="[bold green]🔍 型定義レベル分析開始[/bold green]",
+        border_style="green",
+    )
+    console.print(start_panel)
 
     # アナライザを初期化
     analyzer = TypeLevelAnalyzer()
@@ -120,11 +141,54 @@ def analyze_types(
     # 解析を実行
     try:
         if target_path.is_file():
-            report = analyzer.analyze_file(target_path)
+            # 単一ファイルの場合
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TimeRemainingColumn(),
+                console=console,
+                transient=True,
+            ) as progress:
+                task = progress.add_task("単一ファイル解析中...", total=1)
+                report = analyzer.analyze_file(target_path)
+                progress.advance(task)
         else:
-            report = analyzer.analyze_directory(target_path)
+            # ディレクトリの場合はファイルリストを事前に取得してプログレス表示
+            python_files = list(target_path.rglob("*.py"))
+
+            # プログレスバーを表示しながらファイルを処理
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TimeRemainingColumn(),
+                console=console,
+                transient=True,
+            ) as progress:
+                task = progress.add_task(
+                    "ディレクトリ解析中...", total=len(python_files)
+                )
+
+                # 各ファイルを処理してプログレスを更新
+                for py_file in python_files:
+                    progress.update(task, description=f"解析中: {py_file.name}")
+                    progress.advance(task)
+
+            # 実際の解析はanalyze_directoryで実行（統計計算等も含む）
+            with console.status("[bold green]統計情報を計算中..."):
+                report = analyzer.analyze_directory(
+                    target_path, include_upgrade_recommendations=recommendations
+                )
+
     except Exception as e:
-        console.print(f"[bold red]エラー: 解析中にエラーが発生しました: {e}[/bold red]")
+        # エラーメッセージのPanel
+        error_panel = Panel(
+            f"[red]エラー: {e}[/red]",
+            title="[bold red]❌ 解析エラー[/bold red]",
+            border_style="red",
+        )
+        console.print(error_panel)
         return
 
     # レポートを生成
