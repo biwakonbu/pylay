@@ -16,6 +16,7 @@ from ..core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from ..core.output_manager import OutputPathManager
 from ..core.schemas.pylay_config import PylayConfig
 from .commands.analyze_types import analyze_types
+from .commands.diagnose_type_ignore import diagnose_type_ignore
 from .commands.project_analyze import project_analyze
 
 
@@ -309,6 +310,10 @@ def analyze() -> None:
 # トップレベルにも登録して `pylay analyze-types` で呼び出せるようにする
 cli.add_command(analyze_types)
 analyze.add_command(analyze_types)
+
+# diagnose-type-ignoreコマンドを登録
+cli.add_command(diagnose_type_ignore)
+analyze.add_command(diagnose_type_ignore)
 
 
 @analyze.command("infer-deps")
