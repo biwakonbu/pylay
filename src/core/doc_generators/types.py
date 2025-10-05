@@ -114,6 +114,7 @@ class MarkdownGenerationConfig(BaseModel):
     section_level: PositiveInt = Field(
         default=1, description="セクションの見出しレベル"
     )
+    include_toc: bool = Field(default=True, description="目次を含めるかどうか")
     include_code_syntax: bool = Field(
         default=True, description="コード構文ハイライトを含めるかどうか"
     )
@@ -280,14 +281,14 @@ class DocumentationMetrics(BaseModel):
     このクラスは、ドキュメントの品質指標を保持します。
     """
 
-    total_types: PositiveInt = Field(description="対象の型総数")
-    documented_types: PositiveInt = Field(description="ドキュメント付きの型数")
+    total_types: NonNegativeInt = Field(description="対象の型総数")
+    documented_types: NonNegativeInt = Field(description="ドキュメント付きの型数")
     documentation_coverage: float = Field(
         description="ドキュメントカバー率（0.0-1.0）", ge=0.0, le=1.0
     )
-    avg_docstring_lines: float = Field(description="平均docstring行数")
-    code_blocks_count: PositiveInt = Field(description="コードブロック総数")
-    sections_count: PositiveInt = Field(description="セクション総数")
+    avg_docstring_lines: float = Field(ge=0.0, description="平均docstring行数")
+    code_blocks_count: NonNegativeInt = Field(description="コードブロック総数")
+    sections_count: NonNegativeInt = Field(description="セクション総数")
 
     class Config:
         """Pydantic設定"""
@@ -335,7 +336,7 @@ class BatchGenerationResult(BaseModel):
     results: list[GenerationResult] = Field(
         default_factory=list, description="個別結果のリスト"
     )
-    error_summary: dict[str, PositiveInt] = Field(
+    error_summary: dict[str, NonNegativeInt] = Field(
         default_factory=dict, description="エラータイプ別の集計"
     )
 

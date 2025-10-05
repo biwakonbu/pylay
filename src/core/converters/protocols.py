@@ -50,7 +50,10 @@ class TypeConverterProtocol(Protocol):
 
     @abstractmethod
     def convert_type_to_yaml(
-        self, typ: type[Any], output_file: OutputPath = None, as_root: bool = True
+        self,
+        typ: type[Any],
+        output_file: OutputPath | None = None,
+        as_root: bool = True,
     ) -> YamlString | dict[str, Any]:
         """
         Python型をYAML文字列に変換します。
@@ -67,7 +70,7 @@ class TypeConverterProtocol(Protocol):
 
     @abstractmethod
     def convert_types_to_yaml(
-        self, types: dict[TypeName, type[Any]], output_file: OutputPath = None
+        self, types: dict[TypeName, type[Any]], output_file: OutputPath | None = None
     ) -> YamlString:
         """
         複数のPython型をYAML文字列に変換します。
@@ -218,7 +221,7 @@ class GraphConverterProtocol(Protocol):
 
     @abstractmethod
     def visualize_dependencies(
-        self, graph: TypeDependencyGraph, output_path: OutputPath = "deps.png"
+        self, graph: TypeDependencyGraph, output_path: OutputPath | None = "deps.png"
     ) -> None:
         """
         依存関係を視覚化します。

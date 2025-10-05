@@ -31,6 +31,9 @@ from .types import (
     TypeName,
 )
 
+# デフォルトの出力パス（成功時と例外時で一貫して使用）
+DEFAULT_OUTPUT_PATH = "./docs"
+
 
 class DocumentGeneratorService(BaseModel):
     """
@@ -57,7 +60,9 @@ class DocumentGeneratorService(BaseModel):
         try:
             # 簡易的な実装（実際はより複雑な処理が必要）
             output_path = (
-                Path(config.output_path) if config.output_path else Path("./docs")
+                Path(config.output_path)
+                if config.output_path
+                else Path(DEFAULT_OUTPUT_PATH)
             )
 
             # 出力ディレクトリの作成
@@ -93,7 +98,11 @@ class DocumentGeneratorService(BaseModel):
             processing_time = (time.time() - start_time) * 1000
             return GenerationResult(
                 success=False,
-                output_path=str(config.output_path) if config.output_path else "./docs",
+                output_path=(
+                    str(config.output_path)
+                    if config.output_path
+                    else DEFAULT_OUTPUT_PATH
+                ),
                 generation_time_ms=processing_time,
                 error_message=str(e),
                 files_count=0,
@@ -196,6 +205,8 @@ class TypeInspectorService(BaseModel):
         try:
             from pydantic import BaseModel
 
+            if not isinstance(type_cls, type):
+                return False
             return issubclass(type_cls, BaseModel)
         except Exception:
             return False
@@ -253,7 +264,7 @@ class MarkdownBuilderService(BaseModel):
             lines.append(section_content)
 
         # 目次（設定されている場合）
-        if config.include_code_syntax and structure.toc:
+        if config.include_toc and structure.toc:
             lines.append("## Table of Contents")
             lines.append("")
             for item in structure.toc:
