@@ -140,24 +140,46 @@ def analyze_types(
 
     # 解析を実行
     try:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TimeRemainingColumn(),
-            console=console,
-            transient=True,
-        ) as progress:
-            if target_path.is_file():
+        if target_path.is_file():
+            # 単一ファイルの場合
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TimeRemainingColumn(),
+                console=console,
+                transient=True,
+            ) as progress:
                 task = progress.add_task("単一ファイル解析中...", total=1)
                 report = analyzer.analyze_file(target_path)
-            else:
-                # ディレクトリの場合はファイル数をカウントしてプログレス表示
-                file_count = sum(1 for _ in target_path.rglob("*.py"))
-                task = progress.add_task("ディレクトリ解析中...", total=file_count)
-                report = analyzer.analyze_directory(target_path)
+                progress.advance(task)
+        else:
+            # ディレクトリの場合はファイルリストを事前に取得してプログレス表示
+            python_files = list(target_path.rglob("*.py"))
 
-            progress.advance(task)
+            # プログレスバーを表示しながらファイルを処理
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TimeRemainingColumn(),
+                console=console,
+                transient=True,
+            ) as progress:
+                task = progress.add_task(
+                    "ディレクトリ解析中...", total=len(python_files)
+                )
+
+                # 各ファイルを処理してプログレスを更新
+                for py_file in python_files:
+                    progress.update(task, description=f"解析中: {py_file.name}")
+                    progress.advance(task)
+
+            # 実際の解析はanalyze_directoryで実行（統計計算等も含む）
+            with console.status("[bold green]統計情報を計算中..."):
+                report = analyzer.analyze_directory(
+                    target_path, include_upgrade_recommendations=recommendations
+                )
 
     except Exception as e:
         # エラーメッセージのPanel
