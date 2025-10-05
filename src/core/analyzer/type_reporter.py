@@ -279,17 +279,17 @@ class TypeReporter:
     def _create_statistics_table(self, statistics: TypeStatistics) -> Table:
         """統計情報をRich Tableで作成"""
         table = Table(
-            title="型定義レベル統計",
+            title="Type Definition Level Statistics",
             show_header=True,
             width=80,
             header_style="",
             box=SIMPLE,
         )
 
-        table.add_column("レベル", style="cyan", no_wrap=True, width=30)
-        table.add_column("件数", justify="right", style="green", width=10)
-        table.add_column("比率", justify="right", width=10)
-        table.add_column("状態", justify="center", width=10)
+        table.add_column("Level", style="cyan", no_wrap=True, width=30)
+        table.add_column("Count", justify="right", style="green", width=10)
+        table.add_column("Ratio", justify="right", width=10)
+        table.add_column("Status", justify="center", width=10)
 
         # Level 1
         level1_limit = self.threshold_ratios["level1_max"]
@@ -350,11 +350,11 @@ class TypeReporter:
 
         table = Table(show_header=True, width=80, header_style="", box=SIMPLE)
 
-        table.add_column("レベル", style="cyan", no_wrap=True, width=15)
-        table.add_column("現在値", justify="right", width=10)
-        table.add_column("閾値", justify="right", width=15)
-        table.add_column("差分", justify="right", width=15)
-        table.add_column("状態", justify="center", width=10)
+        table.add_column("Level", style="cyan", no_wrap=True, width=15)
+        table.add_column("Current", justify="right", width=10)
+        table.add_column("Threshold", justify="right", width=15)
+        table.add_column("Deviation", justify="right", width=15)
+        table.add_column("Status", justify="center", width=10)
 
         # Level 1
         l1_max_dev = report.deviation_from_threshold.get("level1_max", 0.0)
@@ -400,9 +400,9 @@ class TypeReporter:
         """ドキュメント品質をRich Tableで作成"""
         table = Table(show_header=True, width=80, header_style="", box=SIMPLE)
 
-        table.add_column("指標", style="cyan", no_wrap=True, width=30)
-        table.add_column("値", justify="right", style="green", width=20)
-        table.add_column("評価", justify="center", width=10)
+        table.add_column("Metric", style="cyan", no_wrap=True, width=30)
+        table.add_column("Value", justify="right", style="green", width=20)
+        table.add_column("Status", justify="center", width=10)
 
         # 実装率
         impl_threshold = self.doc_thresholds["implementation_rate"]
@@ -444,10 +444,10 @@ class TypeReporter:
         """コード品質統計をRich Tableで作成"""
         table = Table(show_header=True, width=80, header_style="", box=SIMPLE)
 
-        table.add_column("レベル", style="cyan", no_wrap=True, width=30)
-        table.add_column("件数", justify="right", style="green", width=10)
-        table.add_column("比率", justify="right", width=10)
-        table.add_column("状態", justify="center", width=10)
+        table.add_column("Level", style="cyan", no_wrap=True, width=30)
+        table.add_column("Count", justify="right", style="green", width=10)
+        table.add_column("Ratio", justify="right", width=10)
+        table.add_column("Status", justify="center", width=10)
 
         # Level 0: 非推奨typing使用
         dep_status = "✓" if statistics.deprecated_typing_ratio == 0.0 else "✗"
@@ -485,8 +485,8 @@ class TypeReporter:
         """推奨事項をRich Tableで作成"""
         table = Table(show_header=True, header_style="", box=SIMPLE, width=100)
 
-        table.add_column("優先度", style="cyan", no_wrap=True, width=12)
-        table.add_column("推奨内容", no_wrap=False, width=85)
+        table.add_column("Priority", style="cyan", no_wrap=True, width=12)
+        table.add_column("Recommendation", no_wrap=False, width=85)
 
         for rec in recommendations:
             # 優先度を判定（警告マークがあるかで判断）
@@ -875,18 +875,18 @@ class TypeReporter:
     ) -> Table:
         """Primitive型使用の詳細テーブルを生成"""
         table = Table(
-            title="Primitive型の直接使用",
+            title="Direct Primitive Type Usage",
             show_header=True,
             width=120,
             header_style="",
             box=SIMPLE,
         )
 
-        table.add_column("ファイル", style="cyan", no_wrap=True, width=25)
-        table.add_column("行", justify="right", style="green", width=5)
-        table.add_column("種類", justify="center", width=12)
-        table.add_column("型", justify="center", width=8)
-        table.add_column("コード", no_wrap=False, width=65)
+        table.add_column("File", style="cyan", no_wrap=True, width=25)
+        table.add_column("Line", justify="right", style="green", width=5)
+        table.add_column("Kind", justify="center", width=12)
+        table.add_column("Type", justify="center", width=8)
+        table.add_column("Code", no_wrap=False, width=65)
 
         for detail in details[:50]:  # 最大50件まで表示
             # ファイル名を短く表示
@@ -915,18 +915,18 @@ class TypeReporter:
     def _create_level1_types_table(self, details: list[Level1TypeDetail]) -> Table:
         """Level 1型の詳細テーブルを生成"""
         table = Table(
-            title="Level 1型の放置",
+            title="Unused Level 1 Types",
             show_header=True,
             width=120,
             header_style="",
             box=SIMPLE,
         )
 
-        table.add_column("型定義", style="cyan", no_wrap=True, width=25)
-        table.add_column("ファイル", style="blue", no_wrap=True, width=20)
-        table.add_column("行", justify="right", style="green", width=5)
-        table.add_column("使用回数", justify="right", width=8)
-        table.add_column("推奨", no_wrap=False, width=60)
+        table.add_column("Type Definition", style="cyan", no_wrap=True, width=25)
+        table.add_column("File", style="blue", no_wrap=True, width=20)
+        table.add_column("Line", justify="right", style="green", width=5)
+        table.add_column("Usage Count", justify="right", width=8)
+        table.add_column("Recommendation", no_wrap=False, width=60)
 
         for detail in details[:30]:  # 最大30件まで表示
             # 型名を短く表示
@@ -958,18 +958,18 @@ class TypeReporter:
     def _create_unused_types_table(self, details: list[UnusedTypeDetail]) -> Table:
         """被参照0型の詳細テーブルを生成"""
         table = Table(
-            title="被参照0の型定義",
+            title="Unused Type Definitions",
             show_header=True,
             width=120,
             header_style="",
             box=SIMPLE,
         )
 
-        table.add_column("型定義", style="cyan", no_wrap=True, width=25)
-        table.add_column("ファイル", style="blue", no_wrap=True, width=20)
-        table.add_column("行", justify="right", style="green", width=5)
-        table.add_column("レベル", justify="center", width=8)
-        table.add_column("推奨", no_wrap=False, width=60)
+        table.add_column("Type Definition", style="cyan", no_wrap=True, width=25)
+        table.add_column("File", style="blue", no_wrap=True, width=20)
+        table.add_column("Line", justify="right", style="green", width=5)
+        table.add_column("Level", justify="center", width=8)
+        table.add_column("Recommendation", no_wrap=False, width=60)
 
         for detail in details[:30]:  # 最大30件まで表示
             # 型名を短く表示
@@ -1003,18 +1003,18 @@ class TypeReporter:
     ) -> Table:
         """非推奨typing使用の詳細テーブルを生成"""
         table = Table(
-            title="非推奨typing使用",
+            title="Deprecated typing Usage",
             show_header=True,
             width=120,
             header_style="",
             box=SIMPLE,
         )
 
-        table.add_column("ファイル", style="cyan", no_wrap=True, width=25)
-        table.add_column("行", justify="right", style="green", width=5)
-        table.add_column("非推奨型", justify="center", width=15)
-        table.add_column("推奨代替", justify="center", width=15)
-        table.add_column("コード", no_wrap=False, width=60)
+        table.add_column("File", style="cyan", no_wrap=True, width=25)
+        table.add_column("Line", justify="right", style="green", width=5)
+        table.add_column("Deprecated Type", justify="center", width=15)
+        table.add_column("Recommended Alternative", justify="center", width=15)
+        table.add_column("Code", no_wrap=False, width=60)
 
         for detail in details[:30]:  # 最大30件まで表示
             # ファイル名を短く表示
