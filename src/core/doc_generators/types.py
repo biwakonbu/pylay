@@ -237,7 +237,7 @@ class DocumentStructure(BaseModel):
 
     title: str = Field(description="ドキュメントタイトル")
     sections: list[MarkdownSectionInfo] = Field(
-        default_factory=list, description="メインメクションのリスト"
+        default_factory=list, description="メインセクションのリスト"
     )
     toc: list[dict[str, Any]] = Field(default_factory=list, description="目次情報")
     metadata: dict[str, Any] = Field(default_factory=dict, description="メタデータ")
