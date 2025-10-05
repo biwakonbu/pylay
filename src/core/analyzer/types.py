@@ -141,10 +141,10 @@ class DocumentationStatistics(BaseModel):
     detail_rate: Percentage = Field(description="詳細度率（0.0-1.0）")
     avg_docstring_lines: float = Field(description="平均docstring行数")
     quality_score: Percentage = Field(description="総合品質スコア（実装率 × 詳細度）")
-    by_level: dict[TypeLevel, dict[str, PositiveInt]] = Field(
+    by_level: dict[TypeLevel, dict[str, NonNegativeInt]] = Field(
         description="レベル別のdocstring統計"
     )
-    by_format: dict[FormatStyle, PositiveInt] = Field(
+    by_format: dict[FormatStyle, NonNegativeInt] = Field(
         description="フォーマット別のdocstring数"
     )
 
