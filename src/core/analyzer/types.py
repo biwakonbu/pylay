@@ -162,11 +162,11 @@ class TypeLevelInfo(BaseModel):
     """
 
     level: TypeLevel = Field(description="型レベル")
-    count: PositiveInt = Field(description="型定義の数")
-    documented_count: PositiveInt = Field(description="ドキュメント付きの型定義数")
+    count: NonNegativeInt = Field(description="型定義の数")
+    documented_count: NonNegativeInt = Field(description="ドキュメント付きの型定義数")
     avg_docstring_lines: float = Field(description="平均docstring行数")
-    upgrade_candidates: PositiveInt = Field(description="レベルアップ候補の数")
-    keep_as_is_count: PositiveInt = Field(description="現状維持指定の数")
+    upgrade_candidates: NonNegativeInt = Field(description="レベルアップ候補の数")
+    keep_as_is_count: NonNegativeInt = Field(description="現状維持指定の数")
 
     class Config:
         """Pydantic設定"""
