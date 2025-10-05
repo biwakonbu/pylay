@@ -125,9 +125,9 @@ class TestProjectAnalyzer:
         analyzer.print_summary(summary)
 
         captured = capsys.readouterr()
-        assert "✅ Successful checks: 2/3" in captured.out
-        assert "❌ Failed checks: 1/3" in captured.out
-        assert "💡 Recommendations:" in captured.out
+        assert "✅ 成功したチェック: 2/3" in captured.out
+        assert "❌ 失敗したチェック: 1/3" in captured.out
+        assert "💡 推奨事項:" in captured.out
 
     def test_save_report_json(self, tmp_path):
         """レポート保存のテスト"""
