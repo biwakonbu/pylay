@@ -93,7 +93,8 @@ class DocumentationStatistics(BaseModel):
         detail_rate: 詳細度率（0.0-1.0）
         avg_docstring_lines: 平均docstring行数
         quality_score: 総合品質スコア（実装率 × 詳細度）
-        by_level: レベル別のdocstring統計
+        by_level: レベル別のdocstring統計（カウント値のみ）
+        by_level_avg_lines: レベル別の平均docstring行数
         by_format: フォーマット別のdocstring数
     """
 
@@ -111,7 +112,8 @@ class DocumentationStatistics(BaseModel):
     avg_docstring_lines: float
     quality_score: float = Field(ge=0.0, le=1.0)
 
-    by_level: dict[str, dict[str, float]]
+    by_level: dict[str, dict[str, int]]
+    by_level_avg_lines: dict[str, float]
     by_format: dict[str, int]
 
 
