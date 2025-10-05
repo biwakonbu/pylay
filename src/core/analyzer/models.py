@@ -562,6 +562,7 @@ class DocstringAnalyzerService(BaseModel):
                 avg_docstring_lines=0.0,
                 quality_score=0.0,
                 by_level={},
+                by_level_avg_lines={},
                 by_format={},
             )
 
@@ -600,13 +601,16 @@ class DocstringAnalyzerService(BaseModel):
                     by_format[format_key] = 0
                 by_format[format_key] += 1
 
-        # レベル別統計の最終計算
+        # レベル別平均行数の計算（NonNegativeIntとfloatを分離）
+        by_level_avg_lines: dict[TypeLevel, float] = {}
         for level in by_level:
             stats = by_level[level]
             avg_lines = (
                 stats["lines"] / stats["documented"] if stats["documented"] > 0 else 0.0
             )
-            stats["avg_lines"] = int(avg_lines)  # int型に変換
+            by_level_avg_lines[level] = avg_lines
+            # by_levelからはavg_linesを削除し、カウント値のみ保持
+            del stats["lines"]  # 中間値を削除
 
         avg_docstring_lines = (
             total_docstring_lines / documented_types if documented_types > 0 else 0.0
@@ -627,6 +631,7 @@ class DocstringAnalyzerService(BaseModel):
             avg_docstring_lines=avg_docstring_lines,
             quality_score=quality_score,
             by_level=by_level,
+            by_level_avg_lines=by_level_avg_lines,
             by_format=by_format,
         )
 
