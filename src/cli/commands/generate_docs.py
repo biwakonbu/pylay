@@ -6,13 +6,6 @@ from pathlib import Path
 from rich.box import SIMPLE
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import (
-    BarColumn,
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-    TimeRemainingColumn,
-)
 from rich.table import Table
 
 from src.core.converters.yaml_to_type import yaml_to_spec
@@ -69,18 +62,9 @@ def run_generate_docs(
             # Single file output
             output_file = output_path / "types.md"
 
-            # ドキュメント生成中のプログレス表示
-            with Progress(
-                SpinnerColumn(),
-                TextColumn("[progress.description]{task.description}"),
-                BarColumn(),
-                TimeRemainingColumn(),
-                console=console,
-                transient=True,
-            ) as progress:
-                task = progress.add_task("ドキュメント生成中...", total=1)
+            # ドキュメント生成中のステータス表示
+            with console.status("[bold green]ドキュメント生成中..."):
                 generator.generate(output_file, spec=spec)
-                progress.advance(task)
 
         else:
             # Multiple files output (not implemented yet)
