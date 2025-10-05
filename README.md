@@ -147,6 +147,34 @@ pylay analyze analyze-types src/ --format markdown --output docs/type_analysis.m
 
 詳細は [型レベル分析: 警告箇所の詳細表示機能](docs/features/type-analysis-details.md) を参照してください。
 
+### type: ignore 診断（NEW!）
+```bash
+# プロジェクト全体のtype: ignoreを診断
+pylay diagnose-type-ignore
+
+# 特定ファイルのtype: ignoreを診断（解決策付き）
+pylay diagnose-type-ignore --file src/core/converters/type_to_yaml.py --solutions
+
+# 高優先度のみ表示
+pylay diagnose-type-ignore --priority high --solutions
+
+# JSON形式で出力
+pylay diagnose-type-ignore --format json --output report.json
+
+# Makeターゲットで利用
+make diagnose-ignore
+make diagnose-ignore-file FILE=src/cli/analyze_issues.py
+make diagnose-ignore-high
+```
+
+`# type: ignore` が使用されている箇所の原因を自動的に特定し、具体的な解決策を提案します：
+- **優先度判定**: HIGH/MEDIUM/LOW で問題を分類
+- **原因特定**: mypy実行による型エラー情報の取得と紐付け
+- **解決策提案**: コンテキストに応じた具体的な修正方法を提示
+- **モダンUI**: Richベースの見やすいコンソール出力
+
+詳細は [type: ignore診断機能](docs/features/diagnose-type-ignore.md) を参照してください。
+
 ### プロジェクト全体解析
 ```bash
 # pyproject.toml設定に基づいてプロジェクト全体を解析

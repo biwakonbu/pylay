@@ -402,10 +402,12 @@ class TypeClassifier:
             if (
                 hasattr(node, "lineno")
                 and hasattr(node, "end_lineno")
-                and node.end_lineno is not None  # type: ignore[attr-defined]
+                and hasattr(node, "end_lineno")
+                and getattr(node, "end_lineno") is not None
             ):
-                start = node.lineno - 1  # type: ignore[attr-defined]
-                end = node.end_lineno  # type: ignore[attr-defined]
+                # hastattrで確認済みなので安全にアクセス可能
+                start = getattr(node, "lineno") - 1
+                end = getattr(node, "end_lineno")
                 return "\n".join(lines[start:end])
         except Exception:
             pass
@@ -478,8 +480,13 @@ class TypeClassifier:
         match = re.search(r"@target-level:\s*(level[123])", docstring)
         if match:
             level = match.group(1)
-            if level in ("level1", "level2", "level3"):
-                return level  # type: ignore[return-value]
+            # 型ガードで検証
+            if level == "level1":
+                return "level1"
+            elif level == "level2":
+                return "level2"
+            elif level == "level3":
+                return "level3"
 
         return None
 

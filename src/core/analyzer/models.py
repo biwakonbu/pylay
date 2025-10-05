@@ -59,6 +59,11 @@ from .types import (
 logger = logging.getLogger(__name__)
 
 
+def is_type_level(value: str) -> TypeGuard[TypeLevel]:
+    """文字列がTypeLevelリテラル型であることを確認する型ガード関数"""
+    return value in ("level1", "level2", "level3", "other")
+
+
 class InferResult(BaseModel):
     """
     型推論結果を表すモデル
@@ -395,8 +400,8 @@ class TypeAnalyzerService(BaseModel):
             type_level = self._determine_type_level(node, category)
 
             # 型レベルを適切に変換
-            if type_level in ("level1", "level2", "level3", "other"):
-                level_value = type_level  # type: ignore[assignment]
+            if is_type_level(type_level):
+                level_value = type_level
             else:
                 level_value = "other"  # デフォルト値
 
@@ -766,18 +771,14 @@ class StatisticsCalculatorService(BaseModel):
         # TypeLevelInfoオブジェクトの作成
         result: dict[TypeLevel, TypeLevelInfo] = {}
         for level_str, stats in level_stats.items():
-            # 型レベル文字列を明示的に扱う
-            type_level: TypeLevel = level_str  # type: ignore[assignment]
             # 型レベル文字列をTypeLevelリテラルに変換
             # 有効なレベル値であることを確認
-            valid_levels = {"level1", "level2", "level3", "other"}
-            if level_str not in valid_levels:
+            if not is_type_level(level_str):
                 continue  # 無効なレベルはスキップ
 
-            # 有効なレベル値なので、型アサーションを使用
-            assert level_str in valid_levels  # 実行時に確認
-            result[type_level] = TypeLevelInfo(
-                level=type_level,
+            # 型ガードで検証済みなので、level_strはTypeLevel型
+            result[level_str] = TypeLevelInfo(
+                level=level_str,
                 count=stats["count"],
                 documented_count=stats["documented_count"],
                 avg_docstring_lines=stats["avg_docstring_lines"],
