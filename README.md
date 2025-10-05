@@ -114,26 +114,38 @@ pylay convert to-type --input types.yaml --output-py model.py
 ### 型定義レベル分析
 ```bash
 # ファイルの型定義レベルを分析
-pylay analyze-types --file src/core/schemas/types.py
+pylay analyze analyze-types src/core/schemas/types.py
 
 # ディレクトリ全体を分析
-pylay analyze-types --directory src/core/analyzer/
-
-# カスタム閾値を指定して分析
-pylay analyze-types --file src/core/schemas/types.py \
-  --level1-max 0.15 \
-  --level2-min 0.50 \
-  --level3-min 0.20
+pylay analyze analyze-types src/core/analyzer/
 
 # 型レベルアップ推奨を含めて分析
-pylay analyze-types --directory src/core/analyzer/ --recommendations
+pylay analyze analyze-types src/core/analyzer/ --recommendations
+
+# 問題箇所の詳細表示（NEW!）
+pylay analyze analyze-types src/ --show-details
+
+# 問題詳細をYAMLファイルにエクスポート（NEW!）
+pylay analyze analyze-types src/ --export-details=./analysis-details.yaml
 
 # JSON形式で出力
-pylay analyze-types --file src/core/schemas/types.py --format json --output type_analysis.json
+pylay analyze analyze-types src/core/schemas/types.py --format json --output type_analysis.json
 
 # Markdown形式で出力
-pylay analyze-types --directory src/ --format markdown --output docs/type_analysis.md
+pylay analyze analyze-types src/ --format markdown --output docs/type_analysis.md
 ```
+
+#### 新機能: 警告箇所の詳細表示
+
+`--show-details` オプションを使用すると、以下の問題箇所を詳細に表示できます：
+- Primitive型の直接使用（ファイルパス、行番号、コード内容）
+- Level 1型の長期放置（使用箇所の例を最大3件表示）
+- 被参照0の型定義（削除または調査推奨の判定理由）
+- 非推奨typing使用（Python 3.13標準構文への移行推奨）
+
+`--export-details` オプションでYAML形式で問題詳細をエクスポートし、AI修正やCI/CD統合に活用できます。
+
+詳細は [型レベル分析: 警告箇所の詳細表示機能](docs/features/type-analysis-details.md) を参照してください。
 
 ### プロジェクト全体解析
 ```bash
