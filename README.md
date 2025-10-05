@@ -135,7 +135,7 @@ pylay analyze analyze-types src/core/schemas/types.py --format json --output typ
 pylay analyze analyze-types src/ --format markdown --output docs/type_analysis.md
 ```
 
-**新機能: 警告箇所の詳細表示**
+#### 新機能: 警告箇所の詳細表示
 
 `--show-details` オプションを使用すると、以下の問題箇所を詳細に表示できます：
 - Primitive型の直接使用（ファイルパス、行番号、コード内容）
