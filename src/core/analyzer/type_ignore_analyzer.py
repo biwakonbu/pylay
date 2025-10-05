@@ -199,8 +199,9 @@ class TypeIgnoreAnalyzer:
                         dir_name + "/"
                     ):
                         return True
-                elif "/" not in suffix:
+                elif "/" not in suffix and "*" not in suffix:
                     # **/__pycache__ -> __pycache__ をパスの一部として含む
+                    # (ワイルドカードなし)
                     if (
                         f"/{suffix}/" in rel_path_str
                         or rel_path_str.startswith(suffix + "/")
@@ -209,6 +210,7 @@ class TypeIgnoreAnalyzer:
                         return True
                 else:
                     # **/*_test.py -> _test.py で終わるファイル
+                    # (ワイルドカード含む)
                     if fnmatch.fnmatch(rel_path_str.split("/")[-1], suffix):
                         return True
             elif pattern.endswith("/**"):
