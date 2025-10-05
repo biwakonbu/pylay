@@ -86,7 +86,7 @@ class TypeDefinition(BaseModel):
     )
     docstring: str | None = Field(default=None, description="docstring（存在する場合）")
     has_docstring: bool = Field(default=False, description="docstringが存在するか")
-    docstring_lines: PositiveInt = Field(default=0, description="docstringの行数")
+    docstring_lines: NonNegativeInt = Field(default=0, description="docstringの行数")
     target_level: TargetLevel = Field(
         default=None, description="docstringで指定された目標レベル"
     )
