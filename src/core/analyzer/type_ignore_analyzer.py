@@ -192,17 +192,43 @@ class TypeIgnoreAnalyzer:
 
         errors = []
 
-        # mypyを実行
+        # mypyを実行（uvが利用可能ならuv経由、なければ直接実行）
+        try:
+            # まずuvの存在確認
+            uv_result = subprocess.run(
+                ["uv", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if uv_result.returncode == 0:
+                # uvが存在する場合はuv経由で実行
+                cmd = ["uv", "run", "mypy", "--no-error-summary", str(file_path)]
+            else:
+                # uvが失敗した場合はmypyを直接実行
+                cmd = ["mypy", "--no-error-summary", str(file_path)]
+        except FileNotFoundError:
+            # uvコマンドが見つからない場合はmypyを直接実行
+            cmd = ["mypy", "--no-error-summary", str(file_path)]
+
         try:
             result = subprocess.run(
-                ["uv", "run", "mypy", "--no-error-summary", str(file_path)],
+                cmd,
                 capture_output=True,
                 text=True,
                 timeout=30,
             )
             errors.extend(self._parse_mypy_output(result.stdout + result.stderr))
-        except (subprocess.TimeoutExpired, FileNotFoundError):
+        except subprocess.TimeoutExpired:
             pass
+        except FileNotFoundError:
+            # mypy自体が見つからない場合は警告を出す
+            import sys
+
+            print(
+                "警告: mypyが見つかりません。型エラー情報を取得できません。",
+                file=sys.stderr,
+            )
 
         # キャッシュに保存
         self._type_error_cache[cache_key] = errors
