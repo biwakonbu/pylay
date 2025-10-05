@@ -144,6 +144,13 @@ def run_yaml_to_type(
             lines.append("")
             return lines
 
+        # 生成する型の数を計算
+        type_count = 0
+        if spec is not None and isinstance(spec, TypeRoot):
+            type_count = len(spec.types)
+        elif spec is not None:
+            type_count = 1
+
         # コード生成中のプログレス表示
         with Progress(
             SpinnerColumn(),
@@ -153,7 +160,7 @@ def run_yaml_to_type(
             console=console,
             transient=True,
         ) as progress:
-            task = progress.add_task("Pythonコード生成中...", total=1)
+            task = progress.add_task("Pythonコード生成中...", total=type_count)
 
             if spec is not None and isinstance(spec, TypeRoot):
                 # 複数型仕様
@@ -161,13 +168,13 @@ def run_yaml_to_type(
                     code_lines.extend(
                         generate_class_code(type_name, type_spec.model_dump())
                     )
+                    progress.advance(task)
             elif spec is not None:
                 # 単一型仕様
                 code_lines.extend(
                     generate_class_code("GeneratedType", spec.model_dump())
                 )
-
-            progress.advance(task)
+                progress.advance(task)
 
         # ファイルに書き込み
         with console.status("[bold green]ファイル出力中..."):
