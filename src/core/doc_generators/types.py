@@ -282,7 +282,9 @@ class DocumentationMetrics(BaseModel):
 
     total_types: PositiveInt = Field(description="対象の型総数")
     documented_types: PositiveInt = Field(description="ドキュメント付きの型数")
-    documentation_coverage: float = Field(description="ドキュメントカバー率（0.0-1.0）")
+    documentation_coverage: float = Field(
+        description="ドキュメントカバー率（0.0-1.0）", ge=0.0, le=1.0
+    )
     avg_docstring_lines: float = Field(description="平均docstring行数")
     code_blocks_count: PositiveInt = Field(description="コードブロック総数")
     sections_count: PositiveInt = Field(description="セクション総数")
