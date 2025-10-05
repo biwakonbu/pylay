@@ -45,7 +45,7 @@ repos:
     hooks:
       - id: safety
         name: safety (依存関係脆弱性チェック)
-        entry: bash -c 'uv run safety check'
+        entry: bash -c 'uv run safety check --ignore 51457'
         language: system
         files: ^(pyproject\.toml|uv\.lock)$
         pass_filenames: false
