@@ -114,17 +114,17 @@ def analyze_types(
         docstring_recommendations = True
 
     # 処理開始時のPanel表示
-    rec_text = "オン" if recommendations else "オフ"
-    doc_rec_text = "オン" if docstring_recommendations else "オフ"
+    rec_text = "On" if recommendations else "Off"
+    doc_rec_text = "On" if docstring_recommendations else "Off"
     panel_content = (
-        f"[bold cyan]解析対象:[/bold cyan] {target_path}\n"
-        f"[bold cyan]出力形式:[/bold cyan] {format}\n"
-        f"[bold cyan]型レベル推奨:[/bold cyan] {rec_text}\n"
-        f"[bold cyan]docstring推奨:[/bold cyan] {doc_rec_text}"
+        f"[bold cyan]Target:[/bold cyan] {target_path}\n"
+        f"[bold cyan]Format:[/bold cyan] {format}\n"
+        f"[bold cyan]Type Level Recommendations:[/bold cyan] {rec_text}\n"
+        f"[bold cyan]Docstring Recommendations:[/bold cyan] {doc_rec_text}"
     )
     start_panel = Panel(
         panel_content,
-        title="[bold green]🔍 型定義レベル分析開始[/bold green]",
+        title="[bold green]🔍 Type Definition Level Analysis[/bold green]",
         border_style="green",
     )
     console.print(start_panel)
@@ -150,7 +150,7 @@ def analyze_types(
                 console=console,
                 transient=True,
             ) as progress:
-                task = progress.add_task("単一ファイル解析中...", total=1)
+                task = progress.add_task("Analyzing file...", total=1)
                 report = analyzer.analyze_file(target_path)
                 progress.advance(task)
         else:
@@ -167,16 +167,16 @@ def analyze_types(
                 transient=True,
             ) as progress:
                 task = progress.add_task(
-                    "ディレクトリ解析中...", total=len(python_files)
+                    "Analyzing directory...", total=len(python_files)
                 )
 
                 # 各ファイルを処理してプログレスを更新
                 for py_file in python_files:
-                    progress.update(task, description=f"解析中: {py_file.name}")
+                    progress.update(task, description=f"Analyzing: {py_file.name}")
                     progress.advance(task)
 
             # 実際の解析はanalyze_directoryで実行（統計計算等も含む）
-            with console.status("[bold green]統計情報を計算中..."):
+            with console.status("[bold green]Calculating statistics..."):
                 report = analyzer.analyze_directory(
                     target_path, include_upgrade_recommendations=recommendations
                 )
@@ -184,8 +184,8 @@ def analyze_types(
     except Exception as e:
         # エラーメッセージのPanel
         error_panel = Panel(
-            f"[red]エラー: {e}[/red]",
-            title="[bold red]❌ 解析エラー[/bold red]",
+            f"[red]Error: {e}[/red]",
+            title="[bold red]❌ Analysis Error[/bold red]",
             border_style="red",
         )
         console.print(error_panel)
@@ -302,7 +302,7 @@ def _output_markdown_report(
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(markdown_report)
         console.print(
-            f"[bold green]✅ Markdownレポートを保存しました: {output_path}[/bold green]"
+            f"[bold green]✅ Markdown report saved: {output_path}[/bold green]"
         )
     else:
         # コンソールに出力
@@ -341,9 +341,7 @@ def _output_json_report(
         # ファイルに書き込み
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(json_report)
-        console.print(
-            f"[bold green]✅ JSONレポートを保存しました: {output_path}[/bold green]"
-        )
+        console.print(f"[bold green]✅ JSON report saved: {output_path}[/bold green]")
     else:
         # コンソールに出力
         console.print(json_report)
@@ -456,14 +454,10 @@ def _export_details_to_yaml(
             )
 
         console.print(
-            f"[bold green]✅ 問題詳細をYAMLファイルにエクスポートしました: "
+            f"[bold green]✅ Problem details exported to YAML file: "
             f"{output_path}[/bold green]"
         )
     except OSError as e:
-        console.print(
-            f"[bold red]エラー: YAMLファイルの書き込みに失敗しました: {e}[/bold red]"
-        )
+        console.print(f"[bold red]Error: Failed to write YAML file: {e}[/bold red]")
     except yaml.YAMLError as e:
-        console.print(
-            f"[bold red]エラー: YAMLシリアライゼーションに失敗しました: {e}[/bold red]"
-        )
+        console.print(f"[bold red]Error: YAML serialization failed: {e}[/bold red]")
