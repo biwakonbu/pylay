@@ -169,7 +169,7 @@ class GenerationResult(BaseModel):
     generated_files: list[OutputPath] = Field(
         default_factory=list, description="生成されたファイルのリスト"
     )
-    generation_time_ms: float = Field(description="生成時間（ミリ秒）")
+    generation_time_ms: float = Field(ge=0.0, description="生成時間（ミリ秒）")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
     files_count: NonNegativeInt = Field(description="生成されたファイル数")
 
@@ -196,7 +196,7 @@ class TypeInspectionResult(BaseModel):
     schema_info: dict[str, Any] | None = Field(
         default=None, description="Pydanticスキーマ情報"
     )
-    inspection_time_ms: float = Field(description="検査時間（ミリ秒）")
+    inspection_time_ms: float = Field(ge=0.0, description="検査時間（ミリ秒）")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
 
     class Config:
@@ -329,7 +329,7 @@ class BatchGenerationResult(BaseModel):
     total_files: NonNegativeInt = Field(description="処理対象のファイル総数")
     successful_files: NonNegativeInt = Field(description="成功したファイル数")
     failed_files: NonNegativeInt = Field(description="失敗したファイル数")
-    total_generation_time_ms: float = Field(description="総生成時間（ミリ秒）")
+    total_generation_time_ms: float = Field(ge=0.0, description="総生成時間（ミリ秒）")
     results: list[GenerationResult] = Field(
         default_factory=list, description="個別結果のリスト"
     )
