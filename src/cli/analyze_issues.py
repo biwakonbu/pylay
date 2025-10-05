@@ -259,10 +259,8 @@ class ProjectAnalyzer:
 
         successful = summary["successful_checks"]
         total = summary["total_checks"]
-        print(f"✅ 成功したチェック: {successful}/{total}")
-        print(
-            f"❌ 失敗したチェック: {summary['failed_checks']}/{summary['total_checks']}"
-        )
+        print(f"✅ Successful checks: {successful}/{total}")
+        print(f"❌ Failed checks: {summary['failed_checks']}/{summary['total_checks']}")
         issues = summary["checks_with_issues"]
         print(f"⚠️ 問題のあるチェック: {issues}/{total}")
 
@@ -281,7 +279,7 @@ class ProjectAnalyzer:
                 err_lines = result["error_lines"]
                 print(f"    - 出力行数: {out_lines}, エラー行数: {err_lines}")
 
-        print("\n💡 推奨事項:")
+        print("\n💡 Recommendations:")
         if summary["failed_checks"] > 0:  # type: ignore
             print("  - 失敗したチェックを優先的に修正してください")
         if summary["checks_with_issues"] > 0:  # type: ignore
