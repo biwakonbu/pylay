@@ -984,7 +984,8 @@ class ProjectAnalyzerService(BaseModel):
                 file_results.append(result)
                 all_type_definitions.extend(result.type_definitions)
                 analyzed_files += 1
-            except Exception:
+            except Exception as e:
+                logger.warning(f"ファイル解析に失敗: {file_path}, エラー: {e}")
                 failed_files += 1
 
         # 統計情報の計算
