@@ -29,6 +29,7 @@ help: ## このMakefileのヘルプを表示
 	@echo "  analyze            プロジェクト全体を解析"
 	@echo "  analyze-types      型定義レベルを分析"
 	@echo "  analyze-types-all  詳細な型レベル分析（推奨事項含む）"
+	@echo "  diagnose-ignore    type: ignore の原因を診断"
 	@echo ""
 	@echo "🧹 クリーンアップ:"
 	@echo "  clean              キャッシュと一時ファイルを削除"
@@ -108,6 +109,23 @@ analyze-types: ## 型定義レベルを分析（デフォルト: src/）
 analyze-types-all: ## 全ての推奨事項を含む詳細な型レベル分析
 	@echo "🔍 詳細な型定義レベル分析中..."
 	uv run pylay analyze analyze-types src/ --all-recommendations
+
+diagnose-ignore: ## type: ignore の原因を診断（デフォルト: プロジェクト全体）
+	@echo "🔍 type: ignore の原因を診断中..."
+	uv run pylay diagnose-type-ignore
+
+diagnose-ignore-file: ## 特定ファイルの type: ignore を診断（FILE変数で指定）
+	@if [ -z "$(FILE)" ]; then \
+		echo "❌ エラー: FILE変数を指定してください"; \
+		echo "使用例: make diagnose-ignore-file FILE=src/cli/analyze_issues.py"; \
+		exit 1; \
+	fi; \
+	echo "🔍 type: ignore の原因を診断中: $(FILE)"; \
+	uv run pylay diagnose-type-ignore --file $(FILE) --solutions
+
+diagnose-ignore-high: ## 高優先度の type: ignore のみ診断
+	@echo "🔍 高優先度の type: ignore を診断中..."
+	uv run pylay diagnose-type-ignore --priority high --solutions
 
 # =============================================================================
 # クリーンアップ
