@@ -74,7 +74,13 @@ class TypeIgnoreReporter:
         """
         # ファイル名
         file_p = Path(file_path)
-        rel_path = file_p.relative_to(Path.cwd()) if file_p.is_absolute() else file_p
+        if file_p.is_absolute():
+            try:
+                rel_path = file_p.relative_to(Path.cwd())
+            except ValueError:
+                rel_path = file_p
+        else:
+            rel_path = file_p
         self.console.print(f"[bold]{rel_path}[/bold]\n")
 
         # 各問題を表示
