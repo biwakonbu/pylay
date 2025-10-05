@@ -154,14 +154,13 @@ class TypeInspectorService(BaseModel):
                 inspection_time_ms=processing_time,
             )
 
-        except Exception as e:
+        except Exception:
             processing_time = (time.time() - start_time) * 1000
             return TypeInspectionResult(
                 type_name=getattr(type_cls, "__name__", str(type_cls)),
                 is_pydantic_model=False,
                 has_docstring=False,
                 inspection_time_ms=processing_time,
-                error_message=str(e),
             )
 
     def _get_docstring(self, type_cls: type[Any]) -> str | None:
