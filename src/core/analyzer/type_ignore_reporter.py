@@ -231,11 +231,12 @@ class TypeIgnoreReporter:
         )
 
         # Total
+        total_ratio = "0%" if summary.total_count == 0 else "100%"
         table.add_row(
             "",
             "[bold]Total[/bold]",
             f"[bold]{summary.total_count}[/bold]",
-            "[bold]100%[/bold]",
+            f"[bold]{total_ratio}[/bold]",
             style="dim",
         )
 

@@ -70,12 +70,18 @@ class TypeIgnoreAnalyzer:
         """アナライザーを初期化"""
         self._type_error_cache: dict[str, list[dict[str, str]]] = {}
 
-    def analyze_file(self, file_path: str | Path) -> list[TypeIgnoreIssue]:
+    def analyze_file(
+        self,
+        file_path: str | Path,
+        *,
+        preloaded_errors: list[dict[str, str]] | None = None,
+    ) -> list[TypeIgnoreIssue]:
         """
         ファイル内の type: ignore を分析
 
         Args:
             file_path: 解析対象のファイルパス
+            preloaded_errors: 事前読み込みされた型エラー情報（省略時は自動取得）
 
         Returns:
             検出された type: ignore 問題のリスト
@@ -90,8 +96,12 @@ class TypeIgnoreAnalyzer:
         if not type_ignore_lines:
             return []
 
-        # mypy/pyrightで型エラー情報を取得
-        type_errors = self._get_type_errors(file_path)
+        # mypy/pyrightで型エラー情報を取得（事前読み込みデータがあれば優先使用）
+        type_errors = (
+            preloaded_errors
+            if preloaded_errors is not None
+            else self._get_type_errors(file_path)
+        )
 
         # 各type: ignoreについて原因を特定
         issues = []
@@ -130,12 +140,19 @@ class TypeIgnoreAnalyzer:
                 "**/*_test.py",
                 "**/__pycache__/**",
                 "**/.venv/**",
+                "**/venv/**",  # 仮想環境の別名パターン
+                "**/.mypy_cache/**",  # mypyキャッシュディレクトリ
                 "**/node_modules/**",
                 "**/dist/**",
                 "**/build/**",
+                "**/.git/**",  # gitディレクトリ
+                "**/.tox/**",  # tox仮想環境
+                "**/env/**",  # 仮想環境の別名パターン
+                "**/ENV/**",  # 仮想環境の大文字パターン
             ]
 
         # Pythonファイルを再帰的に検索（除外パターンでフィルタリング）
+        candidate_files: list[Path] = []
         analyzed_count = 0
         excluded_count = 0
         for py_file in project_path.rglob("*.py"):
@@ -144,9 +161,19 @@ class TypeIgnoreAnalyzer:
                 excluded_count += 1
                 continue
 
+            candidate_files.append(py_file)
+
+        # 一度だけmypyを実行して全ファイルの型エラーを取得
+        type_error_map = self._get_bulk_type_errors(candidate_files, project_path)
+
+        # 各ファイルを分析（事前読み込みデータを使用）
+        for py_file in candidate_files:
             analyzed_count += 1
             try:
-                issues = self.analyze_file(py_file)
+                issues = self.analyze_file(
+                    py_file,
+                    preloaded_errors=type_error_map.get(py_file.resolve(), []),
+                )
                 all_issues.extend(issues)
             except Exception as e:
                 print(f"警告: {py_file} の解析中にエラー: {e}")
@@ -292,38 +319,63 @@ class TypeIgnoreAnalyzer:
 
         errors = []
 
-        # mypyを実行（uvが利用可能ならuv経由、なければ直接実行）
-        # まずuv経由でmypyを実行
-        cmd = ["uv", "run", "mypy", "--no-error-summary", str(file_path)]
+        # mypyを直接実行を優先（uvはオプション）
+        # まずmypyを直接実行
+        mypy_cmd = ["mypy", "--no-error-summary", str(file_path)]
         try:
+            import sys
+
+            print(f"型チェック実行中: {file_path}", file=sys.stderr)
             result = subprocess.run(
-                cmd,
+                mypy_cmd,
                 capture_output=True,
                 text=True,
                 timeout=30,
             )
+            if result.stdout.strip() or result.stderr.strip():
+                print(f"型チェック完了: {file_path}", file=sys.stderr)
             errors.extend(self._parse_mypy_output(result.stdout + result.stderr))
         except FileNotFoundError:
-            # uvコマンドが見つからない場合はmypyを直接実行
-            cmd_fallback = ["mypy", "--no-error-summary", str(file_path)]
+            # mypyが見つからない場合はuv経由で試行
+            uv_cmd = ["uv", "run", "mypy", "--no-error-summary", str(file_path)]
             try:
+                import sys
+
+                print(f"uv経由で型チェック実行中: {file_path}", file=sys.stderr)
                 result = subprocess.run(
-                    cmd_fallback,
+                    uv_cmd,
                     capture_output=True,
                     text=True,
                     timeout=30,
                 )
+                if result.stdout.strip() or result.stderr.strip():
+                    print(f"uv経由で型チェック完了: {file_path}", file=sys.stderr)
                 errors.extend(self._parse_mypy_output(result.stdout + result.stderr))
             except FileNotFoundError:
-                # mypy自体が見つからない場合は警告を出す
+                # uvもmypyも見つからない場合は明確なエラーメッセージを表示
                 import sys
 
                 print(
-                    "警告: mypyが見つかりません。型エラー情報を取得できません。",
+                    f"エラー: mypyが見つかりません。型エラー情報を取得できません。\n"
+                    f"解決策:\n"
+                    f"  1. mypyをインストール: pip install mypy\n"
+                    f"  2. または uv をインストールして: uv run mypy を使用\n"
+                    f"対象ファイル: {file_path}",
                     file=sys.stderr,
                 )
+            except subprocess.TimeoutExpired:
+                import sys
+
+                print(
+                    "警告: uv経由の型チェックがタイムアウトしました",
+                    file=sys.stderr,
+                )
+                print(f"対象ファイル: {file_path}", file=sys.stderr)
         except subprocess.TimeoutExpired:
-            pass
+            import sys
+
+            print("警告: 型チェックがタイムアウトしました", file=sys.stderr)
+            print(f"対象ファイル: {file_path}", file=sys.stderr)
 
         # キャッシュに保存
         self._type_error_cache[cache_key] = errors
@@ -591,3 +643,64 @@ class TypeIgnoreAnalyzer:
             solutions.append("型の不一致を修正するためのキャストやバリデーションを追加")
 
         return solutions
+
+    def _get_bulk_type_errors(
+        self,
+        files: list[Path],
+        project_root: Path,
+    ) -> dict[Path, list[dict[str, str]]]:
+        """
+        複数のファイルを一度にmypyでチェックし、結果をファイル単位でグループ化
+
+        Args:
+            files: チェック対象のファイルパスのリスト
+            project_root: プロジェクトルートパス
+
+        Returns:
+            ファイルパスをキー、エラー情報のリストを値とする辞書
+        """
+        if not files:
+            return {}
+
+        # mypyコマンドを構築（全ファイルを一度にチェック）
+        cmd = ["mypy", "--no-error-summary", *(str(path) for path in files)]
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=120,  # プロジェクト全体なので長めのタイムアウト
+                cwd=project_root,
+            )
+
+            # エラーをファイル単位でグループ化
+            grouped: dict[Path, list[dict[str, str]]] = {}
+            for error in self._parse_mypy_output(result.stdout + result.stderr):
+                err_file = error.get("file")
+                if not err_file:
+                    continue
+                resolved_path = Path(err_file).resolve()
+                grouped.setdefault(resolved_path, []).append(error)
+
+            return grouped
+
+        except subprocess.TimeoutExpired:
+            import sys
+
+            print(
+                "警告: プロジェクト全体の型チェックがタイムアウトしました",
+                file=sys.stderr,
+            )
+            print(f"対象プロジェクト: {project_root}", file=sys.stderr)
+            return {}
+        except FileNotFoundError:
+            import sys
+
+            print(
+                f"エラー: mypyが見つかりません。型エラー情報を取得できません。\n"
+                f"解決策:\n"
+                f"  1. mypyをインストール: pip install mypy\n"
+                f"対象プロジェクト: {project_root}",
+                file=sys.stderr,
+            )
+            return {}
