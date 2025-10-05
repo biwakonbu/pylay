@@ -37,6 +37,11 @@ help: ## このMakefileのヘルプを表示
 	@echo "🚀 CI/CD:"
 	@echo "  ci                 CIで実行する全チェック"
 	@echo ""
+	@echo "📦 リリース管理:"
+	@echo "  release-prepare    リリース準備（タグ設定・ビルド）"
+	@echo "  publish-test       テストPyPIに公開"
+	@echo "  publish            本番PyPIに公開"
+	@echo ""
 	@echo "📚 詳細なヘルプ:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
@@ -172,6 +177,29 @@ infer-deps: ## 型推論と依存関係抽出を実行
 	uv run python src/infer_deps.py $(FILE)
 
 # =============================================================================
+# リリース管理スクリプト（メンテナ向け）
+# =============================================================================
+
+release-prepare: ## リリース準備（バージョン更新・タグ設定・ビルド）
+	@echo "🚀 リリース準備を開始します..."
+	@echo "現在のバージョン: $$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = \"\(.*\)\"/\1/')"
+	@echo "📝 Gitタグを設定中..."
+	@VERSION=$(shell grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/'); \
+	if git tag | grep -q "^v$$VERSION$$"; then \
+		echo "⚠️  タグ v$$VERSION は既に存在します"; \
+	else \
+		echo "📝 Gitタグ v$$VERSION を作成中..."; \
+		echo "タグメッセージを生成中..."; \
+		TAG_MSG="リリースバージョン$$VERSION\n\n$$(awk '/^## \[$$VERSION\]/{f=1; next} /^---/{f=0} f{print}' CHANGELOG.md | head -20)"; \
+		git tag -a "v$$VERSION" -m "$$TAG_MSG"; \
+		git push origin "v$$VERSION"; \
+		echo "✅ Gitタグ v$$VERSION を作成・プッシュしました"; \
+	fi
+	@echo "📦 パッケージをビルド中..."
+	$(MAKE) build
+	@echo "✅ リリース準備完了"
+
+# =============================================================================
 # PyPI公開（メンテナ向け）
 # =============================================================================
 
@@ -191,6 +219,19 @@ publish-test: build ## テストPyPIに公開
 	@echo "   2. バージョン番号が適切であること"
 	@echo "   3. ビルドが正常に完了していること"
 	@read -p "上記の確認が完了したらEnterを押してください..." || echo "続行します..."
+	@echo "📝 Gitタグを設定中..."
+	@VERSION=$(shell grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/'); \
+	echo "現在のバージョン: $$VERSION"; \
+	if git tag | grep -q "^v$$VERSION$$"; then \
+		echo "⚠️  タグ v$$VERSION は既に存在します"; \
+	else \
+		echo "📝 Gitタグ v$$VERSION を作成中..."; \
+		echo "タグメッセージを生成中..."; \
+		TAG_MSG="リリースバージョン$$VERSION\n\n$$(awk '/^## \[$$VERSION\]/{f=1; next} /^---/{f=0} f{print}' CHANGELOG.md | head -20)"; \
+		git tag -a "v$$VERSION" -m "$$TAG_MSG"; \
+		git push origin "v$$VERSION"; \
+		echo "✅ Gitタグ v$$VERSION を作成・プッシュしました"; \
+	fi
 	uv publish --index testpypi
 
 publish: build ## 本番PyPIに公開
@@ -202,6 +243,19 @@ publish: build ## 本番PyPIに公開
 	@echo "   4. CHANGELOG.mdが更新されていること"
 	@echo "続行するにはEnterを押してください..."
 	@read confirm || echo "続行します..."
+	@echo "📝 Gitタグを設定中..."
+	@VERSION=$(shell grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/'); \
+	echo "現在のバージョン: $$VERSION"; \
+	if git tag | grep -q "^v$$VERSION$$"; then \
+		echo "⚠️  タグ v$$VERSION は既に存在します"; \
+	else \
+		echo "📝 Gitタグ v$$VERSION を作成中..."; \
+		echo "タグメッセージを生成中..."; \
+		TAG_MSG="リリースバージョン$$VERSION\n\n$$(awk '/^## \[$$VERSION\]/{f=1; next} /^---/{f=0} f{print}' CHANGELOG.md | head -20)"; \
+		git tag -a "v$$VERSION" -m "$$TAG_MSG"; \
+		git push origin "v$$VERSION"; \
+		echo "✅ Gitタグ v$$VERSION を作成・プッシュしました"; \
+	fi
 	uv publish
 
 check-pypi: ## PyPIでの公開状況を確認
