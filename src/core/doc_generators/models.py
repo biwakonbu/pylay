@@ -309,10 +309,7 @@ class FileSystemService(BaseModel):
     このクラスは、ファイルシステム操作のビジネスロジックを実装します。
     """
 
-    def __init__(self, config: FileSystemConfig | None = None):
-        """ファイルシステムサービスを初期化します。"""
-        self.config = config or FileSystemConfig()
-        super().__init__()
+    config: FileSystemConfig = Field(default_factory=FileSystemConfig)
 
     def mkdir(
         self, path: str | Path, parents: bool = True, exist_ok: bool = True
