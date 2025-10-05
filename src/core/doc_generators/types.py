@@ -326,7 +326,7 @@ class BatchGenerationResult(BaseModel):
     """
 
     success: bool = Field(description="全体の処理が成功したかどうか")
-    total_files: PositiveInt = Field(description="処理対象のファイル総数")
+    total_files: NonNegativeInt = Field(description="処理対象のファイル総数")
     successful_files: NonNegativeInt = Field(description="成功したファイル数")
     failed_files: NonNegativeInt = Field(description="失敗したファイル数")
     total_generation_time_ms: float = Field(description="総生成時間（ミリ秒）")
