@@ -310,8 +310,11 @@ VSCodeを使用する場合、以下の拡張機能が推奨されます：
 2. **Pydanticによる厳密な型定義でドメイン型を作成する**
    - **3つのレベル**を適切に使い分ける：
      - Level 1: `type` エイリアス（制約なし）
-     - Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
-     - Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
+     - Level 2: `NewType` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出パターン）
+     - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型・ビジネスロジック）
+       - 3a: `dataclass(frozen=True)` - 不変値オブジェクト
+       - 3b: `dataclass` - 状態管理エンティティ
+       - 3c: `BaseModel` - 複雑なドメインモデル
    - Fieldによるバリデーション（`min_length`, `ge`, `pattern` など）
 
 3. **typing モジュールは必要最小限に留める（Python 3.13標準を優先）**
@@ -336,27 +339,35 @@ VSCodeを使用する場合、以下の拡張機能が推奨されます：
 本プロジェクトはPython 3.13を開発基準とし、以下の新機能を活用します：
 
 ```python
-from typing import Annotated
+from typing import NewType, Annotated
 from pydantic import AfterValidator, Field, BaseModel
+from dataclasses import dataclass
 
 # Level 1: 単純な型エイリアス（制約なし）
-type UserId = str
 type Timestamp = float
 
-# Level 2: Annotated + AfterValidator（制約付き、★NewType代替）
+# Level 2: NewType + Annotated（★プリミティブ型代替、最頻出パターン）
+UserId = NewType('UserId', Annotated[str, Field(min_length=8)])
+Count = NewType('Count', Annotated[int, Field(ge=0)])
+
 def validate_email(v: str) -> str:
     if "@" not in v:
         raise ValueError("無効なメールアドレス")
     return v
 
-type Email = Annotated[str, AfterValidator(validate_email)]
-type PositiveInt = Annotated[int, Field(gt=0)]
+Email = NewType('Email', Annotated[str, AfterValidator(validate_email)])
 
-# Level 3: BaseModel（複雑なドメイン型）
+# Level 3a: dataclass(frozen=True)（不変値オブジェクト）
+@dataclass(frozen=True)
+class CodeLocation:
+    file: str
+    line: int = Field(ge=1)
+
+# Level 3b: BaseModel（複雑なドメインモデル）
 class User(BaseModel):
     user_id: UserId
     email: Email
-    age: PositiveInt
+    age: Count
 
     def is_adult(self) -> bool:
         return self.age >= 18

@@ -105,7 +105,7 @@ Python 3.13では、以下のtypingモジュールの型は**使用禁止**と�
 | `Generic[T]` | `class C[T]` | Python 3.12+ |
 | `TypeVar('T')` | `class C[T]` | Python 3.12+ |
 
-**例外**: `Protocol`, `TypedDict`, `TypeGuard`, `Callable`, `override` は引き続き使用可
+**例外**: `NewType`, `Protocol`, `TypedDict`, `TypeGuard`, `Callable`, `override` は引き続き使用可
 
 ## 型定義レベルの基本構造と理念
 
@@ -124,8 +124,8 @@ Python 3.13では、以下のtypingモジュールの型は**使用禁止**と�
 | レベル | 定義 | 構造 | 用途 | 実装方法 | 例 |
 |--------|------|------|------|----------|-----|
 | **Level 1** | 型エイリアス<br/>（制約なし） | 単純な別名定義 | - 意味的な型名を与える<br/>- 可読性向上<br/>- 一時的な型定義 | `type` 文 | `type UserId = str`<br/>`type Timestamp = float` |
-| **Level 2** | 制約付き型<br/>（バリデーション付き） | 型 + バリデータ関数 | - 値の制約を保証<br/>- 不正な値を型レベルで排除<br/>- 再利用可能なバリデーション | `Annotated` + `AfterValidator` | `type Email = Annotated[str, AfterValidator(validate_email)]` |
-| **Level 3** | ドメインモデル<br/>（ビジネスロジック含む） | 複数フィールド + メソッド | - 複雑なドメイン型<br/>- ビジネスロジックのカプセル化<br/>- 不変条件の保証 | `BaseModel` | `class User(BaseModel):`<br/>&nbsp;&nbsp;&nbsp;&nbsp;`user_id: UserId`<br/>&nbsp;&nbsp;&nbsp;&nbsp;`email: Email`<br/>&nbsp;&nbsp;&nbsp;&nbsp;`def is_valid(): ...` |
+| **Level 2** | 制約付き型<br/>（型レベル区別 + バリデーション） | NewType + Annotated + バリデータ | - プリミティブ型の代替（最頻出パターン）<br/>- 型レベルでの区別（mypy/pyright）<br/>- ランタイムバリデーション | `NewType` + `Annotated` + `Field` | `UserId = NewType('UserId', Annotated[str, Field(min_length=8)])`<br/>`Count = NewType('Count', Annotated[int, Field(ge=0)])` |
+| **Level 3** | ドメインモデル<br/>（値オブジェクト・エンティティ） | dataclass + Pydantic | - 複雑なドメイン型<br/>- 値オブジェクト（不変）<br/>- エンティティ（状態 + ロジック） | `dataclass` + Pydantic | `@dataclass(frozen=True)`<br/>`class CodeLocation:`<br/>&nbsp;&nbsp;&nbsp;&nbsp;`file: str`<br/>&nbsp;&nbsp;&nbsp;&nbsp;`line: int = Field(ge=1)` |
 
 ### レベル間の関係性とライフサイクル
 
@@ -135,11 +135,13 @@ Python 3.13では、以下のtypingモジュールの型は**使用禁止**と�
 [設計初期]
    ↓
 Level 1: type UserId = str
-   ↓ (制約が必要になる)
-Level 2: type UserId = Annotated[str, AfterValidator(validate_user_id)]
-   ↓ (ビジネスロジックが増える)
-Level 3: class UserId(BaseModel):
-             value: str
+   ↓ (型レベル区別 + バリデーションが必要になる)
+Level 2: UserId = NewType('UserId', Annotated[str, Field(min_length=8)])
+   ↓ (複数フィールド・ビジネスロジックが増える)
+Level 3: @dataclass(frozen=True)
+         class User:
+             user_id: UserId
+             name: str
              def is_admin(self) -> bool: ...
 ```
 
@@ -164,32 +166,89 @@ Level 3: class UserId(BaseModel):
       └───────┬───────┘      ※将来的にLevel 2/3への昇格を検討
               ↓ YES
       ┌───────────────┐
-      │ 複数フィールドまたは │ NO → Level 2 (Annotated + AfterValidator)
-      │ ビジネスロジックが   │      ※単一値の制約付き型
-      │ 必要か？           │      ※再利用可能なバリデーション
-      └───────┬───────┘
+      │ 複数フィールドまたは │ NO → Level 2 (NewType + Annotated)
+      │ ビジネスロジックが   │      ★プリミティブ型代替の最頻出パターン
+      │ 必要か？           │      ※型レベル区別（mypy/pyright）
+      └───────┬───────┘      ※ランタイムバリデーション
               ↓ YES
-         Level 3 (BaseModel)
-         ※複雑なドメイン型
-         ※不変条件の保証
+         Level 3 (dataclass + Pydantic)
+         ※値オブジェクト: @dataclass(frozen=True)
+         ※エンティティ: @dataclass
+         ※複雑なロジック: class
 ```
 
-### Level 2がNewTypeの代替である理由
+### Level 2の設計方針：NewType + Annotated
 
-Python標準ライブラリの `NewType` は、型チェッカーでは区別されますが、ランタイムでは単なる関数呼び出しであり、**バリデーションが一切行われません**。
+**重要な設計方針**: Level 2は `NewType` + `Annotated` の組み合わせで実装します。これにより、**型レベルでの区別（mypy/pyright）**と**ランタイムバリデーション（Pydantic）**の両方を実現します。
+
+#### なぜ NewType + Annotated なのか
+
+1. **型安全性が最優先**: このプロジェクトの目的は、mypy/pyrightによる静的解析で問題を検出できる厳格な型管理です
+2. **NewTypeの役割**: 型チェッカーでプリミティブ型を区別し、誤った代入を防止
+3. **Annotatedの役割**: バリデーション制約を追加（ランタイム補助保証）
+
+#### バリデーション方法の使い分け
+
+Level 2では、バリデーションに `Field` または `AfterValidator` を使い分けます：
+
+**Field（宣言的制約）**: 単純な制約に使用
+```python
+from typing import NewType, Annotated
+from pydantic import Field
+
+# 範囲制約、長さ制約、パターン制約など
+Count = NewType('Count', Annotated[int, Field(ge=0)])
+UserId = NewType('UserId', Annotated[str, Field(min_length=8, max_length=20)])
+Email = NewType('Email', Annotated[str, Field(pattern=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')])
+```
+
+**AfterValidator（カスタムロジック）**: 複雑なバリデーションに使用
+```python
+from typing import NewType, Annotated
+from pydantic import AfterValidator
+
+def validate_module_name(v: str) -> str:
+    """モジュール名の複雑なバリデーション"""
+    if not v.islower():
+        raise ValueError("モジュール名は小文字のみで構成してください")
+    if not v.replace("_", "").isalnum():
+        raise ValueError("モジュール名は英数字とアンダースコアのみです")
+    return v
+
+ModuleName = NewType('ModuleName', Annotated[str, AfterValidator(validate_module_name)])
+```
+
+**Field + AfterValidator（併用）**: 宣言的制約 + カスタムロジック
+```python
+from typing import NewType, Annotated
+from pydantic import Field, AfterValidator
+
+def validate_port_range(v: int) -> int:
+    """予約ポート範囲のチェック"""
+    if 0 < v < 1024:
+        raise ValueError(f"ポート {v} は予約されています（1-1023）")
+    return v
+
+Port = NewType('Port', Annotated[int, Field(ge=1, le=65535), AfterValidator(validate_port_range)])
+```
+
+#### 型チェッカーでの区別
 
 ```python
-# ❌ NewType: 型チェックのみ、ランタイム保証なし
-from typing import NewType
-UserId = NewType('UserId', str)
-user_id = UserId("invalid-id")  # 型チェックは通るが、バリデーションなし
+# 型チェッカーでの区別
+user_id: UserId = UserId("user-12345")
+another_id: str = "string-value"
+# user_id = another_id  # ❌ mypyエラー: UserId型とstr型は互換性なし
 
-# ✅ Level 2: ランタイムでもバリデーションが実行される
-type UserId = Annotated[str, AfterValidator(validate_user_id)]
-user_id = UserId("invalid-id")  # ValidationError: バリデーション失敗
+# ランタイムバリデーション（Pydantic経由）
+from pydantic import BaseModel
+
+class User(BaseModel):
+    user_id: UserId  # 自動的にmin_length=8がチェックされる
+    count: Count     # 自動的にge=0がチェックされる
 ```
 
-このプロジェクトでは、**型定義の厳密性 = ドキュメント生成の精度**という理念に基づき、ランタイムでも値を保証できる `Annotated` + `AfterValidator` を採用しています。
+このプロジェクトでは、**型解析による安全性を高める**ことが最優先であり、バリデーションはそれをランタイムで保証するための補助機能です。
 
 ### 型定義レベルの自動判定とdocstringによる制御
 
@@ -411,13 +470,13 @@ def get_user(user_id: UserId) -> User:
 - バリデーションなし
 - ランタイムでの型チェックなし
 
-##### Level 2: `Annotated` + `AfterValidator`（★推奨：NewTypeの代替）
+##### Level 2: `NewType` + `Annotated` + (`Field` | `AfterValidator`)（★推奨：プリミティブ型代替）
 
-**用途**: 制約付き型、再利用可能なバリデーション、単一値の型
+**用途**: 制約付き型、型レベル区別、再利用可能なバリデーション
 
 ```python
-from typing import Annotated
-from pydantic import AfterValidator, Field, field_validator
+from typing import NewType, Annotated
+from pydantic import AfterValidator, Field, BaseModel
 
 # バリデータ関数の定義
 def validate_module_name(v: str) -> str:
@@ -434,23 +493,25 @@ def validate_positive(v: int) -> int:
         raise ValueError(f"正の整数が必要です: {v}")
     return v
 
-# Annotated型の定義（再利用可能）
-type ModuleName = Annotated[
-    str,
-    AfterValidator(validate_module_name),
-    Field(min_length=1, max_length=100, description="Pythonモジュール名")
-]
+# NewType + Annotated型の定義（再利用可能）
+ModuleName = NewType(
+    'ModuleName',
+    Annotated[
+        str,
+        AfterValidator(validate_module_name),
+        Field(min_length=1, max_length=100, description="Pythonモジュール名")
+    ]
+)
 
-type PositiveInt = Annotated[
-    int,
-    AfterValidator(validate_positive),
-    Field(description="正の整数")
-]
+PositiveInt = NewType(
+    'PositiveInt',
+    Annotated[int, AfterValidator(validate_positive), Field(description="正の整数")]
+)
 
-type EmailAddress = Annotated[
-    str,
-    Field(pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
-]
+EmailAddress = NewType(
+    'EmailAddress',
+    Annotated[str, Field(pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")]
+)
 
 # Pydantic BaseModelで使用
 class ModuleSpec(BaseModel):
@@ -462,45 +523,107 @@ class ModuleSpec(BaseModel):
 
 # 使用例
 spec = ModuleSpec(
-    name="my_module",  # validate_module_name が自動実行
+    name=ModuleName("my_module"),  # validate_module_name が自動実行
     version="1.0.0",
-    line_count=100,    # validate_positive が自動実行
+    line_count=PositiveInt(100),    # validate_positive が自動実行
 )
 ```
 
 **利点**:
+- **型レベル区別**: mypy/pyrightで異なる型として扱われる
 - **再利用可能**: 同じバリデータを複数のモデルで使用
 - **型ヒントとして明確**: フィールド定義を見ればバリデーションがわかる
-- **Pydantic公式推奨**: v2のベストプラクティス
-- **パフォーマンス良好**: BaseModelより軽量
+- **パフォーマンス良好**: dataclass/BaseModelより軽量
 
 **欠点**:
 - バリデータ関数の定義が必要
 - 複雑なビジネスロジックには不向き
 
-##### Level 3: `BaseModel`（複雑なドメイン型のみ）
+##### Level 3: `dataclass` + Pydantic（値オブジェクト・ドメインモデル）
 
-**用途**: 複数フィールド、ビジネスロジック含む、不変条件がある型
+**用途**: 複数フィールド、ビジネスロジック、不変条件がある型
 
+**パターンA: 値オブジェクト（dataclass frozen）**
 ```python
-from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
+from dataclasses import dataclass
+from pydantic import Field
+
+@dataclass(frozen=True)  # 不変値オブジェクト
+class CodeLocation:
+    """コード位置を表す値オブジェクト
+
+    ファイルパスと行番号の組み合わせ。
+    不変オブジェクトとして扱う。
+    """
+    file: str = Field(min_length=1)
+    line: int = Field(ge=1)
+    column: int = Field(ge=0, default=0)
+
+    def format_display(self) -> str:
+        """表示用フォーマット"""
+        return f"{self.file}:{self.line}:{self.column}"
+
+@dataclass(frozen=True)
+class TypeSpec:
+    """型仕様の値オブジェクト"""
+    name: str
+    module: str
+    qualified_name: str = Field(min_length=1)
+
+    def to_import_string(self) -> str:
+        """import文として出力"""
+        return f"from {self.module} import {self.name}"
+```
+
+**パターンB: エンティティ（dataclass mutable）**
+```python
+from dataclasses import dataclass, field
+from pydantic import Field
+
+@dataclass  # 状態を持つエンティティ
+class AnalysisSession:
+    """解析セッション（状態管理）
+
+    解析の進行状況を管理するエンティティ。
+    状態の変更を許可する。
+    """
+    session_id: str = Field(min_length=1)
+    start_time: float
+    analyzed_files: list[str] = field(default_factory=list)
+    error_count: int = Field(ge=0, default=0)
+
+    def add_file(self, file_path: str) -> None:
+        """解析済みファイルを追加"""
+        if file_path not in self.analyzed_files:
+            self.analyzed_files.append(file_path)
+
+    def record_error(self) -> None:
+        """エラーカウントを増加"""
+        self.error_count += 1
+
+    def is_completed(self) -> bool:
+        """セッションが完了したか"""
+        return len(self.analyzed_files) > 0
+```
+
+**パターンC: 複雑なドメインモデル（BaseModel）**
+```python
+from pydantic import BaseModel, Field, model_validator
 
 class ModuleAnalysisResult(BaseModel):
     """モジュール解析結果（複雑なドメイン型）
 
     複数のフィールドと不変条件、ビジネスロジックを持つ。
     """
-    model_config = ConfigDict(frozen=True)  # 不変
-
     module_name: ModuleName  # Level 2の型を活用
-    total_lines: PositiveInt
-    code_lines: PositiveInt
-    comment_lines: PositiveInt
+    total_lines: int = Field(ge=0)
+    code_lines: int = Field(ge=0)
+    comment_lines: int = Field(ge=0)
     complexity: float = Field(ge=0.0, le=100.0)
 
     @model_validator(mode="after")
     def validate_line_counts(self) -> "ModuleAnalysisResult":
-        """不変条件: total_lines = code_lines + comment_lines"""
+        """不変条件: total_lines >= code_lines + comment_lines"""
         if self.total_lines < self.code_lines + self.comment_lines:
             raise ValueError(
                 f"行数の整合性エラー: total={self.total_lines}, "
@@ -528,10 +651,9 @@ class ModuleAnalysisResult(BaseModel):
 ```
 
 **利点**:
-- 複数フィールドの組み合わせバリデーション
-- ビジネスロジックのカプセル化
-- 不変条件の保証
-- 豊富なPydantic機能（model_validator等）
+- **dataclass frozen**: 不変値オブジェクト、hashable、型安全
+- **dataclass mutable**: 状態管理、エンティティパターン
+- **BaseModel**: 複雑なバリデーション、model_validator、豊富な機能
 
 **欠点**:
 - オーバーヘッドあり（単純な型には過剰）
@@ -539,22 +661,30 @@ class ModuleAnalysisResult(BaseModel):
 
 #### 使い分けガイドライン
 
-| レベル | パターン | 用途 | 例 | NewType代替 |
-|--------|---------|------|-----|------------|
-| 1 | `type` エイリアス | 制約なし型の別名 | `type UserId = str` | ❌ |
-| 2 | `Annotated` + `AfterValidator` | 制約付き単一値型 | `type Email = Annotated[str, AfterValidator(...)]` | ✅ ★推奨 |
-| 3 | `BaseModel` | 複数フィールド・ビジネスロジック | `class User(BaseModel): ...` | ❌ |
+| レベル | パターン | 用途 | 例 | 型安全性 |
+|--------|---------|------|-----|----------|
+| 1 | `type` エイリアス | 制約なし型の別名 | `type UserId = str` | ❌ プリミティブと区別されない |
+| 2 | `NewType` + `Annotated` | プリミティブ型代替（最頻出） | `UserId = NewType('UserId', Annotated[str, Field(...)])` | ✅ ★型レベル区別 + バリデーション |
+| 3a | `dataclass(frozen=True)` | 不変値オブジェクト | `@dataclass(frozen=True)` `class CodeLocation: ...` | ✅ 値オブジェクト |
+| 3b | `dataclass` | 状態管理エンティティ | `@dataclass` `class Session: ...` | ✅ エンティティ |
+| 3c | `BaseModel` | 複雑なドメインモデル | `class AnalysisResult(BaseModel): ...` | ✅ 複雑なロジック |
 
 **判断フロー**:
 ```
-NewTypeの代替が必要？
-  ↓
-制約・バリデーションが必要？
-  ↓ NO  → type エイリアス（Level 1）
+プリミティブ型の代替が必要？
+  ↓ YES → Level 2 (NewType + Annotated) ★最頻出パターン
+  ↓ NO
+複数フィールドが必要？
+  ↓ NO  → Level 1 (type エイリアス)
   ↓ YES
-複数フィールド or ビジネスロジック？
-  ↓ NO  → Annotated + AfterValidator（Level 2）★推奨
-  ↓ YES → BaseModel（Level 3）
+不変値オブジェクト？
+  ↓ YES → Level 3a (dataclass frozen)
+  ↓ NO
+状態管理が必要？
+  ↓ YES → Level 3b (dataclass)
+  ↓ NO
+複雑なバリデーション・ビジネスロジック？
+  ↓ YES → Level 3c (BaseModel)
 ```
 
 #### Pydantic BaseModelの活用パターン
@@ -773,24 +903,18 @@ def func(items: List[str]) -> Dict[str, Tuple[int, int]]:
 def func(items: list[str]) -> dict[str, tuple[int, int]]:
     pass
 
-# ❌ NewType は使用しない
-from typing import NewType
-UserId = NewType('UserId', str)
+# ✅ NewType は Level 2 の実装に使用（型レベル区別が最優先）
+from typing import NewType, Annotated
+from pydantic import Field
 
-# ✅ 制約付き型には Annotated + AfterValidator を使用（原則2参照）
-from typing import Annotated
-from pydantic import AfterValidator, Field
+UserId = NewType('UserId', Annotated[str, Field(min_length=8)])
 
-def validate_user_id(v: str) -> str:
-    if len(v) < 8:
-        raise ValueError("ユーザーIDは8文字以上必要です")
-    return v
+# 複雑なビジネスロジックが必要な場合は dataclass または BaseModel
+from dataclasses import dataclass
 
-type UserId = Annotated[str, AfterValidator(validate_user_id), Field(min_length=8)]
-
-# 複雑なビジネスロジックが必要な場合のみ BaseModel
-class UserEntity(BaseModel):
-    user_id: UserId  # Annotated型を活用
+@dataclass(frozen=True)  # 値オブジェクト
+class User:
+    user_id: UserId
     name: str
     created_at: float
 
@@ -1816,7 +1940,9 @@ def test_user_id_validation():
 - ✅ `list[str]`, `dict[str, int]` を使用（組み込み型ジェネリクス）
 - ✅ `class Container[T]` を使用（型パラメータ構文）
 - ✅ `type Point = tuple[float, float]` を使用（type文）
-- ✅ `Annotated` + `AfterValidator` で制約付き型を定義（★NewType代替）
+- ✅ `NewType` + `Annotated` + `Field` で Level 2 型を定義（★最頻出パターン）
+- ✅ `dataclass(frozen=True)` で不変値オブジェクトを定義
+- ✅ `dataclass` でエンティティを定義
 - ✅ Pydantic BaseModel で複雑なドメイン型を定義
 - ✅ Field制約でバリデーションを宣言的に記述
 - ✅ 型定義を types.py に集約
@@ -1827,9 +1953,8 @@ def test_user_id_validation():
 - ❌ `List[str]`, `Dict[str, int]` を使用（Python 3.9+では不要）
 - ❌ `TypeVar('T')` と `Generic[T]` を使用（Python 3.12+では不要）
 - ❌ `TypeAlias` を使用（`type` 文を使用）
-- ❌ `NewType` を使用（`Annotated` + `AfterValidator` を使用）
-- ❌ primitive型を直接使用（ドメイン型を定義）
-- ❌ 単純な制約のために BaseModel を使用（`Annotated` で十分）
+- ❌ primitive型を直接使用（Level 2: NewType + Annotated を使用）
+- ❌ 単純な制約のために BaseModel を使用（Level 2 または dataclass で十分）
 
 ### プロジェクトへの影響
 

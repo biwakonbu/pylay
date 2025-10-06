@@ -22,8 +22,11 @@
        - 将来の拡張性を考えた設計意図 → docstringで設計意図を明記し、`@keep-as-is: true`で現状維持を宣言
   2. Pydanticによる厳密な型定義（3つのレベルを適切に使い分ける）
      - Level 1: `type` エイリアス（制約なし）
-     - Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
-     - Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
+     - Level 2: `NewType` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出パターン）
+     - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型・ビジネスロジック）
+       - 3a: `dataclass(frozen=True)` - 不変値オブジェクト
+       - 3b: `dataclass` - 状態管理エンティティ
+       - 3c: `BaseModel` - 複雑なドメインモデル
   3. typing モジュールは最小限に（Python 3.13標準を優先）
   4. 型と実装を分離（types.py, protocols.py, models.py, services.py）
      - **設計思想**: Djangoのアプリケーション構造のように、各モジュールが独立したパッケージとして完結
@@ -328,37 +331,48 @@ _private_method()
 本プロジェクトはPython 3.13を開発基準とし、以下の原則を厳守します：
 
 #### 4つの核心原則
-1. **primitive型を直接使わない** → ドメイン型を定義（`type`、`Annotated`、`BaseModel`）
+1. **primitive型を直接使わない** → ドメイン型を定義（`NewType` + `Annotated`、`dataclass`、`BaseModel`）
 2. **Pydanticによる厳密な型定義** → 3つのレベルを適切に使い分ける
    - Level 1: `type` エイリアス（制約なし）
-   - Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
-   - Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
+   - Level 2: `NewType` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出）
+   - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
 3. **typing モジュールは最小限** → Python 3.13標準構文を優先
 4. **型と実装を分離** → types.py, protocols.py, models.py, services.py
 
 #### Python 3.13型構文（推奨）
 ```python
-from typing import Annotated
+from typing import NewType, Annotated
 from pydantic import AfterValidator, Field, BaseModel
+from dataclasses import dataclass
 
 # Level 1: 単純な型エイリアス
-type UserId = str
+type Timestamp = float
 
-# Level 2: Annotated + AfterValidator（★NewType代替）
+# Level 2: NewType + Annotated（★プリミティブ型代替、最頻出）
+UserId = NewType('UserId', Annotated[str, Field(min_length=8)])
+Count = NewType('Count', Annotated[int, Field(ge=0)])
+
 def validate_email(v: str) -> str:
     if "@" not in v:
         raise ValueError("無効なメールアドレス")
     return v
 
-type Email = Annotated[str, AfterValidator(validate_email)]
+Email = NewType('Email', Annotated[str, AfterValidator(validate_email)])
 
-# Level 3: BaseModel（複雑なドメイン型）
+# Level 3a: dataclass(frozen=True)（不変値オブジェクト）
+@dataclass(frozen=True)
+class CodeLocation:
+    file: str
+    line: int = Field(ge=1)
+
+# Level 3b: BaseModel（複雑なドメインモデル）
 class User(BaseModel):
     user_id: UserId
     email: Email
+    age: Count
 
-    def is_valid(self) -> bool:
-        return len(self.user_id) > 0
+    def is_adult(self) -> bool:
+        return self.age >= 18
 
 # ✅ Python 3.13標準構文
 def process(data: str | int | None) -> list[str]:
