@@ -279,7 +279,6 @@ class QualityChecker:
                 issues.append(
                     QualityIssue(
                         issue_type="custom_error_condition",
-                        severity="エラー",  # カスタム条件はすべてエラー扱い
                         message=condition.message,
                         suggestion="設定された基準を満たすようにコードを修正してください",
                         improvement_plan="pyproject.tomlの基準設定を確認し、適切な閾値に調整してください",
