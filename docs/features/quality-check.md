@@ -441,7 +441,8 @@ repos:
 
 ### Level 2: NewType + Annotated（最頻出パターン）
 
-**Pattern A: Field（宣言的制約）**
+#### Pattern A: Field（宣言的制約）
+
 ```python
 from typing import NewType, Annotated
 from pydantic import Field
@@ -451,7 +452,8 @@ UserId = NewType('UserId', Annotated[str, Field(min_length=8, max_length=20)])
 Email = NewType('Email', Annotated[str, Field(pattern=r'^[a-zA-Z0-9._%+-]+@.*')])
 ```
 
-**Pattern B: AfterValidator（カスタムロジック）**
+#### Pattern B: AfterValidator（カスタムロジック）
+
 ```python
 from typing import NewType, Annotated
 from pydantic import AfterValidator
@@ -466,7 +468,8 @@ def validate_module_name(v: str) -> str:
 ModuleName = NewType('ModuleName', Annotated[str, AfterValidator(validate_module_name)])
 ```
 
-**Pattern C: Field + AfterValidator（併用）**
+#### Pattern C: Field + AfterValidator（併用）
+
 ```python
 from typing import NewType, Annotated
 from pydantic import Field, AfterValidator
