@@ -504,8 +504,8 @@ pylay quality --severity error --issue-type primitive_usage src/
 
 - [x] CLIオプション追加
 - [x] フィルタロジック実装
-- [ ] テスト追加
-- [ ] ドキュメント更新
+- [x] テスト追加（3つの新しいテストケース）
+- [x] ドキュメント更新（MIGRATION_PLAN.md、issue #45）
 
 ---
 
@@ -515,6 +515,8 @@ pylay quality --severity error --issue-type primitive_usage src/
 - 2025-10-07: Phase 2完了（新パターンテンプレートの詳細実装）
   - `quality_checker.py`に NewType + @validate_call の具体的なコードテンプレートを追加
   - primitive型置き換え時に自動的に型名候補と制約を提案する機能を実装
-- 2025-10-07: 品質チェック機能拡張（フィルタ機能）
+- 2025-10-07: 品質チェック機能拡張（フィルタ機能）✅
   - `--severity`と`--issue-type`オプションを追加
   - フィルタロジックを実装（`_apply_filters`関数）
+  - フィルタ機能のテストを追加（3つのテストケース）
+  - 実装完了・テスト成功
