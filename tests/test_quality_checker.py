@@ -113,9 +113,9 @@ class TestQualityChecker:
             improvement_plan="基準を満たすよう修正してください",
         )
         severity1 = quality_checker._calculate_severity(issue1, test_stats)
-        assert severity1 == "error", (
-            f"custom_error_condition (score=1.0): " f"期待=error, 実際={severity1}"
-        )
+        assert (
+            severity1 == "error"
+        ), f"custom_error_condition (score=1.0): 期待=error, 実際={severity1}"
 
         # テストケース2: primitive_usage (base_score=0.7) → warning
         issue2 = QualityIssue(
@@ -125,9 +125,9 @@ class TestQualityChecker:
             improvement_plan="ドメイン型を定義して置き換えてください",
         )
         severity2 = quality_checker._calculate_severity(issue2, test_stats)
-        assert severity2 == "warning", (
-            f"primitive_usage (score=0.7): " f"期待=warning, 実際={severity2}"
-        )
+        assert (
+            severity2 == "warning"
+        ), f"primitive_usage (score=0.7): 期待=warning, 実際={severity2}"
 
         # テストケース3: primitive_usage_excluded (base_score=0.85) → advice
         issue3 = QualityIssue(
@@ -137,9 +137,9 @@ class TestQualityChecker:
             improvement_plan="現状維持（変更不要）",
         )
         severity3 = quality_checker._calculate_severity(issue3, test_stats)
-        assert severity3 == "advice", (
-            f"primitive_usage_excluded (score=0.85): " f"期待=advice, 実際={severity3}"
-        )
+        assert (
+            severity3 == "advice"
+        ), f"primitive_usage_excluded (score=0.85): 期待=advice, 実際={severity3}"
 
         # テストケース4: level1_ratio_high (base_score=0.3) → error
         issue4 = QualityIssue(
@@ -149,6 +149,6 @@ class TestQualityChecker:
             improvement_plan="制約が必要な型をLevel 2に昇格してください",
         )
         severity4 = quality_checker._calculate_severity(issue4, test_stats)
-        assert severity4 == "error", (
-            f"level1_ratio_high (score=0.3): " f"期待=error, 実際={severity4}"
-        )
+        assert (
+            severity4 == "error"
+        ), f"level1_ratio_high (score=0.3): 期待=error, 実際={severity4}"
