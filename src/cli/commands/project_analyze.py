@@ -5,9 +5,11 @@ pyproject.tomlの設定に基づいて、ディレクトリ全体のPythonファ
 解析し、型情報、依存関係、ドキュメントを生成します。
 """
 
+from __future__ import annotations
+
 import asyncio
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 from rich.box import SIMPLE
@@ -23,6 +25,11 @@ from rich.progress import (
 from rich.table import Table
 from rich.tree import Tree
 
+from src.cli.utils import load_config
+
+if TYPE_CHECKING:
+    from src.core.schemas.pylay_config import PylayConfig
+
 from ...core.analyzer.type_inferrer import TypeInferenceAnalyzer
 from ...core.converters.extract_deps import extract_dependencies_from_file
 from ...core.converters.type_to_yaml import extract_types_from_module
@@ -30,7 +37,6 @@ from ...core.converters.yaml_to_type import yaml_to_spec
 from ...core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from ...core.output_manager import OutputPathManager
 from ...core.project_scanner import ProjectScanner
-from ...core.schemas.pylay_config import PylayConfig
 
 console = Console()
 
@@ -62,13 +68,10 @@ def project_analyze(
     を一括実行します。
     """
     try:
-        # 設定の読み込み
-        if config_path:
-            project_root = Path(config_path).parent
-            config = PylayConfig.from_pyproject_toml(project_root)
-        else:
-            config = PylayConfig.from_pyproject_toml()
-            project_root = Path.cwd()
+        # 設定の読み込み（共通ユーティリティを使用）
+        config = load_config(config_path)
+        # プロジェクトルートを取得（config読み込み後に決定）
+        project_root = Path.cwd()
 
         # OutputPathManager を初期化（統一パス管理）
         output_manager = OutputPathManager(config, project_root)

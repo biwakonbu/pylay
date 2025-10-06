@@ -200,7 +200,7 @@ class PylayConfig(BaseModel):
 
         Args:
             project_root: プロジェクトルートディレクトリ
-                （Noneの場合はカレントディレクトリ）
+                （Noneの場合はカレントディレクトリから親を遡って探索）
 
         Returns:
             設定オブジェクト
@@ -210,12 +210,25 @@ class PylayConfig(BaseModel):
             ValueError: TOMLパースエラーの場合
         """
         if project_root is None:
-            project_root = Path.cwd()
+            # カレントディレクトリから親ディレクトリを遡ってpyproject.tomlを探索
+            current = Path.cwd()
+            pyproject_path = None
 
-        pyproject_path = project_root / "pyproject.toml"
+            # ルートディレクトリまで遡る
+            for parent in [current] + list(current.parents):
+                candidate = parent / "pyproject.toml"
+                if candidate.exists():
+                    pyproject_path = candidate
+                    break
 
-        if not pyproject_path.exists():
-            raise FileNotFoundError(f"pyproject.toml not found at {pyproject_path}")
+            if pyproject_path is None:
+                raise FileNotFoundError(
+                    f"pyproject.toml not found in {current} or any parent directory"
+                )
+        else:
+            pyproject_path = project_root / "pyproject.toml"
+            if not pyproject_path.exists():
+                raise FileNotFoundError(f"pyproject.toml not found at {pyproject_path}")
 
         try:
             with open(pyproject_path, "rb") as f:

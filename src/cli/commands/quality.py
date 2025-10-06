@@ -13,9 +13,9 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 
+from src.cli.utils import load_config, resolve_target_path
 from src.core.analyzer.quality_checker import QualityChecker
 from src.core.analyzer.type_level_analyzer import TypeLevelAnalyzer
-from src.core.schemas.pylay_config import PylayConfig
 
 if TYPE_CHECKING:
     from src.core.analyzer.quality_models import QualityCheckResult
@@ -96,31 +96,13 @@ def quality(
     """
     # 設定ファイルを読み込み（target_dirs参照のため先に読み込む）
     try:
-        if config:
-            project_root = Path(config).parent
-            config_obj = PylayConfig.from_pyproject_toml(project_root)
-        else:
-            # configが指定されていない場合、カレントディレクトリから探索
-            project_root = Path.cwd()
-            config_obj = PylayConfig.from_pyproject_toml(project_root)
+        config_obj = load_config(config)
     except Exception as e:
-        if config:
-            console.print(f"[red]Error: Failed to load config file: {e}[/red]")
-        else:
-            console.print(f"[red]Error: Failed to load pyproject.toml: {e}[/red]")
+        console.print(f"[red]Error: {e}[/red]")
         return
 
     # 解析対象を決定
-    if target is None:
-        # TARGET未指定の場合、pyproject.tomlのtarget_dirsを使用
-        if config_obj.target_dirs:
-            # target_dirsの最初のディレクトリを使用（複数ある場合は統合解析が必要）
-            target_path = Path(config_obj.target_dirs[0])
-        else:
-            # target_dirsも未設定の場合はカレントディレクトリ
-            target_path = Path.cwd()
-    else:
-        target_path = Path(target)
+    target_path = resolve_target_path(target, config_obj)
 
     # 品質チェックが有効か確認
     if not config_obj.is_quality_check_enabled():
