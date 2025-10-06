@@ -15,6 +15,7 @@ from src.core.analyzer.improvement_templates import (
     VALIDATION_PATTERNS,
     extract_variable_name,
     format_validation_checklist,
+    suggest_pydantic_type,
     suggest_type_name,
     suggest_validation_patterns,
 )
@@ -386,40 +387,75 @@ class QualityChecker:
         # 変数名を抽出
         var_name = extract_variable_name(detail.location.code)
 
-        # 型名候補を推測
-        type_candidates = suggest_type_name(var_name, detail.primitive_type)
+        # Pydantic提供の型を優先的に推奨
+        pydantic_type = suggest_pydantic_type(var_name, detail.primitive_type)
 
-        # バリデーションパターンを提案
-        validation_patterns = suggest_validation_patterns(
-            var_name, detail.primitive_type
-        )
+        if pydantic_type:
+            # Pydantic型が見つかった場合
+            fixed_code = detail.location.code.replace(
+                f": {detail.primitive_type}", f": {pydantic_type['type']}"
+            ).strip()
 
-        # バリデーション例を構築
-        validation_examples = []
-        for pattern_key in validation_patterns:
-            if pattern_key in VALIDATION_PATTERNS:
-                pattern = VALIDATION_PATTERNS[pattern_key]
-                validation_examples.append(f"  # {pattern['description']}")
-                validation_examples.append(f"  {pattern['validator']}")
+            plan = f"""primitive型 {detail.primitive_type} をPydantic型に置き換える手順:
 
-        validation_code = (
-            "\n\n".join(validation_examples)
-            if validation_examples
-            else "  # TODO: 適切なバリデーションを実装"
-        )
+★ 推奨: Pydantic提供の型を使用（最もシンプル）
 
-        # 型名候補をフォーマット
-        type_candidates_formatted = "\n  ".join(f"- {name}" for name in type_candidates)
+Step 1: Pydantic型をインポート
 
-        # 修正後のコードを生成
-        fixed_code = detail.location.code.replace(
-            f": {detail.primitive_type}", f": {type_candidates[0]}"
-        ).strip()
+  {pydantic_type['import']}
 
-        # チェックリストを生成
-        checklist = format_validation_checklist(detail.primitive_type)
+  説明: {pydantic_type['description']}
+  例: {pydantic_type['example']}
 
-        plan = f"""primitive型 {detail.primitive_type} をドメイン型に置き換える手順:
+Step 2: 使用箇所を修正
+
+  File: {detail.location.file}:{detail.location.line}
+
+  # Before
+  {detail.location.code.strip()}
+
+  # After
+  {pydantic_type['import']}
+  {fixed_code}
+
+利点:
+  - 自動バリデーション（Pydanticが提供）
+  - 追加のコード不要
+  - 標準的な型定義パターン
+  - ドキュメント自動生成対応
+
+参考: https://docs.pydantic.dev/latest/api/types/
+"""
+        else:
+            # カスタム型定義が必要な場合
+            type_candidates = suggest_type_name(var_name, detail.primitive_type)
+            validation_patterns = suggest_validation_patterns(
+                var_name, detail.primitive_type
+            )
+
+            # バリデーション例を構築
+            validation_examples = []
+            for pattern_key in validation_patterns:
+                if pattern_key in VALIDATION_PATTERNS:
+                    pattern = VALIDATION_PATTERNS[pattern_key]
+                    validation_examples.append(f"  # {pattern['description']}")
+                    validation_examples.append(f"  {pattern['validator']}")
+
+            validation_code = (
+                "\n\n".join(validation_examples)
+                if validation_examples
+                else "  # TODO: 適切なバリデーションを実装"
+            )
+
+            type_candidates_formatted = "\n  ".join(
+                f"- {name}" for name in type_candidates
+            )
+            fixed_code = detail.location.code.replace(
+                f": {detail.primitive_type}", f": {type_candidates[0]}"
+            ).strip()
+            checklist = format_validation_checklist(detail.primitive_type)
+
+            plan = f"""primitive型 {detail.primitive_type} をドメイン型に置き換える手順:
 
 Step 1: src/core/schemas/types.py に型定義を作成
 

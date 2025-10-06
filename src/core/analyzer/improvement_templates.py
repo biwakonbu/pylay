@@ -4,6 +4,70 @@
 型定義の品質改善のための具体的なテンプレートとヒューリスティックを提供します。
 """
 
+# Pydantic提供の型マッピング
+PYDANTIC_TYPES: dict[str, dict[str, str]] = {
+    "email": {
+        "type": "EmailStr",
+        "import": "from pydantic import EmailStr",
+        "description": "メールアドレス（自動バリデーション）",
+        "example": "user_email: EmailStr",
+    },
+    "url": {
+        "type": "HttpUrl",
+        "import": "from pydantic import HttpUrl",
+        "description": "HTTP/HTTPS URL（自動バリデーション）",
+        "example": "website: HttpUrl",
+    },
+    "filepath": {
+        "type": "FilePath",
+        "import": "from pydantic import FilePath",
+        "description": "既存ファイルのパス（存在チェック）",
+        "example": "config_file: FilePath",
+    },
+    "dirpath": {
+        "type": "DirectoryPath",
+        "import": "from pydantic import DirectoryPath",
+        "description": "既存ディレクトリのパス（存在チェック）",
+        "example": "output_dir: DirectoryPath",
+    },
+    "positive_int": {
+        "type": "PositiveInt",
+        "import": "from pydantic import PositiveInt",
+        "description": "正の整数（1以上）",
+        "example": "count: PositiveInt",
+    },
+    "non_negative_int": {
+        "type": "NonNegativeInt",
+        "import": "from pydantic import NonNegativeInt",
+        "description": "非負整数（0以上）",
+        "example": "index: NonNegativeInt",
+    },
+    "positive_float": {
+        "type": "PositiveFloat",
+        "import": "from pydantic import PositiveFloat",
+        "description": "正の浮動小数点数",
+        "example": "score: PositiveFloat",
+    },
+    "non_negative_float": {
+        "type": "NonNegativeFloat",
+        "import": "from pydantic import NonNegativeFloat",
+        "description": "非負浮動小数点数",
+        "example": "weight: NonNegativeFloat",
+    },
+    "uuid": {
+        "type": "UUID4",
+        "import": "from pydantic import UUID4",
+        "description": "UUID version 4",
+        "example": "id: UUID4",
+    },
+    "secret": {
+        "type": "SecretStr",
+        "import": "from pydantic import SecretStr",
+        "description": "機密文字列（ログに表示されない）",
+        "example": "password: SecretStr",
+    },
+}
+
 # バリデーションパターンのカタログ
 VALIDATION_PATTERNS: dict[str, dict[str, str]] = {
     "email": {
@@ -57,6 +121,80 @@ VALIDATION_PATTERNS: dict[str, dict[str, str]] = {
         "description": "ファイルパス存在チェック",
     },
 }
+
+
+def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] | None:
+    """変数名とprimitive型からPydantic提供の型を推奨
+
+    Args:
+        var_name: 変数名（例: "user_email", "count"）
+        primitive_type: primitive型（例: "str", "int"）
+
+    Returns:
+        Pydantic型の情報（type, import, description）またはNone
+    """
+    var_lower = var_name.lower()
+
+    # str型の場合
+    if primitive_type == "str":
+        # メールアドレス
+        if "email" in var_lower or "mail" in var_lower:
+            return PYDANTIC_TYPES["email"]
+        # URL
+        if "url" in var_lower or "link" in var_lower or "href" in var_lower:
+            return PYDANTIC_TYPES["url"]
+        # ファイルパス
+        if (
+            "file" in var_lower
+            or "path" in var_lower
+            or "filename" in var_lower
+            or "filepath" in var_lower
+        ):
+            # ディレクトリとファイルを区別
+            if "dir" in var_lower or "directory" in var_lower:
+                return PYDANTIC_TYPES["dirpath"]
+            return PYDANTIC_TYPES["filepath"]
+        # 機密情報
+        if (
+            "password" in var_lower
+            or "secret" in var_lower
+            or "token" in var_lower
+            or "api_key" in var_lower
+        ):
+            return PYDANTIC_TYPES["secret"]
+        # UUID
+        if "uuid" in var_lower or "_id" in var_lower:
+            return PYDANTIC_TYPES["uuid"]
+
+    # int型の場合
+    elif primitive_type == "int":
+        # 正の整数
+        if (
+            "count" in var_lower
+            or "num" in var_lower
+            or "size" in var_lower
+            or "length" in var_lower
+        ):
+            return PYDANTIC_TYPES["positive_int"]
+        # 非負整数（インデックス、深度等）
+        if "index" in var_lower or "depth" in var_lower or "level" in var_lower:
+            return PYDANTIC_TYPES["non_negative_int"]
+
+    # float型の場合
+    elif primitive_type == "float":
+        # 正の浮動小数点数
+        if (
+            "score" in var_lower
+            or "rate" in var_lower
+            or "ratio" in var_lower
+            or "percentage" in var_lower
+        ):
+            return PYDANTIC_TYPES["positive_float"]
+        # 非負浮動小数点数
+        if "weight" in var_lower or "distance" in var_lower:
+            return PYDANTIC_TYPES["non_negative_float"]
+
+    return None
 
 
 def suggest_type_name(var_name: str, primitive_type: str) -> list[str]:
@@ -199,23 +337,38 @@ def extract_variable_name(code_line: str) -> str:
     Returns:
         抽出された変数名（例: "type_name"）
     """
-    # パターン1: 変数アノテーション（var_name: type）
-    if ":" in code_line:
+    import re
+
+    # パターン1: 関数パラメータ（def func(param: type）または (self, param: type)
+    if "def " in code_line or "(" in code_line:
+        # 関数パラメータ部分を抽出
+        # 例: "def func(self, filename: str = 'test.txt')" → "filename"
+        param_match = re.search(r"[,\(]\s*([a-zA-Z_]\w*)\s*:", code_line)
+        if param_match:
+            param_name = param_match.group(1)
+            # selfやclsは除外
+            if param_name not in ("self", "cls"):
+                return param_name
+
+    # パターン2: 変数アノテーション（var_name: type）
+    if ":" in code_line and "def " not in code_line:
         parts = code_line.split(":")
         var_part = parts[0].strip()
-        # 関数定義の場合はスキップ
-        if "def " in var_part:
-            return "value"
         # インデントを除去して変数名を取得
         var_name = var_part.split()[-1].strip()
-        return var_name
+        # カンマやカッコを除去
+        var_name = var_name.rstrip(",)")
+        if var_name and var_name not in ("self", "cls"):
+            return var_name
 
-    # パターン2: 代入文（var_name = value）
+    # パターン3: 代入文（var_name = value）
     if "=" in code_line and "def " not in code_line:
         parts = code_line.split("=")
         var_part = parts[0].strip()
         var_name = var_part.split()[-1].strip()
-        return var_name
+        var_name = var_name.rstrip(",)")
+        if var_name:
+            return var_name
 
     # デフォルト
     return "value"
