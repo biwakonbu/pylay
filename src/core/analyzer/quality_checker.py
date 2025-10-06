@@ -193,12 +193,18 @@ class QualityChecker:
         self, report: TypeAnalysisReport
     ) -> list[QualityIssue]:
         """primitive型使用の問題をチェック（位置情報付き）"""
+        from src.core.analyzer.improvement_templates import _is_excluded_variable_name
+
         issues: list[QualityIssue] = []
 
         # CodeLocatorで詳細情報を取得
         primitive_details = self.code_locator.find_primitive_usages()
 
         for detail in primitive_details:
+            # 変数名を抽出して除外パターンチェック
+            var_name = extract_variable_name(detail.location.code)
+            is_excluded = _is_excluded_variable_name(var_name)
+
             # 位置情報を含むQualityIssueを作成
             location = CodeLocation(
                 file=detail.location.file,
@@ -213,13 +219,25 @@ class QualityChecker:
                 else [],
             )
 
-            prim_msg = f"primitive型 {detail.primitive_type} が直接使用されています"
+            # 除外パターンの場合はアドバイスとして扱う
+            if is_excluded:
+                issue_type = "primitive_usage_excluded"
+                prim_msg = (
+                    f"primitive型 {detail.primitive_type} "
+                    "が使用されています（汎用変数名）"
+                )
+                suggestion = "現状維持を推奨（汎用的な変数名のため型定義不要）"
+            else:
+                issue_type = "primitive_usage"
+                prim_msg = f"primitive型 {detail.primitive_type} が直接使用されています"
+                suggestion = "ドメイン型を定義して使用してください"
+
             issues.append(
                 QualityIssue(
-                    issue_type="primitive_usage",
+                    issue_type=issue_type,
                     message=prim_msg,
                     location=location,
-                    suggestion="ドメイン型を定義して使用してください",
+                    suggestion=suggestion,
                     improvement_plan=self._generate_primitive_replacement_plan(detail),
                 )
             )
@@ -330,6 +348,8 @@ class QualityChecker:
             "level3_ratio_low": 0.5,
             "documentation_low": 0.6,
             "documentation_detail_low": 0.7,
+            "primitive_usage": 0.7,  # 警告レベル（0.6以上）
+            "primitive_usage_excluded": 0.85,  # アドバイスレベル（0.8以上）
             "primitive_usage_high": 0.8,
             "deprecated_typing_usage": 0.9,
             "custom_error_condition": 1.0,
@@ -384,8 +404,25 @@ class QualityChecker:
         Returns:
             フォーマット済みの改善プラン
         """
+        from src.core.analyzer.improvement_templates import _is_excluded_variable_name
+
         # 変数名を抽出
         var_name = extract_variable_name(detail.location.code)
+
+        # 除外パターンチェック（汎用的な変数名は型定義不要）
+        if _is_excluded_variable_name(var_name):
+            return f"""primitive型 {detail.primitive_type} の直接使用は問題ありません。
+
+変数名 '{var_name}' は汎用的な変数名のため、ドメイン型定義は不要です。
+このような一般的な変数名にはprimitive型をそのまま使用することが推奨されます。
+
+理由:
+  - フレームワーク変数やユーティリティパラメータなど、特定のドメイン概念を表さない
+  - 型定義によるオーバーエンジニアリングを避ける
+  - 型の意図は変数名とコンテキストから十分に明確
+
+推奨アクション: 現状維持（変更不要）
+"""
 
         # Pydantic提供の型を優先的に推奨
         pydantic_type = suggest_pydantic_type(var_name, detail.primitive_type)

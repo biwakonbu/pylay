@@ -24,11 +24,17 @@ PYDANTIC_TYPES: dict[str, dict[str, str]] = {
         "description": "既存ファイルのパス（存在チェック）",
         "example": "config_file: FilePath",
     },
+    "newpath": {
+        "type": "NewPath",
+        "import": "from pydantic import NewPath",
+        "description": "新規作成するファイルのパス",
+        "example": "output_file: NewPath",
+    },
     "dirpath": {
         "type": "DirectoryPath",
         "import": "from pydantic import DirectoryPath",
         "description": "既存ディレクトリのパス（存在チェック）",
-        "example": "output_dir: DirectoryPath",
+        "example": "data_dir: DirectoryPath",
     },
     "positive_int": {
         "type": "PositiveInt",
@@ -123,6 +129,77 @@ VALIDATION_PATTERNS: dict[str, dict[str, str]] = {
 }
 
 
+def _is_excluded_variable_name(var_name: str) -> bool:
+    """変数名が除外パターンに該当するかをチェック
+
+    Args:
+        var_name: 変数名
+
+    Returns:
+        除外対象の場合True、それ以外False
+    """
+    var_lower = var_name.lower()
+
+    # 除外パターン1: 一般的な変数名（設定値、フォーマット指定、一時変数等）
+    exclude_exact = [
+        "ctx",  # click.Context等のフレームワーク変数
+        "context",
+        "self",
+        "cls",
+        "args",
+        "kwargs",
+        "format",
+        "type",
+        "kind",
+        "mode",
+        "style",
+        "encoding",
+        "message",
+        "error",
+        "text",
+        "value",
+        "name",
+        "key",
+        "title",
+        "label",
+        "description",
+        "data",
+        "result",
+        "output",
+        "input",
+        "verbose",
+        "strict",
+        "details",
+    ]
+    # 完全一致で除外
+    if var_lower in exclude_exact:
+        return True
+
+    # 除外パターン2: サフィックスパターン
+    exclude_suffixes = [
+        "_format",
+        "_type",
+        "_kind",
+        "_mode",
+        "_style",
+        "_encoding",
+        "_message",
+        "_error",
+        "_text",
+        "_value",
+        "_name",
+        "_key",
+        "_title",
+        "_label",
+        "_description",
+    ]
+    # サフィックスで除外
+    if any(var_lower.endswith(suffix) for suffix in exclude_suffixes):
+        return True
+
+    return False
+
+
 def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] | None:
     """変数名とprimitive型からPydantic提供の型を推奨
 
@@ -133,27 +210,35 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
     Returns:
         Pydantic型の情報（type, import, description）またはNone
     """
+    # 除外パターンチェック
+    if _is_excluded_variable_name(var_name):
+        return None
+
     var_lower = var_name.lower()
 
     # str型の場合
     if primitive_type == "str":
-        # メールアドレス
-        if "email" in var_lower or "mail" in var_lower:
+        # メールアドレス（明確なパターンのみ）
+        if var_lower in ("email", "mail") or var_lower.endswith("_email"):
             return PYDANTIC_TYPES["email"]
-        # URL
-        if "url" in var_lower or "link" in var_lower or "href" in var_lower:
+        # URL（明確なパターンのみ）
+        if var_lower in ("url", "link", "href") or var_lower.endswith("_url"):
             return PYDANTIC_TYPES["url"]
-        # ファイルパス
-        if (
-            "file" in var_lower
-            or "path" in var_lower
-            or "filename" in var_lower
-            or "filepath" in var_lower
-        ):
-            # ディレクトリとファイルを区別
-            if "dir" in var_lower or "directory" in var_lower:
-                return PYDANTIC_TYPES["dirpath"]
+        # ファイルパス（より厳密に）
+        if var_lower in ("file", "filename", "filepath"):
             return PYDANTIC_TYPES["filepath"]
+        if var_lower.endswith(("_file", "_filename", "_filepath")):
+            return PYDANTIC_TYPES["filepath"]
+        # input/output系のファイル
+        if var_lower.startswith(("input_", "output_")) and (
+            "file" in var_lower or "path" in var_lower
+        ):
+            return PYDANTIC_TYPES["filepath"]
+        # ディレクトリパス
+        if var_lower in ("dir", "directory", "dirpath") or var_lower.endswith(
+            ("_dir", "_directory", "_dirpath")
+        ):
+            return PYDANTIC_TYPES["dirpath"]
         # 機密情報
         if (
             "password" in var_lower
@@ -162,8 +247,8 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
             or "api_key" in var_lower
         ):
             return PYDANTIC_TYPES["secret"]
-        # UUID
-        if "uuid" in var_lower or "_id" in var_lower:
+        # UUID（明確なパターンのみ）
+        if var_lower in ("uuid", "guid") or var_lower.endswith(("_uuid", "_guid")):
             return PYDANTIC_TYPES["uuid"]
 
     # int型の場合
