@@ -6,7 +6,7 @@
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final, Literal
 
 from rich.console import Console
 from rich.panel import Panel
@@ -17,6 +17,13 @@ from src.core.analyzer.quality_models import QualityCheckResult, QualityIssue
 
 if TYPE_CHECKING:
     from src.core.analyzer.type_level_models import TypeAnalysisReport
+
+# 深刻度の型付き定数（Literal型との互換性を確保）
+SEVERITIES: Final[tuple[Literal["エラー", "警告", "アドバイス"], ...]] = (
+    "エラー",
+    "警告",
+    "アドバイス",
+)
 
 
 class QualityReporter:
@@ -117,7 +124,7 @@ class QualityReporter:
             lines.append("")
 
             # 深刻度別にグループ化して表示
-            for severity in ["エラー", "警告", "アドバイス"]:
+            for severity in SEVERITIES:
                 severity_issues = check_result.get_issues_by_severity(severity)
                 if severity_issues:
                     severity_emoji = {"エラー": "❌", "警告": "⚠️", "アドバイス": "💡"}[
@@ -337,7 +344,7 @@ class QualityReporter:
     ) -> None:
         """問題リストテーブルを表示"""
         # 深刻度別にテーブルを作成
-        for severity in ["エラー", "警告", "アドバイス"]:
+        for severity in SEVERITIES:
             severity_issues = check_result.get_issues_by_severity(severity)
             if not severity_issues:
                 continue
