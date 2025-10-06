@@ -310,7 +310,7 @@ VSCodeを使用する場合、以下の拡張機能が推奨されます：
 2. **Pydanticによる厳密な型定義でドメイン型を作成する**
    - **3つのレベル**を適切に使い分ける：
      - Level 1: `type` エイリアス（制約なし）
-     - Level 2: `NewType` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出パターン）
+     - Level 2: `NewType` + ファクトリ関数 + `TypeAdapter`（★プリミティブ型代替、最頻出パターン、PEP 484準拠）
      - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型・ビジネスロジック）
        - 3a: `dataclass(frozen=True)` - 不変値オブジェクト
        - 3b: `dataclass` - 状態管理エンティティ
@@ -346,16 +346,24 @@ from dataclasses import dataclass
 # Level 1: 単純な型エイリアス（制約なし）
 type Timestamp = float
 
-# Level 2: NewType + Annotated（★プリミティブ型代替、最頻出パターン）
-UserId = NewType('UserId', Annotated[str, Field(min_length=8)])
-Count = NewType('Count', Annotated[int, Field(ge=0)])
+# Level 2: NewType + ファクトリ関数（★プリミティブ型代替、最頻出パターン、PEP 484準拠）
+from pydantic import TypeAdapter
 
-def validate_email(v: str) -> str:
-    if "@" not in v:
-        raise ValueError("無効なメールアドレス")
-    return v
+UserId = NewType('UserId', str)
+UserIdValidator = TypeAdapter(Annotated[str, Field(min_length=8)])
 
-Email = NewType('Email', Annotated[str, AfterValidator(validate_email)])
+def create_user_id(value: str) -> UserId:
+    validated = UserIdValidator.validate_python(value)
+    return UserId(validated)
+
+# または @validate_call パターン（より実用的）
+from pydantic import validate_call
+
+Count = NewType('Count', int)
+
+@validate_call
+def Count(value: Annotated[int, Field(ge=0)]) -> Count:  # type: ignore[no-redef]
+    return NewType('Count', int)(value)
 
 # Level 3a: dataclass(frozen=True)（不変値オブジェクト）
 @dataclass(frozen=True)

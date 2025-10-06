@@ -124,7 +124,7 @@ Python 3.13では、以下のtypingモジュールの型は**使用禁止**と�
 | レベル | 定義 | 構造 | 用途 | 実装方法 | 例 |
 |--------|------|------|------|----------|-----|
 | **Level 1** | 型エイリアス<br/>（制約なし） | 単純な別名定義 | - 意味的な型名を与える<br/>- 可読性向上<br/>- 一時的な型定義 | `type` 文 | `type UserId = str`<br/>`type Timestamp = float` |
-| **Level 2** | 制約付き型<br/>（型レベル区別 + バリデーション） | NewType + Annotated + バリデータ | - プリミティブ型の代替（最頻出パターン）<br/>- 型レベルでの区別（mypy/pyright）<br/>- ランタイムバリデーション | `NewType` + `Annotated` + `Field` | `UserId = NewType('UserId', Annotated[str, Field(min_length=8)])`<br/>`Count = NewType('Count', Annotated[int, Field(ge=0)])` |
+| **Level 2** | 制約付き型<br/>（型レベル区別 + バリデーション） | NewType + ファクトリ関数 + TypeAdapter | - プリミティブ型の代替（最頻出パターン）<br/>- 型レベルでの区別（mypy/pyright）<br/>- ランタイムバリデーション（PEP 484準拠） | `NewType` + ファクトリ関数 + `TypeAdapter` | `UserId = NewType('UserId', str)`<br/>`def create_user_id(v: str) -> UserId: ...` |
 | **Level 3** | ドメインモデル<br/>（値オブジェクト・エンティティ） | dataclass + Pydantic | - 複雑なドメイン型<br/>- 値オブジェクト（不変）<br/>- エンティティ（状態 + ロジック） | `dataclass` + Pydantic | `@dataclass(frozen=True)`<br/>`class CodeLocation:`<br/>&nbsp;&nbsp;&nbsp;&nbsp;`file: str`<br/>&nbsp;&nbsp;&nbsp;&nbsp;`line: int = Field(ge=1)` |
 
 ### レベル間の関係性とライフサイクル
@@ -136,7 +136,8 @@ Python 3.13では、以下のtypingモジュールの型は**使用禁止**と�
    ↓
 Level 1: type UserId = str
    ↓ (型レベル区別 + バリデーションが必要になる)
-Level 2: UserId = NewType('UserId', Annotated[str, Field(min_length=8)])
+Level 2: UserId = NewType('UserId', str)
+         def create_user_id(v: str) -> UserId: ...（ファクトリ）
    ↓ (複数フィールド・ビジネスロジックが増える)
 Level 3: @dataclass(frozen=True)
          class User:
@@ -166,10 +167,10 @@ Level 3: @dataclass(frozen=True)
       └───────┬───────┘      ※将来的にLevel 2/3への昇格を検討
               ↓ YES
       ┌───────────────┐
-      │ 複数フィールドまたは │ NO → Level 2 (NewType + Annotated)
+      │ 複数フィールドまたは │ NO → Level 2 (NewType + ファクトリ関数)
       │ ビジネスロジックが   │      ★プリミティブ型代替の最頻出パターン
-      │ 必要か？           │      ※型レベル区別（mypy/pyright）
-      └───────┬───────┘      ※ランタイムバリデーション
+      │ 必要か？           │      ※型レベル区別（mypy/pyright、PEP 484準拠）
+      └───────┬───────┘      ※ランタイムバリデーション（TypeAdapter）
               ↓ YES
          Level 3 (dataclass + Pydantic)
          ※値オブジェクト: @dataclass(frozen=True)
@@ -177,36 +178,73 @@ Level 3: @dataclass(frozen=True)
          ※複雑なロジック: class
 ```
 
-### Level 2の設計方針：NewType + Annotated
+### Level 2の設計方針：NewType + ファクトリ関数パターン
 
-**重要な設計方針**: Level 2は `NewType` + `Annotated` の組み合わせで実装します。これにより、**型レベルでの区別（mypy/pyright）**と**ランタイムバリデーション（Pydantic）**の両方を実現します。
+**重要な設計方針**: Level 2は `NewType` + ファクトリ関数 + `TypeAdapter` の組み合わせで実装します。これにより、**PEP 484に準拠しつつ、型レベルでの区別（mypy/pyright）**と**ランタイムバリデーション（Pydantic）**の両方を実現します。
 
-#### なぜ NewType + Annotated なのか
+#### なぜ NewType + ファクトリ関数なのか
 
-1. **型安全性が最優先**: このプロジェクトの目的は、mypy/pyrightによる静的解析で問題を検出できる厳格な型管理です
-2. **NewTypeの役割**: 型チェッカーでプリミティブ型を区別し、誤った代入を防止
-3. **Annotatedの役割**: バリデーション制約を追加（ランタイム補助保証）
+1. **PEP 484完全準拠**: `NewType`の第2引数はクラスのみ許可されるため、`Annotated`との組み合わせはPEP 484の仕様外です
+2. **pyrightとmypyの両対応**: 厳格な型チェッカー（pyright）でもエラーが発生しません
+3. **NewTypeの役割**: 型チェッカーでプリミティブ型を区別し、誤った代入を防止（名目的型付け）
+4. **TypeAdapterの役割**: Pydanticによるランタイムバリデーションを分離して実行
 
-#### バリデーション方法の使い分け
+#### 基本パターン：シンプルな制約
 
-Level 2では、バリデーションに `Field` または `AfterValidator` を使い分けます：
-
-**Field（宣言的制約）**: 単純な制約に使用
 ```python
 from typing import NewType, Annotated
-from pydantic import Field
+from pydantic import Field, TypeAdapter
 
-# 範囲制約、長さ制約、パターン制約など
-Count = NewType('Count', Annotated[int, Field(ge=0)])
-UserId = NewType('UserId', Annotated[str, Field(min_length=8, max_length=20)])
-Email = NewType('Email', Annotated[str, Field(pattern=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')])
+# 1. 型定義（型チェッカー用）
+UserId = NewType('UserId', str)
+
+# 2. バリデーター定義（実行時検証用）
+UserIdValidator = TypeAdapter(
+    Annotated[str, Field(min_length=8, max_length=20, pattern=r'^[a-zA-Z0-9_]+$')]
+)
+
+# 3. ファクトリ関数（バリデーション付きコンストラクタ）
+def create_user_id(value: str) -> UserId:
+    """UserIdを検証付きで生成"""
+    validated = UserIdValidator.validate_python(value)
+    return UserId(validated)
+
+# 使用例
+user_id = create_user_id("user_12345")  # ✅ UserId型
+# user_id = "just_string"  # ❌ mypyエラー: str型はUserId型に代入不可
 ```
 
-**AfterValidator（カスタムロジック）**: 複雑なバリデーションに使用
+#### 実用的なパターン：関数名の再利用（@validate_call）
+
+より実用的には、Pydanticの`@validate_call`を使ってファクトリ関数を簡潔に書けます：
+
 ```python
 from typing import NewType, Annotated
-from pydantic import AfterValidator
+from pydantic import Field, validate_call
 
+# NewType定義
+UserId = NewType('UserId', str)
+
+# ファクトリ関数（バリデーション自動実行）
+@validate_call
+def UserId(  # type: ignore[no-redef]  # 関数名を型名と同じにする
+    value: Annotated[str, Field(min_length=8, pattern=r'^[a-zA-Z0-9_]+$')]
+) -> UserId:
+    """UserIdコンストラクタ（バリデーション付き）"""
+    return NewType('UserId', str)(value)
+
+# 使用例
+user_id = UserId("user_12345")  # ✅ バリデーションが実行される
+# user_id = UserId("short")    # ❌ ValidationError
+```
+
+#### 複雑なバリデーション：カスタムロジック
+
+```python
+from typing import NewType, Annotated
+from pydantic import Field, AfterValidator, TypeAdapter
+
+# カスタムバリデーター
 def validate_module_name(v: str) -> str:
     """モジュール名の複雑なバリデーション"""
     if not v.islower():
@@ -215,40 +253,49 @@ def validate_module_name(v: str) -> str:
         raise ValueError("モジュール名は英数字とアンダースコアのみです")
     return v
 
-ModuleName = NewType('ModuleName', Annotated[str, AfterValidator(validate_module_name)])
-```
+# NewType定義
+ModuleName = NewType('ModuleName', str)
 
-**Field + AfterValidator（併用）**: 宣言的制約 + カスタムロジック
-```python
-from typing import NewType, Annotated
-from pydantic import Field, AfterValidator
+# バリデーター定義
+ModuleNameValidator = TypeAdapter(
+    Annotated[str, Field(min_length=1, max_length=100), AfterValidator(validate_module_name)]
+)
 
-def validate_port_range(v: int) -> int:
-    """予約ポート範囲のチェック"""
-    if 0 < v < 1024:
-        raise ValueError(f"ポート {v} は予約されています（1-1023）")
-    return v
-
-Port = NewType('Port', Annotated[int, Field(ge=1, le=65535), AfterValidator(validate_port_range)])
+# ファクトリ関数
+def create_module_name(value: str) -> ModuleName:
+    """ModuleNameを検証付きで生成"""
+    validated = ModuleNameValidator.validate_python(value)
+    return ModuleName(validated)
 ```
 
 #### 型チェッカーでの区別
 
 ```python
-# 型チェッカーでの区別
-user_id: UserId = UserId("user-12345")
+# 型チェッカーでの区別（名目的型付け）
+user_id: UserId = create_user_id("user_12345")
 another_id: str = "string-value"
 # user_id = another_id  # ❌ mypyエラー: UserId型とstr型は互換性なし
 
-# ランタイムバリデーション（Pydantic経由）
+# Pydantic BaseModelでの使用
 from pydantic import BaseModel
 
 class User(BaseModel):
-    user_id: UserId  # 自動的にmin_length=8がチェックされる
-    count: Count     # 自動的にge=0がチェックされる
+    user_id: UserId  # 型チェッカーはUserId型として認識
+    name: str
+
+# 使用例（バリデーションは手動で実行）
+user = User(user_id=create_user_id("user_12345"), name="John")
 ```
 
-このプロジェクトでは、**型解析による安全性を高める**ことが最優先であり、バリデーションはそれをランタイムで保証するための補助機能です。
+#### パターンの比較
+
+| パターン | 利点 | 欠点 | 推奨ケース |
+|---------|------|------|-----------|
+| TypeAdapter + ファクトリ関数 | - 明示的で理解しやすい<br/>- バリデーションと型定義の分離 | - コード量がやや多い | 複雑なバリデーションロジック |
+| @validate_call + 関数名再利用 | - 簡潔<br/>- 使いやすい | - `type: ignore`が必要 | シンプルな制約のみ |
+| dataclass | - 最も堅牢<br/>- `.value`アクセス | - コード量が多い<br/>- `.value`が必要 | 複雑なドメインロジック |
+
+このプロジェクトでは、**PEP 484準拠を最優先**とし、**型解析による安全性を高める**ことを目指します。バリデーションはそれをランタイムで保証するための補助機能です。
 
 ### 型定義レベルの自動判定とdocstringによる制御
 
@@ -470,15 +517,34 @@ def get_user(user_id: UserId) -> User:
 - バリデーションなし
 - ランタイムでの型チェックなし
 
-##### Level 2: `NewType` + `Annotated` + (`Field` | `AfterValidator`)（★推奨：プリミティブ型代替）
+##### Level 2: `NewType` + ファクトリ関数（★推奨：プリミティブ型代替、PEP 484準拠）
 
-**用途**: 制約付き型、型レベル区別、再利用可能なバリデーション
+**用途**: 制約付き型、型レベル区別、PEP 484準拠のバリデーション
 
 ```python
 from typing import NewType, Annotated
-from pydantic import AfterValidator, Field, BaseModel
+from pydantic import Field, AfterValidator, TypeAdapter, validate_call
 
-# バリデータ関数の定義
+# パターン1: TypeAdapter + ファクトリ関数（基本）
+UserId = NewType('UserId', str)
+UserIdValidator = TypeAdapter(
+    Annotated[str, Field(min_length=8, max_length=20, pattern=r'^[a-zA-Z0-9_]+$')]
+)
+
+def create_user_id(value: str) -> UserId:
+    """UserIdを検証付きで生成"""
+    validated = UserIdValidator.validate_python(value)
+    return UserId(validated)
+
+# パターン2: @validate_call + 関数名再利用（実用的）
+PositiveInt = NewType('PositiveInt', int)
+
+@validate_call
+def PositiveInt(value: Annotated[int, Field(gt=0)]) -> PositiveInt:  # type: ignore[no-redef]
+    """正の整数を検証付きで生成"""
+    return NewType('PositiveInt', int)(value)
+
+# パターン3: カスタムバリデーター
 def validate_module_name(v: str) -> str:
     """モジュール名のバリデーション"""
     if not v.islower():
@@ -487,57 +553,35 @@ def validate_module_name(v: str) -> str:
         raise ValueError("モジュール名は英数字とアンダースコアのみです")
     return v
 
-def validate_positive(v: int) -> int:
-    """正の整数のバリデーション"""
-    if v <= 0:
-        raise ValueError(f"正の整数が必要です: {v}")
-    return v
-
-# NewType + Annotated型の定義（再利用可能）
-ModuleName = NewType(
-    'ModuleName',
-    Annotated[
-        str,
-        AfterValidator(validate_module_name),
-        Field(min_length=1, max_length=100, description="Pythonモジュール名")
-    ]
+ModuleName = NewType('ModuleName', str)
+ModuleNameValidator = TypeAdapter(
+    Annotated[str, Field(min_length=1, max_length=100), AfterValidator(validate_module_name)]
 )
 
-PositiveInt = NewType(
-    'PositiveInt',
-    Annotated[int, AfterValidator(validate_positive), Field(description="正の整数")]
-)
-
-EmailAddress = NewType(
-    'EmailAddress',
-    Annotated[str, Field(pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")]
-)
-
-# Pydantic BaseModelで使用
-class ModuleSpec(BaseModel):
-    """モジュール仕様"""
-    name: ModuleName  # 自動的にバリデーションされる
-    version: str
-    line_count: PositiveInt
-    author_email: EmailAddress | None = None
+def create_module_name(value: str) -> ModuleName:
+    """ModuleNameを検証付きで生成"""
+    validated = ModuleNameValidator.validate_python(value)
+    return ModuleName(validated)
 
 # 使用例
-spec = ModuleSpec(
-    name=ModuleName("my_module"),  # validate_module_name が自動実行
-    version="1.0.0",
-    line_count=PositiveInt(100),    # validate_positive が自動実行
-)
+user_id = create_user_id("user_12345")  # ✅ UserId型
+count = PositiveInt(100)                # ✅ PositiveInt型
+module = create_module_name("my_module")  # ✅ ModuleName型
+
+# 型チェッカーでの区別
+another_id: str = "string-value"
+# user_id = another_id  # ❌ mypyエラー: UserId型とstr型は互換性なし
 ```
 
 **利点**:
-- **型レベル区別**: mypy/pyrightで異なる型として扱われる
-- **再利用可能**: 同じバリデータを複数のモデルで使用
-- **型ヒントとして明確**: フィールド定義を見ればバリデーションがわかる
+- **PEP 484完全準拠**: pyrightとmypyの両方で型チェック通過
+- **型レベル区別**: mypy/pyrightで異なる型として扱われる（名目的型付け）
+- **明示的なバリデーション**: ファクトリ関数を使用することでバリデーションの実行タイミングが明確
 - **パフォーマンス良好**: dataclass/BaseModelより軽量
 
 **欠点**:
-- バリデータ関数の定義が必要
-- 複雑なビジネスロジックには不向き
+- コンストラクタ関数の定義が必要（`create_*`）
+- Pydantic BaseModelでの自動バリデーションは不可（手動でファクトリを呼ぶ必要がある）
 
 ##### Level 3: `dataclass` + Pydantic（値オブジェクト・ドメインモデル）
 
@@ -650,21 +694,86 @@ class ModuleAnalysisResult(BaseModel):
         return doc_ratio >= 0.2  # コメント率20%以上
 ```
 
+**パターンD: dataclass + Pydantic統合（__get_pydantic_core_schema__）**
+
+`dataclass`をPydanticモデルのフィールドとして使用したい場合、`__get_pydantic_core_schema__`を実装することでPydanticと統合できます：
+
+```python
+from dataclasses import dataclass
+from typing import Any
+from pydantic import BaseModel
+from pydantic_core import core_schema
+
+@dataclass(frozen=True)
+class UserId:
+    """ユーザーID型（dataclass + Pydantic統合）
+
+    Pydantic BaseModelのフィールドとして使用可能。
+    """
+    value: int
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source: Any, handler: core_schema.SchemaHandler
+    ) -> core_schema.CoreSchema:
+        """Pydanticコアスキーマを提供
+
+        内部的に int を検証させ、検証後に UserId にラップする。
+        """
+        # 内部的に int を検証させる
+        int_schema = handler(int)
+
+        # 検証後に UserId にラップ
+        def wrap(v: int) -> UserId:
+            if v <= 0:
+                raise ValueError("UserId must be > 0")
+            return cls(v)
+
+        # schema: int → 検証 → UserId に変換
+        return core_schema.no_info_after_validator_function(wrap, int_schema)
+
+# Pydantic BaseModelで使用
+class User(BaseModel):
+    """ユーザーモデル（dataclass型を統合）"""
+    user_id: UserId  # 自動的にバリデーションされる
+    name: str
+
+# 使用例
+user = User(user_id=123, name="John")  # ✅ intから自動変換
+print(user)  # User(user_id=UserId(value=123), name='John')
+
+# user = User(user_id=0, name="John")  # ❌ ValidationError
+```
+
+**参考**: [Pydantic Custom Types](https://docs.pydantic.dev/latest/concepts/types/)
+
+**このパターンの利点**:
+- **自動バリデーション**: Pydantic BaseModelで自動的にバリデーションが実行される
+- **型安全性**: dataclassとして型チェッカーで区別される
+- **柔軟な変換**: 任意の型（int, str等）からdataclassへの自動変換が可能
+
+**推奨ケース**:
+- Pydantic BaseModelのフィールドとして使用したい場合
+- 自動バリデーション（BaseModel経由）が必要な場合
+- `.value`アクセスを許容できる場合
+
 **利点**:
 - **dataclass frozen**: 不変値オブジェクト、hashable、型安全
 - **dataclass mutable**: 状態管理、エンティティパターン
 - **BaseModel**: 複雑なバリデーション、model_validator、豊富な機能
+- **dataclass + __get_pydantic_core_schema__**: dataclassとPydanticの統合、柔軟な型変換
 
 **欠点**:
 - オーバーヘッドあり（単純な型には過剰）
 - 記述量が多い
+- `__get_pydantic_core_schema__`は実装が複雑
 
 #### 使い分けガイドライン
 
 | レベル | パターン | 用途 | 例 | 型安全性 |
 |--------|---------|------|-----|----------|
 | 1 | `type` エイリアス | 制約なし型の別名 | `type UserId = str` | ❌ プリミティブと区別されない |
-| 2 | `NewType` + `Annotated` | プリミティブ型代替（最頻出） | `UserId = NewType('UserId', Annotated[str, Field(...)])` | ✅ ★型レベル区別 + バリデーション |
+| 2 | `NewType` + ファクトリ関数 | プリミティブ型代替（最頻出、PEP 484準拠） | `UserId = NewType('UserId', str)`<br/>`def create_user_id(v: str) -> UserId: ...` | ✅ ★型レベル区別 + バリデーション |
 | 3a | `dataclass(frozen=True)` | 不変値オブジェクト | `@dataclass(frozen=True)` `class CodeLocation: ...` | ✅ 値オブジェクト |
 | 3b | `dataclass` | 状態管理エンティティ | `@dataclass` `class Session: ...` | ✅ エンティティ |
 | 3c | `BaseModel` | 複雑なドメインモデル | `class AnalysisResult(BaseModel): ...` | ✅ 複雑なロジック |
@@ -672,7 +781,7 @@ class ModuleAnalysisResult(BaseModel):
 **判断フロー**:
 ```
 プリミティブ型の代替が必要？
-  ↓ YES → Level 2 (NewType + Annotated) ★最頻出パターン
+  ↓ YES → Level 2 (NewType + ファクトリ関数) ★最頻出パターン、PEP 484準拠
   ↓ NO
 複数フィールドが必要？
   ↓ NO  → Level 1 (type エイリアス)
@@ -692,7 +801,7 @@ class ModuleAnalysisResult(BaseModel):
 ##### パターンA: Value Objectパターン（Level 3の詳細）
 複雑なビジネスロジックを持つ単一値のドメイン型
 
-**注**: 単純な制約のみの場合は Level 2 の `Annotated` パターンを優先してください。
+**注**: 単純な制約のみの場合は Level 2 の `NewType` + ファクトリ関数パターンを優先してください。
 
 ```python
 from pydantic import BaseModel, Field
@@ -903,11 +1012,20 @@ def func(items: List[str]) -> Dict[str, Tuple[int, int]]:
 def func(items: list[str]) -> dict[str, tuple[int, int]]:
     pass
 
-# ✅ NewType は Level 2 の実装に使用（型レベル区別が最優先）
+# ✅ NewType は Level 2 の実装に使用（PEP 484準拠、型レベル区別が最優先）
 from typing import NewType, Annotated
-from pydantic import Field
+from pydantic import Field, TypeAdapter
 
-UserId = NewType('UserId', Annotated[str, Field(min_length=8)])
+# NewType定義（型チェッカー用）
+UserId = NewType('UserId', str)
+
+# バリデーター定義（実行時検証用）
+UserIdValidator = TypeAdapter(Annotated[str, Field(min_length=8)])
+
+# ファクトリ関数
+def create_user_id(value: str) -> UserId:
+    validated = UserIdValidator.validate_python(value)
+    return UserId(validated)
 
 # 複雑なビジネスロジックが必要な場合は dataclass または BaseModel
 from dataclasses import dataclass
@@ -1940,8 +2058,9 @@ def test_user_id_validation():
 - ✅ `list[str]`, `dict[str, int]` を使用（組み込み型ジェネリクス）
 - ✅ `class Container[T]` を使用（型パラメータ構文）
 - ✅ `type Point = tuple[float, float]` を使用（type文）
-- ✅ `NewType` + `Annotated` + `Field` で Level 2 型を定義（★最頻出パターン）
+- ✅ `NewType` + ファクトリ関数 で Level 2 型を定義（★最頻出パターン、PEP 484準拠）
 - ✅ `dataclass(frozen=True)` で不変値オブジェクトを定義
+- ✅ `dataclass` + `__get_pydantic_core_schema__` でPydantic互換の値オブジェクトを定義
 - ✅ `dataclass` でエンティティを定義
 - ✅ Pydantic BaseModel で複雑なドメイン型を定義
 - ✅ Field制約でバリデーションを宣言的に記述
@@ -1953,7 +2072,8 @@ def test_user_id_validation():
 - ❌ `List[str]`, `Dict[str, int]` を使用（Python 3.9+では不要）
 - ❌ `TypeVar('T')` と `Generic[T]` を使用（Python 3.12+では不要）
 - ❌ `TypeAlias` を使用（`type` 文を使用）
-- ❌ primitive型を直接使用（Level 2: NewType + Annotated を使用）
+- ❌ primitive型を直接使用（Level 2: NewType + ファクトリ関数 を使用）
+- ❌ `NewType('UserId', Annotated[...])` を使用（PEP 484非準拠、pyrightエラー）
 - ❌ 単純な制約のために BaseModel を使用（Level 2 または dataclass で十分）
 
 ### プロジェクトへの影響
