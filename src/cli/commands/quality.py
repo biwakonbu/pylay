@@ -332,7 +332,6 @@ def _export_details_to_yaml(
                             else [],
                         },
                         "suggestion": issue.suggestion,
-                        "improvement_plan": issue.improvement_plan,
                     }
                     for issue in check_result.issues
                 ],

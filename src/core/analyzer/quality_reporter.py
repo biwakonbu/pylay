@@ -209,7 +209,6 @@ class QualityReporter:
                     "severity": issue.severity,
                     "message": issue.message,
                     "suggestion": issue.suggestion,
-                    "improvement_plan": issue.improvement_plan,
                     "location": {
                         "file": str(issue.location.file) if issue.location else None,
                         "line": issue.location.line if issue.location else None,
