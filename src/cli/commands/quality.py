@@ -105,7 +105,7 @@ def quality(
             project_root = Path(config).parent
             config_obj = PylayConfig.from_pyproject_toml(project_root)
         else:
-            project_root = target_path if target_path.is_file() else target_path
+            project_root = target_path.parent if target_path.is_file() else target_path
             config_obj = PylayConfig.from_pyproject_toml(project_root)
     except Exception as e:
         if config:
