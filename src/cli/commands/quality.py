@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 console = Console()
 
 
-@click.command("check-quality")
+@click.command("quality")
 @click.argument(
     "target",
     type=click.Path(exists=True),
@@ -70,7 +70,7 @@ console = Console()
     is_flag=True,
     help="エラーが発生した場合に終了コード1で終了",
 )
-def check_quality(
+def quality(
     target: str | None,
     config: str | None,
     strict: bool,
@@ -89,9 +89,9 @@ def check_quality(
     設定されていない場合はデフォルトの基準でチェックします。
 
     例:
-        pylay check-quality src/
-        pylay check-quality --strict --format markdown --output report.md
-        pylay check-quality --config custom.toml --fail-on-error
+        pylay quality src/
+        pylay quality --strict --format markdown --output report.md
+        pylay quality --config custom.toml --fail-on-error
     """
     # デフォルトはカレントディレクトリ
     if target is None:
