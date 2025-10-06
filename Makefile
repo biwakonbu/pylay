@@ -76,8 +76,8 @@ quality-check: ## 品質チェック（型チェック + リンター + pylay品
 	@echo "🔍 コード品質チェック中..."
 	$(MAKE) type-check
 	$(MAKE) lint
-	@echo "🔍 pylay品質チェック中..."
-	uv run pylay quality src/ --config .
+	@echo "🔍 pylay品質チェック中（pyproject.toml の target_dirs を使用）..."
+	uv run pylay quality
 
 # =============================================================================
 # テスト実行

@@ -94,19 +94,14 @@ def quality(
         pylay quality --strict --format markdown --output report.md
         pylay quality --config custom.toml --fail-on-error
     """
-    # デフォルトはカレントディレクトリ
-    if target is None:
-        target_path = Path.cwd()
-    else:
-        target_path = Path(target)
-
-    # 設定ファイルを読み込み
+    # 設定ファイルを読み込み（target_dirs参照のため先に読み込む）
     try:
         if config:
             project_root = Path(config).parent
             config_obj = PylayConfig.from_pyproject_toml(project_root)
         else:
-            project_root = target_path.parent if target_path.is_file() else target_path
+            # configが指定されていない場合、カレントディレクトリから探索
+            project_root = Path.cwd()
             config_obj = PylayConfig.from_pyproject_toml(project_root)
     except Exception as e:
         if config:
@@ -114,6 +109,18 @@ def quality(
         else:
             console.print(f"[red]Error: Failed to load pyproject.toml: {e}[/red]")
         return
+
+    # 解析対象を決定
+    if target is None:
+        # TARGET未指定の場合、pyproject.tomlのtarget_dirsを使用
+        if config_obj.target_dirs:
+            # target_dirsの最初のディレクトリを使用（複数ある場合は統合解析が必要）
+            target_path = Path(config_obj.target_dirs[0])
+        else:
+            # target_dirsも未設定の場合はカレントディレクトリ
+            target_path = Path.cwd()
+    else:
+        target_path = Path(target)
 
     # 品質チェックが有効か確認
     if not config_obj.is_quality_check_enabled():
