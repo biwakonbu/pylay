@@ -221,25 +221,11 @@ class TypeReporter:
             report: 型定義分析レポート
             show_details: 詳細情報を表示するか
         """
-        # ヘッダー
-        self.console.rule("[bold cyan]型定義品質チェックレポート[/bold cyan]")
-        self.console.print()
+        # QualityReporterに委譲して品質チェック結果を表示
+        from src.core.analyzer.quality_reporter import QualityReporter
 
-        # 全体サマリー
-        self._show_quality_summary_panel(quality_check_result)
-
-        # 統計情報テーブル
-        self._show_quality_statistics_table(quality_check_result)
-
-        # 問題リスト
-        if quality_check_result.issues:
-            self._show_quality_issues_table(quality_check_result, show_details)
-        else:
-            self.console.print("[green]✅ 品質問題は検出されませんでした[/green]")
-
-        # 推奨事項（問題がある場合のみ）
-        if quality_check_result.issues:
-            self._show_quality_recommendations(quality_check_result)
+        reporter = QualityReporter(target_dirs=[str(path) for path in self.target_dirs])
+        reporter.generate_console_report(quality_check_result, report, show_details)
 
     def generate_markdown_report(self, report: TypeAnalysisReport) -> str:
         """Markdown形式のレポートを生成
