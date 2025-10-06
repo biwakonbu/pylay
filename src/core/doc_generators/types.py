@@ -75,7 +75,7 @@ class DocumentConfig(BaseModel):
     include_code_blocks: bool = Field(
         default=True, description="コードブロックを含めるかどうか"
     )
-    max_depth: PositiveInt = Field(default=3, description="ドキュメントの最大深さ")
+    max_depth: PositiveInt = Field(default=3, description="ドキュメントの最大深さ")  # type: ignore[assignment]
     encoding: str = Field(default="utf-8", description="出力ファイルのエンコーディング")
 
     class Config:
@@ -94,7 +94,7 @@ class TypeInspectionConfig(BaseModel):
     skip_types: list[TypeName] = Field(
         default_factory=list, description="スキップする型のリスト"
     )
-    max_inspection_depth: PositiveInt = Field(default=5, description="検査の最大深さ")
+    max_inspection_depth: PositiveInt = Field(default=5, description="検査の最大深さ")  # type: ignore[assignment]
     include_private_types: bool = Field(
         default=False, description="プライベート型を含めるかどうか"
     )
@@ -115,7 +115,7 @@ class MarkdownGenerationConfig(BaseModel):
     このクラスは、マークダウン生成処理の設定を管理します。
     """
 
-    section_level: PositiveInt = Field(
+    section_level: PositiveInt = Field(  # type: ignore[assignment]
         default=1, description="セクションの見出しレベル"
     )
     include_toc: bool = Field(default=True, description="目次を含めるかどうか")

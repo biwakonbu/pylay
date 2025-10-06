@@ -91,7 +91,7 @@ class TypeDefinition(BaseModel):
     )
     docstring: str | None = Field(default=None, description="docstring（存在する場合）")
     has_docstring: bool = Field(default=False, description="docstringが存在するか")
-    docstring_lines: NonNegativeInt = Field(default=0, description="docstringの行数")
+    docstring_lines: NonNegativeInt = Field(default=0, description="docstringの行数")  # type: ignore[assignment]
     target_level: TargetLevel = Field(
         default=None, description="docstringで指定された目標レベル"
     )
@@ -250,7 +250,7 @@ class AnalysisConfig(BaseModel):
         default_factory=lambda: ["test_*", "__pycache__", "*.pyc"],
         description="除外対象のパターン",
     )
-    max_file_size: PositiveInt = Field(
+    max_file_size: PositiveInt = Field(  # type: ignore[assignment]
         default=10 * 1024 * 1024, description="処理可能な最大ファイルサイズ（バイト）"
     )
     max_files: PositiveInt | None = Field(

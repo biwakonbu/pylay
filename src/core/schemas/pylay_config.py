@@ -141,12 +141,12 @@ class PylayConfig(BaseModel):
 
     # 解析対象ディレクトリ
     target_dirs: list[DirectoryPath] = Field(
-        default=["src"],
+        default=["src"],  # type: ignore[list-item]
         description="解析対象のディレクトリパス（相対パス、末尾スラッシュは自動削除）",
     )
 
     # 出力ディレクトリ
-    output_dir: DirectoryPath = Field(
+    output_dir: DirectoryPath = Field(  # type: ignore[assignment]
         default="docs",
         description="出力ファイルの保存先ディレクトリ（末尾スラッシュは自動削除）",
     )
@@ -186,7 +186,7 @@ class PylayConfig(BaseModel):
     )
 
     # 最大解析深度
-    max_depth: MaxDepth = Field(default=10, description="再帰解析の最大深度")
+    max_depth: MaxDepth = Field(default=10, description="再帰解析の最大深度")  # type: ignore[assignment]
 
     # 新機能：品質チェック設定（オプション）
     quality_check: "QualityCheckConfig | None" = Field(

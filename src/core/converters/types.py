@@ -70,7 +70,7 @@ class TypeConversionConfig(BaseModel):
     このクラスは、型変換処理の全体的な設定を管理します。
     """
 
-    max_depth: MaxDepth = Field(default=10, description="再帰処理の最大深さ制限")
+    max_depth: MaxDepth = Field(default=10, description="再帰処理の最大深さ制限")  # type: ignore[assignment]
     preserve_quotes: bool = Field(
         default=True, description="YAML出力で引用符を保持するか"
     )
@@ -89,13 +89,13 @@ class YamlOutputConfig(BaseModel):
     このクラスは、YAML出力のフォーマット設定を管理します。
     """
 
-    indent_mapping: PositiveInt = Field(
+    indent_mapping: PositiveInt = Field(  # type: ignore[assignment]
         default=2, description="マッピングのインデント幅"
     )
-    indent_sequence: PositiveInt = Field(
+    indent_sequence: PositiveInt = Field(  # type: ignore[assignment]
         default=4, description="シーケンスのインデント幅"
     )
-    indent_offset: PositiveInt = Field(
+    indent_offset: PositiveInt = Field(  # type: ignore[assignment]
         default=2, description="ベースインデントのオフセット"
     )
     width: PositiveInt | None = Field(
@@ -124,7 +124,7 @@ class ModuleExtractionConfig(BaseModel):
     extract_classes: bool = Field(
         default=True, description="クラス定義も抽出対象に含めるか"
     )
-    max_file_size: PositiveInt = Field(
+    max_file_size: PositiveInt = Field(  # type: ignore[assignment]
         default=10 * 1024 * 1024, description="処理可能な最大ファイルサイズ（バイト）"
     )
 
@@ -168,8 +168,8 @@ class VisualizationConfig(BaseModel):
     output_path: OutputPath = Field(
         default="deps.png", description="出力画像ファイルのパス"
     )
-    width: PositiveInt = Field(default=8, description="画像の幅（インチ）")
-    height: PositiveInt = Field(default=6, description="画像の高さ（インチ）")
+    width: PositiveInt = Field(default=8, description="画像の幅（インチ）")  # type: ignore[assignment]
+    height: PositiveInt = Field(default=6, description="画像の高さ（インチ）")  # type: ignore[assignment]
     node_colors: dict[str, str] | None = Field(
         default_factory=lambda: {
             "function": "lightblue",

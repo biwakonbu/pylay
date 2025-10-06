@@ -44,8 +44,8 @@ class TypeDocConfig(GeneratorConfig):
     """型ドキュメントジェネレーターの設定。"""
 
     output_directory: Path = field(default_factory=lambda: Path("docs/types"))
-    index_filename: IndexFilename = "README.md"
-    layer_filename_template: LayerFilenameTemplate = "{layer}.md"
+    index_filename: IndexFilename = "README.md"  # type: ignore[assignment]
+    layer_filename_template: LayerFilenameTemplate = "{layer}.md"  # type: ignore[assignment]
     skip_types: set[TypeName] = field(default_factory=set)
     type_alias_descriptions: dict[TypeName, Description] = field(
         default_factory=lambda: {

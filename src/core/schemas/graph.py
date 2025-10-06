@@ -96,7 +96,7 @@ class GraphEdge(BaseModel):
     source: NodeId
     target: NodeId
     relation_type: RelationType
-    weight: Weight = Field(default=1.0)  # 0.0から1.0の範囲
+    weight: Weight = Field(default=1.0)  # type: ignore[assignment]  # 0.0から1.0の範囲
     attributes: NodeAttributes | None = None
     metadata: GraphMetadata | None = None
 

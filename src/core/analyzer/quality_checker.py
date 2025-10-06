@@ -45,7 +45,7 @@ class QualityChecker:
         self.improvement_guidance = config.get_improvement_guidance()
 
         # CodeLocatorを初期化（コード位置情報取得用）
-        target_dirs = config.target_dirs if config.target_dirs else ["src"]
+        target_dirs = config.target_dirs if config.target_dirs else ["src"]  # type: ignore[list-item]
         self.code_locator = CodeLocator([Path(d) for d in target_dirs])
 
     def check_quality(self, report: TypeAnalysisReport) -> QualityCheckResult:
