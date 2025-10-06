@@ -298,7 +298,7 @@ class Config(BaseModel):
 ### まとめ：型定義レベルの基本方針
 
 1. **Level 1は一時的な状態**: 設計初期や実装途中として許容、最終的にはLevel 2/3への昇格を検討
-2. **Level 2が推奨**: 単一値に制約を持たせる場合は、Annotated + AfterValidatorを使用（NewType禁止）
+2. **Level 2が推奨**: 単一値に制約を持たせる場合は、`NewType('TypeName', Annotated[..., AfterValidator(...)])`パターンを使用して型安全性を確保
 3. **Level 3は必要な場合のみ**: 複数フィールドやビジネスロジックがある場合のみBaseModelを使用
 4. **自動判定 + docstring制御**: システムが推奨を提示、必要に応じてdocstringで制御
 5. **段階的な成長**: Level 1から始めて、必要性に応じて昇格させる開発フローを推奨
