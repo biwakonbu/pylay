@@ -28,8 +28,10 @@ class TypeClassifier:
     FACTORY_PATTERN = re.compile(
         r"^\s*def\s+(create_(\w+)|(\w+))\s*\([^)]*\)\s*->\s*(\w+):", re.MULTILINE
     )
+    # @validate_call デコレータ + 関数定義（改行を許容、パラメータは.*?で非貪欲マッチ）
     VALIDATE_CALL_PATTERN = re.compile(
-        r"@validate_call\s+def\s+(\w+)\s*\([^)]*\)\s*->\s*(\w+):", re.MULTILINE
+        r"@validate_call\s*\n\s*def\s+(\w+)\s*\(.*?\)\s*->\s*(\w+):",
+        re.MULTILINE | re.DOTALL,
     )
     LEVEL3_PATTERN = re.compile(r"^\s*class\s+(\w+)\(.*BaseModel.*\):", re.MULTILINE)
     OTHER_CLASS_PATTERN = re.compile(
@@ -260,6 +262,14 @@ class TypeClassifier:
 
         # 型定義のコードを抽出
         definition = self._extract_definition(node, source_code)
+
+        # NewType定義はスキップ（_detect_newtype_with_factoryで処理）
+        if isinstance(node.value, ast.Call):
+            if (
+                isinstance(node.value.func, ast.Name)
+                and node.value.func.id == "NewType"
+            ):
+                return None
 
         # Annotated型かつAfterValidatorを含むか確認
         is_level2 = self._is_annotated_with_validator(node.value)
@@ -582,10 +592,10 @@ class TypeClassifier:
 
         # NewTypeとファクトリ関数のペアを検出
         for type_name, (newtype_line, definition, base_type) in newtype_defs.items():
+            docstring = self._extract_docstring_near_line(source_code, newtype_line)
+
             if type_name in factory_funcs:
                 # ペアになっている場合、Level 2として登録
-                docstring = self._extract_docstring_near_line(source_code, newtype_line)
-
                 type_definitions.append(
                     TypeDefinition(
                         name=type_name,
@@ -594,6 +604,21 @@ class TypeClassifier:
                         line_number=newtype_line,
                         definition=definition,
                         category="newtype_with_factory",
+                        docstring=docstring,
+                        has_docstring=docstring is not None,
+                        docstring_lines=len(docstring.splitlines()) if docstring else 0,
+                    )
+                )
+            else:
+                # ファクトリ関数なしの場合、Level 1として登録
+                type_definitions.append(
+                    TypeDefinition(
+                        name=type_name,
+                        level="level1",
+                        file_path=str(file_path),
+                        line_number=newtype_line,
+                        definition=definition,
+                        category="newtype_plain",
                         docstring=docstring,
                         has_docstring=docstring is not None,
                         docstring_lines=len(docstring.splitlines()) if docstring else 0,
