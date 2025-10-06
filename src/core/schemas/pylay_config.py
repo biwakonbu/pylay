@@ -361,7 +361,15 @@ class PylayConfig(BaseModel):
         Returns:
             深刻度レベル設定のリスト
         """
-        return self.quality_check.severity_levels if self.quality_check else []
+        if self.quality_check and self.quality_check.severity_levels:
+            return self.quality_check.severity_levels
+
+        # デフォルト値（error:0.0, warning:0.6, advice:0.8）
+        return [
+            SeverityLevel(name="error", color="red", threshold=0.0),
+            SeverityLevel(name="warning", color="yellow", threshold=0.6),
+            SeverityLevel(name="advice", color="blue", threshold=0.8),
+        ]
 
     def get_improvement_guidance(self) -> list[ImprovementGuidance]:
         """

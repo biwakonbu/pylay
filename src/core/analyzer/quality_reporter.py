@@ -535,8 +535,7 @@ class QualityReporter:
 
         if check_result.warning_count > 0:
             self.console.print(  # noqa: E501
-                "2. [bold yellow]Strongly recommend fixing warning items"
-                "[/bold yellow]"
+                "2. [bold yellow]Strongly recommend fixing warning items[/bold yellow]"
             )
             self.console.print("   - 警告は品質低下の兆候です")
             self.console.print("   - 長期的に見て型安全性が損なわれる可能性があります")

@@ -224,12 +224,13 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
         # URL（明確なパターンのみ）
         if var_lower in ("url", "link", "href") or var_lower.endswith("_url"):
             return PYDANTIC_TYPES["url"]
-        # input/output系のファイル（より具体的なパターンを先にチェック）
+        # output系のファイル（新規作成を想定）
         if var_lower.startswith("output_") and (
             "file" in var_lower or "path" in var_lower
         ):
             # output系は新規作成ファイルなのでNewPath、なければFilePath
             return PYDANTIC_TYPES.get("newpath", PYDANTIC_TYPES["filepath"])
+        # input系のファイル（既存ファイルを想定）
         if var_lower.startswith("input_") and (
             "file" in var_lower or "path" in var_lower
         ):

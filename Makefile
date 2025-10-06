@@ -18,7 +18,7 @@ help: ## このMakefileのヘルプを表示
 	@echo "  format             コードを自動フォーマット"
 	@echo "  lint               リンターでコードチェック"
 	@echo "  type-check         型チェック（mypy + pyright 一括実行）"
-	@echo "  quality-check      品質チェック（型 + リンター）"
+	@echo "  quality-check      品質チェック（型 + リンター + pylay品質）"
 	@echo ""
 	@echo "🧪 テスト実行:"
 	@echo "  test               テスト実行 + カバレッジレポート"
@@ -72,10 +72,12 @@ type-check: ## 型チェック（mypy + pyright）
 	@echo "  - pyright..."
 	@uv run pyright src/
 
-quality-check: ## 品質チェック（型チェック + リンター）
+quality-check: ## 品質チェック（型チェック + リンター + pylay品質チェック）
 	@echo "🔍 コード品質チェック中..."
 	$(MAKE) type-check
 	$(MAKE) lint
+	@echo "🔍 pylay品質チェック中..."
+	uv run pylay quality src/ --config .
 
 # =============================================================================
 # テスト実行
@@ -148,8 +150,9 @@ clean: ## キャッシュと一時ファイルを削除
 # CI/CD パイプライン
 # =============================================================================
 
-ci: ## CIで実行する全チェック
+ci: ## CIで実行する全チェック（format + quality-check + test + analyze）
 	@echo "🚀 CIパイプラインを実行中..."
+	$(MAKE) format
 	$(MAKE) quality-check
 	$(MAKE) test
 	$(MAKE) analyze

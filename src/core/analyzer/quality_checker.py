@@ -328,38 +328,60 @@ class QualityChecker:
     def _calculate_severity(
         self, issue: QualityIssue, statistics: TypeStatistics
     ) -> Literal["advice", "warning", "error"]:
-        """問題の深刻度レベルを計算"""
+        """問題の深刻度レベルを計算
+
+        設定ファイルのしきい値（デフォルト: error:0.0, warning:0.6, advice:0.8）は
+        「base_scoreがこの値以上なら該当レベル」を意味します。
+
+        スコアの意味:
+            - 低いスコア（0.0〜0.6未満）: 深刻（error）
+            - 中程度のスコア（0.6〜0.8未満）: 警告（warning）
+            - 高いスコア（0.8以上）: アドバイス（advice）
+
+        修正後のロジック: 降順走査（advice → warning → error）し、
+        base_score >= threshold を満たす最初のレベルを返します。
+
+        例:
+            - base_score=0.0 → error(0.0) にマッチ → error
+            - base_score=0.7 → warning(0.6) にマッチ → warning
+            - base_score=0.85 → advice(0.8) にマッチ → advice
+        """
         # ベーススコアを計算（問題の種類によって重み付け）
         base_score = self._calculate_base_score(issue.issue_type, statistics)
 
-        # 深刻度レベルを決定
+        # 降順（しきい値が高い順: advice → warning → error）で走査
         for level in sorted(
             self.severity_levels, key=lambda x: x.threshold, reverse=True
         ):
             name = level.name
-            # 型チェックを満たすため、明示的に判定
             if name in ("advice", "warning", "error"):
                 if base_score >= level.threshold:
                     return name  # type: ignore[return-value]
 
-        # デフォルトはアドバイス
-        return "advice"
+        # デフォルトはエラー（すべてのしきい値を満たさない場合）
+        return "error"
 
     def _calculate_base_score(
         self, issue_type: str, statistics: TypeStatistics
     ) -> float:
-        """問題のベーススコアを計算（0.0〜1.0）"""
+        """問題のベーススコアを計算（0.0〜1.0）
+
+        スコアの意味:
+            - 低いスコア（0.0〜0.6未満）: 深刻（error）
+            - 中程度のスコア（0.6〜0.8未満）: 警告（warning）
+            - 高いスコア（0.8以上）: アドバイス（advice）
+        """
         base_scores = {
-            "level1_ratio_high": 0.3,
-            "level2_ratio_low": 0.4,
-            "level3_ratio_low": 0.5,
-            "documentation_low": 0.6,
-            "documentation_detail_low": 0.7,
-            "primitive_usage": 0.7,  # 警告レベル（0.6以上）
-            "primitive_usage_excluded": 0.85,  # アドバイスレベル（0.8以上）
-            "primitive_usage_high": 0.8,
-            "deprecated_typing_usage": 0.9,
-            "custom_error_condition": 1.0,
+            "level1_ratio_high": 0.3,  # error
+            "level2_ratio_low": 0.4,  # error
+            "level3_ratio_low": 0.5,  # error
+            "documentation_low": 0.6,  # warning（境界値）
+            "documentation_detail_low": 0.7,  # warning
+            "primitive_usage": 0.7,  # warning
+            "primitive_usage_excluded": 0.85,  # advice
+            "primitive_usage_high": 0.8,  # advice（境界値）
+            "deprecated_typing_usage": 0.9,  # advice
+            "custom_error_condition": 0.0,  # error（最も深刻）
         }
 
         base_score = base_scores.get(issue_type, 0.5)
