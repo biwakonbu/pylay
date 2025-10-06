@@ -97,9 +97,9 @@ class QualityCheckConfig(BaseModel):
     # アドバイス・警告・エラーレベル設定
     severity_levels: list[SeverityLevel] = Field(
         default_factory=lambda: [
-            SeverityLevel(name="error", color="red", threshold=0.8),
+            SeverityLevel(name="error", color="red", threshold=0.0),
             SeverityLevel(name="warning", color="yellow", threshold=0.6),
-            SeverityLevel(name="advice", color="blue", threshold=0.0),
+            SeverityLevel(name="advice", color="blue", threshold=0.8),
         ],
         description="深刻度レベルの定義",
     )

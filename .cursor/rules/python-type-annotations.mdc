@@ -12,12 +12,12 @@ alwaysApply: false
 ### pylayプロジェクトの4つの核心原則
 
 1. **個別型をちゃんと定義し、primitive型を直接使わない**
-   - ❌ `str`, `int` → ✅ ドメイン型を定義（`NewType` + `Annotated`、`dataclass`、`BaseModel`）
+   - ❌ `str`, `int` → ✅ ドメイン型を定義（`type` + `Annotated`、`dataclass`、`BaseModel`）
 
 2. **Pydanticによる厳密な型定義でドメイン型を作成する**
    - **3つのレベルを適切に使い分ける**：
      - Level 1: `type` エイリアス（制約なし）
-     - Level 2: `NewType` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出）
+     - Level 2: `type` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出）
      - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
        - 3a: `dataclass(frozen=True)` - 不変値オブジェクト
        - 3b: `dataclass` - 状態管理エンティティ
@@ -28,7 +28,7 @@ alwaysApply: false
    - ❌ `List[X]` → ✅ `list[X]`
    - ❌ `TypeVar('T')` + `Generic[T]` → ✅ `class Container[T]`
    - ❌ `TypeAlias` → ✅ `type Point = tuple[float, float]`
-   - ✅ `NewType` - Level 2で型レベル区別のために使用
+   - 🚫 `NewType` は使用しない（型区別は Annotated/別名で表現）
 
 4. **型と実装を分離し、循環参照を防ぐ**
    - `types.py`: 型定義のみ（Level 1/2を優先）
@@ -238,17 +238,17 @@ class ProductDataclass:
 
 **重要**: pylayプロジェクトでは**3つのレベル**を適切に使い分けます：
 - Level 1: `type` エイリアス（制約なし）
-- Level 2: `NewType` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出）
+- Level 2: `type` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出）
 - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
 
 詳細は [docs/typing-rule.md](../../docs/typing-rule.md) の「型定義の3つのレベル」を参照してください。
 
-### 1. Level 2: NewType + Annotated（プリミティブ型代替、最頻出パターン）
+### 1. Level 2: type + Annotated（プリミティブ型代替、最頻出パターン）
 
-制約付きの単一値型には `NewType` + `Annotated` を使用します：
+制約付きの単一値型には `type` + `Annotated` を使用します：
 
 ```python
-from typing import NewType, Annotated
+from typing import Annotated
 from pydantic import AfterValidator, Field, BaseModel
 
 # バリデータ関数の定義
@@ -266,32 +266,23 @@ def validate_type_name(v: str) -> str:
         raise ValueError("型名は大文字で始まる必要があります")
     return v
 
-# NewType + Annotated型の定義（再利用可能）
-ModuleName = NewType(
-    'ModuleName',
-    Annotated[
-        str,
-        AfterValidator(validate_module_name),
-        Field(min_length=1, pattern=r"^[a-z][a-z0-9_]*$", description="Pythonモジュール名")
-    ]
-)
+# type + Annotated型の定義（再利用可能）
+type ModuleName = Annotated[
+    str,
+    AfterValidator(validate_module_name),
+    Field(min_length=1, pattern=r"^[a-z][a-z0-9_]*$", description="Pythonモジュール名"),
+]
 
-TypeName = NewType(
-    'TypeName',
-    Annotated[
-        str,
-        AfterValidator(validate_type_name),
-        Field(min_length=1, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", description="型名")
-    ]
-)
+type TypeName = Annotated[
+    str,
+    AfterValidator(validate_type_name),
+    Field(min_length=1, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", description="型名"),
+]
 
 # Field のみのパターン
-YamlPath = NewType(
-    'YamlPath',
-    Annotated[str, Field(min_length=1, pattern=r"\.ya?ml$", description="YAML型仕様ファイルパス")]
-)
+type YamlPath = Annotated[str, Field(min_length=1, pattern=r"\.ya?ml$", description="YAML型仕様ファイルパス")]
 
-Count = NewType('Count', Annotated[int, Field(ge=0)])
+type Count = Annotated[int, Field(ge=0)]
 
 # Pydantic BaseModelで使用
 class TypeSpec(BaseModel):

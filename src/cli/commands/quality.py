@@ -44,6 +44,7 @@ console = Console()
 @click.option(
     "--format",
     "-f",
+    "output_format",
     type=click.Choice(["console", "markdown", "json"]),
     default="console",
     help="出力形式（デフォルト: console）",
@@ -75,7 +76,7 @@ def quality(
     target: str | None,
     config: str | None,
     strict: bool,
-    format: str,
+    output_format: str,
     output: str | None,
     show_details: bool,
     export_details: str | None,
@@ -179,7 +180,7 @@ def quality(
         check_result = quality_checker.check_quality(report)
 
         # レポートを生成
-        if format == "console":
+        if output_format == "console":
             _output_console_report(
                 quality_checker,
                 check_result,
@@ -187,13 +188,13 @@ def quality(
                 show_details,
                 target_dirs,
             )
-        elif format == "markdown":
+        elif output_format == "markdown":
             _output_markdown_report(
                 quality_checker,
                 check_result,
                 output,
             )
-        elif format == "json":
+        elif output_format == "json":
             _output_json_report(
                 quality_checker,
                 check_result,

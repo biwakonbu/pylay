@@ -313,6 +313,7 @@ class QualityChecker:
                 "documentation": statistics.documentation,
                 "documentation_rate": statistics.documentation.implementation_rate,
                 "detail_rate": statistics.documentation.detail_rate,
+                "implementation_rate": statistics.documentation.implementation_rate,
             }
 
             # サンドボックス環境で条件式を評価
@@ -358,8 +359,8 @@ class QualityChecker:
                 if base_score >= level.threshold:
                     return name  # type: ignore[return-value]
 
-        # デフォルトはエラー（すべてのしきい値を満たさない場合）
-        return "error"
+        # デフォルトはアドバイス（すべてのしきい値を満たさない場合）
+        return "advice"
 
     def _calculate_base_score(
         self, issue_type: str, statistics: TypeStatistics
@@ -493,31 +494,78 @@ Step 2: 使用箇所を修正
 参考: https://docs.pydantic.dev/latest/api/types/
 """
         else:
-            # 機械的に判定できない場合: プロジェクトの型定義を活用するよう促す
-            plan = f"""primitive型 {detail.primitive_type} の使用が検出されました。
+            # 機械的に判定できない場合: NewType + ファクトリ関数パターンを提示
+            from src.core.analyzer.improvement_templates import suggest_type_name
 
-変数名 '{var_name}' から適切な型を自動推奨できませんでした。
-プロジェクトで定義された型を活用することを検討してください。
+            # 型名候補を生成
+            type_candidates = suggest_type_name(var_name, detail.primitive_type)
+            type_name = type_candidates[0] if type_candidates else "CustomType"
 
-推奨アクション:
-  1. プロジェクトの既存型定義を確認
-     - src/core/schemas/types.py に適切な型が定義されているか確認
-     - 同様の用途の変数で使われている型を参照
+            # フィールド制約の提案（例）
+            if detail.primitive_type == "str":
+                constraints = "min_length=1, max_length=100"
+            elif detail.primitive_type == "int":
+                constraints = "ge=0"
+            elif detail.primitive_type == "float":
+                constraints = "ge=0.0"
+            else:
+                constraints = ""
 
-  2. 新規型定義が必要な場合
-     - この変数が表すドメイン概念を明確化
-     - Level 2（NewType + ファクトリ関数、PEP 484準拠）での定義を推奨
-     - docs/typing-rule.md の型定義ルールに従う
+            plan = f"""primitive型 {detail.primitive_type} をドメイン型に置き換える手順:
 
-  3. primitive型のままで良い場合
-     - 汎用的な値で特定のドメイン概念を表さない場合
-     - 一時変数やユーティリティパラメータの場合
+推奨: NewType + ファクトリ関数パターン（PEP 484準拠、Level 2）
+
+Step 1: src/core/schemas/types.py に型定義を作成
+
+  ```python
+  from typing import NewType, Annotated
+  from pydantic import Field, validate_call
+
+  # 型名候補: {', '.join(type_candidates)}
+
+  # NewType定義（型チェッカー用）
+  {type_name} = NewType('{type_name}', {detail.primitive_type})
+
+  # ファクトリ関数（バリデーション付き）
+  @validate_call
+  def {type_name}(
+      value: Annotated[{detail.primitive_type}, Field({constraints})]
+  ) -> {type_name}:  # type: ignore[no-redef]
+      '''{{型の説明をここに記述}}'''
+      return NewType('{type_name}', {detail.primitive_type})(value)
+  ```
+
+Step 2: 使用箇所を修正
+
+  File: {detail.location.file}:{detail.location.line}
+
+  ```python
+  # インポート追加
+  from src.core.schemas.types import {type_name}
+
+  # Before
+  {detail.location.code.strip()}
+
+  # After
+  {var_name}: {type_name}
+
+  # 値の生成（バリデーション付き）
+  {var_name}_value = {type_name}("example_value")
+  ```
+
+利点:
+  - ✅ PEP 484完全準拠（pyrightとmypyの両対応）
+  - ✅ 名目的型付け（{type_name}と{detail.primitive_type}が区別される）
+  - ✅ 自動バリデーション（@validate_callで実行）
+  - ✅ 型安全性向上
+
+代替案: プロジェクトの既存型定義を活用
+  - src/core/schemas/types.py に適切な型が定義されているか確認
+  - 同様の用途の変数で使われている型を参照
 
 参考:
-  - 型定義ルール: docs/typing-rule.md
+  - 型定義ルール: docs/typing-rule.md - Level 2
+  - MIGRATION_PLAN.md: NewType + ファクトリ関数パターンの詳細
   - 既存の型定義: src/core/schemas/types.py
-  - 位置: {detail.location.file}:{detail.location.line}
-
-注記: 将来的には、より精度の高い型推奨機能を提供予定です。
 """
         return plan
