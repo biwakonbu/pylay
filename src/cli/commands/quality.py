@@ -156,6 +156,11 @@ def quality(
     else:
         target_dirs = [str(target_path)]
 
+    # 品質チェッカーのロケータを解析対象に合わせる
+    from src.core.analyzer.code_locator import CodeLocator
+
+    quality_checker.code_locator = CodeLocator([Path(d) for d in target_dirs])
+
     # 解析を実行
     try:
         if target_path.is_file():
