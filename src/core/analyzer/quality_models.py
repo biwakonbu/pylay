@@ -19,6 +19,9 @@ from src.core.schemas.pylay_config import (
 if TYPE_CHECKING:
     from src.core.analyzer.type_level_models import TypeStatistics
 
+# 深刻度の型定義
+type SeverityName = Literal["アドバイス", "警告", "エラー"]
+
 
 class CodeLocation(BaseModel):
     """コードの位置情報"""
@@ -39,9 +42,7 @@ class QualityIssue(BaseModel):
     """品質問題の情報"""
 
     issue_type: str = Field(description="問題の種類")
-    severity: Literal["アドバイス", "警告", "エラー"] = Field(
-        default="アドバイス", description="深刻度レベル"
-    )
+    severity: SeverityName = Field(default="アドバイス", description="深刻度レベル")
     message: str = Field(description="問題の説明")
     location: CodeLocation | None = Field(default=None, description="問題の場所")
     suggestion: str = Field(description="簡単な解決策の提案")
@@ -78,9 +79,7 @@ class QualityCheckResult(BaseModel):
     thresholds: LevelThresholds = Field(description="使用された閾値設定")
     severity_levels: list[SeverityLevel] = Field(description="深刻度レベル設定")
 
-    def get_issues_by_severity(
-        self, severity: Literal["アドバイス", "警告", "エラー"]
-    ) -> list[QualityIssue]:
+    def get_issues_by_severity(self, severity: SeverityName) -> list[QualityIssue]:
         """深刻度別の問題を取得"""
         return [issue for issue in self.issues if issue.severity == severity]
 
