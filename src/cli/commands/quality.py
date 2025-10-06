@@ -5,6 +5,7 @@ pyproject.tomlで指定された基準に基づいて型定義の品質をチェ
 アドバイス・警告・エラーレベルで結果を報告します。
 """
 
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -176,7 +177,7 @@ def quality(
         )
         console.print(error_panel)
         if fail_on_error or strict:
-            exit(1)
+            sys.exit(1)
         return
 
     # 品質チェックを実行
@@ -218,7 +219,7 @@ def quality(
                 console.print(
                     "[bold red]❌ Quality check failed with errors[/bold red]"
                 )
-                exit(1)
+                sys.exit(1)
             else:
                 console.print()
                 console.print(
@@ -237,7 +238,7 @@ def quality(
         )
         console.print(error_panel)
         if fail_on_error or strict:
-            exit(1)
+            sys.exit(1)
 
 
 def _output_console_report(
