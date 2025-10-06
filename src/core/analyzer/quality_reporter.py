@@ -357,9 +357,98 @@ class QualityReporter:
             self.console.rule(rule_text, style=color)
             self.console.print()
 
-            for issue in severity_issues:
+            # primitive_usage関連の問題をグルーピング表示
+            primitive_issues = [
+                i
+                for i in severity_issues
+                if i.issue_type in ("primitive_usage", "primitive_usage_excluded")
+            ]
+            other_issues = [
+                i
+                for i in severity_issues
+                if i.issue_type not in ("primitive_usage", "primitive_usage_excluded")
+            ]
+
+            # primitive型問題をグルーピング表示
+            if primitive_issues:
+                self._show_grouped_primitive_issues(
+                    primitive_issues, show_details, color
+                )
+
+            # その他の問題は個別表示
+            for issue in other_issues:
                 self._show_issue_detail(issue, show_details, color)
 
+            self.console.print()
+
+    def _show_grouped_primitive_issues(
+        self, issues: list[QualityIssue], show_details: bool, color: str
+    ) -> None:
+        """primitive型問題をグルーピング表示"""
+        from collections import defaultdict
+
+        # 推奨型ごとにグルーピング
+        grouped: dict[str, list[QualityIssue]] = defaultdict(list)
+        for issue in issues:
+            key = issue.recommended_type or "excluded"
+            grouped[key].append(issue)
+
+        # Pydantic型推奨グループ
+        pydantic_groups = {
+            k: v for k, v in grouped.items() if k not in ("custom", "excluded")
+        }
+        if pydantic_groups:
+            self.console.print(
+                f"[bold {color}]Pydantic型で置き換え可能 "
+                f"({sum(len(v) for v in pydantic_groups.values())}件)[/bold {color}]"
+            )
+            for rec_type, type_issues in sorted(pydantic_groups.items()):
+                self.console.print(f"  {rec_type}推奨: {len(type_issues)}箇所")
+                if show_details:
+                    for issue in type_issues[:3]:  # 最大3件表示
+                        loc = issue.location
+                        if loc:
+                            self.console.print(
+                                f"    - {loc.file}:{loc.line} "
+                                f"({issue.primitive_type})"
+                            )
+                    if len(type_issues) > 3:
+                        self.console.print(f"    ... 他{len(type_issues) - 3}件")
+            self.console.print()
+
+        # カスタム型定義が必要なグループ
+        if "custom" in grouped:
+            custom_issues = grouped["custom"]
+            self.console.print(
+                f"[bold {color}]プロジェクト型定義の検討が必要 "
+                f"({len(custom_issues)}件)[/bold {color}]"
+            )
+            if show_details:
+                for issue in custom_issues[:5]:  # 最大5件表示
+                    loc = issue.location
+                    if loc:
+                        self.console.print(
+                            f"  - {loc.file}:{loc.line} ({issue.primitive_type})"
+                        )
+                if len(custom_issues) > 5:
+                    self.console.print(f"  ... 他{len(custom_issues) - 5}件")
+            self.console.print()
+
+        # 除外グループ（汎用変数名）
+        if "excluded" in grouped:
+            excluded_issues = grouped["excluded"]
+            self.console.print(
+                f"[bold {color}]汎用変数名（型定義不要） "
+                f"({len(excluded_issues)}件)[/bold {color}]"
+            )
+            if show_details:
+                # primitive型ごとにカウント
+                type_counts: dict[str, int] = defaultdict(int)
+                for issue in excluded_issues:
+                    if issue.primitive_type:
+                        type_counts[issue.primitive_type] += 1
+                for prim_type, count in sorted(type_counts.items()):
+                    self.console.print(f"  {prim_type}: {count}箇所")
             self.console.print()
 
     def _show_issue_detail(

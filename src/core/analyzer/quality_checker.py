@@ -223,10 +223,14 @@ class QualityChecker:
                     "が使用されています（汎用変数名）"
                 )
                 suggestion = "現状維持を推奨（汎用的な変数名のため型定義不要）"
+                recommended_type = None
             else:
                 issue_type = "primitive_usage"
                 prim_msg = f"primitive型 {detail.primitive_type} が直接使用されています"
                 suggestion = "ドメイン型を定義して使用してください"
+                # 推奨型を取得
+                pydantic_type = suggest_pydantic_type(var_name, detail.primitive_type)
+                recommended_type = pydantic_type["type"] if pydantic_type else "custom"
 
             issues.append(
                 QualityIssue(
@@ -235,6 +239,8 @@ class QualityChecker:
                     location=location,
                     suggestion=suggestion,
                     improvement_plan=self._generate_primitive_replacement_plan(detail),
+                    recommended_type=recommended_type,
+                    primitive_type=detail.primitive_type,
                 )
             )
 

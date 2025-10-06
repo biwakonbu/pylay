@@ -46,6 +46,13 @@ class QualityIssue(BaseModel):
     location: CodeLocation | None = Field(default=None, description="問題の場所")
     suggestion: str = Field(description="簡単な解決策の提案")
     improvement_plan: str = Field(description="詳細な改善プラン")
+    # グルーピング用の追加情報
+    recommended_type: str | None = Field(
+        default=None, description="推奨される型（Pydantic型など）"
+    )
+    primitive_type: str | None = Field(
+        default=None, description="検出されたprimitive型"
+    )
 
 
 class QualityCheckResult(BaseModel):
