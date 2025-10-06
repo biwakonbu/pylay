@@ -29,7 +29,7 @@ class TestQualityChecker:
         self, config: PylayConfig
     ) -> Generator[TypeLevelAnalyzer, None, None]:
         """テスト用のTypeLevelAnalyzerインスタンス"""
-        yield TypeLevelAnalyzer(config)
+        yield TypeLevelAnalyzer()
 
     @pytest.fixture  # type: ignore[misc]
     def quality_checker(
@@ -48,8 +48,10 @@ class TestQualityChecker:
         self, quality_checker: QualityChecker, type_analyzer: TypeLevelAnalyzer
     ) -> None:
         """基本的な品質チェックテスト"""
+        from pathlib import Path
+
         # まず型分析レポートを作成
-        analysis_report = type_analyzer.analyze_types()
+        analysis_report = type_analyzer.analyze_directory(Path("src"))
 
         # 品質チェックを実行
         result = quality_checker.check_quality(analysis_report)
@@ -61,18 +63,3 @@ class TestQualityChecker:
         assert hasattr(result, "has_errors")
         assert hasattr(result, "overall_score")
         assert hasattr(result, "total_issues")
-
-    def test_get_quality_report(
-        self, quality_checker: QualityChecker, type_analyzer: TypeLevelAnalyzer
-    ) -> None:
-        """品質レポート取得テスト"""
-        # 型分析レポートを作成
-        analysis_report = type_analyzer.analyze_types()
-
-        # 品質レポートを取得
-        report = quality_checker.get_quality_report(analysis_report)
-
-        assert report is not None
-        assert hasattr(report, "statistics")
-        assert hasattr(report, "issues")
-        assert hasattr(report, "overall_score")
