@@ -22,6 +22,7 @@ from src.core.analyzer.code_locator import (
     PrimitiveUsageDetail,
     UnusedTypeDetail,
 )
+from src.core.analyzer.quality_models import QualityCheckResult
 from src.core.analyzer.type_level_models import (
     DocstringRecommendation,
     DocumentationStatistics,
@@ -206,6 +207,39 @@ class TypeReporter:
                 lines.append(self._format_docstring_recommendation(rec))
 
         return "\n".join(lines)
+
+    def generate_console_report_with_quality_check(
+        self,
+        quality_check_result: QualityCheckResult,
+        report: TypeAnalysisReport,
+        show_details: bool = False,
+    ) -> None:
+        """品質チェック結果を含むコンソールレポートを生成
+
+        Args:
+            quality_check_result: 品質チェック結果
+            report: 型定義分析レポート
+            show_details: 詳細情報を表示するか
+        """
+        # ヘッダー
+        self.console.rule("[bold cyan]型定義品質チェックレポート[/bold cyan]")
+        self.console.print()
+
+        # 全体サマリー
+        self._show_quality_summary_panel(quality_check_result)
+
+        # 統計情報テーブル
+        self._show_quality_statistics_table(quality_check_result)
+
+        # 問題リスト
+        if quality_check_result.issues:
+            self._show_quality_issues_table(quality_check_result, show_details)
+        else:
+            self.console.print("[green]✅ 品質問題は検出されませんでした[/green]")
+
+        # 推奨事項（問題がある場合のみ）
+        if quality_check_result.issues:
+            self._show_quality_recommendations(quality_check_result)
 
     def generate_markdown_report(self, report: TypeAnalysisReport) -> str:
         """Markdown形式のレポートを生成

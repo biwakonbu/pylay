@@ -16,6 +16,7 @@ from ..core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from ..core.output_manager import OutputPathManager
 from ..core.schemas.pylay_config import PylayConfig
 from .commands.analyze_types import analyze_types
+from .commands.check_quality import check_quality
 from .commands.diagnose_type_ignore import diagnose_type_ignore
 from .commands.project_analyze import project_analyze
 
@@ -314,6 +315,10 @@ analyze.add_command(analyze_types)
 # diagnose-type-ignoreコマンドを登録
 cli.add_command(diagnose_type_ignore)
 analyze.add_command(diagnose_type_ignore)
+
+# check-qualityコマンドを登録
+cli.add_command(check_quality)
+analyze.add_command(check_quality)
 
 
 @analyze.command("infer-deps")
