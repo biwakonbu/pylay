@@ -310,6 +310,7 @@ class QualityChecker:
                 "level3_ratio": statistics.level3_ratio,
                 "primitive_usage_ratio": statistics.primitive_usage_ratio,
                 "deprecated_typing_ratio": statistics.deprecated_typing_ratio,
+                "documentation": statistics.documentation,
                 "documentation_rate": statistics.documentation.implementation_rate,
                 "detail_rate": statistics.documentation.detail_rate,
             }
