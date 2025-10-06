@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from src.core.analyzer.type_level_models import TypeStatistics
 
 # 深刻度の型定義
-type SeverityName = Literal["アドバイス", "警告", "エラー"]
+type SeverityName = Literal["advice", "warning", "error"]
 
 
 class CodeLocation(BaseModel):
@@ -42,7 +42,7 @@ class QualityIssue(BaseModel):
     """品質問題の情報"""
 
     issue_type: str = Field(description="問題の種類")
-    severity: SeverityName = Field(default="アドバイス", description="深刻度レベル")
+    severity: SeverityName = Field(default="advice", description="深刻度レベル")
     message: str = Field(description="問題の説明")
     location: CodeLocation | None = Field(default=None, description="問題の場所")
     suggestion: str = Field(description="簡単な解決策の提案")

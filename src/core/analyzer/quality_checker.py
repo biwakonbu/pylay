@@ -79,9 +79,9 @@ class QualityChecker:
             issue.severity = self._calculate_severity(issue, report.statistics)
 
         # 全体統計を計算
-        error_count = sum(1 for issue in issues if issue.severity == "エラー")
-        warning_count = sum(1 for issue in issues if issue.severity == "警告")
-        advice_count = sum(1 for issue in issues if issue.severity == "アドバイス")
+        error_count = sum(1 for issue in issues if issue.severity == "error")
+        warning_count = sum(1 for issue in issues if issue.severity == "warning")
+        advice_count = sum(1 for issue in issues if issue.severity == "advice")
 
         # 全体スコアを計算（エラーは大きく減点、警告は中程度、アドバイスは軽く減点）
         score_deduction = error_count * 0.3 + warning_count * 0.1 + advice_count * 0.05
@@ -327,7 +327,7 @@ class QualityChecker:
 
     def _calculate_severity(
         self, issue: QualityIssue, statistics: TypeStatistics
-    ) -> Literal["アドバイス", "警告", "エラー"]:
+    ) -> Literal["advice", "warning", "error"]:
         """問題の深刻度レベルを計算"""
         # ベーススコアを計算（問題の種類によって重み付け）
         base_score = self._calculate_base_score(issue.issue_type, statistics)
@@ -338,12 +338,12 @@ class QualityChecker:
         ):
             name = level.name
             # 型チェックを満たすため、明示的に判定
-            if name in ("アドバイス", "警告", "エラー"):
+            if name in ("advice", "warning", "error"):
                 if base_score >= level.threshold:
                     return name  # type: ignore[return-value]
 
         # デフォルトはアドバイス
-        return "アドバイス"
+        return "advice"
 
     def _calculate_base_score(
         self, issue_type: str, statistics: TypeStatistics

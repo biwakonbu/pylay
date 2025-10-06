@@ -19,10 +19,10 @@ if TYPE_CHECKING:
     from src.core.analyzer.type_level_models import TypeAnalysisReport
 
 # 深刻度の型付き定数（Literal型との互換性を確保）
-SEVERITIES: Final[tuple[Literal["エラー", "警告", "アドバイス"], ...]] = (
-    "エラー",
-    "警告",
-    "アドバイス",
+SEVERITIES: Final[tuple[Literal["error", "warning", "advice"], ...]] = (
+    "error",
+    "warning",
+    "advice",
 )
 
 
@@ -52,7 +52,7 @@ class QualityReporter:
             show_details: 詳細情報を表示するか
         """
         # ヘッダー
-        self.console.rule("[bold cyan]型定義品質チェックレポート[/bold cyan]")
+        self.console.rule("[bold cyan]Type Definition Quality Report[/bold cyan]")
         self.console.print()
 
         # 全体サマリー
@@ -65,7 +65,7 @@ class QualityReporter:
         if check_result.issues:
             self._show_issues_table(check_result, show_details)
         else:
-            self.console.print("[green]✅ 品質問題は検出されませんでした[/green]")
+            self.console.print("[green]No quality issues detected[/green]")
 
         # 推奨事項（問題がある場合のみ）
         if check_result.issues:
@@ -127,11 +127,13 @@ class QualityReporter:
             for severity in SEVERITIES:
                 severity_issues = check_result.get_issues_by_severity(severity)
                 if severity_issues:
-                    severity_emoji = {"エラー": "❌", "警告": "⚠️", "アドバイス": "💡"}[
-                        severity
-                    ]
+                    severity_label = {
+                        "error": "ERROR",
+                        "warning": "WARNING",
+                        "advice": "ADVICE",
+                    }[severity]
                     lines.append(
-                        f"### {severity_emoji} {severity} ({len(severity_issues)}件)"
+                        f"### {severity_label} ({len(severity_issues)} issues)"
                     )
                     lines.append("")
 
@@ -243,16 +245,16 @@ class QualityReporter:
         )
 
         summary_content = (
-            f"[bold cyan]全体スコア:[/bold cyan] {score_text}\n"
-            f"[bold cyan]総問題数:[/bold cyan] {check_result.total_issues}\n"
-            f"[bold red]エラー:[/bold red] {check_result.error_count}\n"
-            f"[bold yellow]警告:[/bold yellow] {check_result.warning_count}\n"
-            f"[bold blue]アドバイス:[/bold blue] {check_result.advice_count}"
+            f"[bold cyan]Overall Score:[/bold cyan] {score_text}\n"
+            f"[bold cyan]Total Issues:[/bold cyan] {check_result.total_issues}\n"
+            f"[bold red]Errors:[/bold red] {check_result.error_count}\n"
+            f"[bold yellow]Warnings:[/bold yellow] {check_result.warning_count}\n"
+            f"[bold blue]Advice:[/bold blue] {check_result.advice_count}"
         )
 
         summary_panel = Panel(
             summary_content,
-            title="[bold]📊 サマリー[/bold]",
+            title="[bold]Summary[/bold]",
             border_style=score_color,
         )
         self.console.print(summary_panel)
@@ -260,12 +262,10 @@ class QualityReporter:
 
     def _show_statistics_table(self, check_result: QualityCheckResult) -> None:
         """統計情報テーブルを表示"""
-        table = Table(
-            title="📈 統計情報", show_header=True, header_style="bold magenta"
-        )
-        table.add_column("項目", style="cyan", width=20)
-        table.add_column("値", style="white", justify="right")
-        table.add_column("状態", style="green")
+        table = Table(title="Statistics", show_header=True, header_style="bold magenta")
+        table.add_column("Item", style="cyan", width=30)
+        table.add_column("Value", style="white", justify="right")
+        table.add_column("Status", style="green")
 
         # 型レベル統計
         level1_color = (
@@ -274,12 +274,12 @@ class QualityReporter:
             else "green"
         )
         l1_status = (  # noqa: E501
-            "超過"
+            "Exceeded"
             if check_result.statistics.level1_ratio > check_result.thresholds.level1_max
-            else "正常"
+            else "OK"
         )
         table.add_row(
-            "Level 1比率",
+            "Level 1 Ratio",
             f"{check_result.statistics.level1_ratio * 100:.1f}%",
             f"[bold {level1_color}]{l1_status}[/bold {level1_color}]",
         )
@@ -290,12 +290,12 @@ class QualityReporter:
             else "green"
         )
         l2_status = (  # noqa: E501
-            "不足"
+            "Low"
             if check_result.statistics.level2_ratio < check_result.thresholds.level2_min
-            else "正常"
+            else "OK"
         )
         table.add_row(
-            "Level 2比率",
+            "Level 2 Ratio",
             f"{check_result.statistics.level2_ratio * 100:.1f}%",
             f"[bold {level2_color}]{l2_status}[/bold {level2_color}]",
         )
@@ -306,12 +306,12 @@ class QualityReporter:
             else "green"
         )
         l3_status = (  # noqa: E501
-            "不足"
+            "Low"
             if check_result.statistics.level3_ratio < check_result.thresholds.level3_min
-            else "正常"
+            else "OK"
         )
         table.add_row(
-            "Level 3比率",
+            "Level 3 Ratio",
             f"{check_result.statistics.level3_ratio * 100:.1f}%",
             f"[bold {level3_color}]{l3_status}[/bold {level3_color}]",
         )
@@ -319,9 +319,9 @@ class QualityReporter:
         # ドキュメント統計
         doc_rate = check_result.statistics.documentation.implementation_rate
         doc_color = "yellow" if doc_rate < 0.8 else "green"
-        doc_status = "要改善" if doc_rate < 0.8 else "良好"
+        doc_status = "Needs Improvement" if doc_rate < 0.8 else "Good"
         table.add_row(
-            "ドキュメント実装率",
+            "Documentation Rate",
             f"{doc_rate * 100:.1f}%",
             f"[bold {doc_color}]{doc_status}[/bold {doc_color}]",
         )
@@ -329,9 +329,9 @@ class QualityReporter:
         # その他の統計
         prim_ratio = check_result.statistics.primitive_usage_ratio
         primitive_color = "red" if prim_ratio > 0.10 else "green"
-        prim_status = "過多" if prim_ratio > 0.10 else "正常"
+        prim_status = "High" if prim_ratio > 0.10 else "OK"
         table.add_row(
-            "primitive使用率",
+            "Primitive Usage Ratio",
             f"{prim_ratio * 100:.1f}%",
             f"[bold {primitive_color}]{prim_status}[/bold {primitive_color}]",
         )
@@ -350,11 +350,11 @@ class QualityReporter:
                 continue
 
             # 深刻度別の色設定
-            color = {"エラー": "red", "警告": "yellow", "アドバイス": "blue"}[severity]
+            color = {"error": "red", "warning": "yellow", "advice": "blue"}[severity]
             severity_label = {
-                "エラー": "ERROR",
-                "警告": "WARNING",
-                "アドバイス": "ADVICE",
+                "error": "ERROR",
+                "warning": "WARNING",
+                "advice": "ADVICE",
             }[severity]
 
             rule_text = (  # noqa: E501
@@ -520,12 +520,12 @@ class QualityReporter:
 
     def _show_recommendations(self, check_result: QualityCheckResult) -> None:
         """推奨事項を表示"""
-        self.console.print("[bold cyan]💡 推奨事項[/bold cyan]")
+        self.console.print("[bold cyan]Recommendations[/bold cyan]")
         self.console.print()
 
         if check_result.error_count > 0:
             self.console.print(
-                "1. [bold red]エラー項目を最優先で修正してください[/bold red]"
+                "1. [bold red]Fix error items with highest priority[/bold red]"
             )
             self.console.print("   - エラーは型定義の品質に深刻な影響を及ぼします")
             self.console.print(
@@ -535,7 +535,7 @@ class QualityReporter:
 
         if check_result.warning_count > 0:
             self.console.print(  # noqa: E501
-                "2. [bold yellow]警告項目も可能な限り修正することを推奨します"
+                "2. [bold yellow]Strongly recommend fixing warning items"
                 "[/bold yellow]"
             )
             self.console.print("   - 警告は品質低下の兆候です")
@@ -543,8 +543,8 @@ class QualityReporter:
             self.console.print()
 
         self.console.print(  # noqa: E501
-            "3. [bold blue]アドバイス項目は品質向上のための参考情報として活用して"
-            "ください[/bold blue]"
+            "3. [bold blue]Use advice items as references for quality improvement"
+            "[/bold blue]"
         )
         self.console.print("   - アドバイスはベストプラクティスに基づく推奨事項です")
         self.console.print("   - 段階的に適用することを検討してください")
