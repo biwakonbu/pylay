@@ -62,6 +62,18 @@ console = Console()
     help="問題箇所の詳細（ファイルパス、行番号、コード内容）を表示",
 )
 @click.option(
+    "--severity",
+    type=click.Choice(["error", "warning", "advice"], case_sensitive=False),
+    default=None,
+    help="深刻度でフィルタ（error/warning/advice）",
+)
+@click.option(
+    "--issue-type",
+    type=str,
+    default=None,
+    help="問題タイプでフィルタ（例: primitive_usage, level1_ratio_high）",
+)
+@click.option(
     "--fail-on-error",
     is_flag=True,
     help="エラーが発生した場合に終了コード1で終了",
@@ -73,6 +85,8 @@ def quality(
     output_format: str,
     output: str | None,
     show_details: bool,
+    severity: str | None,
+    issue_type: str | None,
     fail_on_error: bool,
 ) -> None:
     """
@@ -86,6 +100,9 @@ def quality(
     例:
         pylay quality src/
         pylay quality --strict --show-details
+        pylay quality --severity error src/
+        pylay quality --issue-type primitive_usage src/
+        pylay quality --severity error --issue-type level1_ratio_high src/
         pylay quality --format markdown --output report.md
         pylay quality --config custom.toml --fail-on-error
     """
@@ -173,6 +190,10 @@ def quality(
     try:
         check_result = quality_checker.check_quality(report)
 
+        # フィルタを適用
+        if severity or issue_type:
+            check_result = _apply_filters(check_result, severity, issue_type)
+
         # レポートを生成
         if output_format == "console":
             _output_console_report(
@@ -220,6 +241,55 @@ def quality(
         console.print(error_panel)
         if fail_on_error or strict:
             sys.exit(1)
+
+
+def _apply_filters(
+    check_result: "QualityCheckResult",
+    severity: str | None,
+    issue_type: str | None,
+) -> "QualityCheckResult":
+    """品質チェック結果にフィルタを適用
+
+    Args:
+        check_result: 元の品質チェック結果
+        severity: 深刻度フィルタ（error/warning/advice）
+        issue_type: 問題タイプフィルタ
+
+    Returns:
+        フィルタ適用後の品質チェック結果
+    """
+    from src.core.analyzer.quality_models import QualityCheckResult
+
+    filtered_issues = check_result.issues
+
+    # 深刻度でフィルタ
+    if severity:
+        filtered_issues = [i for i in filtered_issues if i.severity == severity]
+
+    # 問題タイプでフィルタ
+    if issue_type:
+        filtered_issues = [i for i in filtered_issues if i.issue_type == issue_type]
+
+    # フィルタ後のカウントを再計算
+    error_count = sum(1 for i in filtered_issues if i.severity == "error")
+    warning_count = sum(1 for i in filtered_issues if i.severity == "warning")
+    advice_count = sum(1 for i in filtered_issues if i.severity == "advice")
+    total_issues = len(filtered_issues)
+    has_errors = error_count > 0
+
+    # 新しいQualityCheckResultを作成
+    return QualityCheckResult(
+        issues=filtered_issues,
+        statistics=check_result.statistics,
+        overall_score=check_result.overall_score,
+        thresholds=check_result.thresholds,
+        severity_levels=check_result.severity_levels,
+        total_issues=total_issues,
+        error_count=error_count,
+        warning_count=warning_count,
+        advice_count=advice_count,
+        has_errors=has_errors,
+    )
 
 
 def _output_console_report(

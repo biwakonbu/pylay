@@ -416,6 +416,11 @@ def test_detect_newtype_with_factory():
 - [x] **Phase 2**: 改善プランテンプレートの更新
   - [x] `quality_checker.py`の推奨テキスト更新
   - [x] `pyproject.toml`のimprovement_guidance更新
+  - [x] `_generate_primitive_replacement_plan()`に新パターンテンプレート追加
+    - NewType + @validate_call パターンの具体的なコード例を提示
+    - 型名候補の自動生成（suggest_type_name）
+    - フィールド制約の自動提案（Field(min_length=1, ge=0等）
+    - Step 1/Step 2形式の実装手順を提供
 
 - [x] **Phase 3**: primitive型検出ロジックの拡張
   - [x] `code_locator.py`のNewType定義除外処理
@@ -454,6 +459,62 @@ def test_detect_newtype_with_factory():
 
 ---
 
+## 🔍 品質チェック機能の拡張
+
+### フィルタ機能の追加【実装中】🔧
+
+#### 目的
+
+大量の問題がある場合でも、特定の問題のみに集中できるフィルタ機能を追加します。
+
+#### 実装内容
+
+**1. 深刻度フィルタ (`--severity`)**
+```bash
+pylay quality --severity error src/       # エラーのみ表示
+pylay quality --severity warning src/     # 警告のみ表示
+pylay quality --severity advice src/      # アドバイスのみ表示
+```
+
+**2. 問題タイプフィルタ (`--issue-type`)**
+```bash
+pylay quality --issue-type primitive_usage src/
+pylay quality --issue-type level1_ratio_high src/
+```
+
+**3. 組み合わせフィルタ**
+```bash
+pylay quality --severity error --issue-type primitive_usage src/
+```
+
+#### 実装ファイル
+
+- `src/cli/commands/quality.py`
+  - CLIオプション追加（`--severity`, `--issue-type`）
+  - `_apply_filters()`関数でフィルタロジック実装
+  - フィルタ後のカウント再計算
+
+#### 期待される効果
+
+- ✅ 段階的な問題修正が容易になる
+- ✅ CI/CDで特定の深刻度のみをチェック可能
+- ✅ 大規模プロジェクトでの使いやすさ向上
+
+#### 実装状況
+
+- [x] CLIオプション追加
+- [x] フィルタロジック実装
+- [ ] テスト追加
+- [ ] ドキュメント更新
+
+---
+
 ## 📝 更新履歴
 
 - 2025-10-07: 初版作成（Phase 0完了、Phase 1-3計画策定）
+- 2025-10-07: Phase 2完了（新パターンテンプレートの詳細実装）
+  - `quality_checker.py`に NewType + @validate_call の具体的なコードテンプレートを追加
+  - primitive型置き換え時に自動的に型名候補と制約を提案する機能を実装
+- 2025-10-07: 品質チェック機能拡張（フィルタ機能）
+  - `--severity`と`--issue-type`オプションを追加
+  - フィルタロジックを実装（`_apply_filters`関数）
