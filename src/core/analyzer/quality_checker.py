@@ -431,7 +431,7 @@ class QualityChecker:
 
             plan = f"""primitive型 {detail.primitive_type} をPydantic型に置き換える手順:
 
-★ 推奨: Pydantic提供の型を使用（最もシンプル）
+推奨: Pydantic提供の型を使用（最もシンプル）
 
 Step 1: Pydantic型をインポート
 
