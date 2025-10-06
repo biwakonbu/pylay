@@ -190,7 +190,7 @@ severity_levels = [
 
 # 改善プランの詳細度設定
 improvement_guidance = [
-    { level = "level1_to_level2", suggestion = "Annotated型で制約を追加してください" },
+    { level = "level1_to_level2", suggestion = "NewType + ファクトリ関数で制約を追加してください（PEP 484準拠）" },
     { level = "level2_to_level3", suggestion = "BaseModelでビジネスロジックを追加してください" },
     { level = "add_validation", suggestion = "バリデーション関数を実装してください" },
     { level = "add_documentation", suggestion = "詳細なdocstringを追加してください" },

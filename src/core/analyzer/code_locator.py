@@ -816,10 +816,9 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
                 isinstance(annotation.func, ast.Name)
                 and annotation.func.id == "NewType"
             ):
-                if len(annotation.args) >= 2:
-                    base_type = annotation.args[1]
-                    # 再帰的にbase_typeをチェック
-                    return self._extract_primitive_type(base_type)
+                # NewType定義はprimitive使用としてカウントしない（PEP 484準拠パターン）
+                # 例: UserId = NewType('UserId', str) → primitive使用ではない
+                return None
 
         return None
 

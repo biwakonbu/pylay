@@ -506,7 +506,7 @@ Step 2: 使用箇所を修正
 
   2. 新規型定義が必要な場合
      - この変数が表すドメイン概念を明確化
-     - Level 2（Annotated + バリデーション）での定義を推奨
+     - Level 2（NewType + ファクトリ関数、PEP 484準拠）での定義を推奨
      - docs/typing-rule.md の型定義ルールに従う
 
   3. primitive型のままで良い場合
