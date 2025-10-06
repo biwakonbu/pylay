@@ -41,14 +41,14 @@ class QualityReporter:
     def generate_console_report(
         self,
         check_result: QualityCheckResult,
-        report: "TypeAnalysisReport",
+        _report: "TypeAnalysisReport",
         show_details: bool = False,
     ) -> None:
         """コンソール用レポートを生成して直接表示
 
         Args:
             check_result: 品質チェック結果
-            report: 型定義分析レポート
+            _report: 型定義分析レポート（現在未使用、将来の拡張用）
             show_details: 詳細情報を表示するか
         """
         # ヘッダー
