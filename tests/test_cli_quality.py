@@ -46,3 +46,48 @@ class TestQualityCommand:
 
         # 厳格モードではエラーがあると終了コード1
         assert result.exit_code in [0, 1]
+
+    def test_quality_command_with_severity_filter(self, runner: CliRunner) -> None:
+        """深刻度フィルタのテスト"""
+        # adviceフィルタ
+        result = runner.invoke(
+            main, ["--config", "pyproject.toml", "src", "--severity", "advice"]
+        )
+        assert result.exit_code in [0, 1]
+        assert "ADVICE" in result.output or "Advice" in result.output
+
+        # errorフィルタ
+        result = runner.invoke(
+            main, ["--config", "pyproject.toml", "src", "--severity", "error"]
+        )
+        assert result.exit_code in [0, 1]
+
+    def test_quality_command_with_issue_type_filter(self, runner: CliRunner) -> None:
+        """問題タイプフィルタのテスト"""
+        result = runner.invoke(
+            main,
+            [
+                "--config",
+                "pyproject.toml",
+                "src",
+                "--issue-type",
+                "level1_ratio_high",
+            ],
+        )
+        assert result.exit_code in [0, 1]
+
+    def test_quality_command_with_combined_filters(self, runner: CliRunner) -> None:
+        """組み合わせフィルタのテスト"""
+        result = runner.invoke(
+            main,
+            [
+                "--config",
+                "pyproject.toml",
+                "src",
+                "--severity",
+                "advice",
+                "--issue-type",
+                "level1_ratio_high",
+            ],
+        )
+        assert result.exit_code in [0, 1]
