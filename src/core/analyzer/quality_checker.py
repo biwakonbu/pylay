@@ -205,7 +205,7 @@ class QualityChecker:
             location = CodeLocation(
                 file=detail.location.file,
                 line=detail.location.line,
-                column=0,
+                column=getattr(detail.location, "column", 0),
                 context_before=detail.location.context_before
                 if hasattr(detail.location, "context_before")
                 else [],
