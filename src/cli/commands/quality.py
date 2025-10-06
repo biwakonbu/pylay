@@ -139,7 +139,7 @@ def quality(
     )
     start_panel = Panel(
         panel_content,
-        title="[bold green]🔍 Type Quality Check[/bold green]",
+        title="[bold green]Type Quality Check[/bold green]",
         border_style="green",
     )
     console.print(start_panel)
@@ -177,7 +177,7 @@ def quality(
         # エラーメッセージのPanel
         error_panel = Panel(
             f"[red]Error: {e}[/red]",
-            title="[bold red]❌ Analysis Error[/bold red]",
+            title="[bold red]Analysis Error[/bold red]",
             border_style="red",
         )
         console.print(error_panel)
@@ -221,24 +221,22 @@ def quality(
         if check_result.has_errors:
             if fail_on_error or strict:
                 console.print()
-                console.print(
-                    "[bold red]❌ Quality check failed with errors[/bold red]"
-                )
+                console.print("[bold red]Quality check failed with errors[/bold red]")
                 sys.exit(1)
             else:
                 console.print()
                 console.print(
-                    "[yellow]⚠️  Quality check completed with warnings/errors "
+                    "[yellow]Quality check completed with warnings/errors "
                     "(use --fail-on-error to exit with code 1)[/yellow]"
                 )
         else:
             console.print()
-            console.print("[bold green]✅ Quality check passed[/bold green]")
+            console.print("[bold green]Quality check passed[/bold green]")
 
     except Exception as e:
         error_panel = Panel(
             f"[red]Error in quality check: {e}[/red]",
-            title="[bold red]❌ Quality Check Error[/bold red]",
+            title="[bold red]Quality Check Error[/bold red]",
             border_style="red",
         )
         console.print(error_panel)
@@ -278,9 +276,7 @@ def _output_markdown_report(
         # ファイルに書き込み
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(markdown_report)
-        console.print(
-            f"[bold green]✅ Markdown report saved: {output_path}[/bold green]"
-        )
+        console.print(f"[bold green]Markdown report saved: {output_path}[/bold green]")
     else:
         # コンソールに出力
         console.print(markdown_report)
@@ -302,7 +298,7 @@ def _output_json_report(
         # ファイルに書き込み
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(json_report)
-        console.print(f"[bold green]✅ JSON report saved: {output_path}[/bold green]")
+        console.print(f"[bold green]JSON report saved: {output_path}[/bold green]")
     else:
         # コンソールに出力
         console.print(json_report)
@@ -375,7 +371,7 @@ def _export_details_to_yaml(
             )
 
         console.print(
-            f"[bold green]✅ Problem details exported to YAML file: "
+            f"[bold green]Problem details exported to YAML file: "
             f"{output_path}[/bold green]"
         )
     except OSError as e:
