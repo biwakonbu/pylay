@@ -12,12 +12,8 @@ from src.core.analyzer.code_locator import CodeLocator
 if TYPE_CHECKING:
     from src.core.analyzer.code_locator import PrimitiveUsageDetail
 from src.core.analyzer.improvement_templates import (
-    VALIDATION_PATTERNS,
     extract_variable_name,
-    format_validation_checklist,
     suggest_pydantic_type,
-    suggest_type_name,
-    suggest_validation_patterns,
 )
 from src.core.analyzer.quality_models import (
     CodeLocation,
@@ -464,85 +460,31 @@ Step 2: 使用箇所を修正
 参考: https://docs.pydantic.dev/latest/api/types/
 """
         else:
-            # カスタム型定義が必要な場合
-            type_candidates = suggest_type_name(var_name, detail.primitive_type)
-            validation_patterns = suggest_validation_patterns(
-                var_name, detail.primitive_type
-            )
+            # 機械的に判定できない場合: プロジェクトの型定義を活用するよう促す
+            plan = f"""primitive型 {detail.primitive_type} の使用が検出されました。
 
-            # バリデーション例を構築
-            validation_examples = []
-            for pattern_key in validation_patterns:
-                if pattern_key in VALIDATION_PATTERNS:
-                    pattern = VALIDATION_PATTERNS[pattern_key]
-                    validation_examples.append(f"  # {pattern['description']}")
-                    validation_examples.append(f"  {pattern['validator']}")
+変数名 '{var_name}' から適切な型を自動推奨できませんでした。
+プロジェクトで定義された型を活用することを検討してください。
 
-            validation_code = (
-                "\n\n".join(validation_examples)
-                if validation_examples
-                else "  # TODO: 適切なバリデーションを実装"
-            )
+推奨アクション:
+  1. プロジェクトの既存型定義を確認
+     - src/core/schemas/types.py に適切な型が定義されているか確認
+     - 同様の用途の変数で使われている型を参照
 
-            type_candidates_formatted = "\n  ".join(
-                f"- {name}" for name in type_candidates
-            )
-            fixed_code = detail.location.code.replace(
-                f": {detail.primitive_type}", f": {type_candidates[0]}"
-            ).strip()
-            checklist = format_validation_checklist(detail.primitive_type)
+  2. 新規型定義が必要な場合
+     - この変数が表すドメイン概念を明確化
+     - Level 2（Annotated + バリデーション）での定義を推奨
+     - docs/typing-rule.md の型定義ルールに従う
 
-            plan = f"""primitive型 {detail.primitive_type} をドメイン型に置き換える手順:
+  3. primitive型のままで良い場合
+     - 汎用的な値で特定のドメイン概念を表さない場合
+     - 一時変数やユーティリティパラメータの場合
 
-Step 1: src/core/schemas/types.py に型定義を作成
+参考:
+  - 型定義ルール: docs/typing-rule.md
+  - 既存の型定義: src/core/schemas/types.py
+  - 位置: {detail.location.file}:{detail.location.line}
 
-  型名の候補（コードから推測）:
-  {type_candidates_formatted}
-
-  # Level 1: 単純な型エイリアス
-  type {type_candidates[0]} = {detail.primitive_type}
-
-  # Level 2: 制約付き型（推奨）
-  from typing import Annotated
-  from pydantic import AfterValidator
-
-{validation_code}
-
-  type {type_candidates[0]} = Annotated[
-      {detail.primitive_type}, AfterValidator(validate_{var_name})
-  ]
-
-Step 2: 使用箇所を修正
-
-  File: {detail.location.file}:{detail.location.line}
-
-  # インポート追加
-  from src.core.schemas.types import {type_candidates[0]}
-
-  # Before
-  {detail.location.code.strip()}
-
-  # After
-  {fixed_code}
-
-Step 3: バリデーションの検討
-
-  この型に必要な制約を検討してください:
-  {checklist}
-
-Implementation Context:
-  - Why: primitive型の直接使用は型の意図を不明確にします
-  - Effect: 型名により「何の{detail.primitive_type}か」が明確になります
-  - Impact: {type_candidates[0]}を使う全ての箇所で型安全性が向上します
-
-Tools and References:
-  - Pydantic AfterValidator - バリデーション実装
-  - typing.Annotated - 型制約の追加
-  - docs/typing-rule.md - 型定義ルール
-  - src/core/schemas/types.py - 既存の型定義例
-
-Related Files:
-  - {detail.location.file}:{detail.location.line} - 修正対象
-  - src/core/schemas/types.py - 型定義を追加
+注記: 将来的には、より精度の高い型推奨機能を提供予定です。
 """
         return plan
