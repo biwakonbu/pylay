@@ -11,7 +11,7 @@
 """
 
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, NewType
 
 from pydantic import AfterValidator, BaseModel, Field
 
@@ -49,14 +49,18 @@ type YamlString = str
 type CodeString = str
 type OutputPath = str | Path | None
 
-# Level 2: Annotated + AfterValidator（制約付き）
+# Level 2: NewType + Annotated（制約付き、型レベル区別）
+# NOTE: ModulePath は str | Path なので、NewTypeでは扱えない（Union型のため）
 type ValidatedModulePath = Annotated[ModulePath, AfterValidator(_validate_path_exists)]
 
-type MaxDepth = Annotated[
-    int, Field(gt=0, le=1000), AfterValidator(_validate_depth_limit)
-]
+MaxDepth = NewType(
+    "MaxDepth",
+    Annotated[int, Field(gt=0, le=1000), AfterValidator(_validate_depth_limit)],
+)
 
-type PositiveInt = Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
+PositiveInt = NewType(
+    "PositiveInt", Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
+)
 
 
 class TypeConversionConfig(BaseModel):

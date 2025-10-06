@@ -11,7 +11,7 @@
 """
 
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, NewType
 
 from pydantic import AfterValidator, BaseModel, Field
 
@@ -46,14 +46,18 @@ type ContentString = str
 type CodeBlock = str
 type MarkdownSection = str
 
-# Level 2: Annotated + AfterValidator（制約付き）
+# Level 2: NewType + Annotated（制約付き、型レベル区別）
+# NOTE: OutputPath は str | Path | None なので、NewTypeでは扱えない（Union型のため）
 type ValidatedOutputPath = Annotated[OutputPath, AfterValidator(_validate_output_path)]
 
-type PositiveInt = Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
+PositiveInt = NewType(
+    "PositiveInt", Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
+)
 
-type NonNegativeInt = Annotated[
-    int, Field(ge=0), AfterValidator(_validate_non_negative_int)
-]
+NonNegativeInt = NewType(
+    "NonNegativeInt",
+    Annotated[int, Field(ge=0), AfterValidator(_validate_non_negative_int)],
+)
 
 
 class DocumentConfig(BaseModel):

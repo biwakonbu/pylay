@@ -11,7 +11,7 @@
 """
 
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Literal, NewType
 
 from pydantic import AfterValidator, BaseModel, Field
 
@@ -55,18 +55,23 @@ type FormatStyle = Literal["google", "numpy", "restructured", "unknown"]
 type TypeLevel = Literal["level1", "level2", "level3", "other"]
 type TargetLevel = Literal["level1", "level2", "level3"] | None
 
-# Level 2: Annotated + AfterValidator（制約付き）
+# Level 2: NewType + Annotated（制約付き、型レベル区別）
+# NOTE: FilePath は str | Path なので、NewTypeでは扱えない（Union型のため）
 type ValidatedFilePath = Annotated[FilePath, AfterValidator(_validate_file_path)]
 
-type PositiveInt = Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
+PositiveInt = NewType(
+    "PositiveInt", Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
+)
 
-type NonNegativeInt = Annotated[
-    int, Field(ge=0), AfterValidator(_validate_non_negative_int)
-]
+NonNegativeInt = NewType(
+    "NonNegativeInt",
+    Annotated[int, Field(ge=0), AfterValidator(_validate_non_negative_int)],
+)
 
-type Percentage = Annotated[
-    float, Field(ge=0.0, le=1.0), AfterValidator(_validate_percentage)
-]
+Percentage = NewType(
+    "Percentage",
+    Annotated[float, Field(ge=0.0, le=1.0), AfterValidator(_validate_percentage)],
+)
 
 
 class TypeDefinition(BaseModel):

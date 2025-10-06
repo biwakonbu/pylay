@@ -441,10 +441,10 @@ class QualityChecker:
 
 Step 1: Pydantic型をインポート
 
-  {pydantic_type['import']}
+  {pydantic_type["import"]}
 
-  説明: {pydantic_type['description']}
-  例: {pydantic_type['example']}
+  説明: {pydantic_type["description"]}
+  例: {pydantic_type["example"]}
 
 Step 2: 使用箇所を修正
 
@@ -454,7 +454,7 @@ Step 2: 使用箇所を修正
   {detail.location.code.strip()}
 
   # After
-  {pydantic_type['import']}
+  {pydantic_type["import"]}
   {fixed_code}
 
 利点:

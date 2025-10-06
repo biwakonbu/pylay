@@ -6,11 +6,11 @@ docs/typing-rule.md の原則1に従い、primitive型を直接使わず、
 
 3つのレベル:
 - Level 1: type エイリアス（制約なし、単純な意味付け）
-- Level 2: Annotated + AfterValidator（制約付き、NewType代替）
+- Level 2: NewType + Annotated（制約付き、型レベル区別）
 - Level 3: BaseModel（複雑なドメイン型・ビジネスロジック）
 """
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, NewType
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
@@ -63,7 +63,9 @@ def validate_index_filename(v: str) -> str:
     return v
 
 
-type IndexFilename = Annotated[str, AfterValidator(validate_index_filename)]
+IndexFilename = NewType(
+    "IndexFilename", Annotated[str, AfterValidator(validate_index_filename)]
+)
 """インデックスファイル名（.md拡張子必須）"""
 
 
@@ -78,9 +80,10 @@ def validate_layer_filename_template(v: str) -> str:
     return v
 
 
-type LayerFilenameTemplate = Annotated[
-    str, AfterValidator(validate_layer_filename_template)
-]
+LayerFilenameTemplate = NewType(
+    "LayerFilenameTemplate",
+    Annotated[str, AfterValidator(validate_layer_filename_template)],
+)
 """レイヤーファイル名テンプレート（.md拡張子と{layer}プレースホルダ必須）"""
 
 type TypeSpecName = str
@@ -250,7 +253,7 @@ type CustomFields = dict[str, object]
 
 
 # =============================================================================
-# Level 2: Annotated + AfterValidator（制約付き、NewType代替）
+# Level 2: NewType + Annotated（制約付き、型レベル区別）
 # =============================================================================
 
 
@@ -285,9 +288,10 @@ def validate_directory_path(v: str) -> str:
     return normalized
 
 
-type DirectoryPath = Annotated[
-    str, AfterValidator(validate_directory_path), Field(min_length=1)
-]
+DirectoryPath = NewType(
+    "DirectoryPath",
+    Annotated[str, AfterValidator(validate_directory_path), Field(min_length=1)],
+)
 """
 ディレクトリパス（相対パス）
 
@@ -305,7 +309,10 @@ def validate_max_depth(v: int) -> int:
     return v
 
 
-type MaxDepth = Annotated[int, AfterValidator(validate_max_depth), Field(ge=1, le=100)]
+MaxDepth = NewType(
+    "MaxDepth",
+    Annotated[int, AfterValidator(validate_max_depth), Field(ge=1, le=100)],
+)
 """再帰解析の最大深度（1〜100）"""
 
 
@@ -316,10 +323,12 @@ def validate_weight(v: float) -> float:
     return v
 
 
-type Weight = Annotated[float, AfterValidator(validate_weight), Field(ge=0.0, le=1.0)]
+Weight = NewType(
+    "Weight", Annotated[float, AfterValidator(validate_weight), Field(ge=0.0, le=1.0)]
+)
 """エッジの重み（0.0〜1.0）"""
 
-type ConfidenceScore = Weight
+ConfidenceScore = NewType("ConfidenceScore", Weight)
 """信頼度スコア（0.0〜1.0）- Weightと同じ制約"""
 
 
@@ -330,7 +339,9 @@ def validate_line_number(v: int) -> int:
     return v
 
 
-type LineNumber = Annotated[int, AfterValidator(validate_line_number), Field(ge=1)]
+LineNumber = NewType(
+    "LineNumber", Annotated[int, AfterValidator(validate_line_number), Field(ge=1)]
+)
 """ソースコード行番号（1以上）"""
 
 

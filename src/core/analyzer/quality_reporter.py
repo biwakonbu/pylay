@@ -409,8 +409,7 @@ class QualityReporter:
                         loc = issue.location
                         if loc:
                             self.console.print(
-                                f"    - {loc.file}:{loc.line} "
-                                f"({issue.primitive_type})"
+                                f"    - {loc.file}:{loc.line} ({issue.primitive_type})"
                             )
                     if len(type_issues) > 3:
                         self.console.print(f"    ... 他{len(type_issues) - 3}件")
