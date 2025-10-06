@@ -297,23 +297,28 @@ class QualityChecker:
 
         Returns:
             条件が真の場合はTrue
+
+        Note:
+            セキュリティのためサンドボックス環境で評価します。
+            TODO: 将来的にはASTベースのセーフ評価器に置き換える
+                 （BoolOp/Compare/UnaryOp/Name/Constantのみ許可）
         """
         try:
-            # 統計情報の属性をローカル変数として設定（eval()で使用）
-            level1_ratio = statistics.level1_ratio  # noqa: F841
-            level2_ratio = statistics.level2_ratio  # noqa: F841
-            level3_ratio = statistics.level3_ratio  # noqa: F841
-            primitive_usage_ratio = statistics.primitive_usage_ratio  # noqa: F841
-            deprecated_typing_ratio = (  # noqa: F841
-                statistics.deprecated_typing_ratio
-            )
-            documentation_rate = (  # noqa: F841
-                statistics.documentation.implementation_rate
-            )
-            detail_rate = statistics.documentation.detail_rate  # noqa: F841
+            # 評価に使用する変数を明示的に辞書で定義
+            env = {
+                "level1_ratio": statistics.level1_ratio,
+                "level2_ratio": statistics.level2_ratio,
+                "level3_ratio": statistics.level3_ratio,
+                "primitive_usage_ratio": statistics.primitive_usage_ratio,
+                "deprecated_typing_ratio": statistics.deprecated_typing_ratio,
+                "documentation_rate": statistics.documentation.implementation_rate,
+                "detail_rate": statistics.documentation.detail_rate,
+            }
 
-            # 条件式を評価
-            result = eval(condition)
+            # サンドボックス環境で条件式を評価
+            # __builtins__を空にすることで危険な組み込み関数へのアクセスを防ぐ
+            compiled = compile(condition, "<quality_condition>", "eval")
+            result = eval(compiled, {"__builtins__": {}}, env)
             return bool(result)
 
         except Exception:
