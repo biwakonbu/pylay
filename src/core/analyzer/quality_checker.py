@@ -198,7 +198,7 @@ class QualityChecker:
 
         for detail in primitive_details:
             # 変数名を抽出して除外パターンチェック
-            var_name = extract_variable_name(detail.location.code)
+            var_name = extract_variable_name(detail.location.code) or "value"
             is_excluded = _is_excluded_variable_name(var_name)
 
             # 位置情報を含むQualityIssueを作成
@@ -414,7 +414,7 @@ class QualityChecker:
         from src.core.analyzer.improvement_templates import _is_excluded_variable_name
 
         # 変数名を抽出
-        var_name = extract_variable_name(detail.location.code)
+        var_name = extract_variable_name(detail.location.code) or "value"
 
         # 除外パターンチェック（汎用的な変数名は型定義不要）
         if _is_excluded_variable_name(var_name):
