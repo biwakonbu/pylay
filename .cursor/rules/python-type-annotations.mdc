@@ -12,25 +12,28 @@ alwaysApply: false
 ### pylayプロジェクトの4つの核心原則
 
 1. **個別型をちゃんと定義し、primitive型を直接使わない**
-   - ❌ `str`, `int` → ✅ ドメイン型を定義（`type`、`Annotated`、`BaseModel`）
+   - ❌ `str`, `int` → ✅ ドメイン型を定義（`NewType` + `Annotated`、`dataclass`、`BaseModel`）
 
 2. **Pydanticによる厳密な型定義でドメイン型を作成する**
    - **3つのレベルを適切に使い分ける**：
      - Level 1: `type` エイリアス（制約なし）
-     - Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
-     - Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
+     - Level 2: `NewType` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出）
+     - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
+       - 3a: `dataclass(frozen=True)` - 不変値オブジェクト
+       - 3b: `dataclass` - 状態管理エンティティ
+       - 3c: `BaseModel` - 複雑なドメインモデル
 
 3. **typing モジュールは必要最小限に留める（Python 3.13標準を優先）**
    - ❌ `Union[X, Y]` → ✅ `X | Y`
    - ❌ `List[X]` → ✅ `list[X]`
    - ❌ `TypeVar('T')` + `Generic[T]` → ✅ `class Container[T]`
    - ❌ `TypeAlias` → ✅ `type Point = tuple[float, float]`
-   - ❌ `NewType` → ✅ `Annotated` + `AfterValidator`
+   - ✅ `NewType` - Level 2で型レベル区別のために使用
 
 4. **型と実装を分離し、循環参照を防ぐ**
-   - `types.py`: 型定義のみ
+   - `types.py`: 型定義のみ（Level 1/2を優先）
    - `protocols.py`: Protocolインターフェース定義
-   - `models.py`: ドメインモデル（型+軽いロジック）
+   - `models.py`: ドメインモデル（Level 3: dataclass/BaseModel）
    - `services.py`: ビジネスロジック実装
 
 **詳細**: [docs/typing-rule.md](../../docs/typing-rule.md)
@@ -235,17 +238,17 @@ class ProductDataclass:
 
 **重要**: pylayプロジェクトでは**3つのレベル**を適切に使い分けます：
 - Level 1: `type` エイリアス（制約なし）
-- Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
-- Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
+- Level 2: `NewType` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出）
+- Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
 
 詳細は [docs/typing-rule.md](../../docs/typing-rule.md) の「型定義の3つのレベル」を参照してください。
 
-### 1. Level 2: Annotated + AfterValidator（推奨：NewType代替）
+### 1. Level 2: NewType + Annotated（プリミティブ型代替、最頻出パターン）
 
-制約付きの単一値型には `Annotated` + `AfterValidator` を使用します：
+制約付きの単一値型には `NewType` + `Annotated` を使用します：
 
 ```python
-from typing import Annotated
+from typing import NewType, Annotated
 from pydantic import AfterValidator, Field, BaseModel
 
 # バリデータ関数の定義
@@ -263,23 +266,32 @@ def validate_type_name(v: str) -> str:
         raise ValueError("型名は大文字で始まる必要があります")
     return v
 
-# Annotated型の定義（再利用可能）
-type ModuleName = Annotated[
-    str,
-    AfterValidator(validate_module_name),
-    Field(min_length=1, pattern=r"^[a-z][a-z0-9_]*$", description="Pythonモジュール名")
-]
+# NewType + Annotated型の定義（再利用可能）
+ModuleName = NewType(
+    'ModuleName',
+    Annotated[
+        str,
+        AfterValidator(validate_module_name),
+        Field(min_length=1, pattern=r"^[a-z][a-z0-9_]*$", description="Pythonモジュール名")
+    ]
+)
 
-type TypeName = Annotated[
-    str,
-    AfterValidator(validate_type_name),
-    Field(min_length=1, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", description="型名")
-]
+TypeName = NewType(
+    'TypeName',
+    Annotated[
+        str,
+        AfterValidator(validate_type_name),
+        Field(min_length=1, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", description="型名")
+    ]
+)
 
-type YamlPath = Annotated[
-    str,
-    Field(min_length=1, pattern=r"\.ya?ml$", description="YAML型仕様ファイルパス")
-]
+# Field のみのパターン
+YamlPath = NewType(
+    'YamlPath',
+    Annotated[str, Field(min_length=1, pattern=r"\.ya?ml$", description="YAML型仕様ファイルパス")]
+)
+
+Count = NewType('Count', Annotated[int, Field(ge=0)])
 
 # Pydantic BaseModelで使用
 class TypeSpec(BaseModel):
@@ -289,19 +301,35 @@ class TypeSpec(BaseModel):
     yaml_path: YamlPath | None = None
 ```
 
-### 2. Level 3: BaseModel（複雑なドメイン型のみ）
+### 2. Level 3: dataclass + Pydantic または BaseModel
 
-複雑なビジネスロジックや複数フィールドを持つドメイン型のみ `BaseModel` を使用します：
+複雑なビジネスロジックや複数フィールドを持つドメイン型：
 
+**Pattern A: dataclass(frozen=True) - 不変値オブジェクト**
 ```python
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from dataclasses import dataclass
+from pydantic import Field
+
+@dataclass(frozen=True)
+class CodeLocation:
+    """コード位置を表す値オブジェクト"""
+    file: str = Field(min_length=1)
+    line: int = Field(ge=1)
+    column: int = Field(ge=0, default=0)
+
+    def format_display(self) -> str:
+        """表示用フォーマット"""
+        return f"{self.file}:{self.line}:{self.column}"
+```
+
+**Pattern B: BaseModel - 複雑なドメインモデル**
+```python
+from pydantic import BaseModel, Field, model_validator
 
 class ModuleAnalysisResult(BaseModel):
     """モジュール解析結果（複雑なドメイン型）"""
-    model_config = ConfigDict(frozen=True)
-
     module_name: ModuleName  # Level 2の型を活用
-    total_lines: int = Field(gt=0)
+    total_lines: int = Field(ge=0)
     code_lines: int = Field(ge=0)
     comment_lines: int = Field(ge=0)
 
