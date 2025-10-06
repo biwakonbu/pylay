@@ -100,13 +100,13 @@ class DocumentationStatistics(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    total_types: int
-    documented_types: int
-    undocumented_types: int
+    total_types: int = Field(ge=0)
+    documented_types: int = Field(ge=0)
+    undocumented_types: int = Field(ge=0)
     implementation_rate: float = Field(ge=0.0, le=1.0)
 
-    minimal_docstrings: int
-    detailed_docstrings: int
+    minimal_docstrings: int = Field(ge=0)
+    detailed_docstrings: int = Field(ge=0)
     detail_rate: float = Field(ge=0.0, le=1.0)
 
     avg_docstring_lines: float
@@ -174,11 +174,11 @@ class TypeStatistics(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    total_count: int
-    level1_count: int
-    level2_count: int
-    level3_count: int
-    other_count: int
+    total_count: int = Field(ge=0)
+    level1_count: int = Field(ge=0)
+    level2_count: int = Field(ge=0)
+    level3_count: int = Field(ge=0)
+    other_count: int = Field(ge=0)
     level1_ratio: float = Field(ge=0.0, le=1.0)
     level2_ratio: float = Field(ge=0.0, le=1.0)
     level3_ratio: float = Field(ge=0.0, le=1.0)
@@ -186,8 +186,8 @@ class TypeStatistics(BaseModel):
     by_directory: dict[str, dict[str, int]]
     by_category: dict[str, int]
     documentation: DocumentationStatistics
-    primitive_usage_count: int = 0
-    deprecated_typing_count: int = 0
+    primitive_usage_count: int = Field(default=0, ge=0)
+    deprecated_typing_count: int = Field(default=0, ge=0)
     primitive_usage_ratio: float = Field(default=0.0, ge=0.0, le=1.0)
     deprecated_typing_ratio: float = Field(default=0.0, ge=0.0, le=1.0)
 

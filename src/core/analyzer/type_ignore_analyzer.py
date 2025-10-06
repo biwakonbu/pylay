@@ -54,10 +54,10 @@ class TypeIgnoreIssue(BaseModel):
 class TypeIgnoreSummary(BaseModel):
     """type: ignore 全体のサマリー情報"""
 
-    total_count: int = Field(description="type: ignore の総数")
-    high_priority_count: int = Field(description="HIGH優先度の数")
-    medium_priority_count: int = Field(description="MEDIUM優先度の数")
-    low_priority_count: int = Field(description="LOW優先度の数")
+    total_count: int = Field(ge=0, description="type: ignore の総数")
+    high_priority_count: int = Field(ge=0, description="HIGH優先度の数")
+    medium_priority_count: int = Field(ge=0, description="MEDIUM優先度の数")
+    low_priority_count: int = Field(ge=0, description="LOW優先度の数")
     by_category: dict[str, int] = Field(
         default_factory=dict, description="カテゴリ別の数"
     )

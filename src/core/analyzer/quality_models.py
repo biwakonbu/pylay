@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Annotated, Literal
 
 from pydantic import BaseModel, Field
 
@@ -59,12 +59,14 @@ class QualityCheckResult(BaseModel):
     """品質チェックの結果"""
 
     # 全体統計
-    total_issues: int = Field(description="総問題数")
-    error_count: int = Field(description="エラー数")
-    warning_count: int = Field(description="警告数")
-    advice_count: int = Field(description="アドバイス数")
+    total_issues: int = Field(ge=0, description="総問題数")
+    error_count: int = Field(ge=0, description="エラー数")
+    warning_count: int = Field(ge=0, description="警告数")
+    advice_count: int = Field(ge=0, description="アドバイス数")
     has_errors: bool = Field(description="エラーが存在するか")
-    overall_score: float = Field(description="全体スコア（0.0〜1.0）")
+    overall_score: Annotated[float, Field(ge=0.0, le=1.0)] = Field(
+        description="全体スコア（0.0〜1.0）"
+    )
 
     # 問題リスト
     issues: list[QualityIssue] = Field(
