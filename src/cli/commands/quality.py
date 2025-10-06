@@ -62,12 +62,6 @@ console = Console()
     help="問題箇所の詳細（ファイルパス、行番号、コード内容）を表示",
 )
 @click.option(
-    "--export-details",
-    type=click.Path(),
-    default=None,
-    help="問題詳細をYAMLファイルにエクスポート（指定したパスに保存）",
-)
-@click.option(
     "--fail-on-error",
     is_flag=True,
     help="エラーが発生した場合に終了コード1で終了",
@@ -79,7 +73,6 @@ def quality(
     output_format: str,
     output: str | None,
     show_details: bool,
-    export_details: str | None,
     fail_on_error: bool,
 ) -> None:
     """
@@ -92,7 +85,8 @@ def quality(
 
     例:
         pylay quality src/
-        pylay quality --strict --format markdown --output report.md
+        pylay quality --strict --show-details
+        pylay quality --format markdown --output report.md
         pylay quality --config custom.toml --fail-on-error
     """
     # 設定ファイルを読み込み（target_dirs参照のため先に読み込む）
@@ -201,12 +195,6 @@ def quality(
                 output,
             )
 
-        # 詳細情報をYAMLファイルにエクスポート
-        if export_details:
-            _export_details_to_yaml(
-                quality_checker, check_result, export_details, target_dirs
-            )
-
         # エラーレベル処理
         if check_result.has_errors:
             if fail_on_error or strict:
@@ -292,78 +280,3 @@ def _output_json_report(
     else:
         # コンソールに出力
         console.print(json_report)
-
-
-def _export_details_to_yaml(
-    quality_checker: QualityChecker,
-    check_result: "QualityCheckResult",
-    output_path: str,
-    target_dirs: list[str],
-) -> None:
-    """問題詳細をYAMLファイルにエクスポート"""
-    import yaml
-
-    try:
-        problem_details = {
-            "quality_check_results": {
-                "summary": {
-                    "total_issues": check_result.total_issues,
-                    "error_count": check_result.error_count,
-                    "warning_count": check_result.warning_count,
-                    "advice_count": check_result.advice_count,
-                    "has_errors": check_result.has_errors,
-                    "overall_score": check_result.overall_score,
-                },
-                "issues": [
-                    {
-                        "type": issue.issue_type,
-                        "severity": issue.severity,
-                        "file": str(issue.location.file) if issue.location else "",
-                        "line": issue.location.line if issue.location else 0,
-                        "column": issue.location.column if issue.location else 0,
-                        "message": issue.message,
-                        "context": {
-                            "before": issue.location.context_before
-                            if issue.location
-                            else [],
-                            "code": issue.location.code if issue.location else "",
-                            "after": issue.location.context_after
-                            if issue.location
-                            else [],
-                        },
-                        "suggestion": issue.suggestion,
-                    }
-                    for issue in check_result.issues
-                ],
-                "statistics": {
-                    "level1_ratio": check_result.statistics.level1_ratio,
-                    "level2_ratio": check_result.statistics.level2_ratio,
-                    "level3_ratio": check_result.statistics.level3_ratio,
-                    "documentation_rate": (
-                        check_result.statistics.documentation.implementation_rate
-                    ),
-                    "primitive_usage_ratio": (
-                        check_result.statistics.primitive_usage_ratio
-                    ),
-                },
-            }
-        }
-
-        # YAMLファイルに書き込み
-        with open(output_path, "w", encoding="utf-8") as f:
-            yaml.dump(
-                problem_details,
-                f,
-                allow_unicode=True,
-                indent=2,
-                default_flow_style=False,
-            )
-
-        console.print(
-            f"[bold green]Problem details exported to YAML file: "
-            f"{output_path}[/bold green]"
-        )
-    except OSError as e:
-        console.print(f"[bold red]Error: Failed to write YAML file: {e}[/bold red]")
-    except yaml.YAMLError as e:
-        console.print(f"[bold red]Error: YAML serialization failed: {e}[/bold red]")
