@@ -405,15 +405,26 @@ def test_detect_newtype_with_factory():
   - [x] `CLAUDE.md` 更新
   - [x] Issue #45とPR #47の本文更新
 
-### 進行中 🔧
+- [x] **Phase 1**: 型レベル検出ロジックの拡張
+  - [x] `NEWTYPE_PATTERN`の追加
+  - [x] `FACTORY_PATTERN`の追加
+  - [x] `VALIDATE_CALL_PATTERN`の追加
+  - [x] `_detect_newtype_with_factory()`メソッドの実装
+  - [x] `_classify_assign_alias()`の修正（NewTypeスキップ）
+  - [x] テストケース24件追加（全て成功）
 
-- [ ] **Phase 1**: 型レベル検出ロジックの拡張
-- [ ] **Phase 2**: 改善プランテンプレートの更新
-- [ ] **Phase 3**: primitive型検出ロジックの拡張
+- [x] **Phase 2**: 改善プランテンプレートの更新
+  - [x] `quality_checker.py`の推奨テキスト更新
+  - [x] `pyproject.toml`のimprovement_guidance更新
+
+- [x] **Phase 3**: primitive型検出ロジックの拡張
+  - [x] `code_locator.py`のNewType定義除外処理
 
 ### 未着手 📋
 
 - [ ] **Phase 4**: 既存コードベースの段階的移行（任意）
+  - 旧パターンも動作するため、緊急性は低い
+  - 必要に応じて段階的に実施
 
 ---
 
