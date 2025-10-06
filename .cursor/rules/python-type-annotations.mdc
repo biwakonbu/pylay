@@ -307,8 +307,8 @@ class TypeSpec(BaseModel):
 
 **Pattern A: dataclass(frozen=True) - 不変値オブジェクト**
 ```python
-from dataclasses import dataclass
 from pydantic import Field
+from pydantic.dataclasses import dataclass
 
 @dataclass(frozen=True)
 class CodeLocation:
