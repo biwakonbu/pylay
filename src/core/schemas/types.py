@@ -257,6 +257,32 @@ type CustomFields = dict[str, object]
 # =============================================================================
 
 
+def validate_positive_int(v: int) -> int:
+    """正の整数であることを検証するバリデーター"""
+    if v <= 0:
+        raise ValueError(f"正の整数である必要がありますが、{v}が指定されました")
+    return v
+
+
+def validate_non_negative_int(v: int) -> int:
+    """非負の整数であることを検証するバリデーター"""
+    if v < 0:
+        raise ValueError(f"非負の整数である必要がありますが、{v}が指定されました")
+    return v
+
+
+PositiveInt = NewType(
+    "PositiveInt", Annotated[int, Field(gt=0), AfterValidator(validate_positive_int)]
+)
+"""正の整数（> 0）"""
+
+NonNegativeInt = NewType(
+    "NonNegativeInt",
+    Annotated[int, Field(ge=0), AfterValidator(validate_non_negative_int)],
+)
+"""非負の整数（>= 0）"""
+
+
 def validate_directory_path(v: str) -> str:
     """
     ディレクトリパスのバリデーション

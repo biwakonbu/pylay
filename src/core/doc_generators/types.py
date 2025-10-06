@@ -11,23 +11,11 @@
 """
 
 from pathlib import Path
-from typing import Annotated, Any, NewType
+from typing import Annotated, Any
 
 from pydantic import AfterValidator, BaseModel, Field
 
-
-def _validate_positive_int(v: int) -> int:
-    """正の整数であることを検証するバリデーター"""
-    if v <= 0:
-        raise ValueError(f"正の整数である必要がありますが、{v}が指定されました")
-    return v
-
-
-def _validate_non_negative_int(v: int) -> int:
-    """非負の整数であることを検証するバリデーター"""
-    if v < 0:
-        raise ValueError(f"非負の整数である必要がありますが、{v}が指定されました")
-    return v
+from src.core.schemas.types import NonNegativeInt, PositiveInt
 
 
 def _validate_output_path(v: str | Path | None) -> str | Path | None:
@@ -49,15 +37,6 @@ type MarkdownSection = str
 # Level 2: NewType + Annotated（制約付き、型レベル区別）
 # NOTE: OutputPath は str | Path | None なので、NewTypeでは扱えない（Union型のため）
 type ValidatedOutputPath = Annotated[OutputPath, AfterValidator(_validate_output_path)]
-
-PositiveInt = NewType(
-    "PositiveInt", Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
-)
-
-NonNegativeInt = NewType(
-    "NonNegativeInt",
-    Annotated[int, Field(ge=0), AfterValidator(_validate_non_negative_int)],
-)
 
 
 class DocumentConfig(BaseModel):

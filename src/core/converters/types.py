@@ -15,6 +15,8 @@ from typing import Annotated, Any, NewType
 
 from pydantic import AfterValidator, BaseModel, Field
 
+from src.core.schemas.types import PositiveInt
+
 
 def _validate_path_exists(v: str | Path | None) -> str | Path | None:
     """パスが存在することを検証するバリデーター"""
@@ -23,13 +25,6 @@ def _validate_path_exists(v: str | Path | None) -> str | Path | None:
     path = Path(v)
     if not path.exists():
         raise ValueError(f"パスが存在しません: {v}")
-    return v
-
-
-def _validate_positive_int(v: int) -> int:
-    """正の整数であることを検証するバリデーター"""
-    if v <= 0:
-        raise ValueError(f"正の整数である必要がありますが、{v}が指定されました")
     return v
 
 
@@ -56,10 +51,6 @@ type ValidatedModulePath = Annotated[ModulePath, AfterValidator(_validate_path_e
 MaxDepth = NewType(
     "MaxDepth",
     Annotated[int, Field(gt=0, le=1000), AfterValidator(_validate_depth_limit)],
-)
-
-PositiveInt = NewType(
-    "PositiveInt", Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
 )
 
 
