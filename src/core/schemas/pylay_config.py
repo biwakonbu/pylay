@@ -9,7 +9,7 @@ import tomllib
 from pathlib import Path
 from typing import Any, Literal, TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from src.core.schemas.types import (
     CleanOutputDirFlag,
@@ -192,6 +192,22 @@ class PylayConfig(BaseModel):
     quality_check: "QualityCheckConfig | None" = Field(
         default=None, description="型品質チェックの設定（オプション）"
     )
+
+    @field_validator("target_dirs", mode="before")
+    @classmethod
+    def normalize_target_dirs(cls, v: Any) -> list[str]:
+        """target_dirsの末尾スラッシュを削除"""
+        if isinstance(v, list):
+            return [s.rstrip("/") if isinstance(s, str) else s for s in v]
+        return v
+
+    @field_validator("output_dir", mode="before")
+    @classmethod
+    def normalize_output_dir(cls, v: Any) -> str:
+        """output_dirの末尾スラッシュを削除"""
+        if isinstance(v, str):
+            return v.rstrip("/")
+        return v
 
     @classmethod
     def from_pyproject_toml(cls, project_root: Path | None = None) -> "PylayConfig":
