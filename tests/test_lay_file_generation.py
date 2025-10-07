@@ -6,8 +6,6 @@ Issue #51: クリーン再生成、警告ヘッダー、拡張子の検証
 
 from pathlib import Path
 
-import pytest
-
 
 class TestLayPyGeneration:
     """.lay.py ファイル生成のテスト"""
@@ -184,9 +182,46 @@ class User(BaseModel):
         assert "このファイルを直接編集しないでください" in content
         assert "次回の pylay yaml 実行時に削除・再生成されます" in content
 
-    def test_lay_yaml_file_has_metadata(self, tmp_path: Path) -> None:
+    def test_lay_yaml_file_has_metadata(self, tmp_path: Path, monkeypatch) -> None:
         """生成された.lay.yamlファイルに_metadataセクションが含まれることを確認"""
-        pytest.skip(".lay.yaml生成機能は未実装")
+        from src.cli.commands.yaml import run_yaml
+
+        monkeypatch.chdir(tmp_path)
+
+        # include_metadata=trueの設定を作成
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text(
+            """
+[tool.pylay.output]
+include_metadata = true
+"""
+        )
+
+        # テスト用Pythonファイルを作成
+        py_content = """
+from pydantic import BaseModel
+
+class Product(BaseModel):
+    name: str
+    price: float
+"""
+        py_file = tmp_path / "test_product.py"
+        py_file.write_text(py_content)
+
+        # .lay.yaml生成
+        output_file = tmp_path / "output.lay.yaml"
+        run_yaml(str(py_file), str(output_file))
+
+        # 生成されたファイルを確認
+        content = output_file.read_text()
+
+        # _metadataセクションの存在確認
+        assert "_metadata:" in content
+        assert "generated_by: pylay yaml" in content
+        assert "source:" in content
+        assert "test_product.py" in content
+        assert "generated_at:" in content
+        assert "pylay_version:" in content
 
     def test_lay_yaml_extension_is_enforced(self, tmp_path: Path) -> None:
         """.lay.yaml拡張子が自動付与されることを確認"""

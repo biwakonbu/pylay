@@ -4,6 +4,7 @@ Pythonの型定義をYAML形式に変換するCLIコマンドです。
 """
 
 import sys
+from datetime import UTC
 from enum import Enum
 from pathlib import Path
 
@@ -22,6 +23,34 @@ from rich.table import Table
 from src.core.converters.generation_header import generate_yaml_header
 from src.core.converters.type_to_yaml import types_to_yaml
 from src.core.schemas.pylay_config import PylayConfig
+
+
+def _generate_metadata_section(source_file: str) -> str:
+    """YAMLメタデータセクションを生成
+
+    Args:
+        source_file: ソースファイルのパス
+
+    Returns:
+        _metadataセクションのYAML文字列
+    """
+    import importlib.metadata
+    from datetime import datetime
+
+    try:
+        pylay_version = importlib.metadata.version("pylay")
+    except importlib.metadata.PackageNotFoundError:
+        pylay_version = "dev"
+
+    generated_at = datetime.now(UTC).isoformat()
+
+    return f"""_metadata:
+  generated_by: pylay yaml
+  source: {source_file}
+  generated_at: {generated_at}
+  pylay_version: {pylay_version}
+
+"""
 
 
 def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> None:
@@ -139,11 +168,18 @@ def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> 
                 include_source=config.generation.include_source_path,
             )
 
+            # メタデータセクションを生成
+            metadata = ""
+            if config.output.include_metadata:
+                metadata = _generate_metadata_section(input_file)
+
             # ファイルに書き込み
             with open(output_path, "w", encoding="utf-8") as f:
                 if header:
                     f.write(header)
                     f.write("\n")
+                if metadata:
+                    f.write(metadata)
                 f.write(yaml_content)
 
         # 結果表示用のTable
