@@ -1,5 +1,6 @@
 """pylay のコマンドラインインターフェース"""
 
+import importlib.metadata
 from pathlib import Path
 
 import click
@@ -19,6 +20,14 @@ from .commands.analyze_types import analyze_types
 from .commands.diagnose_type_ignore import diagnose_type_ignore
 from .commands.project_analyze import project_analyze
 from .commands.quality import quality
+
+
+def get_version() -> str:
+    """パッケージのバージョンを取得する"""
+    try:
+        return importlib.metadata.version("pylay")
+    except importlib.metadata.PackageNotFoundError:
+        return "0.0.0-dev"
 
 
 class PylayCLI:
@@ -49,7 +58,7 @@ cli_instance = PylayCLI()
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
-@click.version_option(version="0.1.0")
+@click.version_option(version=get_version())
 @click.option("--verbose", is_flag=True, help="詳細ログを出力")
 @click.option(
     "--config", type=click.Path(exists=True), help="設定ファイルのパス (YAML)"
