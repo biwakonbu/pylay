@@ -35,7 +35,7 @@ class TestQualityCommand:
         """オプション付きの品質チェックコマンドテスト"""
         result = runner.invoke(
             main,
-            ["--config", "pyproject.toml", "src", "--format", "json", "--show-details"],
+            ["--config", "pyproject.toml", "src", "--show-details"],
         )
 
         assert result.exit_code in [0, 1]

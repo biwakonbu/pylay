@@ -42,20 +42,6 @@ console = Console()
     help="厳格モードで実行（エラーレベルで終了コード1を返す）",
 )
 @click.option(
-    "--format",
-    "-f",
-    "output_format",
-    type=click.Choice(["console", "markdown", "json"]),
-    default="console",
-    help="出力形式（デフォルト: console）",
-)
-@click.option(
-    "--output",
-    "-o",
-    type=click.Path(),
-    help="出力ファイルパス（format=markdown/jsonの場合に使用）",
-)
-@click.option(
     "--show-details",
     is_flag=True,
     default=False,
@@ -82,8 +68,6 @@ def quality(
     target: str | None,
     config: str | None,
     strict: bool,
-    output_format: str,
-    output: str | None,
     show_details: bool,
     severity: str | None,
     issue_type: str | None,
@@ -103,7 +87,6 @@ def quality(
         pylay quality --severity error src/
         pylay quality --issue-type primitive_usage src/
         pylay quality --severity error --issue-type level1_ratio_high src/
-        pylay quality --format markdown --output report.md
         pylay quality --config custom.toml --fail-on-error
     """
     # 設定ファイルを読み込み（target_dirs参照のため先に読み込む）
@@ -194,27 +177,14 @@ def quality(
         if severity or issue_type:
             check_result = _apply_filters(check_result, severity, issue_type)
 
-        # レポートを生成
-        if output_format == "console":
-            _output_console_report(
-                quality_checker,
-                check_result,
-                report,
-                show_details,
-                target_dirs,
-            )
-        elif output_format == "markdown":
-            _output_markdown_report(
-                quality_checker,
-                check_result,
-                output,
-            )
-        elif output_format == "json":
-            _output_json_report(
-                quality_checker,
-                check_result,
-                output,
-            )
+        # レポートを生成（コンソール出力のみ）
+        _output_console_report(
+            quality_checker,
+            check_result,
+            report,
+            show_details,
+            target_dirs,
+        )
 
         # エラーレベル処理
         if check_result.has_errors:
@@ -306,47 +276,3 @@ def _output_console_report(
 
     # 詳細レポートを生成
     reporter.generate_console_report(check_result, report, show_details)
-
-
-def _output_markdown_report(
-    quality_checker: QualityChecker,
-    check_result: "QualityCheckResult",
-    output_path: str | None,
-) -> None:
-    """Markdownレポートを出力"""
-    from src.core.analyzer.quality_reporter import QualityReporter
-
-    reporter = QualityReporter()
-
-    markdown_report = reporter.generate_markdown_report(check_result)
-
-    if output_path:
-        # ファイルに書き込み
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(markdown_report)
-        console.print(f"[bold green]Markdown report saved: {output_path}[/bold green]")
-    else:
-        # コンソールに出力
-        console.print(markdown_report)
-
-
-def _output_json_report(
-    quality_checker: QualityChecker,
-    check_result: "QualityCheckResult",
-    output_path: str | None,
-) -> None:
-    """JSONレポートを出力"""
-    from src.core.analyzer.quality_reporter import QualityReporter
-
-    reporter = QualityReporter()
-
-    json_report = reporter.generate_json_report(check_result)
-
-    if output_path:
-        # ファイルに書き込み
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(json_report)
-        console.print(f"[bold green]JSON report saved: {output_path}[/bold green]")
-    else:
-        # コンソールに出力
-        console.print(json_report)

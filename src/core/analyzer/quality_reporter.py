@@ -1,10 +1,9 @@
 """
 品質チェックレポート生成機能
 
-コンソール、Markdown、JSON形式で品質チェックレポートを生成します。
+コンソール形式で品質チェックレポートを生成します。
 """
 
-import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, Literal
 
@@ -70,164 +69,6 @@ class QualityReporter:
         # 推奨事項（問題がある場合のみ）
         if check_result.issues:
             self._show_recommendations(check_result)
-
-    def generate_markdown_report(self, check_result: QualityCheckResult) -> str:
-        """Markdown形式のレポートを生成
-
-        Args:
-            check_result: 品質チェック結果
-
-        Returns:
-            Markdown形式のレポート文字列
-        """
-        lines = []
-
-        # ヘッダー
-        lines.append("# 型定義品質チェックレポート")
-        lines.append("")
-        lines.append(f"実行日時: {self._get_current_time()}")
-        lines.append("")
-
-        # サマリー
-        lines.append("## サマリー")
-        lines.append("")
-        lines.append(f"- **全体スコア**: {check_result.overall_score:.2f}/1.0")
-        lines.append(f"- **総問題数**: {check_result.total_issues}")
-        lines.append(f"- **エラー数**: {check_result.error_count}")
-        lines.append(f"- **警告数**: {check_result.warning_count}")
-        lines.append(f"- **アドバイス数**: {check_result.advice_count}")
-        lines.append("")
-
-        # 統計情報
-        lines.append("## 統計情報")
-        lines.append("")
-        lines.append("| 項目 | 値 |")
-        lines.append("|------|-----|")
-        lines.append(
-            f"| Level 1比率 | {check_result.statistics.level1_ratio * 100:.1f}% |"
-        )
-        lines.append(
-            f"| Level 2比率 | {check_result.statistics.level2_ratio * 100:.1f}% |"
-        )
-        lines.append(
-            f"| Level 3比率 | {check_result.statistics.level3_ratio * 100:.1f}% |"
-        )
-        doc_rate = check_result.statistics.documentation.implementation_rate
-        lines.append(f"| ドキュメント実装率 | {doc_rate * 100:.1f}% |")
-        prim_ratio = check_result.statistics.primitive_usage_ratio
-        lines.append(f"| primitive使用率 | {prim_ratio * 100:.1f}% |")
-        lines.append("")
-
-        # 問題リスト
-        if check_result.issues:
-            lines.append("## 検出された問題")
-            lines.append("")
-
-            # 深刻度別にグループ化して表示
-            for severity in SEVERITIES:
-                severity_issues = check_result.get_issues_by_severity(severity)
-                if severity_issues:
-                    severity_label = {
-                        "error": "ERROR",
-                        "warning": "WARNING",
-                        "advice": "ADVICE",
-                    }[severity]
-                    lines.append(
-                        f"### {severity_label} ({len(severity_issues)} issues)"
-                    )
-                    lines.append("")
-
-                    for issue in severity_issues:
-                        lines.append(f"#### {issue.message}")
-                        lines.append("")
-                        lines.append(f"**種類**: {issue.issue_type}")
-                        lines.append(f"**提案**: {issue.suggestion}")
-                        lines.append("")
-                        lines.append("**改善プラン**:")
-                        lines.append(f"{issue.improvement_plan}")
-                        lines.append("")
-
-                        if issue.location:
-                            lines.append("**詳細情報**:")
-                            lines.append(f"- ファイル: {issue.location.file}")
-                            lines.append(f"- 行: {issue.location.line}")
-                            if issue.location.code:
-                                lines.append("```python")
-                                lines.append(issue.location.code)
-                                lines.append("```")
-                            lines.append("")
-
-        # 推奨事項
-        if check_result.issues:
-            lines.append("## 全体的な推奨事項")
-            lines.append("")
-            lines.append("- エラー項目を最優先で修正してください")
-            lines.append("- 警告項目も可能な限り修正することを推奨します")
-            lines.append(
-                "- アドバイス項目は品質向上のための参考情報として活用してください"
-            )
-            lines.append("")
-
-        return "\n".join(lines)
-
-    def generate_json_report(self, check_result: QualityCheckResult) -> str:
-        """JSON形式のレポートを生成
-
-        Args:
-            check_result: 品質チェック結果
-
-        Returns:
-            JSON形式のレポート文字列
-        """
-        # Pydanticモデルを辞書に変換してJSONシリアル化
-        report_dict = {
-            "summary": {
-                "overall_score": check_result.overall_score,
-                "total_issues": check_result.total_issues,
-                "error_count": check_result.error_count,
-                "warning_count": check_result.warning_count,
-                "advice_count": check_result.advice_count,
-                "has_errors": check_result.has_errors,
-            },
-            "statistics": {
-                "level1_ratio": check_result.statistics.level1_ratio,
-                "level2_ratio": check_result.statistics.level2_ratio,
-                "level3_ratio": check_result.statistics.level3_ratio,
-                "documentation_rate": (
-                    check_result.statistics.documentation.implementation_rate
-                ),
-                "primitive_usage_ratio": (
-                    check_result.statistics.primitive_usage_ratio
-                ),
-                "deprecated_typing_ratio": (
-                    check_result.statistics.deprecated_typing_ratio
-                ),
-            },
-            "issues": [
-                {
-                    "type": issue.issue_type,
-                    "severity": issue.severity,
-                    "message": issue.message,
-                    "suggestion": issue.suggestion,
-                    "location": {
-                        "file": str(issue.location.file) if issue.location else None,
-                        "line": issue.location.line if issue.location else None,
-                        "column": issue.location.column if issue.location else None,
-                        "code": issue.location.code if issue.location else None,
-                    }
-                    if issue.location
-                    else None,
-                }
-                for issue in check_result.issues
-            ],
-            "thresholds": {
-                "level1_max": check_result.thresholds.level1_max,
-                "level2_min": check_result.thresholds.level2_min,
-                "level3_min": check_result.thresholds.level3_min,
-            },
-        }
-
-        return json.dumps(report_dict, indent=2, ensure_ascii=False)
 
     def _show_summary_panel(self, check_result: QualityCheckResult) -> None:
         """サマリーパネルを表示"""
@@ -563,9 +404,3 @@ class QualityReporter:
                 "調整することを検討してください[/dim]"
             )
             self.console.print()
-
-    def _get_current_time(self) -> str:
-        """現在の時刻を取得（シンプルな実装）"""
-        from datetime import datetime
-
-        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
