@@ -297,3 +297,109 @@ class TestQualityChecker:
         assert "[ ]" in level_checklist
         assert "Level 1型を特定" in level_checklist
         assert "Level 2" in level_checklist
+
+    def test_empty_project(self, quality_checker: QualityChecker) -> None:
+        """空のプロジェクトに対する品質チェックテスト"""
+        from src.core.analyzer.type_level_models import (
+            DocumentationStatistics,
+            TypeAnalysisReport,
+            TypeStatistics,
+        )
+
+        # 空のレポートを作成
+        empty_report = TypeAnalysisReport(
+            statistics=TypeStatistics(
+                total_count=0,
+                level1_count=0,
+                level2_count=0,
+                level3_count=0,
+                other_count=0,
+                level1_ratio=0.0,
+                level2_ratio=0.0,
+                level3_ratio=0.0,
+                other_ratio=0.0,
+                by_directory={},
+                by_category={},
+                documentation=DocumentationStatistics(
+                    total_types=0,
+                    documented_types=0,
+                    undocumented_types=0,
+                    implementation_rate=0.0,
+                    minimal_docstrings=0,
+                    detailed_docstrings=0,
+                    detail_rate=0.0,
+                    avg_docstring_lines=0.0,
+                    quality_score=0.0,
+                    by_level={},
+                    by_level_avg_lines={},
+                    by_format={},
+                ),
+                primitive_usage_count=0,
+                deprecated_typing_count=0,
+                primitive_usage_ratio=0.0,
+                deprecated_typing_ratio=0.0,
+            ),
+            type_definitions=[],
+            recommendations=[],
+            upgrade_recommendations=[],
+            docstring_recommendations=[],
+            threshold_ratios={},
+            deviation_from_threshold={},
+        )
+
+        # 品質チェックを実行
+        result = quality_checker.check_quality(empty_report)
+
+        # 空のプロジェクトでもエラーなく完了すること
+        assert result is not None
+        # CodeLocatorがsrcディレクトリをスキャンするため、問題が検出される可能性がある
+        assert isinstance(result.total_issues, int)
+        assert result.overall_score >= 0.0
+
+    def test_no_type_definitions(
+        self, quality_checker: QualityChecker, type_analyzer: TypeLevelAnalyzer
+    ) -> None:
+        """型定義が全くないプロジェクトの処理テスト"""
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        # 一時ディレクトリに型定義のないPythonファイルを作成
+        with TemporaryDirectory() as tmpdir:
+            test_file = Path(tmpdir) / "test.py"
+            test_file.write_text(
+                """# 型定義なしのファイル
+def foo():
+    return 42
+
+x = foo()
+"""
+            )
+
+            # 解析を実行
+            report = type_analyzer.analyze_directory(Path(tmpdir))
+
+            # 品質チェックを実行
+            result = quality_checker.check_quality(report)
+
+            # エラーなく完了すること
+            assert result is not None
+            assert isinstance(result.total_issues, int)
+
+    def test_invalid_threshold_config(self, config: PylayConfig) -> None:
+        """不正な閾値設定の処理テスト"""
+        from src.core.schemas.pylay_config import LevelThresholds
+
+        # 不正な閾値（合計が1.0を超える）を設定
+        invalid_config = PylayConfig(
+            target_dirs=["src"],
+            quality_thresholds=LevelThresholds(
+                level1_max=0.5,
+                level2_min=0.6,  # level1_max + level2_min > 1.0
+                level3_min=0.3,
+            ),
+        )
+
+        # QualityCheckerが初期化できること（デフォルト値で補正される可能性）
+        checker = QualityChecker(invalid_config)
+        assert checker is not None
+        assert checker.thresholds is not None
