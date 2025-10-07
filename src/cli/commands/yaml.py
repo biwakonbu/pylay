@@ -19,7 +19,9 @@ from rich.progress import (
 )
 from rich.table import Table
 
+from src.core.converters.generation_header import generate_yaml_header
 from src.core.converters.type_to_yaml import types_to_yaml
+from src.core.schemas.pylay_config import PylayConfig
 
 
 def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> None:
@@ -33,9 +35,27 @@ def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> 
     console = Console()
 
     try:
+        # 設定を読み込み
+        try:
+            config = PylayConfig.from_pyproject_toml()
+        except (FileNotFoundError, ValueError):
+            # pyproject.tomlがない場合はデフォルト設定
+            config = PylayConfig()
+
         # 処理開始時のPanel表示
         input_path = Path(input_file)
         output_path = Path(output_file)
+
+        # .lay.yaml拡張子を自動付与
+        if str(output_path).endswith(config.generation.lay_yaml_suffix):
+            # 既に.lay.yamlで終わっている場合はそのまま
+            pass
+        elif not output_path.suffix:
+            # 拡張子がない場合は.lay.yamlを追加
+            output_path = output_path.with_suffix(config.generation.lay_yaml_suffix)
+        else:
+            # 他の拡張子がある場合は.lay.yamlに置き換え
+            output_path = output_path.with_suffix(config.generation.lay_yaml_suffix)
 
         start_panel = Panel(
             f"[bold cyan]入力ファイル:[/bold cyan] {input_path.name}\n"
@@ -110,7 +130,21 @@ def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> 
 
         # 型をYAMLに変換
         with console.status("[bold green]YAMLファイル生成中..."):
-            types_to_yaml(types_dict, output_file)
+            yaml_content = types_to_yaml(types_dict)
+
+            # 警告ヘッダーを追加
+            header = generate_yaml_header(
+                input_file,
+                add_header=config.generation.add_generation_header,
+                include_source=config.generation.include_source_path,
+            )
+
+            # ファイルに書き込み
+            with open(output_path, "w", encoding="utf-8") as f:
+                if header:
+                    f.write(header)
+                    f.write("\n")
+                f.write(yaml_content)
 
         # 結果表示用のTable
         result_table = Table(

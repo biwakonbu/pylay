@@ -18,7 +18,9 @@ from rich.progress import (
 )
 from rich.table import Table
 
+from src.core.converters.generation_header import generate_python_header
 from src.core.converters.yaml_to_type import yaml_to_spec
+from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.yaml_spec import TypeRoot
 
 
@@ -27,15 +29,33 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
     Args:
         input_file: 入力YAMLファイルのパス
-        output_file: 出力Pythonファイルのパス
+        output_file: 出力Pythonファイルのパス（.lay.py拡張子が自動付与される）
         root_key: 変換するYAMLのルートキー
     """
     console = Console()
 
     try:
+        # 設定を読み込み
+        try:
+            config = PylayConfig.from_pyproject_toml()
+        except (FileNotFoundError, ValueError):
+            # pyproject.tomlがない場合はデフォルト設定
+            config = PylayConfig()
+
         # 処理開始時のPanel表示
         input_path = Path(input_file)
         output_path = Path(output_file)
+
+        # .lay.py拡張子を自動付与
+        if str(output_path).endswith(config.generation.lay_suffix):
+            # 既に.lay.pyで終わっている場合はそのまま
+            pass
+        elif not output_path.suffix:
+            # 拡張子がない場合は.lay.pyを追加
+            output_path = output_path.with_suffix(config.generation.lay_suffix)
+        else:
+            # 他の拡張子がある場合は.lay.pyに置き換え
+            output_path = output_path.with_suffix(config.generation.lay_suffix)
 
         start_panel = Panel(
             f"[bold cyan]入力ファイル:[/bold cyan] {input_path.name}\n"
@@ -57,8 +77,16 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
         # Pythonコードを生成
         code_lines = []
-        code_lines.append("# Generated Python types from YAML specification")
-        code_lines.append("# Python 3.13+ type annotations")
+
+        # 警告ヘッダーを追加
+        header = generate_python_header(
+            input_file,
+            add_header=config.generation.add_generation_header,
+            include_source=config.generation.include_source_path,
+        )
+        if header:
+            code_lines.append(header)
+
         code_lines.append("from pydantic import BaseModel")
         code_lines.append("")
 
@@ -176,7 +204,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
         # ファイルに書き込み
         with console.status("[bold green]ファイル出力中..."):
-            with open(output_file, "w", encoding="utf-8") as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(code_lines))
 
         # 結果表示用のTable
