@@ -67,8 +67,9 @@ def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> 
         # 設定を読み込み
         try:
             config = PylayConfig.from_pyproject_toml()
-        except (FileNotFoundError, ValueError):
+        except FileNotFoundError:
             # pyproject.tomlがない場合はデフォルト設定
+            # （構文エラーや設定値の不正はそのまま例外として伝播させる）
             config = PylayConfig()
 
         # 標準出力判定

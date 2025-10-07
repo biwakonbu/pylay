@@ -289,7 +289,19 @@ class User(BaseModel):
 
 
 class TestConfigIntegration:
-    """PylayConfigとの統合テスト"""
+    """PylayConfigとの統合テスト
+
+    pyproject.tomlの[tool.pylay]設定とCLIコマンドの統合動作を検証します。
+
+    検証項目:
+    - generation設定の読み込みと適用（add_generation_header, include_source_path）
+    - output設定の読み込みと適用（include_metadata）
+    - 各種設定値の正しい反映と動作確認
+
+    外部依存:
+    - pyproject.tomlファイル（monkeypatchでカレントディレクトリを変更）
+    - PylayConfig.from_pyproject_toml()による設定読み込み
+    """
 
     def test_generation_config_is_used(self, tmp_path: Path, monkeypatch) -> None:
         """PylayConfigのgeneration設定が使用されることを確認"""
