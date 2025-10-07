@@ -24,10 +24,7 @@ from .commands.quality import quality
 
 def get_version() -> str:
     """パッケージのバージョンを取得する"""
-    try:
-        return importlib.metadata.version("pylay")
-    except importlib.metadata.PackageNotFoundError:
-        return "0.0.0-dev"
+    return importlib.metadata.version("pylay")
 
 
 class PylayCLI:
