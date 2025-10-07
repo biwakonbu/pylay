@@ -137,3 +137,38 @@ class TestInitCommand:
         assert "# pylay の設定" in content
         assert "# スキャン対象ディレクトリ" in content
         assert "# ファイル生成設定" in content
+
+    def test_output_config_is_persisted(self, tmp_path: Path, monkeypatch) -> None:
+        """CLI initコマンドでoutput設定が正しくpyproject.tomlに出力されることを確認
+
+        Issue #51: output設定の統合テスト
+        PylayConfigのoutput設定がCLI initコマンド経由で
+        正しく永続化されることを検証します。
+        """
+        monkeypatch.chdir(tmp_path)
+
+        # 空のpyproject.tomlを作成
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text("[project]\n" 'name = "test"\n')
+
+        # initコマンド実行
+        run_init()
+
+        # 生成されたpyproject.tomlを読み込み
+        content = pyproject.read_text()
+
+        # output設定セクションの存在確認
+        assert "[tool.pylay.output]" in content
+
+        # 各output設定キーの存在と値の確認
+        assert "yaml_output_dir" in content
+        assert 'yaml_output_dir = "docs/pylay"' in content
+
+        assert "mirror_package_structure" in content
+        assert "mirror_package_structure = true" in content
+
+        assert "include_metadata" in content
+        assert "include_metadata = true" in content
+
+        assert "preserve_docstrings" in content
+        assert "preserve_docstrings = true" in content
