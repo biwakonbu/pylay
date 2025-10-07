@@ -59,6 +59,6 @@
     "reportUnsupportedDunderAll": "warning",
     "reportUnusedCoroutine": "error",
     "reportMissingModuleSource": "none",
-    "reportGeneralTypeIssues": "warning",
-    "reportInvalidTypeForm": "warning"
+    "reportGeneralTypeIssues": "error",
+    "reportInvalidTypeForm": "error"
 }
