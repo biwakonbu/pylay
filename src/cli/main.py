@@ -18,8 +18,11 @@ from ..core.output_manager import OutputPathManager
 from ..core.schemas.pylay_config import PylayConfig
 from .commands.analyze_types import analyze_types
 from .commands.diagnose_type_ignore import diagnose_type_ignore
+from .commands.docs import run_docs
 from .commands.project_analyze import project_analyze
 from .commands.quality import quality
+from .commands.types import run_types
+from .commands.yaml import run_yaml
 
 
 def get_version() -> str:
@@ -325,6 +328,102 @@ analyze.add_command(diagnose_type_ignore)
 # qualityコマンドを登録
 cli.add_command(quality)
 analyze.add_command(quality)
+
+
+# 新しい1語コマンドを登録
+@cli.command("yaml")
+@click.argument("target", type=click.Path(exists=True))
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    help="出力YAMLファイルのパス (デフォルト: stdout)",
+)
+@click.option("--root-key", help="YAML構造のルートキー")
+def yaml(target: str, output: str | None, root_key: str | None) -> None:
+    """Python型からYAML仕様を生成
+
+    Pythonモジュールの型定義をYAML形式に変換します。
+
+    使用例:
+        pylay yaml src/core/schemas/types.py
+        pylay yaml src/core/schemas/types.py -o types.yaml
+    """
+    if output is None:
+        output = "-"  # stdout
+    run_yaml(target, output, root_key)
+
+
+@cli.command("types")
+@click.argument("yaml_file", type=click.Path(exists=True))
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    help="出力Pythonファイルのパス (デフォルト: stdout)",
+)
+@click.option("--root-key", help="変換するYAMLのルートキー")
+def types(yaml_file: str, output: str | None, root_key: str | None) -> None:
+    """YAML仕様からPython型を生成
+
+    YAML型仕様をPydantic BaseModelに変換します。
+
+    使用例:
+        pylay types specs/api.yaml
+        pylay types specs/api.yaml -o generated/models.py
+    """
+    if output is None:
+        output = "-"  # stdout
+    run_types(yaml_file, output, root_key)
+
+
+@cli.command("docs")
+@click.option(
+    "--input",
+    "-i",
+    "input_file",
+    type=click.Path(exists=True),
+    help="入力YAMLファイル",
+)
+@click.option(
+    "--output",
+    "-o",
+    "output_dir",
+    type=click.Path(),
+    default="docs/api",
+    help="出力ディレクトリ",
+)
+@click.option(
+    "--format",
+    "format_type",
+    type=click.Choice(["single", "multiple"]),
+    default="single",
+    help="出力フォーマット",
+)
+def docs(input_file: str | None, output_dir: str, format_type: str) -> None:
+    """ドキュメント生成
+
+    YAML型仕様からMarkdownドキュメントを生成します。
+
+    使用例:
+        pylay docs
+        pylay docs -i specs/api.yaml -o docs/api
+        pylay docs --format markdown
+    """
+    if input_file is None:
+        # デフォルトの入力ファイルを探す
+        default_inputs = ["types.yaml", "specs/types.yaml", "docs/types.yaml"]
+        for default_input in default_inputs:
+            if Path(default_input).exists():
+                input_file = default_input
+                break
+        if input_file is None:
+            cli_instance.show_error_message(
+                "入力ファイルが指定されていません",
+                "YAMLファイルを --input オプションで指定してください",
+            )
+            return
+    run_docs(input_file, output_dir, format_type)
 
 
 @analyze.command("infer-deps")

@@ -22,9 +22,7 @@ from rich.table import Table
 from src.core.converters.type_to_yaml import types_to_yaml
 
 
-def run_type_to_yaml(
-    input_file: str, output_file: str, root_key: str | None = None
-) -> None:
+def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> None:
     """Python型をYAML仕様に変換
 
     Args:

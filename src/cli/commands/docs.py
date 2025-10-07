@@ -13,9 +13,7 @@ from src.core.doc_generators.yaml_doc_generator import YamlDocGenerator
 from src.core.schemas.yaml_spec import TypeRoot
 
 
-def run_generate_docs(
-    input_file: str, output_dir: str, format_type: str = "single"
-) -> None:
+def run_docs(input_file: str, output_dir: str, format_type: str = "single") -> None:
     """Generate documentation from YAML specification
 
     Args:

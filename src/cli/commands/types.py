@@ -22,9 +22,7 @@ from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.schemas.yaml_spec import TypeRoot
 
 
-def run_yaml_to_type(
-    input_file: str, output_file: str, root_key: str | None = None
-) -> None:
+def run_types(input_file: str, output_file: str, root_key: str | None = None) -> None:
     """YAML仕様をPython型に変換
 
     Args:
