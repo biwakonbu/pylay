@@ -41,6 +41,7 @@ from src.core.schemas.types import (
     TypeName,
     VariableName,
     VisualizeFlag,
+    create_max_depth,
 )
 
 from .types import (
@@ -216,7 +217,7 @@ class InferenceConfig(BaseModel):
         # 型ガードによって infer_level は Literal["loose", "normal", "strict"] 型
         return cls(
             infer_level=infer_level,
-            max_depth=MaxDepth(max_depth),
+            max_depth=create_max_depth(max_depth),
             enable_mypy=infer_level != "loose",
         )
 
