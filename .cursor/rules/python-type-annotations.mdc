@@ -28,7 +28,7 @@ alwaysApply: false
    - ❌ `List[X]` → ✅ `list[X]`
    - ❌ `TypeVar('T')` + `Generic[T]` → ✅ `class Container[T]`
    - ❌ `TypeAlias` → ✅ `type Point = tuple[float, float]`
-   - ✅ `NewType` + ファクトリ関数パターン（PEP 484準拠、Level 2で使用）
+   - 🚫 `NewType` は使用しない（型区別は `type` + `Annotated` で表現）
 
 4. **型と実装を分離し、循環参照を防ぐ**
    - `types.py`: 型定義のみ（Level 1/2を優先）
