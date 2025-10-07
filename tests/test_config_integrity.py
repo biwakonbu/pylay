@@ -342,3 +342,48 @@ class TestConfigConsistency:
 
         assert mypy_strict is True
         assert pyright_mode in ["standard", "strict"]
+
+
+class TestPylayNewConfig:
+    """Issue #51: .lay.py/.lay.yaml方式の設定テスト."""
+
+    def test_generation_config_defaults(self) -> None:
+        """generation設定のデフォルト値を確認."""
+        from src.core.schemas.pylay_config import GenerationConfig
+
+        config = GenerationConfig()
+        assert config.lay_suffix == ".lay.py"
+        assert config.lay_yaml_suffix == ".lay.yaml"
+        assert config.add_generation_header is True
+        assert config.include_source_path is True
+
+    def test_output_config_defaults(self) -> None:
+        """output設定のデフォルト値を確認."""
+        from src.core.schemas.pylay_config import OutputConfig
+
+        config = OutputConfig()
+        assert config.yaml_output_dir == "docs/pylay"
+        assert config.mirror_package_structure is True
+        assert config.include_metadata is True
+        assert config.preserve_docstrings is True
+
+    def test_imports_config_defaults(self) -> None:
+        """imports設定のデフォルト値を確認."""
+        from src.core.schemas.pylay_config import ImportsConfig
+
+        config = ImportsConfig()
+        assert config.use_relative_imports is True
+
+    def test_pylay_config_with_new_sections(self) -> None:
+        """PylayConfigが新しい設定セクションを持つことを確認."""
+        from src.core.schemas.pylay_config import PylayConfig
+
+        config = PylayConfig()
+        assert config.generation is not None
+        assert config.output is not None
+        assert config.imports is not None
+
+        # デフォルト値の確認
+        assert config.generation.lay_suffix == ".lay.py"
+        assert config.output.yaml_output_dir == "docs/pylay"
+        assert config.imports.use_relative_imports is True
