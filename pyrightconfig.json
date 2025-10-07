@@ -58,5 +58,7 @@
     "reportIncompleteStub": "error",
     "reportUnsupportedDunderAll": "warning",
     "reportUnusedCoroutine": "error",
-    "reportMissingModuleSource": "none"
+    "reportMissingModuleSource": "none",
+    "reportGeneralTypeIssues": "warning",
+    "reportInvalidTypeForm": "warning"
 }
