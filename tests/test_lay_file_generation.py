@@ -87,17 +87,29 @@ User:
 
     def test_clean_regeneration_removes_old_lay_py_files(self, tmp_path: Path) -> None:
         """再生成時に古い.lay.pyファイルが削除されることを確認"""
+        from src.cli.commands.types import run_types
+        from src.core.converters.clean_regeneration import clean_lay_files
 
         output_dir = tmp_path / "output"
         output_dir.mkdir()
 
-        # 既存の.lay.pyファイルを作成
+        # 既存の.lay.pyファイルを作成（警告ヘッダー付き）
         old_file1 = output_dir / "old1.lay.py"
         old_file2 = output_dir / "old2.lay.py"
-        old_file1.write_text("# old content 1")
-        old_file2.write_text("# old content 2")
+        old_file1.write_text(
+            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""'
+        )
+        old_file2.write_text(
+            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""'
+        )
 
-        # 新しいYAMLから生成（old1とold2は含まれない）
+        # クリーン再生成前に削除
+        deleted = clean_lay_files(output_dir, ".lay.py")
+        assert len(deleted) == 2
+        assert not old_file1.exists()
+        assert not old_file2.exists()
+
+        # 新しいYAMLから生成
         yaml_content = """
 NewType:
   type: dict
@@ -108,12 +120,16 @@ NewType:
         yaml_file = tmp_path / "test.lay.yaml"
         yaml_file.write_text(yaml_content)
 
-        # ディレクトリ指定で生成（クリーン再生成）
-        # Note: この機能は後で実装するため、現時点ではスキップ
-        pytest.skip("クリーン再生成機能は未実装")
+        # 新しいファイルを生成
+        new_file = output_dir / "new_types.lay.py"
+        run_types(str(yaml_file), str(new_file))
+
+        assert new_file.exists()
 
     def test_manual_files_are_not_deleted(self, tmp_path: Path) -> None:
         """手動実装ファイル(.lay.py以外)が削除されないことを確認"""
+        from src.core.converters.clean_regeneration import clean_lay_files
+
         output_dir = tmp_path / "output"
         output_dir.mkdir()
 
@@ -123,8 +139,20 @@ NewType:
         manual_file1.write_text("# manual implementation 1")
         manual_file2.write_text("# manual implementation 2")
 
-        # Note: クリーン再生成機能は後で実装
-        pytest.skip("クリーン再生成機能は未実装")
+        # .lay.pyファイルも作成
+        lay_file = output_dir / "types.lay.py"
+        lay_file.write_text(
+            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""'
+        )
+
+        # クリーン再生成実行
+        deleted = clean_lay_files(output_dir, ".lay.py")
+
+        # .lay.pyのみ削除され、手動ファイルは保護される
+        assert len(deleted) == 1
+        assert not lay_file.exists()
+        assert manual_file1.exists()
+        assert manual_file2.exists()
 
 
 class TestLayYamlGeneration:
