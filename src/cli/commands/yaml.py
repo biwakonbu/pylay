@@ -58,7 +58,7 @@ def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> 
 
     Args:
         input_file: Pythonモジュールファイルのパス
-        output_file: 出力YAMLファイルのパス
+        output_file: 出力YAMLファイルのパス または "-" で標準出力
         root_key: YAML構造のルートキー
     """
     console = Console()
@@ -71,24 +71,36 @@ def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> 
             # pyproject.tomlがない場合はデフォルト設定
             config = PylayConfig()
 
+        # 標準出力判定
+        is_stdout = output_file == "-"
+
         # 処理開始時のPanel表示
         input_path = Path(input_file)
-        output_path = Path(output_file)
+        output_path: Path | None
 
-        # .lay.yaml拡張子を自動付与
-        if str(output_path).endswith(config.generation.lay_yaml_suffix):
-            # 既に.lay.yamlで終わっている場合はそのまま
-            pass
-        elif not output_path.suffix:
-            # 拡張子がない場合は.lay.yamlを追加
-            output_path = output_path.with_suffix(config.generation.lay_yaml_suffix)
+        if is_stdout:
+            # 標準出力の場合はパス操作をスキップ
+            output_display = "<stdout>"
+            output_path = None
         else:
-            # 他の拡張子がある場合は.lay.yamlに置き換え
-            output_path = output_path.with_suffix(config.generation.lay_yaml_suffix)
+            output_path = Path(output_file)
+
+            # .lay.yaml拡張子を自動付与
+            if str(output_path).endswith(config.generation.lay_yaml_suffix):
+                # 既に.lay.yamlで終わっている場合はそのまま
+                pass
+            elif not output_path.suffix:
+                # 拡張子がない場合は.lay.yamlを追加
+                output_path = output_path.with_suffix(config.generation.lay_yaml_suffix)
+            else:
+                # 他の拡張子がある場合は.lay.yamlに置き換え
+                output_path = output_path.with_suffix(config.generation.lay_yaml_suffix)
+
+            output_display = str(output_path)
 
         start_panel = Panel(
             f"[bold cyan]入力ファイル:[/bold cyan] {input_path.name}\n"
-            f"[bold cyan]出力ファイル:[/bold cyan] {output_path}\n"
+            f"[bold cyan]出力先:[/bold cyan] {output_display}\n"
             f"[bold cyan]ルートキー:[/bold cyan] {root_key or '自動設定'}",
             title="[bold green]🚀 型からYAML変換開始[/bold green]",
             border_style="green",
@@ -173,45 +185,59 @@ def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> 
             if config.output.include_metadata:
                 metadata = _generate_metadata_section(input_file)
 
-            # ファイルに書き込み
-            with open(output_path, "w", encoding="utf-8") as f:
-                if header:
-                    f.write(header)
-                    f.write("\n")
-                if metadata:
-                    f.write(metadata)
-                f.write(yaml_content)
+            # 出力内容を組み立て
+            output_content_parts = []
+            if header:
+                output_content_parts.append(header)
+                output_content_parts.append("\n")
+            if metadata:
+                output_content_parts.append(metadata)
+            output_content_parts.append(yaml_content)
+            output_content = "".join(output_content_parts)
 
-        # 結果表示用のTable
-        result_table = Table(
-            title="変換結果サマリー",
-            show_header=True,
-            border_style="green",
-            width=80,
-            header_style="",
-            box=SIMPLE,
-        )
-        result_table.add_column("項目", style="cyan", no_wrap=True, width=40)
-        result_table.add_column("結果", style="green", justify="right", width=30)
+            # ファイルまたは標準出力に書き込み
+            if is_stdout:
+                # 標準出力に書き込み
+                sys.stdout.write(output_content)
+            else:
+                # ファイルに書き込み（output_pathはNoneではない）
+                if output_path is None:
+                    msg = "output_path is None when not using stdout"
+                    raise ValueError(msg)
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(output_content)
 
-        result_table.add_row("入力モジュール", input_path.name)
-        result_table.add_row("出力ファイル", output_path.name)
-        result_table.add_row("検出型数", f"{len(types_dict)} 個")
-        type_names = ", ".join(types_dict.keys())
-        truncated_types = type_names[:50] + ("..." if len(type_names) > 50 else "")
-        result_table.add_row("型一覧", truncated_types)
+        if not is_stdout:
+            # 結果表示用のTable
+            result_table = Table(
+                title="変換結果サマリー",
+                show_header=True,
+                border_style="green",
+                width=80,
+                header_style="",
+                box=SIMPLE,
+            )
+            result_table.add_column("項目", style="cyan", no_wrap=True, width=40)
+            result_table.add_column("結果", style="green", justify="right", width=30)
 
-        console.print(result_table)
+            result_table.add_row("入力モジュール", input_path.name)
+            result_table.add_row("出力ファイル", output_path.name)
+            result_table.add_row("検出型数", f"{len(types_dict)} 個")
+            type_names = ", ".join(types_dict.keys())
+            truncated_types = type_names[:50] + ("..." if len(type_names) > 50 else "")
+            result_table.add_row("型一覧", truncated_types)
 
-        # 完了メッセージのPanel
-        complete_panel = Panel(
-            f"[bold green]✅ 型からYAMLへの変換が完了しました[/bold green]\n\n"
-            f"[bold cyan]出力ファイル:[/bold cyan] {output_path}\n"
-            f"[bold cyan]変換型数:[/bold cyan] {len(types_dict)} 個",
-            title="[bold green]🎉 処理完了[/bold green]",
-            border_style="green",
-        )
-        console.print(complete_panel)
+            console.print(result_table)
+
+            # 完了メッセージのPanel
+            complete_panel = Panel(
+                f"[bold green]✅ 型からYAMLへの変換が完了しました[/bold green]\n\n"
+                f"[bold cyan]出力ファイル:[/bold cyan] {output_path}\n"
+                f"[bold cyan]変換型数:[/bold cyan] {len(types_dict)} 個",
+                title="[bold green]🎉 処理完了[/bold green]",
+                border_style="green",
+            )
+            console.print(complete_panel)
 
     except Exception as e:
         # エラーメッセージのPanel

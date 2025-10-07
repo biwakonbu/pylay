@@ -30,6 +30,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
     Args:
         input_file: 入力YAMLファイルのパス
         output_file: 出力Pythonファイルのパス（.lay.py拡張子が自動付与される）
+            または "-" で標準出力
         root_key: 変換するYAMLのルートキー
     """
     console = Console()
@@ -42,24 +43,36 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             # pyproject.tomlがない場合はデフォルト設定
             config = PylayConfig()
 
+        # 標準出力判定
+        is_stdout = output_file == "-"
+
         # 処理開始時のPanel表示
         input_path = Path(input_file)
-        output_path = Path(output_file)
+        output_path: Path | None
 
-        # .lay.py拡張子を自動付与
-        if str(output_path).endswith(config.generation.lay_suffix):
-            # 既に.lay.pyで終わっている場合はそのまま
-            pass
-        elif not output_path.suffix:
-            # 拡張子がない場合は.lay.pyを追加
-            output_path = output_path.with_suffix(config.generation.lay_suffix)
+        if is_stdout:
+            # 標準出力の場合はパス操作をスキップ
+            output_display = "<stdout>"
+            output_path = None
         else:
-            # 他の拡張子がある場合は.lay.pyに置き換え
-            output_path = output_path.with_suffix(config.generation.lay_suffix)
+            output_path = Path(output_file)
+
+            # .lay.py拡張子を自動付与
+            if str(output_path).endswith(config.generation.lay_suffix):
+                # 既に.lay.pyで終わっている場合はそのまま
+                pass
+            elif not output_path.suffix:
+                # 拡張子がない場合は.lay.pyを追加
+                output_path = output_path.with_suffix(config.generation.lay_suffix)
+            else:
+                # 他の拡張子がある場合は.lay.pyに置き換え
+                output_path = output_path.with_suffix(config.generation.lay_suffix)
+
+            output_display = str(output_path)
 
         start_panel = Panel(
             f"[bold cyan]入力ファイル:[/bold cyan] {input_path.name}\n"
-            f"[bold cyan]出力ファイル:[/bold cyan] {output_path}\n"
+            f"[bold cyan]出力先:[/bold cyan] {output_display}\n"
             f"[bold cyan]ルートキー:[/bold cyan] {root_key or '自動設定'}",
             title="[bold green]🚀 YAMLから型変換開始[/bold green]",
             border_style="green",
@@ -202,47 +215,58 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                 )
                 progress.advance(task)
 
-        # ファイルに書き込み
-        with console.status("[bold green]ファイル出力中..."):
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write("\n".join(code_lines))
+        # ファイルまたは標準出力に書き込み
+        output_content = "\n".join(code_lines)
 
-        # 結果表示用のTable
-        result_table = Table(
-            title="変換結果サマリー",
-            show_header=True,
-            border_style="green",
-            width=80,
-            header_style="",
-            box=SIMPLE,
-        )
-        result_table.add_column("項目", style="cyan", no_wrap=True, width=40)
-        result_table.add_column("結果", style="green", justify="right", width=30)
+        if is_stdout:
+            # 標準出力に書き込み
+            sys.stdout.write(output_content)
+            sys.stdout.write("\n")
+        else:
+            # ファイルに書き込み（output_pathはNoneではない）
+            if output_path is None:
+                msg = "output_path is None when not using stdout"
+                raise ValueError(msg)
+            with console.status("[bold green]ファイル出力中..."):
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(output_content)
 
-        result_table.add_row("入力ファイル", input_path.name)
-        result_table.add_row("出力ファイル", output_path.name)
+            # 結果表示用のTable
+            result_table = Table(
+                title="変換結果サマリー",
+                show_header=True,
+                border_style="green",
+                width=80,
+                header_style="",
+                box=SIMPLE,
+            )
+            result_table.add_column("項目", style="cyan", no_wrap=True, width=40)
+            result_table.add_column("結果", style="green", justify="right", width=30)
 
-        # 型情報をカウントして表示
-        type_count = 0
-        if spec is not None and isinstance(spec, TypeRoot):
-            type_count = len(spec.types)
-        elif spec is not None:
-            type_count = 1
+            result_table.add_row("入力ファイル", input_path.name)
+            result_table.add_row("出力ファイル", output_path.name)
 
-        result_table.add_row("生成型数", f"{type_count} 個")
-        result_table.add_row("コード行数", f"{len(code_lines)} 行")
+            # 型情報をカウントして表示
+            type_count = 0
+            if spec is not None and isinstance(spec, TypeRoot):
+                type_count = len(spec.types)
+            elif spec is not None:
+                type_count = 1
 
-        console.print(result_table)
+            result_table.add_row("生成型数", f"{type_count} 個")
+            result_table.add_row("コード行数", f"{len(code_lines)} 行")
 
-        # 完了メッセージのPanel
-        complete_panel = Panel(
-            f"[bold green]✅ YAMLから型への変換が完了しました[/bold green]\n\n"
-            f"[bold cyan]出力ファイル:[/bold cyan] {output_path}\n"
-            f"[bold cyan]生成型数:[/bold cyan] {type_count} 個",
-            title="[bold green]🎉 処理完了[/bold green]",
-            border_style="green",
-        )
-        console.print(complete_panel)
+            console.print(result_table)
+
+            # 完了メッセージのPanel
+            complete_panel = Panel(
+                f"[bold green]✅ YAMLから型への変換が完了しました[/bold green]\n\n"
+                f"[bold cyan]出力ファイル:[/bold cyan] {output_path}\n"
+                f"[bold cyan]生成型数:[/bold cyan] {type_count} 個",
+                title="[bold green]🎉 処理完了[/bold green]",
+                border_style="green",
+            )
+            console.print(complete_panel)
 
     except Exception as e:
         # エラーメッセージのPanel
