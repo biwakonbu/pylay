@@ -11,11 +11,11 @@
 """
 
 from pathlib import Path
-from typing import Annotated, Any, NewType
+from typing import Annotated, Any
 
-from pydantic import AfterValidator, BaseModel, Field, TypeAdapter
+from pydantic import AfterValidator, BaseModel, Field
 
-from src.core.schemas.types import PositiveInt
+from src.core.schemas.types import MaxDepth, PositiveInt
 
 
 def _validate_path_exists(v: str | Path | None) -> str | Path | None:
@@ -38,37 +38,6 @@ type OutputPath = str | Path | None
 # Level 2: NewType + Annotated（制約付き、型レベル区別）
 # NOTE: ModulePath は str | Path なので、NewTypeでは扱えない（Union型のため）
 type ValidatedModulePath = Annotated[ModulePath, AfterValidator(_validate_path_exists)]
-
-
-def _validate_max_depth(v: int) -> int:
-    """最大深度のバリデーション"""
-    if v < 1 or v > 100:
-        raise ValueError("深さは1〜100の範囲")
-    return v
-
-
-MaxDepth = NewType("MaxDepth", int)
-"""再帰解析の最大深度（1〜100）"""
-
-MaxDepthValidator: TypeAdapter[int] = TypeAdapter(
-    Annotated[int, Field(ge=1, le=100), AfterValidator(_validate_max_depth)]
-)
-
-
-def create_max_depth(value: int) -> MaxDepth:
-    """最大深度を生成
-
-    Args:
-        value: 深度値
-
-    Returns:
-        検証済みのMaxDepth型
-
-    Raises:
-        ValidationError: 値が1〜100の範囲外の場合
-    """
-    validated = MaxDepthValidator.validate_python(value)
-    return MaxDepth(validated)
 
 
 class TypeConversionConfig(BaseModel):
