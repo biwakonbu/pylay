@@ -154,7 +154,18 @@ NewType:
 
 
 class TestLayYamlGeneration:
-    """.lay.yaml ファイル生成のテスト"""
+    """.lay.yaml ファイル生成のテスト
+
+    Issue #51: .lay.yaml拡張子による自動生成ファイルの明示化に関するテスト群。
+    Python型からYAML仕様への変換、警告ヘッダーの付与、
+    パッケージ構造ミラーリングを検証します。
+
+    検証項目:
+    - .lay.yaml拡張子の自動付与
+    - 警告ヘッダー（編集禁止メッセージ）の付与
+    - ソースファイルパスの記録
+    - パッケージ構造のミラーリング（types.py → types.lay.yaml）
+    """
 
     def test_lay_yaml_file_has_warning_header(self, tmp_path: Path) -> None:
         """生成された.lay.yamlファイルに警告ヘッダーが含まれることを確認"""
