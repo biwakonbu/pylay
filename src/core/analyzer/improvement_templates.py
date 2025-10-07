@@ -509,9 +509,9 @@ def generate_detailed_improvement_plan(
         # Pydantic型がある場合
         plan_sections.append(
             f"""
-推奨: Pydantic提供の {pydantic_type['type']} を使用
-  {pydantic_type['import']}
-  {pydantic_type['example']}
+推奨: Pydantic提供の {pydantic_type["type"]} を使用
+  {pydantic_type["import"]}
+  {pydantic_type["example"]}
 
 または、カスタム型として定義:"""
         )

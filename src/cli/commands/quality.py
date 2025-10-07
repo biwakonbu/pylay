@@ -186,6 +186,9 @@ def quality(
             target_dirs,
         )
 
+        # NewType直接使用チェック
+        _check_factory_usage(target_path)
+
         # エラーレベル処理
         if check_result.has_errors:
             if fail_on_error or strict:
@@ -276,3 +279,79 @@ def _output_console_report(
 
     # 詳細レポートを生成
     reporter.generate_console_report(check_result, report, show_details)
+
+
+def _check_factory_usage(target_path: Path) -> int:
+    """NewType直接使用をチェック
+
+    Args:
+        target_path: チェック対象のパスまたはディレクトリ
+
+    Returns:
+        検出された問題の総数
+    """
+    from rich.panel import Panel
+    from rich.table import Table
+
+    from src.core.analyzer.factory_usage_checker import check_directory
+
+    console.print()
+    console.print("[bold cyan]NewType Direct Usage Check[/bold cyan]")
+    console.print()
+
+    # チェック実行
+    if target_path.is_file():
+        # 単一ファイルの場合は親ディレクトリをチェック
+        results = check_directory(target_path.parent, pattern=target_path.name)
+    else:
+        # ディレクトリの場合
+        results = check_directory(target_path, pattern="**/*.py")
+
+    total_issues = sum(len(issues) for issues in results.values())
+
+    if total_issues == 0:
+        console.print(
+            "[green]✓ No direct NewType usage detected. "
+            "All types use factory functions.[/green]"
+        )
+        return 0
+
+    # 問題がある場合は詳細を表示
+    console.print(
+        f"[yellow]⚠  Found {total_issues} direct usage(s) in "
+        f"{len(results)} file(s)[/yellow]"
+    )
+    console.print()
+
+    for file_path, issues in sorted(results.items()):
+        # ファイルごとにテーブル表示
+        console.print(f"[bold]File:[/bold] [cyan]{file_path}[/cyan]")
+
+        table = Table(show_header=True, header_style="bold magenta", box=None)
+        table.add_column("Line", style="yellow", width=6, justify="right")
+        table.add_column("Type", style="cyan", width=20)
+        table.add_column("Current Usage", style="red", width=25)
+        table.add_column("Recommended", style="green", width=30)
+
+        for issue in issues:
+            table.add_row(
+                str(issue.line_number),
+                issue.type_name,
+                f"{issue.type_name}(...)",
+                f"{issue.factory_name}(...)",
+            )
+
+        console.print(table)
+        console.print()
+
+    # 推奨事項
+    recommendation_panel = Panel(
+        "[bold yellow]Recommendation:[/bold yellow]\n"
+        "Replace direct NewType usage with factory functions.\n"
+        "Factory functions ensure runtime validation and improve type safety.",
+        title="[bold]Action Required[/bold]",
+        border_style="yellow",
+    )
+    console.print(recommendation_panel)
+
+    return total_issues

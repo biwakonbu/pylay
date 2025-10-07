@@ -53,7 +53,11 @@ from src.core.analyzer.abc_base import Analyzer
 from src.core.analyzer.exceptions import MypyExecutionError
 from src.core.analyzer.models import InferResult, MypyResult
 from src.core.schemas.graph import GraphNode, TypeDependencyGraph
-from src.core.schemas.types import ConfidenceScore, GraphMetadata, LineNumber, Weight
+from src.core.schemas.types import (
+    GraphMetadata,
+    create_confidence_score,
+    create_line_number,
+)
 
 
 class TypeInferenceAnalyzer(Analyzer):
@@ -505,8 +509,8 @@ def _parse_mypy_output(output: str) -> dict[str, InferResult]:
                 types[var_name] = InferResult(
                     variable_name=var_name,
                     inferred_type=type_info,
-                    confidence=ConfidenceScore(Weight(confidence)),
-                    line_number=LineNumber(line_num),
+                    confidence=create_confidence_score(confidence),
+                    line_number=create_line_number(line_num),
                 )
             except (ValueError, AttributeError):
                 # パースエラーは無視して次の行に進む

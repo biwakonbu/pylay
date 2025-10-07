@@ -66,6 +66,26 @@ def validate_index_filename(v: str) -> str:
 IndexFilename = NewType("IndexFilename", str)
 """インデックスファイル名（.md拡張子必須）"""
 
+IndexFilenameValidator: TypeAdapter[str] = TypeAdapter(
+    Annotated[str, AfterValidator(validate_index_filename)]
+)
+
+
+def create_index_filename(value: str) -> IndexFilename:
+    """インデックスファイル名を生成
+
+    Args:
+        value: ファイル名文字列
+
+    Returns:
+        検証済みのIndexFilename型
+
+    Raises:
+        ValidationError: 値が.md拡張子で終わらない場合
+    """
+    validated = IndexFilenameValidator.validate_python(value)
+    return IndexFilename(validated)
+
 
 def validate_layer_filename_template(v: str) -> str:
     """レイヤーファイル名テンプレートのバリデーション"""
@@ -80,6 +100,28 @@ def validate_layer_filename_template(v: str) -> str:
 
 LayerFilenameTemplate = NewType("LayerFilenameTemplate", str)
 """レイヤーファイル名テンプレート（.md拡張子と{layer}プレースホルダ必須）"""
+
+LayerFilenameTemplateValidator: TypeAdapter[str] = TypeAdapter(
+    Annotated[str, AfterValidator(validate_layer_filename_template)]
+)
+
+
+def create_layer_filename_template(value: str) -> LayerFilenameTemplate:
+    """レイヤーファイル名テンプレートを生成
+
+    Args:
+        value: テンプレート文字列
+
+    Returns:
+        検証済みのLayerFilenameTemplate型
+
+    Raises:
+        ValidationError: 値が.md拡張子で終わらない、
+            または{layer}プレースホルダを含まない場合
+    """
+    validated = LayerFilenameTemplateValidator.validate_python(value)
+    return LayerFilenameTemplate(validated)
+
 
 type TypeSpecName = str
 """YAML型仕様の型名"""
@@ -355,6 +397,26 @@ DirectoryPath = NewType("DirectoryPath", str)
 - 存在チェックは get_absolute_paths() で実施
 """
 
+DirectoryPathValidator: TypeAdapter[str] = TypeAdapter(
+    Annotated[str, AfterValidator(validate_directory_path)]
+)
+
+
+def create_directory_path(value: str) -> DirectoryPath:
+    """ディレクトリパスを生成
+
+    Args:
+        value: ディレクトリパス文字列
+
+    Returns:
+        検証済みのDirectoryPath型
+
+    Raises:
+        ValidationError: 値が空、またはnull byteを含む場合
+    """
+    validated = DirectoryPathValidator.validate_python(value)
+    return DirectoryPath(validated)
+
 
 def validate_max_depth(v: int) -> int:
     """最大深度のバリデーション"""
@@ -365,6 +427,26 @@ def validate_max_depth(v: int) -> int:
 
 MaxDepth = NewType("MaxDepth", int)
 """再帰解析の最大深度（1〜100）"""
+
+MaxDepthValidator: TypeAdapter[int] = TypeAdapter(
+    Annotated[int, Field(ge=1, le=100), AfterValidator(validate_max_depth)]
+)
+
+
+def create_max_depth(value: int) -> MaxDepth:
+    """最大深度を生成
+
+    Args:
+        value: 深度値
+
+    Returns:
+        検証済みのMaxDepth型
+
+    Raises:
+        ValidationError: 値が1〜100の範囲外の場合
+    """
+    validated = MaxDepthValidator.validate_python(value)
+    return MaxDepth(validated)
 
 
 def validate_weight(v: float) -> float:
@@ -377,8 +459,49 @@ def validate_weight(v: float) -> float:
 Weight = NewType("Weight", float)
 """エッジの重み（0.0〜1.0）"""
 
-ConfidenceScore = NewType("ConfidenceScore", Weight)
+WeightValidator: TypeAdapter[float] = TypeAdapter(
+    Annotated[float, Field(ge=0.0, le=1.0), AfterValidator(validate_weight)]
+)
+
+
+def create_weight(value: float) -> Weight:
+    """重みを生成
+
+    Args:
+        value: 重み値
+
+    Returns:
+        検証済みのWeight型
+
+    Raises:
+        ValidationError: 値が0.0〜1.0の範囲外の場合
+    """
+    validated = WeightValidator.validate_python(value)
+    return Weight(validated)
+
+
+ConfidenceScore = NewType("ConfidenceScore", float)
 """信頼度スコア（0.0〜1.0）- Weightと同じ制約"""
+
+ConfidenceScoreValidator: TypeAdapter[float] = TypeAdapter(
+    Annotated[float, Field(ge=0.0, le=1.0), AfterValidator(validate_weight)]
+)
+
+
+def create_confidence_score(value: float) -> ConfidenceScore:
+    """信頼度スコアを生成
+
+    Args:
+        value: スコア値
+
+    Returns:
+        検証済みのConfidenceScore型
+
+    Raises:
+        ValidationError: 値が0.0〜1.0の範囲外の場合
+    """
+    validated = ConfidenceScoreValidator.validate_python(value)
+    return ConfidenceScore(validated)
 
 
 def validate_line_number(v: int) -> int:
@@ -390,6 +513,26 @@ def validate_line_number(v: int) -> int:
 
 LineNumber = NewType("LineNumber", int)
 """ソースコード行番号（1以上）"""
+
+LineNumberValidator: TypeAdapter[int] = TypeAdapter(
+    Annotated[int, Field(ge=1), AfterValidator(validate_line_number)]
+)
+
+
+def create_line_number(value: int) -> LineNumber:
+    """行番号を生成
+
+    Args:
+        value: 行番号値
+
+    Returns:
+        検証済みのLineNumber型
+
+    Raises:
+        ValidationError: 値が1未満の場合
+    """
+    validated = LineNumberValidator.validate_python(value)
+    return LineNumber(validated)
 
 
 # =============================================================================

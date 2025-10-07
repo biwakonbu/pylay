@@ -25,7 +25,7 @@ from src.core.analyzer.exceptions import AnalysisError
 from src.core.analyzer.models import AnalyzerState, InferenceConfig, ParseContext
 from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
-from src.core.schemas.types import GraphMetadata, TypeRefList, Weight
+from src.core.schemas.types import GraphMetadata, TypeRefList, create_weight
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +219,7 @@ class NormalAnalysisStrategy(AnalysisStrategy):
                                     source=var_name,
                                     target=ref,
                                     relation_type=RelationType.REFERENCES,
-                                    weight=Weight(0.5),
+                                    weight=create_weight(0.5),
                                 )
                                 self.state.edges[edge_key] = edge
         except AnalysisError as e:

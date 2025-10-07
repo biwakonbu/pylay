@@ -16,7 +16,7 @@ from src.core.schemas.graph import (
     RelationType,
     TypeDependencyGraph,
 )
-from src.core.schemas.types import GraphMetadata, Weight
+from src.core.schemas.types import GraphMetadata, create_weight
 
 
 class MypyTypeExtractor:
@@ -201,7 +201,7 @@ class MypyTypeExtractor:
                             source=var_name,
                             target=type_name,
                             relation_type=RelationType.REFERENCES,
-                            weight=Weight(0.7),  # mypy推論は中程度の信頼性
+                            weight=create_weight(0.7),  # mypy推論は中程度の信頼性
                             metadata=GraphMetadata(
                                 custom_fields={"inferred_by_mypy": True}
                             ),

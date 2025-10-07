@@ -26,7 +26,12 @@ from src.core.analyzer.exceptions import (
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
-from src.core.schemas.types import CyclePathList, GraphMetadata, TypeRefList, Weight
+from src.core.schemas.types import (
+    CyclePathList,
+    GraphMetadata,
+    TypeRefList,
+    create_weight,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +224,7 @@ class DependencyExtractionAnalyzer(Analyzer):
                                             source=node.name,
                                             target=ref,
                                             relation_type=RelationType.REFERENCES,
-                                            weight=Weight(0.5),
+                                            weight=create_weight(0.5),
                                         )
                                         self.state.edges[edge_key] = edge
         except (TypeInferenceError, MypyExecutionError) as e:

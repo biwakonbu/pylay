@@ -328,7 +328,7 @@ type Email = str
 現在はLevel 1だが、将来的にメール形式バリデーションを追加予定。
 
 @target-level: level2
-TODO: Annotated + AfterValidator でメール形式をバリデーション
+TODO: NewType + TypeAdapter + ファクトリ関数（3点セット）でメール形式をバリデーション
 """
 
 # 現状維持（将来的な拡張を考慮）
@@ -345,10 +345,11 @@ class Config(BaseModel):
 ### まとめ：型定義レベルの基本方針
 
 1. **Level 1は一時的な状態**: 設計初期や実装途中として許容、最終的にはLevel 2/3への昇格を検討
-2. **Level 2が推奨**: 単一値に制約を持たせる場合は、`NewType('TypeName', Annotated[..., AfterValidator(...)])`パターンを使用して型安全性を確保
+2. **Level 2が推奨**: 単一値に制約を持たせる場合は、**3点セット（`NewType` + `TypeAdapter` + ファクトリ関数）**を必ず実装して型安全性とバリデーションを確保
 3. **Level 3は必要な場合のみ**: 複数フィールドやビジネスロジックがある場合のみBaseModelを使用
 4. **自動判定 + docstring制御**: システムが推奨を提示、必要に応じてdocstringで制御
 5. **段階的な成長**: Level 1から始めて、必要性に応じて昇格させる開発フローを推奨
+6. **非推奨パターンの自動検出**: `pylay quality`コマンドでNewType直接使用を検出し、ファクトリ関数の使用を推奨
 
 ## 核心原則
 
@@ -400,7 +401,7 @@ type Email = str
 現在はLevel 1だが、メール形式バリデーションが必要。
 
 @target-level: level2
-TODO: Annotated + AfterValidator でメール形式をバリデーション
+TODO: NewType + TypeAdapter + ファクトリ関数（3点セット）でメール形式をバリデーション
 """
 
 # 現状維持（過剰な実装を避ける）
@@ -491,6 +492,11 @@ def validate_age(age: Age) -> bool:
 
 Pythonの型定義には、複雑さに応じて3つのレベルがあります。適切なレベルを選択することで、過剰なエンジニアリングを避け、保守性を高めます。
 
+**レベル概要**:
+- **Level 1**: `type`エイリアス（制約なし）
+- **Level 2**: `NewType` + `TypeAdapter` + ファクトリ関数（★最頻出、3点セット必須）
+- **Level 3**: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
+
 ##### Level 1: 単純な型エイリアス（`type` 文）
 
 **用途**: 制約やバリデーションが不要な、単純な型の別名
@@ -517,9 +523,14 @@ def get_user(user_id: UserId) -> User:
 - バリデーションなし
 - ランタイムでの型チェックなし
 
-##### Level 2: `NewType` + ファクトリ関数（★推奨：プリミティブ型代替、PEP 484準拠）
+##### Level 2: `NewType` + ファクトリ関数 + `TypeAdapter`（★推奨：プリミティブ型代替、PEP 484準拠）
 
 **用途**: 制約付き型、型レベル区別、PEP 484準拠のバリデーション
+
+**必須要件**: Level 2型は以下の3つの要素をセットで定義する必要があります：
+1. `NewType` による型定義
+2. `TypeAdapter` による実行時バリデーション定義
+3. ファクトリ関数（`create_*` または同名関数）による安全な生成
 
 ```python
 from typing import NewType, Annotated
@@ -770,18 +781,19 @@ print(user)  # User(user_id=UserId(value=123), name='John')
 
 #### 使い分けガイドライン
 
-| レベル | パターン | 用途 | 例 | 型安全性 |
-|--------|---------|------|-----|----------|
-| 1 | `type` エイリアス | 制約なし型の別名 | `type UserId = str` | ❌ プリミティブと区別されない |
-| 2 | `NewType` + ファクトリ関数 | プリミティブ型代替（最頻出、PEP 484準拠） | `UserId = NewType('UserId', str)`<br/>`def create_user_id(v: str) -> UserId: ...` | ✅ ★型レベル区別 + バリデーション |
-| 3a | `dataclass(frozen=True)` | 不変値オブジェクト | `@dataclass(frozen=True)` `class CodeLocation: ...` | ✅ 値オブジェクト |
-| 3b | `dataclass` | 状態管理エンティティ | `@dataclass` `class Session: ...` | ✅ エンティティ |
-| 3c | `BaseModel` | 複雑なドメインモデル | `class AnalysisResult(BaseModel): ...` | ✅ 複雑なロジック |
+| レベル | パターン | 用途 | 例 | 型安全性 | 必須要素 |
+|--------|---------|------|-----|----------|----------|
+| 1 | `type` エイリアス | 制約なし型の別名 | `type UserId = str` | ❌ プリミティブと区別されない | 型定義のみ |
+| 2 | `NewType` + `TypeAdapter` + ファクトリ関数 | プリミティブ型代替（★最頻出、PEP 484準拠） | `UserId = NewType('UserId', str)`<br/>`UserIdValidator = TypeAdapter(...)`<br/>`def create_user_id(v: str) -> UserId: ...` | ✅ ★型レベル区別 + バリデーション | 型定義 + TypeAdapter + ファクトリ関数（3点セット） |
+| 3a | `dataclass(frozen=True)` | 不変値オブジェクト | `@dataclass(frozen=True)` `class CodeLocation: ...` | ✅ 値オブジェクト | クラス定義 |
+| 3b | `dataclass` | 状態管理エンティティ | `@dataclass` `class Session: ...` | ✅ エンティティ | クラス定義 |
+| 3c | `BaseModel` | 複雑なドメインモデル | `class AnalysisResult(BaseModel): ...` | ✅ 複雑なロジック | クラス定義 |
 
 **判断フロー**:
 ```
 プリミティブ型の代替が必要？
-  ↓ YES → Level 2 (NewType + ファクトリ関数) ★最頻出パターン、PEP 484準拠
+  ↓ YES → Level 2 (NewType + TypeAdapter + ファクトリ関数) ★最頻出パターン、PEP 484準拠
+          必須: 3点セット（型定義 + TypeAdapter + ファクトリ関数）
   ↓ NO
 複数フィールドが必要？
   ↓ NO  → Level 1 (type エイリアス)
@@ -1177,6 +1189,186 @@ src/core/analyzer/
 | `models.py` | ドメインモデル（型+軽いロジック） | `types.py`, `protocols.py` |
 | `services.py` | ビジネスロジック実装 | `types.py`, `protocols.py`, `models.py` |
 | `exceptions.py` | 例外クラス | なし（または `types.py`） |
+
+## ファクトリ関数の使用例
+
+### Level 2型のファクトリ関数パターン
+
+Level 2（NewType + TypeAdapter）型では、必ずファクトリ関数を提供し、ランタイムバリデーションを保証します。
+
+#### 基本パターン
+
+```python
+from typing import NewType, Annotated
+from pydantic import TypeAdapter, Field, AfterValidator
+
+# 1. バリデーション関数を定義
+def validate_positive_int(v: int) -> int:
+    """正の整数であることを検証"""
+    if v <= 0:
+        raise ValueError(f"正の整数である必要がありますが、{v}が指定されました")
+    return v
+
+# 2. NewType定義（名目的型付け）
+PositiveInt = NewType('PositiveInt', int)
+
+# 3. TypeAdapter定義（バリデーション用）
+PositiveIntValidator: TypeAdapter[int] = TypeAdapter(
+    Annotated[int, Field(gt=0), AfterValidator(validate_positive_int)]
+)
+
+# 4. ファクトリ関数（推奨される使用方法）
+def create_positive_int(value: int) -> PositiveInt:
+    """正の整数を生成
+
+    Args:
+        value: 整数値
+
+    Returns:
+        検証済みのPositiveInt型
+
+    Raises:
+        ValidationError: 値が正の整数でない場合
+    """
+    validated = PositiveIntValidator.validate_python(value)
+    return PositiveInt(validated)
+```
+
+#### 使用方法
+
+```python
+# ✅ 推奨: ファクトリ関数を使用
+count = create_positive_int(42)  # OK
+# count = create_positive_int(-1)  # ValidationError
+
+# ❌ 非推奨: NewTypeを直接使用
+count = PositiveInt(42)  # バリデーションが実行されない！
+```
+
+**重要**: `pylay quality` コマンドで、NewType直接使用は自動検出され警告されます。
+
+### 実例1: 文字列型のファクトリ関数
+
+```python
+from typing import NewType, Annotated
+from pydantic import TypeAdapter, AfterValidator
+
+def validate_index_filename(v: str) -> str:
+    """インデックスファイル名のバリデーション"""
+    if not v.endswith(".md"):
+        raise ValueError("インデックスファイル名は.mdで終わる必要があります")
+    return v
+
+IndexFilename = NewType("IndexFilename", str)
+IndexFilenameValidator: TypeAdapter[str] = TypeAdapter(
+    Annotated[str, AfterValidator(validate_index_filename)]
+)
+
+def create_index_filename(value: str) -> IndexFilename:
+    """インデックスファイル名を生成"""
+    validated = IndexFilenameValidator.validate_python(value)
+    return IndexFilename(validated)
+
+# 使用例
+readme = create_index_filename("README.md")  # OK
+# invalid = create_index_filename("README.txt")  # ValidationError
+```
+
+### 実例2: 数値範囲制限のファクトリ関数
+
+```python
+from typing import NewType, Annotated
+from pydantic import TypeAdapter, Field, AfterValidator
+
+def validate_weight(v: float) -> float:
+    """重みのバリデーション"""
+    if v < 0.0 or v > 1.0:
+        raise ValueError("重みは0.0〜1.0の範囲")
+    return v
+
+Weight = NewType("Weight", float)
+WeightValidator: TypeAdapter[float] = TypeAdapter(
+    Annotated[float, Field(ge=0.0, le=1.0), AfterValidator(validate_weight)]
+)
+
+def create_weight(value: float) -> Weight:
+    """重みを生成"""
+    validated = WeightValidator.validate_python(value)
+    return Weight(validated)
+
+# 使用例
+w = create_weight(0.5)  # OK
+# invalid = create_weight(1.5)  # ValidationError
+```
+
+### 実例3: 複雑なバリデーションのファクトリ関数
+
+```python
+from typing import NewType, Annotated
+from pydantic import TypeAdapter, Field, AfterValidator
+
+def validate_directory_path(v: str) -> str:
+    """ディレクトリパスのバリデーション"""
+    if not v:
+        raise ValueError("ディレクトリパスは空にできません")
+    if "\0" in v:
+        raise ValueError("ディレクトリパスにnull byteを含むことはできません")
+
+    # 末尾スラッシュを削除
+    normalized = v.rstrip("/")
+    if normalized.startswith("./"):
+        normalized = normalized[2:]
+
+    return normalized or "."
+
+DirectoryPath = NewType("DirectoryPath", str)
+DirectoryPathValidator: TypeAdapter[str] = TypeAdapter(
+    Annotated[str, AfterValidator(validate_directory_path)]
+)
+
+def create_directory_path(value: str) -> DirectoryPath:
+    """ディレクトリパスを生成"""
+    validated = DirectoryPathValidator.validate_python(value)
+    return DirectoryPath(validated)
+
+# 使用例
+path1 = create_directory_path("src/")  # "src" に正規化
+path2 = create_directory_path("./docs")  # "docs" に正規化
+# invalid = create_directory_path("")  # ValidationError
+```
+
+### ファクトリ関数の利点
+
+1. **ランタイムバリデーション保証**: 不正な値の混入を防ぐ
+2. **型安全性**: NewTypeによる名目的型付けで型レベルの区別
+3. **一貫性**: プロジェクト全体で統一された型生成方法
+4. **ドキュメント**: ファクトリ関数名とdocstringで使用方法が明確
+5. **テスタビリティ**: バリデーションロジックを独立してテスト可能
+
+### 自動検出機能
+
+`pylay quality` コマンドは、ファクトリ関数が存在するにも関わらずNewTypeを直接使用している箇所を自動検出します：
+
+```bash
+$ pylay quality src/
+
+NewType Direct Usage Check
+
+⚠  Found 2 direct usage(s) in 1 file(s)
+
+File: src/example.py
+ Line  Type               Current Usage               Recommended
+  123  Weight             Weight(...)                 create_weight(...)
+  456  LineNumber         LineNumber(...)             create_line_number(...)
+
+Action Required
+┌────────────────────────────────────────────────────────────────┐
+│ Recommendation:                                                │
+│ Replace direct NewType usage with factory functions.          │
+│ Factory functions ensure runtime validation and improve       │
+│ type safety.                                                   │
+└────────────────────────────────────────────────────────────────┘
+```
 
 ## 型定義パターン集
 
