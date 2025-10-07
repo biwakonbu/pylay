@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### 破壊的変更 (BREAKING CHANGES)
+- **CLIコマンドを1語形式に統一** (#50): ハイフン区切りの2語コマンドを廃止し、シンプルな1語コマンドに統一
+  - 旧: `pylay convert to-yaml` → 新: `pylay yaml`
+  - 旧: `pylay convert to-type` → 新: `pylay types`
+  - 旧: `pylay generate yaml-docs` → 新: `pylay docs`
+  - `pylay quality`コマンドは変更なし（既に1語コマンド）
+
+### 新機能
+- **新しい1語コマンドの追加**:
+  - `pylay yaml <target>`: Python型からYAML仕様を生成
+  - `pylay types <yaml>`: YAML仕様からPython型を生成
+  - `pylay docs`: YAML仕様からMarkdownドキュメントを生成
+
+### 改善
+- **ユーザビリティの向上**: タイプ量の削減とコマンドの直感性向上
+- **一貫性の確保**: 全コマンドを1語形式で統一
+- **拡張性の向上**: 新しいコマンドを追加しやすい構造
+
+### 移行ガイド
+既存のコマンドを新しい形式に置き換えるだけで、オプションやフラグはそのまま使用できます：
+```bash
+# 旧コマンド → 新コマンド
+pylay convert to-yaml input.py -o output.yaml  → pylay yaml input.py -o output.yaml
+pylay convert to-type input.yaml -o output.py  → pylay types input.yaml -o output.py
+pylay generate yaml-docs input.yaml -o docs/   → pylay docs -i input.yaml -o docs/
+```
+
+---
+
 ## [0.4.0] - 2025年10月
 
 ### 新機能
