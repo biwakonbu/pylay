@@ -28,7 +28,7 @@ alwaysApply: false
    - ❌ `List[X]` → ✅ `list[X]`
    - ❌ `TypeVar('T')` + `Generic[T]` → ✅ `class Container[T]`
    - ❌ `TypeAlias` → ✅ `type Point = tuple[float, float]`
-   - 🚫 `NewType` は使用しない（型区別は Annotated/別名で表現）
+   - ✅ `NewType` + ファクトリ関数パターン（PEP 484準拠、Level 2で使用）
 
 4. **型と実装を分離し、循環参照を防ぐ**
    - `types.py`: 型定義のみ（Level 1/2を優先）
@@ -148,15 +148,14 @@ class Contact(BaseModel):
 
 ### Unions & Validators - 複数型とカスタム検証
 
-Unionで複数型を許可し、@field_validatorでカスタムルール：
+Union型（`|`構文）で複数型を許可し、@field_validatorでカスタムルール：
 
 ```python
 from pydantic import BaseModel, Field, field_validator
-from typing import Union
 
 class FlexibleData(BaseModel):
-    """柔軟なデータモデル - UnionとValidator"""
-    value: Union[str, int, float]  # 複数型
+    """柔軟なデータモデル - Union型とValidator"""
+    value: str | int | float  # 複数型（Python 3.13標準構文）
     mode: str = "auto"
 
     @field_validator('value')
@@ -181,17 +180,18 @@ class StrictModel(BaseModel):
 
 ### Generic Models & Type Adapter - ジェネリックと軽量検証
 
-Genericで再利用可能なモデル、TypeAdapterで軽量検証：
+Python 3.13の型パラメータ構文で再利用可能なモデル、TypeAdapterで軽量検証：
 
 ```python
 from pydantic import BaseModel, TypeAdapter
-from typing import Generic, TypeVar
 
-T = TypeVar('T')
-
-class Response(BaseModel, Generic[T]):
+class Response[T](BaseModel):
+    """ジェネリックレスポンスモデル（Python 3.13構文）"""
     data: T
     status: str
+
+# 使用例
+user_response = Response[dict[str, str]](data={"name": "太郎"}, status="success")
 ```
 
 ### Serialization & JSON Schema - 出力とスキーマ生成
@@ -413,19 +413,21 @@ class RelationType(str, Enum):
 
 ### 5. エラーハンドリング型
 
-型安全なエラーハンドリング：
+型安全なエラーハンドリング（Python 3.13型パラメータ構文）：
 
 ```python
 from pydantic import BaseModel, Field
-from typing import Generic, TypeVar, Literal
+from typing import Literal
 
-T = TypeVar('T')
-
-class Result(Generic[T]):
-    """成功/失敗を表すResult型"""
+class Result[T]:
+    """成功/失敗を表すResult型（Python 3.13構文）"""
     def __init__(self, success: T | None = None, error: str | None = None):
         self.success = success
         self.error = error
+
+    def is_success(self) -> bool:
+        """成功判定"""
+        return self.error is None
 
 class BaseGenerationError(BaseModel):
     """LP生成関連エラーの基底クラス"""
@@ -442,7 +444,7 @@ class WorkflowError(BaseGenerationError):
 
 ### ✅ 使用推奨
 ```python
-# 近代的なUnion表記
+# 近代的なUnion表記（Python 3.13）
 def process_data(data: str | int | None) -> dict[str, str]:
     pass
 
@@ -455,6 +457,19 @@ def get_items() -> list[str]:
 from typing import Literal
 def set_mode(mode: Literal["auto", "manual"]) -> None:
     pass
+
+# 型パラメータ構文（Python 3.13）
+class Container[T]:
+    """ジェネリックコンテナ（Python 3.13構文）"""
+    def __init__(self, value: T):
+        self.value = value
+
+    def get_value(self) -> T:
+        return self.value
+
+# 型エイリアス（Python 3.13）
+type Point = tuple[float, float]
+type JSONValue = str | int | float | bool | None | list["JSONValue"] | dict[str, "JSONValue"]
 ```
 
 ### ❌ 使用禁止
@@ -468,6 +483,13 @@ def process_data(data: Union[str, int, None]) -> Dict[str, str]:
 from typing import List, Dict
 def get_items() -> List[str]:
     pass
+
+# 古いGeneric/TypeVar表記（禁止）
+from typing import Generic, TypeVar
+T = TypeVar('T')
+class Container(Generic[T]):
+    def __init__(self, value: T):
+        self.value = value
 ```
 
 ## Any型使用ガイドライン
