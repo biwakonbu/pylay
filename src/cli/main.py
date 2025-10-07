@@ -14,6 +14,7 @@ from ..core.doc_generators.type_doc_generator import LayerDocGenerator
 from .commands.analyze_types import analyze_types
 from .commands.diagnose_type_ignore import diagnose_type_ignore
 from .commands.docs import run_docs
+from .commands.init import run_init
 from .commands.project_analyze import project_analyze
 from .commands.quality import quality
 from .commands.types import run_types
@@ -378,6 +379,21 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
 
     except Exception as e:
         cli_instance.show_error_message("型推論と依存関係抽出に失敗しました", str(e))
+
+
+@cli.command("init")
+@click.option("--force", is_flag=True, help="既存の設定を上書きする")
+def init(force: bool) -> None:
+    """pyproject.toml に pylay の設定を追加
+
+    プロジェクトのルートディレクトリで実行し、
+    pyproject.toml に [tool.pylay] セクションを追加します。
+
+    使用例:
+        pylay init
+        pylay init --force  # 既存設定を上書き
+    """
+    run_init(force)
 
 
 if __name__ == "__main__":
