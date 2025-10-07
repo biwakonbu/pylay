@@ -464,3 +464,163 @@ def extract_variable_name(code_line: str) -> str:
 
     # デフォルト
     return "value"
+
+
+def generate_detailed_improvement_plan(
+    var_name: str,
+    primitive_type: str,
+    file_path: str,
+    line_number: int,
+    code_line: str,
+) -> str:
+    """詳細な改善プラン（テンプレートベース）を生成
+
+    Args:
+        var_name: 変数名
+        primitive_type: primitive型
+        file_path: ファイルパス
+        line_number: 行番号
+        code_line: コード行
+
+    Returns:
+        詳細な改善プラン（マークダウン形式）
+    """
+    # 型名候補を取得
+    type_candidates = suggest_type_name(var_name, primitive_type)
+    primary_type_name = type_candidates[0] if type_candidates else "CustomType"
+
+    # バリデーションパターンを取得
+    validation_patterns = suggest_validation_patterns(var_name, primitive_type)
+
+    # Pydantic型の推奨があるかチェック
+    pydantic_type = suggest_pydantic_type(var_name, primitive_type)
+
+    plan_sections = []
+
+    # Step 1: 型定義の作成
+    plan_sections.append(
+        f"""**Step 1: src/core/schemas/types.py に型定義を作成**
+
+型名の候補（コードから推測）:
+  {", ".join(type_candidates)}"""
+    )
+
+    if pydantic_type:
+        # Pydantic型がある場合
+        plan_sections.append(
+            f"""
+推奨: Pydantic提供の {pydantic_type['type']} を使用
+  {pydantic_type['import']}
+  {pydantic_type['example']}
+
+または、カスタム型として定義:"""
+        )
+
+    # Level 1の例
+    plan_sections.append(
+        f"""
+Level 1: 単純な型エイリアス
+```python
+type {primary_type_name} = {primitive_type}
+```"""
+    )
+
+    # Level 2の例（バリデーション付き）
+    if validation_patterns:
+        validator_example = VALIDATION_PATTERNS[validation_patterns[0]]["validator"]
+        plan_sections.append(
+            f"""
+Level 2: 制約付き型（推奨）
+```python
+from typing import Annotated
+from pydantic import AfterValidator
+
+{validator_example}
+
+type {primary_type_name} = Annotated[
+    {primitive_type}, AfterValidator(validate_{var_name})
+]
+```"""
+        )
+    else:
+        plan_sections.append(
+            f"""
+Level 2: 制約付き型（推奨）
+```python
+from typing import Annotated
+from pydantic import AfterValidator
+
+def validate_{var_name}(v: {primitive_type}) -> {primitive_type}:
+    # 適切なバリデーションを追加
+    if not v:  # 例: 空チェック
+        raise ValueError("{primary_type_name}は空にできません")
+    return v
+
+type {primary_type_name} = Annotated[
+    {primitive_type}, AfterValidator(validate_{var_name})
+]
+```"""
+        )
+
+    # Step 2: 使用箇所の修正
+    fixed_code = code_line.replace(f": {primitive_type}", f": {primary_type_name}")
+    plan_sections.append(
+        f"""
+**Step 2: 使用箇所を修正**
+
+File: {file_path}
+
+インポート追加:
+```python
+from src.core.schemas.types import {primary_type_name}
+```
+
+Before (line {line_number}):
+```python
+{code_line.strip()}
+```
+
+After:
+```python
+{fixed_code.strip()}
+```"""
+    )
+
+    # Step 3: バリデーションの検討
+    checklist = format_validation_checklist(primitive_type)
+    plan_sections.append(
+        f"""
+**Step 3: バリデーションの検討**
+
+この型に必要な制約を検討してください:
+  {checklist}"""
+    )
+
+    # Implementation Context
+    plan_sections.append(
+        f"""
+**Implementation Context:**
+  - Why: primitive型の直接使用は型の意図を不明確にします
+  - Effect: 型名により「何の{primitive_type}か」が明確になります
+  - Impact: {primary_type_name}を使う全ての箇所で型安全性が向上します"""
+    )
+
+    # Tools and References
+    plan_sections.append(
+        """
+**Tools and References:**
+  - Pydantic AfterValidator - バリデーション実装
+  - typing.Annotated - 型制約の追加
+  - docs/typing-rule.md - 型定義ルール
+  - src/core/schemas/types.py - 既存の型定義例"""
+    )
+
+    # Related Files
+    plan_sections.append(
+        f"""
+**Related Files:**
+  - {file_path}:{line_number} - 修正対象
+  - src/core/schemas/types.py - 型定義を追加"""
+    )
+
+    return "\n".join(plan_sections)

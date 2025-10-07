@@ -415,8 +415,12 @@ class QualityReporter:
                         loc = issue.location
                         if loc:
                             self.console.print(
-                                f"    - {loc.file}:{loc.line} ({issue.primitive_type})"
+                                f"    [dim]Location:[/dim] {loc.file}:{loc.line}"
                             )
+                            # コードコンテキストを表示
+                            if loc.code:
+                                self._print_code_context(issue)
+                                self.console.print()
                     if len(type_issues) > 3:
                         self.console.print(f"    ... 他{len(type_issues) - 3}件")
             self.console.print()
@@ -433,8 +437,12 @@ class QualityReporter:
                     loc = issue.location
                     if loc:
                         self.console.print(
-                            f"  - {loc.file}:{loc.line} ({issue.primitive_type})"
+                            f"  [dim]Location:[/dim] {loc.file}:{loc.line}"
                         )
+                        # コードコンテキストを表示
+                        if loc.code:
+                            self._print_code_context(issue)
+                            self.console.print()
                 if len(custom_issues) > 5:
                     self.console.print(f"  ... 他{len(custom_issues) - 5}件")
             self.console.print()

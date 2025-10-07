@@ -434,7 +434,10 @@ class QualityChecker:
         Returns:
             フォーマット済みの改善プラン
         """
-        from src.core.analyzer.improvement_templates import _is_excluded_variable_name
+        from src.core.analyzer.improvement_templates import (
+            _is_excluded_variable_name,
+            generate_detailed_improvement_plan,
+        )
 
         # 変数名を抽出
         var_name = extract_variable_name(detail.location.code) or "value"
@@ -494,78 +497,13 @@ Step 2: 使用箇所を修正
 参考: https://docs.pydantic.dev/latest/api/types/
 """
         else:
-            # 機械的に判定できない場合: NewType + ファクトリ関数パターンを提示
-            from src.core.analyzer.improvement_templates import suggest_type_name
+            # カスタム型の場合: 詳細な改善プランを生成
+            plan = generate_detailed_improvement_plan(
+                var_name=var_name,
+                primitive_type=detail.primitive_type,
+                file_path=str(detail.location.file),
+                line_number=detail.location.line,
+                code_line=detail.location.code,
+            )
 
-            # 型名候補を生成
-            type_candidates = suggest_type_name(var_name, detail.primitive_type)
-            type_name = type_candidates[0] if type_candidates else "CustomType"
-
-            # フィールド制約の提案（例）
-            if detail.primitive_type == "str":
-                constraints = "min_length=1, max_length=100"
-            elif detail.primitive_type == "int":
-                constraints = "ge=0"
-            elif detail.primitive_type == "float":
-                constraints = "ge=0.0"
-            else:
-                constraints = ""
-
-            plan = f"""primitive型 {detail.primitive_type} をドメイン型に置き換える手順:
-
-推奨: NewType + ファクトリ関数パターン（PEP 484準拠、Level 2）
-
-Step 1: src/core/schemas/types.py に型定義を作成
-
-  ```python
-  from typing import NewType, Annotated
-  from pydantic import Field, validate_call
-
-  # 型名候補: {', '.join(type_candidates)}
-
-  # NewType定義（型チェッカー用）
-  {type_name} = NewType('{type_name}', {detail.primitive_type})
-
-  # ファクトリ関数（バリデーション付き）
-  @validate_call
-  def {type_name}(
-      value: Annotated[{detail.primitive_type}, Field({constraints})]
-  ) -> {type_name}:  # type: ignore[no-redef]
-      '''{{型の説明をここに記述}}'''
-      return NewType('{type_name}', {detail.primitive_type})(value)
-  ```
-
-Step 2: 使用箇所を修正
-
-  File: {detail.location.file}:{detail.location.line}
-
-  ```python
-  # インポート追加
-  from src.core.schemas.types import {type_name}
-
-  # Before
-  {detail.location.code.strip()}
-
-  # After
-  {var_name}: {type_name}
-
-  # 値の生成（バリデーション付き）
-  {var_name}_value = {type_name}("example_value")
-  ```
-
-利点:
-  - ✅ PEP 484完全準拠（pyrightとmypyの両対応）
-  - ✅ 名目的型付け（{type_name}と{detail.primitive_type}が区別される）
-  - ✅ 自動バリデーション（@validate_callで実行）
-  - ✅ 型安全性向上
-
-代替案: プロジェクトの既存型定義を活用
-  - src/core/schemas/types.py に適切な型が定義されているか確認
-  - 同様の用途の変数で使われている型を参照
-
-参考:
-  - 型定義ルール: docs/typing-rule.md - Level 2
-  - MIGRATION_PLAN.md: NewType + ファクトリ関数パターンの詳細
-  - 既存の型定義: src/core/schemas/types.py
-"""
         return plan
