@@ -76,7 +76,6 @@ __all__ = [
     "TypeLevel",
     "TargetLevel",
     "ValidatedFilePath",
-    "PositiveInt",
     "Percentage",
     # プロトコル
     "TypeAnalyzerProtocol",
