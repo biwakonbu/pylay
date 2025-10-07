@@ -15,7 +15,7 @@ from typing import Annotated, Any
 
 from pydantic import AfterValidator, BaseModel, Field
 
-from src.core.schemas.types import NonNegativeInt, PositiveInt
+from src.core.schemas.types import PositiveInt
 
 
 def _validate_output_path(v: str | Path | None) -> str | Path | None:
@@ -54,7 +54,7 @@ class DocumentConfig(BaseModel):
     include_code_blocks: bool = Field(
         default=True, description="コードブロックを含めるかどうか"
     )
-    max_depth: PositiveInt = Field(default=3, description="ドキュメントの最大深さ")  # type: ignore[assignment]
+    max_depth: int = Field(gt=0, default=3, description="ドキュメントの最大深さ")  # type: ignore[assignment]
     encoding: str = Field(default="utf-8", description="出力ファイルのエンコーディング")
 
     class Config:
@@ -73,7 +73,7 @@ class TypeInspectionConfig(BaseModel):
     skip_types: list[TypeName] = Field(
         default_factory=list, description="スキップする型のリスト"
     )
-    max_inspection_depth: PositiveInt = Field(default=5, description="検査の最大深さ")  # type: ignore[assignment]
+    max_inspection_depth: int = Field(gt=0, default=5, description="検査の最大深さ")  # type: ignore[assignment]
     include_private_types: bool = Field(
         default=False, description="プライベート型を含めるかどうか"
     )
@@ -94,8 +94,10 @@ class MarkdownGenerationConfig(BaseModel):
     このクラスは、マークダウン生成処理の設定を管理します。
     """
 
-    section_level: PositiveInt = Field(  # type: ignore[assignment]
-        default=1, description="セクションの見出しレベル"
+    section_level: int = Field(
+        gt=0,  # type: ignore[assignment]
+        default=1,
+        description="セクションの見出しレベル",
     )
     include_toc: bool = Field(default=True, description="目次を含めるかどうか")
     include_code_syntax: bool = Field(
@@ -155,7 +157,7 @@ class GenerationResult(BaseModel):
     )
     generation_time_ms: float = Field(ge=0.0, description="生成時間（ミリ秒）")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
-    files_count: NonNegativeInt = Field(description="生成されたファイル数")
+    files_count: int = Field(ge=0, description="生成されたファイル数")
 
     class Config:
         """Pydantic設定"""
@@ -197,7 +199,7 @@ class MarkdownSectionInfo(BaseModel):
     """
 
     title: str = Field(description="セクションタイトル")
-    level: PositiveInt = Field(description="見出しレベル")
+    level: int = Field(gt=0, description="見出しレベル")
     content: ContentString = Field(description="セクション内容")
     subsections: list["MarkdownSectionInfo"] = Field(
         default_factory=list, description="サブセクションのリスト"
@@ -264,14 +266,14 @@ class DocumentationMetrics(BaseModel):
     このクラスは、ドキュメントの品質指標を保持します。
     """
 
-    total_types: NonNegativeInt = Field(description="対象の型総数")
-    documented_types: NonNegativeInt = Field(description="ドキュメント付きの型数")
+    total_types: int = Field(ge=0, description="対象の型総数")
+    documented_types: int = Field(ge=0, description="ドキュメント付きの型数")
     documentation_coverage: float = Field(
         description="ドキュメントカバー率（0.0-1.0）", ge=0.0, le=1.0
     )
     avg_docstring_lines: float = Field(ge=0.0, description="平均docstring行数")
-    code_blocks_count: NonNegativeInt = Field(description="コードブロック総数")
-    sections_count: NonNegativeInt = Field(description="セクション総数")
+    code_blocks_count: int = Field(ge=0, description="コードブロック総数")
+    sections_count: int = Field(ge=0, description="セクション総数")
 
     class Config:
         """Pydantic設定"""
@@ -312,14 +314,14 @@ class BatchGenerationResult(BaseModel):
     """
 
     success: bool = Field(description="全体の処理が成功したかどうか")
-    total_files: NonNegativeInt = Field(description="処理対象のファイル総数")
-    successful_files: NonNegativeInt = Field(description="成功したファイル数")
-    failed_files: NonNegativeInt = Field(description="失敗したファイル数")
+    total_files: int = Field(ge=0, description="処理対象のファイル総数")
+    successful_files: int = Field(ge=0, description="成功したファイル数")
+    failed_files: int = Field(ge=0, description="失敗したファイル数")
     total_generation_time_ms: float = Field(ge=0.0, description="総生成時間（ミリ秒）")
     results: list[GenerationResult] = Field(
         default_factory=list, description="個別結果のリスト"
     )
-    error_summary: dict[str, NonNegativeInt] = Field(
+    error_summary: dict[str, int] = Field(
         default_factory=dict, description="エラータイプ別の集計"
     )
 

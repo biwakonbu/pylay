@@ -10,7 +10,7 @@ from pathlib import Path
 from src.core.analyzer.exceptions import ASTParseError
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.schemas.graph import GraphEdge, GraphNode, RelationType
-from src.core.schemas.types import GraphMetadata, TypeNameList
+from src.core.schemas.types import GraphMetadata, TypeNameList, Weight
 
 # 関数定義の共通型（Python 3.13+）
 type FunctionDefLike = ast.FunctionDef | ast.AsyncFunctionDef
@@ -373,7 +373,7 @@ class DependencyVisitor(ast.NodeVisitor):
                     source=source,
                     target=target,
                     relation_type=relation,
-                    weight=weight,
+                    weight=Weight(weight),
                     metadata=GraphMetadata(
                         custom_fields={"extraction_method": "AST_analysis"}
                     ),

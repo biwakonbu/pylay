@@ -26,7 +26,7 @@ from src.core.analyzer.exceptions import (
 from src.core.analyzer.models import AnalyzerState, ParseContext
 from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
-from src.core.schemas.types import CyclePathList, TypeRefList
+from src.core.schemas.types import CyclePathList, GraphMetadata, TypeRefList, Weight
 
 logger = logging.getLogger(__name__)
 
@@ -97,8 +97,6 @@ class DependencyExtractionAnalyzer(Analyzer):
                 self._integrate_mypy(file_path)
 
             # グラフ構築
-            from src.core.schemas.types import GraphMetadata
-
             # 循環検出を先に実行（型安全性のため構築時に設定）
             detected_cycles: list[list[str]] = []
             if nx:
@@ -221,7 +219,7 @@ class DependencyExtractionAnalyzer(Analyzer):
                                             source=node.name,
                                             target=ref,
                                             relation_type=RelationType.REFERENCES,
-                                            weight=0.5,
+                                            weight=Weight(0.5),
                                         )
                                         self.state.edges[edge_key] = edge
         except (TypeInferenceError, MypyExecutionError) as e:

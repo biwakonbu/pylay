@@ -140,7 +140,7 @@ class PylayConfig(BaseModel):
     """
 
     # 解析対象ディレクトリ
-    target_dirs: list[DirectoryPath] = Field(
+    target_dirs: list[str] = Field(
         default=["src"],  # type: ignore[list-item]
         description="解析対象のディレクトリパス（相対パス、末尾スラッシュは自動削除）",
     )

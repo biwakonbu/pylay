@@ -216,7 +216,7 @@ class InferenceConfig(BaseModel):
         # 型ガードによって infer_level は Literal["loose", "normal", "strict"] 型
         return cls(
             infer_level=infer_level,
-            max_depth=max_depth,
+            max_depth=MaxDepth(max_depth),
             enable_mypy=infer_level != "loose",
         )
 

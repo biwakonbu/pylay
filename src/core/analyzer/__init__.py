@@ -46,7 +46,6 @@ from .types import (
     FilePath,
     FormatStyle,
     Percentage,
-    PositiveInt,
     ProjectAnalysisResult,
     QualityMetrics,
     TargetLevel,

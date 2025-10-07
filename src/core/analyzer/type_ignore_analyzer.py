@@ -467,7 +467,7 @@ class TypeIgnoreAnalyzer:
 
         return TypeIgnoreIssue(
             file_path=str(file_path),
-            line_number=line_num,
+            line_number=LineNumber(line_num),
             ignore_type=ignore_type,
             cause=cause,
             detail=detail,
@@ -499,7 +499,7 @@ class TypeIgnoreAnalyzer:
             before_lines=[line.rstrip() for line in before_lines],
             target_line=target_line.rstrip(),
             after_lines=[line.rstrip() for line in after_lines],
-            line_number=line_num,
+            line_number=LineNumber(line_num),
         )
 
     def _extract_error_detail(

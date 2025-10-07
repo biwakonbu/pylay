@@ -28,15 +28,6 @@ def _validate_path_exists(v: str | Path | None) -> str | Path | None:
     return v
 
 
-def _validate_depth_limit(v: int) -> int:
-    """深さ制限が適切な範囲内であることを検証するバリデーター"""
-    if v <= 0 or v > 1000:
-        raise ValueError(
-            f"深さ制限は1〜1000の範囲である必要がありますが、{v}が指定されました"
-        )
-    return v
-
-
 # Level 1: 単純な型エイリアス（制約なし）
 type ModulePath = str | Path
 type TypeName = str
@@ -48,10 +39,7 @@ type OutputPath = str | Path | None
 # NOTE: ModulePath は str | Path なので、NewTypeでは扱えない（Union型のため）
 type ValidatedModulePath = Annotated[ModulePath, AfterValidator(_validate_path_exists)]
 
-MaxDepth = NewType(
-    "MaxDepth",
-    Annotated[int, Field(gt=0, le=1000), AfterValidator(_validate_depth_limit)],
-)
+MaxDepth = NewType("MaxDepth", int)
 
 
 class TypeConversionConfig(BaseModel):
@@ -80,14 +68,20 @@ class YamlOutputConfig(BaseModel):
     このクラスは、YAML出力のフォーマット設定を管理します。
     """
 
-    indent_mapping: PositiveInt = Field(  # type: ignore[assignment]
-        default=2, description="マッピングのインデント幅"
+    indent_mapping: int = Field(
+        gt=0,  # type: ignore[assignment]
+        default=2,
+        description="マッピングのインデント幅",
     )
-    indent_sequence: PositiveInt = Field(  # type: ignore[assignment]
-        default=4, description="シーケンスのインデント幅"
+    indent_sequence: int = Field(
+        gt=0,  # type: ignore[assignment]
+        default=4,
+        description="シーケンスのインデント幅",
     )
-    indent_offset: PositiveInt = Field(  # type: ignore[assignment]
-        default=2, description="ベースインデントのオフセット"
+    indent_offset: int = Field(
+        gt=0,  # type: ignore[assignment]
+        default=2,
+        description="ベースインデントのオフセット",
     )
     width: PositiveInt | None = Field(
         default=None, description="出力幅の制限（Noneで無制限）"
@@ -115,8 +109,10 @@ class ModuleExtractionConfig(BaseModel):
     extract_classes: bool = Field(
         default=True, description="クラス定義も抽出対象に含めるか"
     )
-    max_file_size: PositiveInt = Field(  # type: ignore[assignment]
-        default=10 * 1024 * 1024, description="処理可能な最大ファイルサイズ（バイト）"
+    max_file_size: int = Field(
+        gt=0,  # type: ignore[assignment]
+        default=10 * 1024 * 1024,
+        description="処理可能な最大ファイルサイズ（バイト）",
     )
 
     class Config:
@@ -159,8 +155,8 @@ class VisualizationConfig(BaseModel):
     output_path: OutputPath = Field(
         default="deps.png", description="出力画像ファイルのパス"
     )
-    width: PositiveInt = Field(default=8, description="画像の幅（インチ）")  # type: ignore[assignment]
-    height: PositiveInt = Field(default=6, description="画像の高さ（インチ）")  # type: ignore[assignment]
+    width: int = Field(gt=0, default=8, description="画像の幅（インチ）")  # type: ignore[assignment]
+    height: int = Field(gt=0, default=6, description="画像の高さ（インチ）")  # type: ignore[assignment]
     node_colors: dict[str, str] | None = Field(
         default_factory=lambda: {
             "function": "lightblue",
@@ -236,8 +232,8 @@ class DependencyResult(BaseModel):
 
     success: bool = Field(description="処理が成功したかどうか")
     input_path: ValidatedModulePath = Field(description="処理対象のパス")
-    graph_nodes: PositiveInt = Field(description="グラフのノード数")
-    graph_edges: PositiveInt = Field(description="グラフのエッジ数")
+    graph_nodes: int = Field(gt=0, description="グラフのノード数")
+    graph_edges: int = Field(gt=0, description="グラフのエッジ数")
     has_cycles: bool = Field(description="循環参照が存在するか")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
     processing_time_ms: float | None = Field(
