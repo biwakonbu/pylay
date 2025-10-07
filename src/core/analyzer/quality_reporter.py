@@ -336,6 +336,20 @@ class QualityReporter:
             self.console.print(issue.improvement_plan)
             self.console.print()
 
+        # 修正チェックリスト（詳細表示時）
+        if show_details:
+            from src.core.analyzer.quality_checker import QualityChecker
+
+            # チェックリストを生成（仮のQualityCheckerインスタンスを使用）
+            from src.core.schemas.pylay_config import PylayConfig
+
+            temp_checker = QualityChecker(PylayConfig())
+            checklist = temp_checker.generate_fix_checklist(issue)
+
+            self.console.print("[bold]Fix Checklist:[/bold]")
+            self.console.print(checklist)
+            self.console.print()
+
         self.console.rule(style="dim")
 
     def _print_code_context(self, issue: QualityIssue) -> None:

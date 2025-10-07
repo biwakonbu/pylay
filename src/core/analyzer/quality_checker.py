@@ -78,6 +78,15 @@ class QualityChecker:
         for issue in issues:
             issue.severity = self._calculate_severity(issue, report.statistics)
 
+        # 優先度スコアを計算
+        for issue in issues:
+            issue.priority_score = self._calculate_priority_score(issue)
+            issue.impact_score = self._calculate_impact_score(issue, report)
+            issue.difficulty_score = self._estimate_difficulty(issue)
+
+        # 優先度順にソート（優先度高→影響大→難易度低の順）
+        issues = self._prioritize_issues(issues)
+
         # 全体統計を計算
         error_count = sum(1 for issue in issues if issue.severity == "error")
         warning_count = sum(1 for issue in issues if issue.severity == "warning")
@@ -507,3 +516,160 @@ Step 2: 使用箇所を修正
             )
 
         return plan
+
+    def _calculate_priority_score(self, issue: QualityIssue) -> int:
+        """問題の優先度スコアを計算（低いほど優先度高）
+
+        Args:
+            issue: 品質問題
+
+        Returns:
+            優先度スコア（0=最高優先度、10=最低優先度）
+        """
+        # 深刻度による基本スコア
+        severity_score = {"error": 0, "warning": 3, "advice": 6}[issue.severity]
+
+        # 問題タイプによる調整
+        type_penalty = 0
+        if issue.issue_type in ("primitive_usage", "level2_ratio_low"):
+            # 型安全性に直結する問題は優先度高
+            type_penalty = -1
+        elif issue.issue_type in ("documentation_low", "documentation_detail_low"):
+            # ドキュメント問題は優先度低
+            type_penalty = 2
+
+        return severity_score + type_penalty
+
+    def _calculate_impact_score(
+        self, issue: QualityIssue, report: TypeAnalysisReport
+    ) -> int:
+        """問題の影響度を計算（高いほど影響大）
+
+        Args:
+            issue: 品質問題
+            report: 型定義分析レポート
+
+        Returns:
+            影響度スコア（1=影響小、10=影響大）
+        """
+        # primitive型使用の場合、使用箇所の数で影響度を判定
+        if issue.issue_type == "primitive_usage" and issue.primitive_type:
+            # primitive使用率から推測
+            usage_ratio = report.statistics.primitive_usage_ratio
+            if usage_ratio > 0.2:  # 20%以上
+                return 10
+            elif usage_ratio > 0.1:  # 10%以上
+                return 7
+            elif usage_ratio > 0.05:  # 5%以上
+                return 5
+            else:
+                return 3
+
+        # Level比率の問題は全体に影響
+        if "ratio" in issue.issue_type:
+            return 8
+
+        # その他の問題
+        return 5
+
+    def _estimate_difficulty(self, issue: QualityIssue) -> int:
+        """修正難易度を推定（低いほど簡単）
+
+        Args:
+            issue: 品質問題
+
+        Returns:
+            難易度スコア（1=簡単、10=難しい）
+        """
+        # primitive型使用で推奨型がある場合は簡単
+        if issue.issue_type == "primitive_usage" and issue.recommended_type:
+            # Pydantic型推奨がある場合は非常に簡単
+            if issue.recommended_type != "custom":
+                return 2
+            # カスタム型が必要な場合は少し難しい
+            return 5
+
+        # Level比率の問題は複数箇所の修正が必要で難しい
+        if "ratio" in issue.issue_type:
+            return 8
+
+        # ドキュメント問題は比較的簡単
+        if "documentation" in issue.issue_type:
+            return 3
+
+        # その他の問題
+        return 5
+
+    def _prioritize_issues(self, issues: list[QualityIssue]) -> list[QualityIssue]:
+        """問題に優先度を付けてソート
+
+        Args:
+            issues: 問題リスト
+
+        Returns:
+            ソート済み問題リスト（優先度高→影響大→難易度低の順）
+        """
+
+        def sort_key(issue: QualityIssue) -> tuple[int, int, int]:
+            return (
+                issue.priority_score,  # 優先度（低いほど優先）
+                -issue.impact_score,  # 影響度（高いほど優先）
+                issue.difficulty_score,  # 難易度（低いほど優先）
+            )
+
+        return sorted(issues, key=sort_key)
+
+    def generate_fix_checklist(self, issue: QualityIssue) -> str:
+        """修正完了チェックリストを生成
+
+        Args:
+            issue: 品質問題
+
+        Returns:
+            チェックリスト（マークダウン形式）
+        """
+        checklist_items = []
+
+        if issue.issue_type == "primitive_usage" and issue.location:
+            # primitive型使用の場合
+            var_name = extract_variable_name(issue.location.code) or "value"
+            type_name = (
+                issue.recommended_type
+                if issue.recommended_type and issue.recommended_type != "custom"
+                else f"{var_name.capitalize()}Type"
+            )
+
+            checklist_items = [
+                f"[ ] 1. src/core/schemas/types.py に {type_name} を定義",
+                f"[ ] 2. {issue.location.file}:{issue.location.line} のコードを修正",
+                "[ ] 3. インポート文を追加",
+                "[ ] 4. バリデーション関数を実装（必要な場合）",
+                "[ ] 5. テストを実行して型エラーがないことを確認",
+            ]
+        elif "level1_ratio" in issue.issue_type or "level2_ratio" in issue.issue_type:
+            # Level比率の問題の場合
+            checklist_items = [
+                "[ ] 1. Level 1型を特定（制約が必要か検討）",
+                "[ ] 2. バリデーション関数を定義",
+                "[ ] 3. Level 2（Annotated）に昇格",
+                "[ ] 4. 全ての使用箇所を確認",
+                "[ ] 5. テストを実行して動作確認",
+            ]
+        elif "documentation" in issue.issue_type:
+            # ドキュメント問題の場合
+            checklist_items = [
+                "[ ] 1. 未ドキュメント型をリストアップ",
+                "[ ] 2. 各型にdocstringを追加",
+                "[ ] 3. 型の目的と使用例を記述",
+                "[ ] 4. ドキュメントカバレッジを再確認",
+            ]
+        else:
+            # その他の問題の場合
+            checklist_items = [
+                "[ ] 1. 問題箇所を特定",
+                "[ ] 2. 改善プランに従って修正",
+                "[ ] 3. テストを実行",
+                "[ ] 4. 品質チェックを再実行",
+            ]
+
+        return "\n".join(checklist_items)

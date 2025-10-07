@@ -54,6 +54,12 @@ class QualityIssue(BaseModel):
     primitive_type: str | None = Field(
         default=None, description="検出されたprimitive型"
     )
+    # 優先度情報（自動計算）
+    priority_score: int = Field(
+        default=0, description="優先度スコア（低いほど優先度高）"
+    )
+    impact_score: int = Field(default=1, description="影響度スコア（高いほど影響大）")
+    difficulty_score: int = Field(default=1, description="修正難易度（低いほど簡単）")
 
 
 class QualityCheckResult(BaseModel):
