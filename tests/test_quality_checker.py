@@ -152,3 +152,148 @@ class TestQualityChecker:
         assert (
             severity4 == "error"
         ), f"level1_ratio_high (score=0.3): 期待=error, 実際={severity4}"
+
+    def test_priority_calculation(self, quality_checker: QualityChecker) -> None:
+        """優先度計算のテスト"""
+        from src.core.analyzer.quality_models import QualityIssue
+
+        # テストケース1: error + primitive_usage → 優先度高
+        issue1 = QualityIssue(
+            issue_type="primitive_usage",
+            severity="error",
+            message="primitive型使用",
+            suggestion="ドメイン型を使用",
+            improvement_plan="ドメイン型を定義",
+        )
+        priority1 = quality_checker._calculate_priority_score(issue1)
+        assert priority1 == -1  # 0 (error) + (-1) (type_penalty)
+
+        # テストケース2: warning + documentation → 優先度低
+        issue2 = QualityIssue(
+            issue_type="documentation_low",
+            severity="warning",
+            message="ドキュメント不足",
+            suggestion="docstringを追加",
+            improvement_plan="各型にdocstringを追加",
+        )
+        priority2 = quality_checker._calculate_priority_score(issue2)
+        assert priority2 == 5  # 3 (warning) + 2 (doc penalty)
+
+        # 優先度順にソート確認（スコアを設定してから）
+        issue1.priority_score = priority1
+        issue1.impact_score = 5
+        issue1.difficulty_score = 2
+        issue2.priority_score = priority2
+        issue2.impact_score = 3
+        issue2.difficulty_score = 3
+
+        issues = [issue2, issue1]  # 逆順
+        sorted_issues = quality_checker._prioritize_issues(issues)
+        assert sorted_issues[0].issue_type == "primitive_usage"  # 優先度高が先
+
+    def test_impact_calculation(
+        self, quality_checker: QualityChecker, type_analyzer: TypeLevelAnalyzer
+    ) -> None:
+        """影響度計算のテスト"""
+        from pathlib import Path
+
+        from src.core.analyzer.quality_models import QualityIssue
+
+        # 実際のレポートを取得
+        high_report = type_analyzer.analyze_directory(Path("src"))
+
+        # primitive型使用の問題
+        issue = QualityIssue(
+            issue_type="primitive_usage",
+            severity="warning",
+            message="primitive型使用",
+            suggestion="ドメイン型を使用",
+            improvement_plan="ドメイン型を定義",
+            primitive_type="str",
+        )
+
+        # 影響度を計算（実際の使用率に基づく）
+        impact = quality_checker._calculate_impact_score(issue, high_report)
+        assert impact > 0  # 何らかの影響度が計算される
+        assert isinstance(impact, int)
+
+    def test_difficulty_estimation(self, quality_checker: QualityChecker) -> None:
+        """修正難易度推定のテスト"""
+        from src.core.analyzer.quality_models import QualityIssue
+
+        # Pydantic型推奨あり → 簡単
+        easy_issue = QualityIssue(
+            issue_type="primitive_usage",
+            severity="advice",
+            message="primitive型使用",
+            suggestion="EmailStrを使用",
+            improvement_plan="EmailStrに置き換え",
+            recommended_type="EmailStr",
+        )
+        difficulty1 = quality_checker._estimate_difficulty(easy_issue)
+        assert difficulty1 == 2  # 非常に簡単
+
+        # カスタム型必要 → 中程度
+        medium_issue = QualityIssue(
+            issue_type="primitive_usage",
+            severity="advice",
+            message="primitive型使用",
+            suggestion="カスタム型を定義",
+            improvement_plan="カスタム型を定義",
+            recommended_type="custom",
+        )
+        difficulty2 = quality_checker._estimate_difficulty(medium_issue)
+        assert difficulty2 == 5  # 中程度
+
+        # Level比率問題 → 難しい
+        hard_issue = QualityIssue(
+            issue_type="level2_ratio_low",
+            severity="error",
+            message="Level 2比率が低い",
+            suggestion="Level 2に昇格",
+            improvement_plan="複数の型をLevel 2に昇格",
+        )
+        difficulty3 = quality_checker._estimate_difficulty(hard_issue)
+        assert difficulty3 == 8  # 難しい
+
+    def test_generate_fix_checklist(self, quality_checker: QualityChecker) -> None:
+        """修正チェックリスト生成のテスト"""
+        from pathlib import Path
+
+        from src.core.analyzer.quality_models import CodeLocation, QualityIssue
+
+        # primitive型使用の問題
+        location = CodeLocation(
+            file=Path("src/test.py"),
+            line=42,
+            column=0,
+            code="user_id: str = get_user_id()",
+        )
+        issue = QualityIssue(
+            issue_type="primitive_usage",
+            severity="warning",
+            message="primitive型使用",
+            suggestion="ドメイン型を使用",
+            improvement_plan="ドメイン型を定義",
+            location=location,
+            recommended_type="UserId",
+        )
+
+        checklist = quality_checker.generate_fix_checklist(issue)
+        assert "[ ]" in checklist
+        assert "src/core/schemas/types.py" in checklist
+        assert "UserId" in checklist
+        assert "src/test.py:42" in checklist
+
+        # Level比率問題
+        level_issue = QualityIssue(
+            issue_type="level1_ratio_high",
+            severity="error",
+            message="Level 1比率が高い",
+            suggestion="Level 2に昇格",
+            improvement_plan="Level 2に昇格",
+        )
+        level_checklist = quality_checker.generate_fix_checklist(level_issue)
+        assert "[ ]" in level_checklist
+        assert "Level 1型を特定" in level_checklist
+        assert "Level 2" in level_checklist
