@@ -12,12 +12,12 @@ alwaysApply: false
 ### pylayプロジェクトの4つの核心原則
 
 1. **個別型をちゃんと定義し、primitive型を直接使わない**
-   - ❌ `str`, `int` → ✅ ドメイン型を定義（`type` + `Annotated`、`dataclass`、`BaseModel`）
+   - ❌ `str`, `int` → ✅ ドメイン型を定義（`NewType` + ファクトリ関数、`dataclass`、`BaseModel`）
 
 2. **Pydanticによる厳密な型定義でドメイン型を作成する**
    - **3つのレベルを適切に使い分ける**：
      - Level 1: `type` エイリアス（制約なし）
-     - Level 2: `type` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出）
+     - Level 2: `NewType` + ファクトリ関数 + `TypeAdapter`（★プリミティブ型代替、最頻出、PEP 484準拠）
      - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
        - 3a: `dataclass(frozen=True)` - 不変値オブジェクト
        - 3b: `dataclass` - 状態管理エンティティ
