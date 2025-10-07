@@ -54,10 +54,10 @@ class TypeIgnoreIssue(BaseModel):
 class TypeIgnoreSummary(BaseModel):
     """type: ignore 全体のサマリー情報"""
 
-    total_count: int = Field(description="type: ignore の総数")
-    high_priority_count: int = Field(description="HIGH優先度の数")
-    medium_priority_count: int = Field(description="MEDIUM優先度の数")
-    low_priority_count: int = Field(description="LOW優先度の数")
+    total_count: int = Field(ge=0, description="type: ignore の総数")
+    high_priority_count: int = Field(ge=0, description="HIGH優先度の数")
+    medium_priority_count: int = Field(ge=0, description="MEDIUM優先度の数")
+    low_priority_count: int = Field(ge=0, description="LOW優先度の数")
     by_category: dict[str, int] = Field(
         default_factory=dict, description="カテゴリ別の数"
     )
@@ -467,7 +467,7 @@ class TypeIgnoreAnalyzer:
 
         return TypeIgnoreIssue(
             file_path=str(file_path),
-            line_number=line_num,
+            line_number=LineNumber(line_num),
             ignore_type=ignore_type,
             cause=cause,
             detail=detail,
@@ -499,7 +499,7 @@ class TypeIgnoreAnalyzer:
             before_lines=[line.rstrip() for line in before_lines],
             target_line=target_line.rstrip(),
             after_lines=[line.rstrip() for line in after_lines],
-            line_number=line_num,
+            line_number=LineNumber(line_num),
         )
 
     def _extract_error_detail(

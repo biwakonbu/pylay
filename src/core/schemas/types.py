@@ -6,13 +6,13 @@ docs/typing-rule.md の原則1に従い、primitive型を直接使わず、
 
 3つのレベル:
 - Level 1: type エイリアス（制約なし、単純な意味付け）
-- Level 2: Annotated + AfterValidator（制約付き、NewType代替）
+- Level 2: NewType + Annotated（制約付き、型レベル区別）
 - Level 3: BaseModel（複雑なドメイン型・ビジネスロジック）
 """
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, NewType
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, TypeAdapter
 
 # =============================================================================
 # Level 1: type エイリアス（制約なし、単純な意味付け）
@@ -63,7 +63,7 @@ def validate_index_filename(v: str) -> str:
     return v
 
 
-type IndexFilename = Annotated[str, AfterValidator(validate_index_filename)]
+IndexFilename = NewType("IndexFilename", str)
 """インデックスファイル名（.md拡張子必須）"""
 
 
@@ -78,9 +78,7 @@ def validate_layer_filename_template(v: str) -> str:
     return v
 
 
-type LayerFilenameTemplate = Annotated[
-    str, AfterValidator(validate_layer_filename_template)
-]
+LayerFilenameTemplate = NewType("LayerFilenameTemplate", str)
 """レイヤーファイル名テンプレート（.md拡張子と{layer}プレースホルダ必須）"""
 
 type TypeSpecName = str
@@ -250,8 +248,70 @@ type CustomFields = dict[str, object]
 
 
 # =============================================================================
-# Level 2: Annotated + AfterValidator（制約付き、NewType代替）
+# Level 2: NewType + Annotated（制約付き、型レベル区別）
 # =============================================================================
+
+
+def validate_positive_int(v: int) -> int:
+    """正の整数であることを検証するバリデーター"""
+    if v <= 0:
+        raise ValueError(f"正の整数である必要がありますが、{v}が指定されました")
+    return v
+
+
+def validate_non_negative_int(v: int) -> int:
+    """非負の整数であることを検証するバリデーター"""
+    if v < 0:
+        raise ValueError(f"非負の整数である必要がありますが、{v}が指定されました")
+    return v
+
+
+# Level 2: NewType + ファクトリ関数パターン（PEP 484準拠）
+PositiveInt = NewType("PositiveInt", int)
+"""正の整数（> 0）"""
+
+NonNegativeInt = NewType("NonNegativeInt", int)
+"""非負の整数（>= 0）"""
+
+# TypeAdapter（バリデーション用）
+PositiveIntValidator: TypeAdapter[int] = TypeAdapter(
+    Annotated[int, Field(gt=0), AfterValidator(validate_positive_int)]
+)
+NonNegativeIntValidator: TypeAdapter[int] = TypeAdapter(
+    Annotated[int, Field(ge=0), AfterValidator(validate_non_negative_int)]
+)
+
+
+def create_positive_int(value: int) -> PositiveInt:
+    """正の整数を生成
+
+    Args:
+        value: 整数値
+
+    Returns:
+        検証済みのPositiveInt型
+
+    Raises:
+        ValidationError: 値が正の整数でない場合
+    """
+    validated = PositiveIntValidator.validate_python(value)
+    return PositiveInt(validated)
+
+
+def create_non_negative_int(value: int) -> NonNegativeInt:
+    """非負の整数を生成
+
+    Args:
+        value: 整数値
+
+    Returns:
+        検証済みのNonNegativeInt型
+
+    Raises:
+        ValidationError: 値が非負の整数でない場合
+    """
+    validated = NonNegativeIntValidator.validate_python(value)
+    return NonNegativeInt(validated)
 
 
 def validate_directory_path(v: str) -> str:
@@ -285,9 +345,7 @@ def validate_directory_path(v: str) -> str:
     return normalized
 
 
-type DirectoryPath = Annotated[
-    str, AfterValidator(validate_directory_path), Field(min_length=1)
-]
+DirectoryPath = NewType("DirectoryPath", str)
 """
 ディレクトリパス（相対パス）
 
@@ -305,7 +363,7 @@ def validate_max_depth(v: int) -> int:
     return v
 
 
-type MaxDepth = Annotated[int, AfterValidator(validate_max_depth), Field(ge=1, le=100)]
+MaxDepth = NewType("MaxDepth", int)
 """再帰解析の最大深度（1〜100）"""
 
 
@@ -316,10 +374,10 @@ def validate_weight(v: float) -> float:
     return v
 
 
-type Weight = Annotated[float, AfterValidator(validate_weight), Field(ge=0.0, le=1.0)]
+Weight = NewType("Weight", float)
 """エッジの重み（0.0〜1.0）"""
 
-type ConfidenceScore = Weight
+ConfidenceScore = NewType("ConfidenceScore", Weight)
 """信頼度スコア（0.0〜1.0）- Weightと同じ制約"""
 
 
@@ -330,7 +388,7 @@ def validate_line_number(v: int) -> int:
     return v
 
 
-type LineNumber = Annotated[int, AfterValidator(validate_line_number), Field(ge=1)]
+LineNumber = NewType("LineNumber", int)
 """ソースコード行番号（1以上）"""
 
 

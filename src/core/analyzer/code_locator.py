@@ -676,10 +676,9 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
         if not self._is_in_class():
             return
 
-        if (
-            isinstance(node.annotation, ast.Name)
-            and node.annotation.id in self.PRIMITIVE_TYPES
-        ):
+        # primitive型を抽出（Annotated内も含む）
+        primitive_type = self._extract_primitive_type(node.annotation)
+        if primitive_type:
             context_before, code, context_after = self._extract_context(node.lineno)
             location = CodeLocation(
                 file=self.file_path,
@@ -693,7 +692,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
             detail = PrimitiveUsageDetail(
                 location=location,
                 kind="class_attribute",
-                primitive_type=node.annotation.id,
+                primitive_type=primitive_type,
                 class_name=self._get_current_class_name(),
             )
             self.details.append(detail)
@@ -770,6 +769,58 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
     def _get_current_class_name(self) -> str | None:
         """現在のクラス名を取得"""
         return self.class_stack[-1] if self.class_stack else None
+
+    def _extract_primitive_type(self, annotation: ast.expr) -> str | None:
+        """アノテーションからprimitive型を抽出
+
+        Args:
+            annotation: 型アノテーションのASTノード
+
+        Returns:
+            primitive型名、検出されない場合はNone
+
+        Note:
+            以下のパターンを検出:
+            - 直接のprimitive型: str, int, float, bool, bytes
+            - Annotated内のprimitive型: Annotated[str, ...]
+            - NewType内のprimitive型:
+              NewType('X', str) または NewType('X', Annotated[str, ...])
+        """
+        # パターン1: 直接のprimitive型（ast.Name）
+        if isinstance(annotation, ast.Name) and annotation.id in self.PRIMITIVE_TYPES:
+            return annotation.id
+
+        # パターン2: Annotated[primitive, ...] 形式
+        if isinstance(annotation, ast.Subscript):
+            # Annotated[...]の場合
+            if (
+                isinstance(annotation.value, ast.Name)
+                and annotation.value.id == "Annotated"
+            ):
+                # Annotatedの第1引数を取得
+                if isinstance(annotation.slice, ast.Tuple) and annotation.slice.elts:
+                    first_arg = annotation.slice.elts[0]
+                    if (
+                        isinstance(first_arg, ast.Name)
+                        and first_arg.id in self.PRIMITIVE_TYPES
+                    ):
+                        return first_arg.id
+
+            # NewType('X', primitive) または NewType('X', Annotated[...]) 形式
+            # NewTypeはCallノードとして解析されるため、ここでは検出しない
+
+        # パターン3: NewType(...) 形式（ast.Call）
+        if isinstance(annotation, ast.Call):
+            # NewType('X', base_type)の場合
+            if (
+                isinstance(annotation.func, ast.Name)
+                and annotation.func.id == "NewType"
+            ):
+                # NewType定義はprimitive使用としてカウントしない（PEP 484準拠パターン）
+                # 例: UserId = NewType('UserId', str) → primitive使用ではない
+                return None
+
+        return None
 
     def _extract_context(
         self, line: int, before: int = 2, after: int = 2

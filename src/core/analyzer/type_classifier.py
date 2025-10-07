@@ -20,6 +20,19 @@ class TypeClassifier:
     LEVEL2_PATTERN = re.compile(
         r"^\s*type\s+(\w+)\s*=\s*Annotated\[.*AfterValidator.*\]", re.MULTILINE
     )
+    # 新パターン: NewType定義
+    NEWTYPE_PATTERN = re.compile(
+        r"^\s*(\w+)\s*=\s*NewType\(['\"](\w+)['\"]\s*,\s*(\w+)\)", re.MULTILINE
+    )
+    # ファクトリ関数パターン
+    FACTORY_PATTERN = re.compile(
+        r"^\s*def\s+(create_(\w+)|(\w+))\s*\([^)]*\)\s*->\s*(\w+):", re.MULTILINE
+    )
+    # @validate_call デコレータ + 関数定義（改行を許容、パラメータは.*?で非貪欲マッチ）
+    VALIDATE_CALL_PATTERN = re.compile(
+        r"@validate_call\s*\n\s*def\s+(\w+)\s*\(.*?\)\s*->\s*(\w+):",
+        re.MULTILINE | re.DOTALL,
+    )
     LEVEL3_PATTERN = re.compile(r"^\s*class\s+(\w+)\(.*BaseModel.*\):", re.MULTILINE)
     OTHER_CLASS_PATTERN = re.compile(
         r"^\s*class\s+(\w+)(?:\((?!.*BaseModel).*\))?:", re.MULTILINE
@@ -250,6 +263,14 @@ class TypeClassifier:
         # 型定義のコードを抽出
         definition = self._extract_definition(node, source_code)
 
+        # NewType定義はスキップ（_detect_newtype_with_factoryで処理）
+        if isinstance(node.value, ast.Call):
+            if (
+                isinstance(node.value.func, ast.Name)
+                and node.value.func.id == "NewType"
+            ):
+                return None
+
         # Annotated型かつAfterValidatorを含むか確認
         is_level2 = self._is_annotated_with_validator(node.value)
 
@@ -295,7 +316,11 @@ class TypeClassifier:
         """
         type_definitions: list[TypeDefinition] = []
 
-        # Level 2: Annotated + AfterValidator
+        # NewType + ファクトリ関数パターンを検出（新パターン）
+        newtype_with_factory = self._detect_newtype_with_factory(source_code, file_path)
+        type_definitions.extend(newtype_with_factory)
+
+        # Level 2: Annotated + AfterValidator（旧パターン）
         for match in self.LEVEL2_PATTERN.finditer(source_code):
             type_name = match.group(1)
             line_number = source_code[: match.start()].count("\n") + 1
@@ -505,3 +530,99 @@ class TypeClassifier:
         # @keep-as-is: true のパターン
         match = re.search(r"@keep-as-is:\s*(true|True|yes|Yes)", docstring)
         return match is not None
+
+    def _detect_newtype_with_factory(
+        self, source_code: str, file_path: Path
+    ) -> list[TypeDefinition]:
+        """NewType + ファクトリ関数パターンを検出（PEP 484準拠パターン）
+
+        Args:
+            source_code: ソースコード
+            file_path: ファイルパス
+
+        Returns:
+            検出されたLevel 2型定義のリスト
+        """
+        type_definitions: list[TypeDefinition] = []
+
+        # NewType定義を収集
+        newtype_defs: dict[
+            str, tuple[int, str, str]
+        ] = {}  # {type_name: (line, definition, base_type)}
+        for match in self.NEWTYPE_PATTERN.finditer(source_code):
+            var_name = match.group(1)
+            type_name = match.group(2)
+            base_type = match.group(3)
+            line_number = source_code[: match.start()].count("\n") + 1
+            definition = match.group(0).strip()
+
+            # 変数名と型名が一致する場合のみ検出（UserId = NewType('UserId', str)）
+            if var_name == type_name:
+                newtype_defs[type_name] = (line_number, definition, base_type)
+
+        # ファクトリ関数を収集
+        factory_funcs: dict[str, int] = {}  # {type_name: line_number}
+
+        # パターン1: create_* 関数
+        for match in self.FACTORY_PATTERN.finditer(source_code):
+            full_func_name = match.group(1)
+            # create_user_id -> UserId
+            if full_func_name.startswith("create_"):
+                type_name_snake = full_func_name.replace("create_", "")
+                # snake_case -> PascalCase
+                type_name = "".join(
+                    word.capitalize() for word in type_name_snake.split("_")
+                )
+            else:
+                type_name = full_func_name
+
+            return_type = match.group(4)
+            if return_type == type_name:
+                line_number = source_code[: match.start()].count("\n") + 1
+                factory_funcs[type_name] = line_number
+
+        # パターン2: @validate_call + 同名関数
+        for match in self.VALIDATE_CALL_PATTERN.finditer(source_code):
+            func_name = match.group(1)
+            return_type = match.group(2)
+            # 関数名と返り値型が一致する場合（UserId関数 -> UserId型）
+            if func_name == return_type:
+                line_number = source_code[: match.start()].count("\n") + 1
+                factory_funcs[func_name] = line_number
+
+        # NewTypeとファクトリ関数のペアを検出
+        for type_name, (newtype_line, definition, base_type) in newtype_defs.items():
+            docstring = self._extract_docstring_near_line(source_code, newtype_line)
+
+            if type_name in factory_funcs:
+                # ペアになっている場合、Level 2として登録
+                type_definitions.append(
+                    TypeDefinition(
+                        name=type_name,
+                        level="level2",
+                        file_path=str(file_path),
+                        line_number=newtype_line,
+                        definition=definition,
+                        category="newtype_with_factory",
+                        docstring=docstring,
+                        has_docstring=docstring is not None,
+                        docstring_lines=len(docstring.splitlines()) if docstring else 0,
+                    )
+                )
+            else:
+                # ファクトリ関数なしの場合、Level 1として登録
+                type_definitions.append(
+                    TypeDefinition(
+                        name=type_name,
+                        level="level1",
+                        file_path=str(file_path),
+                        line_number=newtype_line,
+                        definition=definition,
+                        category="newtype_plain",
+                        docstring=docstring,
+                        has_docstring=docstring is not None,
+                        docstring_lines=len(docstring.splitlines()) if docstring else 0,
+                    )
+                )
+
+        return type_definitions

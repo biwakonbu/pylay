@@ -177,7 +177,7 @@ class InferenceConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     infer_level: Literal["loose", "normal", "strict"] = "normal"
-    max_depth: MaxDepth = Field(default=10)
+    max_depth: MaxDepth = Field(default=10)  # type: ignore[assignment]
     enable_mypy: EnableMypyFlag = True
     mypy_flags: list[MypyFlag] = Field(
         default_factory=lambda: ["--infer", "--dump-type-stats"]
@@ -216,7 +216,7 @@ class InferenceConfig(BaseModel):
         # 型ガードによって infer_level は Literal["loose", "normal", "strict"] 型
         return cls(
             infer_level=infer_level,
-            max_depth=max_depth,
+            max_depth=MaxDepth(max_depth),
             enable_mypy=infer_level != "loose",
         )
 

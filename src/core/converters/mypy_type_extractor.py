@@ -16,6 +16,7 @@ from src.core.schemas.graph import (
     RelationType,
     TypeDependencyGraph,
 )
+from src.core.schemas.types import GraphMetadata, Weight
 
 
 class MypyTypeExtractor:
@@ -133,8 +134,6 @@ class MypyTypeExtractor:
         merged_edges.extend(additional_edges)
 
         # メタデータを更新
-        from src.core.schemas.types import GraphMetadata
-
         if ast_graph.metadata:
             merged_metadata = GraphMetadata(
                 version=ast_graph.metadata.version,
@@ -197,14 +196,12 @@ class MypyTypeExtractor:
                 # 型名を抽出（簡易的に最初の単語）
                 type_name = str(inferred_type).split("[")[0].split(".")[0]
                 if type_name != var_name:  # 自己参照を避ける
-                    from src.core.schemas.types import GraphMetadata
-
                     edges.append(
                         GraphEdge(
                             source=var_name,
                             target=type_name,
                             relation_type=RelationType.REFERENCES,
-                            weight=0.7,  # mypy推論は中程度の信頼性
+                            weight=Weight(0.7),  # mypy推論は中程度の信頼性
                             metadata=GraphMetadata(
                                 custom_fields={"inferred_by_mypy": True}
                             ),

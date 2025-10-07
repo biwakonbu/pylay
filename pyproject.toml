@@ -167,6 +167,36 @@ exclude_patterns = [
 ]
 max_depth = 10
 
+# 新機能：型品質チェック設定
+[tool.pylay.quality_check]
+# 型レベル閾値設定（厳格モード）
+level_thresholds = { level1_max = 0.15, level2_min = 0.50, level3_min = 0.20 }
+
+# エラーレベル判定基準
+error_conditions = [
+    { condition = "level1_ratio > 0.20", message = "Level 1型エイリアスの比率が高すぎます" },
+    { condition = "level2_ratio < 0.40", message = "Level 2制約付き型の比率が低すぎます" },
+    { condition = "level3_ratio < 0.15", message = "Level 3 BaseModelの比率が低すぎます" },
+    { condition = "documentation.implementation_rate < 0.70", message = "ドキュメント実装率が低すぎます" },
+    { condition = "primitive_usage_ratio > 0.10", message = "プリミティブ型の直接使用が多すぎます" },
+]
+
+# アドバイス・警告・エラーレベル設定
+severity_levels = [
+    { name = "アドバイス", color = "blue", threshold = 0.8 },
+    { name = "警告", color = "yellow", threshold = 0.6 },
+    { name = "エラー", color = "red", threshold = 0.0 },
+]
+
+# 改善プランの詳細度設定
+improvement_guidance = [
+    { level = "level1_to_level2", suggestion = "NewType + ファクトリ関数で制約を追加してください（PEP 484準拠）" },
+    { level = "level2_to_level3", suggestion = "BaseModelでビジネスロジックを追加してください" },
+    { level = "add_validation", suggestion = "バリデーション関数を実装してください" },
+    { level = "add_documentation", suggestion = "詳細なdocstringを追加してください" },
+    { level = "primitive_replacement", suggestion = "ドメイン型に置き換えてください" },
+]
+
 [tool.uv.sources]
 # ローカル開発用
 # pylay = { path = ".", editable = true }

@@ -13,7 +13,14 @@ from src.core.schemas.graph import (
     RelationType,
     TypeDependencyGraph,
 )
-from src.core.schemas.types import NodeId, ProcessingNodeSet, TypeRefList
+from src.core.schemas.types import (
+    DirectoryPath,
+    GraphMetadata,
+    NodeId,
+    ProcessingNodeSet,
+    TypeRefList,
+    Weight,
+)
 
 
 class ASTDependencyExtractor:
@@ -83,7 +90,7 @@ class ASTDependencyExtractor:
                 # デフォルト設定で TypeInferenceAnalyzer を初期化
                 config = PylayConfig(
                     target_dirs=["src"],
-                    output_dir="docs/output",
+                    output_dir=DirectoryPath("docs/output"),
                     infer_level="normal",
                     generate_markdown=False,
                     extract_deps=False,
@@ -127,7 +134,6 @@ class ASTDependencyExtractor:
                 pass
 
         # グラフを構築
-        from src.core.schemas.types import GraphMetadata
 
         extraction_method = "AST_analysis_with_mypy" if include_mypy else "AST_analysis"
         graph = TypeDependencyGraph(
@@ -469,13 +475,12 @@ class ASTDependencyExtractor:
         if source != target and target not in self.visited_nodes:
             self.visited_nodes.add(target)
             edge_key = f"{source}->{target}:{relation}"
-            from src.core.schemas.types import GraphMetadata
 
             edge = GraphEdge(
                 source=source,
                 target=target,
                 relation_type=relation,
-                weight=weight,
+                weight=Weight(weight),
                 metadata=GraphMetadata(
                     custom_fields={"extraction_method": self.extraction_method}
                 ),

@@ -7,9 +7,9 @@ pyproject.toml の [tool.pylay] セクションから設定を読み込み、
 
 import tomllib
 from pathlib import Path
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from src.core.schemas.types import (
     CleanOutputDirFlag,
@@ -29,6 +29,109 @@ class AbsolutePathsDict(TypedDict):
     output_dir: Path
 
 
+# 品質チェック関連のクラス定義（先に定義が必要）
+class LevelThresholds(BaseModel):
+    """型レベル閾値設定"""
+
+    level1_max: float = Field(
+        default=0.20,
+        ge=0.0,
+        le=1.0,
+        description="Level 1型エイリアスの最大比率（これを超えると警告）",
+    )
+    level2_min: float = Field(
+        default=0.40,
+        ge=0.0,
+        le=1.0,
+        description="Level 2制約付き型の最小比率（これを下回ると警告）",
+    )
+    level3_min: float = Field(
+        default=0.15,
+        ge=0.0,
+        le=1.0,
+        description="Level 3 BaseModelの最小比率（これを下回ると警告）",
+    )
+
+
+class ErrorCondition(BaseModel):
+    """エラー条件設定"""
+
+    condition: str = Field(
+        description="エラー判定のための条件式（例: 'level1_ratio > 0.20'）"
+    )
+    message: str = Field(description="エラー発生時のメッセージ")
+
+
+class SeverityLevel(BaseModel):
+    """深刻度レベル設定"""
+
+    name: str = Field(description="深刻度レベルの名前（アドバイス、警告、エラー）")
+    color: Literal["blue", "yellow", "red"] = Field(
+        description="表示色（blue=アドバイス、yellow=警告、red=エラー）"
+    )
+    threshold: float = Field(
+        ge=0.0, le=1.0, description="このレベルに分類される閾値スコア"
+    )
+
+
+class ImprovementGuidance(BaseModel):
+    """改善プランのガイダンス設定"""
+
+    level: str = Field(description="対象の改善レベル")
+    suggestion: str = Field(description="改善のための具体的な提案")
+
+
+class QualityCheckConfig(BaseModel):
+    """品質チェック設定"""
+
+    # 型レベル閾値設定（厳格モード）
+    level_thresholds: LevelThresholds = Field(
+        default_factory=LevelThresholds, description="型レベルの閾値設定"
+    )
+
+    # エラーレベル判定基準
+    error_conditions: list[ErrorCondition] = Field(
+        default_factory=list, description="エラー判定のための条件リスト"
+    )
+
+    # アドバイス・警告・エラーレベル設定
+    severity_levels: list[SeverityLevel] = Field(
+        default_factory=lambda: [
+            SeverityLevel(name="error", color="red", threshold=0.0),
+            SeverityLevel(name="warning", color="yellow", threshold=0.6),
+            SeverityLevel(name="advice", color="blue", threshold=0.8),
+        ],
+        description="深刻度レベルの定義",
+    )
+
+    # 改善プランの詳細度設定
+    improvement_guidance: list[ImprovementGuidance] = Field(
+        default_factory=lambda: [
+            ImprovementGuidance(
+                level="level1_to_level2",
+                suggestion="Annotated型で制約を追加してください",
+            ),
+            ImprovementGuidance(
+                level="level2_to_level3",
+                suggestion="BaseModelでビジネスロジックを追加してください",
+            ),
+            ImprovementGuidance(
+                level="add_validation",
+                suggestion="バリデーション関数を実装してください",
+            ),
+            ImprovementGuidance(
+                level="add_documentation",
+                suggestion="詳細なdocstringを追加してください",
+            ),
+            ImprovementGuidance(
+                level="primitive_replacement",
+                suggestion="ドメイン型に置き換えてください",
+            ),
+        ],
+        description="改善プランのガイダンス設定",
+    )
+
+
 class PylayConfig(BaseModel):
     """
     pylayの設定を管理するPydanticモデル
@@ -37,13 +140,13 @@ class PylayConfig(BaseModel):
     """
 
     # 解析対象ディレクトリ
-    target_dirs: list[DirectoryPath] = Field(
-        default=["src"],
+    target_dirs: list[str] = Field(
+        default=["src"],  # type: ignore[list-item]
         description="解析対象のディレクトリパス（相対パス、末尾スラッシュは自動削除）",
     )
 
     # 出力ディレクトリ
-    output_dir: DirectoryPath = Field(
+    output_dir: DirectoryPath = Field(  # type: ignore[assignment]
         default="docs",
         description="出力ファイルの保存先ディレクトリ（末尾スラッシュは自動削除）",
     )
@@ -83,7 +186,28 @@ class PylayConfig(BaseModel):
     )
 
     # 最大解析深度
-    max_depth: MaxDepth = Field(default=10, description="再帰解析の最大深度")
+    max_depth: MaxDepth = Field(default=10, description="再帰解析の最大深度")  # type: ignore[assignment]
+
+    # 新機能：品質チェック設定（オプション）
+    quality_check: "QualityCheckConfig | None" = Field(
+        default=None, description="型品質チェックの設定（オプション）"
+    )
+
+    @field_validator("target_dirs", mode="before")
+    @classmethod
+    def normalize_target_dirs(cls, v: Any) -> list[str]:
+        """target_dirsの末尾スラッシュを削除"""
+        if isinstance(v, list):
+            return [s.rstrip("/") if isinstance(s, str) else s for s in v]
+        return v
+
+    @field_validator("output_dir", mode="before")
+    @classmethod
+    def normalize_output_dir(cls, v: Any) -> str:
+        """output_dirの末尾スラッシュを削除"""
+        if isinstance(v, str):
+            return v.rstrip("/")
+        return v
 
     @classmethod
     def from_pyproject_toml(cls, project_root: Path | None = None) -> "PylayConfig":
@@ -92,7 +216,7 @@ class PylayConfig(BaseModel):
 
         Args:
             project_root: プロジェクトルートディレクトリ
-                （Noneの場合はカレントディレクトリ）
+                （Noneの場合はカレントディレクトリから親を遡って探索）
 
         Returns:
             設定オブジェクト
@@ -102,12 +226,25 @@ class PylayConfig(BaseModel):
             ValueError: TOMLパースエラーの場合
         """
         if project_root is None:
-            project_root = Path.cwd()
+            # カレントディレクトリから親ディレクトリを遡ってpyproject.tomlを探索
+            current = Path.cwd()
+            pyproject_path = None
 
-        pyproject_path = project_root / "pyproject.toml"
+            # ルートディレクトリまで遡る
+            for parent in [current] + list(current.parents):
+                candidate = parent / "pyproject.toml"
+                if candidate.exists():
+                    pyproject_path = candidate
+                    break
 
-        if not pyproject_path.exists():
-            raise FileNotFoundError(f"pyproject.toml not found at {pyproject_path}")
+            if pyproject_path is None:
+                raise FileNotFoundError(
+                    f"pyproject.toml not found in {current} or any parent directory"
+                )
+        else:
+            pyproject_path = project_root / "pyproject.toml"
+            if not pyproject_path.exists():
+                raise FileNotFoundError(f"pyproject.toml not found at {pyproject_path}")
 
         try:
             with open(pyproject_path, "rb") as f:
@@ -117,6 +254,20 @@ class PylayConfig(BaseModel):
 
         # [tool.pylay] セクションを取得
         pylay_section = toml_data.get("tool", {}).get("pylay", {})
+
+        # ネストされたquality_check設定を抽出して処理
+        quality_check_data = pylay_section.get("quality_check")
+        if quality_check_data and isinstance(quality_check_data, dict):
+            # quality_checkデータを削除して別途処理
+            pylay_section = pylay_section.copy()
+            del pylay_section["quality_check"]
+
+            # QualityCheckConfigとしてパース
+            try:
+                quality_check_config = QualityCheckConfig(**quality_check_data)
+                pylay_section["quality_check"] = quality_check_config
+            except Exception as e:
+                raise ValueError(f"Failed to parse quality_check config: {e}")
 
         return cls(**pylay_section)
 
@@ -204,3 +355,56 @@ class PylayConfig(BaseModel):
 
         for dir_path in subdirs.values():
             dir_path.mkdir(parents=True, exist_ok=True)
+
+    def is_quality_check_enabled(self) -> bool:
+        """
+        品質チェック機能が有効かどうかを確認します。
+
+        Returns:
+            品質チェックが有効な場合はTrue、無効な場合はFalse
+        """
+        return self.quality_check is not None
+
+    def get_quality_thresholds(self) -> LevelThresholds | None:
+        """
+        品質チェックの閾値設定を取得します。
+
+        Returns:
+            閾値設定（品質チェックが無効の場合はNone）
+        """
+        return self.quality_check.level_thresholds if self.quality_check else None
+
+    def get_error_conditions(self) -> list[ErrorCondition]:
+        """
+        エラー判定条件を取得します。
+
+        Returns:
+            エラー判定条件のリスト
+        """
+        return self.quality_check.error_conditions if self.quality_check else []
+
+    def get_severity_levels(self) -> list[SeverityLevel]:
+        """
+        深刻度レベル設定を取得します。
+
+        Returns:
+            深刻度レベル設定のリスト
+        """
+        if self.quality_check and self.quality_check.severity_levels:
+            return self.quality_check.severity_levels
+
+        # デフォルト値（error:0.0, warning:0.6, advice:0.8）
+        return [
+            SeverityLevel(name="error", color="red", threshold=0.0),
+            SeverityLevel(name="warning", color="yellow", threshold=0.6),
+            SeverityLevel(name="advice", color="blue", threshold=0.8),
+        ]
+
+    def get_improvement_guidance(self) -> list[ImprovementGuidance]:
+        """
+        改善プランのガイダンス設定を取得します。
+
+        Returns:
+            改善プランのガイダンス設定のリスト
+        """
+        return self.quality_check.improvement_guidance if self.quality_check else []

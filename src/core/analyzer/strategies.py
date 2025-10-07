@@ -25,7 +25,7 @@ from src.core.analyzer.exceptions import AnalysisError
 from src.core.analyzer.models import AnalyzerState, InferenceConfig, ParseContext
 from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
-from src.core.schemas.types import TypeRefList
+from src.core.schemas.types import GraphMetadata, TypeRefList, Weight
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +94,6 @@ class AnalysisStrategy(ABC):
     def _build_graph(self, file_path: Path) -> TypeDependencyGraph:
         """状態からグラフを構築"""
         from datetime import datetime
-
-        from src.core.schemas.types import GraphMetadata
 
         metadata = GraphMetadata(
             created_at=datetime.now(UTC).isoformat(),
@@ -221,7 +219,7 @@ class NormalAnalysisStrategy(AnalysisStrategy):
                                     source=var_name,
                                     target=ref,
                                     relation_type=RelationType.REFERENCES,
-                                    weight=0.5,
+                                    weight=Weight(0.5),
                                 )
                                 self.state.edges[edge_key] = edge
         except AnalysisError as e:

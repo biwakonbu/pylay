@@ -12,25 +12,28 @@ alwaysApply: false
 ### pylayプロジェクトの4つの核心原則
 
 1. **個別型をちゃんと定義し、primitive型を直接使わない**
-   - ❌ `str`, `int` → ✅ ドメイン型を定義（`type`、`Annotated`、`BaseModel`）
+   - ❌ `str`, `int` → ✅ ドメイン型を定義（`NewType` + ファクトリ関数、`dataclass`、`BaseModel`）
 
 2. **Pydanticによる厳密な型定義でドメイン型を作成する**
    - **3つのレベルを適切に使い分ける**：
      - Level 1: `type` エイリアス（制約なし）
-     - Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
-     - Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
+     - Level 2: `NewType` + ファクトリ関数 + `TypeAdapter`（★プリミティブ型代替、最頻出、PEP 484準拠）
+     - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
+       - 3a: `dataclass(frozen=True)` - 不変値オブジェクト
+       - 3b: `dataclass` - 状態管理エンティティ
+       - 3c: `BaseModel` - 複雑なドメインモデル
 
 3. **typing モジュールは必要最小限に留める（Python 3.13標準を優先）**
    - ❌ `Union[X, Y]` → ✅ `X | Y`
    - ❌ `List[X]` → ✅ `list[X]`
    - ❌ `TypeVar('T')` + `Generic[T]` → ✅ `class Container[T]`
    - ❌ `TypeAlias` → ✅ `type Point = tuple[float, float]`
-   - ❌ `NewType` → ✅ `Annotated` + `AfterValidator`
+   - ✅ `NewType` + ファクトリ関数パターン（PEP 484準拠、Level 2で使用）
 
 4. **型と実装を分離し、循環参照を防ぐ**
-   - `types.py`: 型定義のみ
+   - `types.py`: 型定義のみ（Level 1/2を優先）
    - `protocols.py`: Protocolインターフェース定義
-   - `models.py`: ドメインモデル（型+軽いロジック）
+   - `models.py`: ドメインモデル（Level 3: dataclass/BaseModel）
    - `services.py`: ビジネスロジック実装
 
 **詳細**: [docs/typing-rule.md](../../docs/typing-rule.md)
@@ -145,15 +148,14 @@ class Contact(BaseModel):
 
 ### Unions & Validators - 複数型とカスタム検証
 
-Unionで複数型を許可し、@field_validatorでカスタムルール：
+Union型（`|`構文）で複数型を許可し、@field_validatorでカスタムルール：
 
 ```python
 from pydantic import BaseModel, Field, field_validator
-from typing import Union
 
 class FlexibleData(BaseModel):
-    """柔軟なデータモデル - UnionとValidator"""
-    value: Union[str, int, float]  # 複数型
+    """柔軟なデータモデル - Union型とValidator"""
+    value: str | int | float  # 複数型（Python 3.13標準構文）
     mode: str = "auto"
 
     @field_validator('value')
@@ -178,17 +180,18 @@ class StrictModel(BaseModel):
 
 ### Generic Models & Type Adapter - ジェネリックと軽量検証
 
-Genericで再利用可能なモデル、TypeAdapterで軽量検証：
+Python 3.13の型パラメータ構文で再利用可能なモデル、TypeAdapterで軽量検証：
 
 ```python
 from pydantic import BaseModel, TypeAdapter
-from typing import Generic, TypeVar
 
-T = TypeVar('T')
-
-class Response(BaseModel, Generic[T]):
+class Response[T](BaseModel):
+    """ジェネリックレスポンスモデル（Python 3.13構文）"""
     data: T
     status: str
+
+# 使用例
+user_response = Response[dict[str, str]](data={"name": "太郎"}, status="success")
 ```
 
 ### Serialization & JSON Schema - 出力とスキーマ生成
@@ -235,14 +238,14 @@ class ProductDataclass:
 
 **重要**: pylayプロジェクトでは**3つのレベル**を適切に使い分けます：
 - Level 1: `type` エイリアス（制約なし）
-- Level 2: `Annotated` + `AfterValidator`（制約付き、★NewType代替）
-- Level 3: `BaseModel`（複雑なドメイン型・ビジネスロジック）
+- Level 2: `type` + `Annotated` + (`Field` | `AfterValidator`)（★プリミティブ型代替、最頻出）
+- Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
 
 詳細は [docs/typing-rule.md](../../docs/typing-rule.md) の「型定義の3つのレベル」を参照してください。
 
-### 1. Level 2: Annotated + AfterValidator（推奨：NewType代替）
+### 1. Level 2: type + Annotated（プリミティブ型代替、最頻出パターン）
 
-制約付きの単一値型には `Annotated` + `AfterValidator` を使用します：
+制約付きの単一値型には `type` + `Annotated` を使用します：
 
 ```python
 from typing import Annotated
@@ -263,23 +266,23 @@ def validate_type_name(v: str) -> str:
         raise ValueError("型名は大文字で始まる必要があります")
     return v
 
-# Annotated型の定義（再利用可能）
+# type + Annotated型の定義（再利用可能）
 type ModuleName = Annotated[
     str,
     AfterValidator(validate_module_name),
-    Field(min_length=1, pattern=r"^[a-z][a-z0-9_]*$", description="Pythonモジュール名")
+    Field(min_length=1, pattern=r"^[a-z][a-z0-9_]*$", description="Pythonモジュール名"),
 ]
 
 type TypeName = Annotated[
     str,
     AfterValidator(validate_type_name),
-    Field(min_length=1, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", description="型名")
+    Field(min_length=1, pattern=r"^[A-Za-z_][A-Za-z0-9_]*$", description="型名"),
 ]
 
-type YamlPath = Annotated[
-    str,
-    Field(min_length=1, pattern=r"\.ya?ml$", description="YAML型仕様ファイルパス")
-]
+# Field のみのパターン
+type YamlPath = Annotated[str, Field(min_length=1, pattern=r"\.ya?ml$", description="YAML型仕様ファイルパス")]
+
+type Count = Annotated[int, Field(ge=0)]
 
 # Pydantic BaseModelで使用
 class TypeSpec(BaseModel):
@@ -289,19 +292,35 @@ class TypeSpec(BaseModel):
     yaml_path: YamlPath | None = None
 ```
 
-### 2. Level 3: BaseModel（複雑なドメイン型のみ）
+### 2. Level 3: dataclass + Pydantic または BaseModel
 
-複雑なビジネスロジックや複数フィールドを持つドメイン型のみ `BaseModel` を使用します：
+複雑なビジネスロジックや複数フィールドを持つドメイン型：
 
+**Pattern A: dataclass(frozen=True) - 不変値オブジェクト**
 ```python
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import Field
+from pydantic.dataclasses import dataclass
+
+@dataclass(frozen=True)
+class CodeLocation:
+    """コード位置を表す値オブジェクト"""
+    file: str = Field(min_length=1)
+    line: int = Field(ge=1)
+    column: int = Field(ge=0, default=0)
+
+    def format_display(self) -> str:
+        """表示用フォーマット"""
+        return f"{self.file}:{self.line}:{self.column}"
+```
+
+**Pattern B: BaseModel - 複雑なドメインモデル**
+```python
+from pydantic import BaseModel, Field, model_validator
 
 class ModuleAnalysisResult(BaseModel):
     """モジュール解析結果（複雑なドメイン型）"""
-    model_config = ConfigDict(frozen=True)
-
     module_name: ModuleName  # Level 2の型を活用
-    total_lines: int = Field(gt=0)
+    total_lines: int = Field(ge=0)
     code_lines: int = Field(ge=0)
     comment_lines: int = Field(ge=0)
 
@@ -394,19 +413,21 @@ class RelationType(str, Enum):
 
 ### 5. エラーハンドリング型
 
-型安全なエラーハンドリング：
+型安全なエラーハンドリング（Python 3.13型パラメータ構文）：
 
 ```python
 from pydantic import BaseModel, Field
-from typing import Generic, TypeVar, Literal
+from typing import Literal
 
-T = TypeVar('T')
-
-class Result(Generic[T]):
-    """成功/失敗を表すResult型"""
+class Result[T]:
+    """成功/失敗を表すResult型（Python 3.13構文）"""
     def __init__(self, success: T | None = None, error: str | None = None):
         self.success = success
         self.error = error
+
+    def is_success(self) -> bool:
+        """成功判定"""
+        return self.error is None
 
 class BaseGenerationError(BaseModel):
     """LP生成関連エラーの基底クラス"""
@@ -423,7 +444,7 @@ class WorkflowError(BaseGenerationError):
 
 ### ✅ 使用推奨
 ```python
-# 近代的なUnion表記
+# 近代的なUnion表記（Python 3.13）
 def process_data(data: str | int | None) -> dict[str, str]:
     pass
 
@@ -436,6 +457,19 @@ def get_items() -> list[str]:
 from typing import Literal
 def set_mode(mode: Literal["auto", "manual"]) -> None:
     pass
+
+# 型パラメータ構文（Python 3.13）
+class Container[T]:
+    """ジェネリックコンテナ（Python 3.13構文）"""
+    def __init__(self, value: T):
+        self.value = value
+
+    def get_value(self) -> T:
+        return self.value
+
+# 型エイリアス（Python 3.13）
+type Point = tuple[float, float]
+type JSONValue = str | int | float | bool | None | list["JSONValue"] | dict[str, "JSONValue"]
 ```
 
 ### ❌ 使用禁止
@@ -449,6 +483,13 @@ def process_data(data: Union[str, int, None]) -> Dict[str, str]:
 from typing import List, Dict
 def get_items() -> List[str]:
     pass
+
+# 古いGeneric/TypeVar表記（禁止）
+from typing import Generic, TypeVar
+T = TypeVar('T')
+class Container(Generic[T]):
+    def __init__(self, value: T):
+        self.value = value
 ```
 
 ## Any型使用ガイドライン

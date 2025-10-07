@@ -640,7 +640,9 @@ class TypeUpgradeAnalyzer:
         raise ValueError("パスが長すぎます")
     return v
 
-type {type_name} = Annotated[str, AfterValidator({validator_name})]'''
+{type_name} = NewType(
+    '{type_name}', Annotated[str, AfterValidator({validator_name})]
+)'''
 
     def _generate_name_validator(self, type_name: str) -> str:
         """識別子系のバリデータコードを生成
@@ -658,7 +660,9 @@ type {type_name} = Annotated[str, AfterValidator({validator_name})]'''
         raise ValueError("無効な識別子です")
     return v
 
-type {type_name} = Annotated[str, AfterValidator({validator_name})]'''
+{type_name} = NewType(
+    '{type_name}', Annotated[str, AfterValidator({validator_name})]
+)'''
 
     def _generate_count_validator(self, type_name: str) -> str:
         """数値範囲系のバリデータコードを生成
@@ -676,7 +680,9 @@ type {type_name} = Annotated[str, AfterValidator({validator_name})]'''
         raise ValueError("負の値は許可されていません")
     return v
 
-type {type_name} = Annotated[int, AfterValidator({validator_name})]'''
+{type_name} = NewType(
+    '{type_name}', Annotated[int, AfterValidator({validator_name})]
+)'''
 
     def _generate_score_validator(self, type_name: str) -> str:
         """重み・スコア系のバリデータコードを生成
@@ -694,7 +700,9 @@ type {type_name} = Annotated[int, AfterValidator({validator_name})]'''
         raise ValueError("スコアは0.0-1.0の範囲である必要があります")
     return v
 
-type {type_name} = Annotated[float, AfterValidator({validator_name})]'''
+{type_name} = NewType(
+    '{type_name}', Annotated[float, AfterValidator({validator_name})]
+)'''
 
     def _generate_basemodel_implementation(self, type_def: TypeDefinition) -> str:
         """BaseModel実装コードを生成

@@ -11,23 +11,9 @@
 """
 
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Literal, NewType
 
-from pydantic import AfterValidator, BaseModel, Field
-
-
-def _validate_positive_int(v: int) -> int:
-    """正の整数であることを検証するバリデーター"""
-    if v <= 0:
-        raise ValueError(f"正の整数である必要がありますが、{v}が指定されました")
-    return v
-
-
-def _validate_non_negative_int(v: int) -> int:
-    """非負の整数であることを検証するバリデーター"""
-    if v < 0:
-        raise ValueError(f"非負の整数である必要がありますが、{v}が指定されました")
-    return v
+from pydantic import AfterValidator, BaseModel, Field, TypeAdapter
 
 
 def _validate_percentage(v: float) -> float:
@@ -55,18 +41,31 @@ type FormatStyle = Literal["google", "numpy", "restructured", "unknown"]
 type TypeLevel = Literal["level1", "level2", "level3", "other"]
 type TargetLevel = Literal["level1", "level2", "level3"] | None
 
-# Level 2: Annotated + AfterValidator（制約付き）
+# Level 2: NewType + ファクトリ関数 + TypeAdapter（制約付き、型レベル区別、PEP 484準拠）
+# NOTE: FilePath は str | Path なので、NewTypeでは扱えない（Union型のため）
 type ValidatedFilePath = Annotated[FilePath, AfterValidator(_validate_file_path)]
 
-type PositiveInt = Annotated[int, Field(gt=0), AfterValidator(_validate_positive_int)]
+# Percentage: NewType + ファクトリ関数パターン
+Percentage = NewType("Percentage", float)
+PercentageValidator: TypeAdapter[float] = TypeAdapter(
+    Annotated[float, Field(ge=0.0, le=1.0), AfterValidator(_validate_percentage)]
+)
 
-type NonNegativeInt = Annotated[
-    int, Field(ge=0), AfterValidator(_validate_non_negative_int)
-]
 
-type Percentage = Annotated[
-    float, Field(ge=0.0, le=1.0), AfterValidator(_validate_percentage)
-]
+def create_percentage(value: float) -> Percentage:
+    """パーセンテージ値を生成
+
+    Args:
+        value: パーセンテージ値（0.0〜1.0）
+
+    Returns:
+        検証済みのPercentage型
+
+    Raises:
+        ValidationError: 値が0.0〜1.0の範囲外の場合
+    """
+    validated = PercentageValidator.validate_python(value)
+    return Percentage(validated)
 
 
 class TypeDefinition(BaseModel):
@@ -79,14 +78,14 @@ class TypeDefinition(BaseModel):
     name: TypeName = Field(description="型の名前")
     level: TypeLevel = Field(description="型定義レベル（level1/level2/level3/other）")
     file_path: ValidatedFilePath = Field(description="ファイルパス")
-    line_number: PositiveInt = Field(description="行番号")
+    line_number: int = Field(gt=0, description="行番号")
     definition: str = Field(description="型定義のコード")
     category: CategoryName = Field(
         description="型のカテゴリ（type_alias/annotated/basemodel/class/dataclass等）"
     )
     docstring: str | None = Field(default=None, description="docstring（存在する場合）")
     has_docstring: bool = Field(default=False, description="docstringが存在するか")
-    docstring_lines: NonNegativeInt = Field(default=0, description="docstringの行数")
+    docstring_lines: int = Field(default=0, ge=0, description="docstringの行数")
     target_level: TargetLevel = Field(
         default=None, description="docstringで指定された目標レベル"
     )
@@ -112,8 +111,8 @@ class DocstringDetail(BaseModel):
     has_returns: bool = Field(description="Returnsセクションが存在するか")
     has_examples: bool = Field(description="Examplesセクションが存在するか")
     format_style: FormatStyle = Field(description="docstringフォーマット")
-    line_count: NonNegativeInt = Field(description="docstringの行数")
-    detail_score: Percentage = Field(description="詳細度スコア（0.0-1.0）")
+    line_count: int = Field(ge=0, description="docstringの行数")
+    detail_score: float = Field(ge=0.0, le=1.0, description="詳細度スコア（0.0-1.0）")
 
     class Config:
         """Pydantic設定"""
@@ -128,28 +127,26 @@ class DocumentationStatistics(BaseModel):
     このクラスは、プロジェクト全体のドキュメント統計を保持します。
     """
 
-    total_types: NonNegativeInt = Field(description="型定義の総数")
-    documented_types: NonNegativeInt = Field(description="docstringが存在する型の数")
-    undocumented_types: NonNegativeInt = Field(
-        description="docstringが存在しない型の数"
+    total_types: int = Field(ge=0, description="型定義の総数")
+    documented_types: int = Field(ge=0, description="docstringが存在する型の数")
+    undocumented_types: int = Field(ge=0, description="docstringが存在しない型の数")
+    implementation_rate: float = Field(ge=0.0, le=1.0, description="実装率（0.0-1.0）")
+    minimal_docstrings: int = Field(
+        ge=0, description="最低限のdocstring（1行のみ）の数"
     )
-    implementation_rate: Percentage = Field(description="実装率（0.0-1.0）")
-    minimal_docstrings: NonNegativeInt = Field(
-        description="最低限のdocstring（1行のみ）の数"
-    )
-    detailed_docstrings: NonNegativeInt = Field(description="詳細なdocstringの数")
-    detail_rate: Percentage = Field(description="詳細度率（0.0-1.0）")
+    detailed_docstrings: int = Field(ge=0, description="詳細なdocstringの数")
+    detail_rate: float = Field(ge=0.0, le=1.0, description="詳細度率（0.0-1.0）")
     avg_docstring_lines: float = Field(description="平均docstring行数")
-    quality_score: Percentage = Field(description="総合品質スコア（実装率 × 詳細度）")
-    by_level: dict[TypeLevel, dict[str, NonNegativeInt]] = Field(
+    quality_score: float = Field(
+        ge=0.0, le=1.0, description="総合品質スコア（実装率 × 詳細度）"
+    )
+    by_level: dict[TypeLevel, dict[str, int]] = Field(
         description="レベル別のdocstring統計（カウント値のみ）"
     )
     by_level_avg_lines: dict[TypeLevel, float] = Field(
         description="レベル別の平均docstring行数"
     )
-    by_format: dict[FormatStyle, NonNegativeInt] = Field(
-        description="フォーマット別のdocstring数"
-    )
+    by_format: dict[FormatStyle, int] = Field(description="フォーマット別のdocstring数")
 
     class Config:
         """Pydantic設定"""
@@ -165,11 +162,11 @@ class TypeLevelInfo(BaseModel):
     """
 
     level: TypeLevel = Field(description="型レベル")
-    count: NonNegativeInt = Field(description="型定義の数")
-    documented_count: NonNegativeInt = Field(description="ドキュメント付きの型定義数")
+    count: int = Field(ge=0, description="型定義の数")
+    documented_count: int = Field(ge=0, description="ドキュメント付きの型定義数")
     avg_docstring_lines: float = Field(description="平均docstring行数")
-    upgrade_candidates: NonNegativeInt = Field(description="レベルアップ候補の数")
-    keep_as_is_count: NonNegativeInt = Field(description="現状維持指定の数")
+    upgrade_candidates: int = Field(ge=0, description="レベルアップ候補の数")
+    keep_as_is_count: int = Field(ge=0, description="現状維持指定の数")
 
     class Config:
         """Pydantic設定"""
@@ -188,8 +185,8 @@ class FileAnalysisResult(BaseModel):
     type_definitions: list[TypeDefinition] = Field(
         default_factory=list, description="検出された型定義のリスト"
     )
-    total_types: NonNegativeInt = Field(description="型定義の総数")
-    documented_types: NonNegativeInt = Field(description="ドキュメント付き型定義数")
+    total_types: int = Field(ge=0, description="型定義の総数")
+    documented_types: int = Field(ge=0, description="ドキュメント付き型定義数")
     analysis_time_ms: float = Field(description="解析時間（ミリ秒）")
     has_errors: bool = Field(description="解析エラーがあるかどうか")
     error_messages: list[str] = Field(
@@ -210,9 +207,9 @@ class ProjectAnalysisResult(BaseModel):
     """
 
     project_path: ValidatedFilePath = Field(description="プロジェクトのルートパス")
-    total_files: PositiveInt = Field(description="解析対象のファイル総数")
-    analyzed_files: PositiveInt = Field(description="解析完了したファイル数")
-    failed_files: PositiveInt = Field(description="解析失敗したファイル数")
+    total_files: int = Field(gt=0, description="解析対象のファイル総数")
+    analyzed_files: int = Field(gt=0, description="解析完了したファイル数")
+    failed_files: int = Field(gt=0, description="解析失敗したファイル数")
     all_type_definitions: list[TypeDefinition] = Field(
         default_factory=list, description="全型定義のリスト"
     )
@@ -245,11 +242,13 @@ class AnalysisConfig(BaseModel):
         default_factory=lambda: ["test_*", "__pycache__", "*.pyc"],
         description="除外対象のパターン",
     )
-    max_file_size: PositiveInt = Field(
-        default=10 * 1024 * 1024, description="処理可能な最大ファイルサイズ（バイト）"
+    max_file_size: int = Field(
+        gt=0,  # type: ignore[assignment]
+        default=10 * 1024 * 1024,
+        description="処理可能な最大ファイルサイズ（バイト）",
     )
-    max_files: PositiveInt | None = Field(
-        default=None, description="最大処理ファイル数（Noneで無制限）"
+    max_files: int | None = Field(
+        default=None, gt=0, description="最大処理ファイル数（Noneで無制限）"
     )
     analyze_docstrings: bool = Field(default=True, description="docstringも解析するか")
     analyze_dependencies: bool = Field(default=True, description="依存関係も解析するか")
@@ -268,12 +267,16 @@ class QualityMetrics(BaseModel):
     このクラスは、コード品質の各種指標を保持します。
     """
 
-    overall_score: Percentage = Field(description="総合スコア（0.0-1.0）")
-    type_coverage: Percentage = Field(description="型定義カバー率")
-    documentation_coverage: Percentage = Field(description="ドキュメントカバー率")
-    type_level_balance: Percentage = Field(description="型レベルバランススコア")
-    maintainability_score: Percentage = Field(description="保守性スコア")
-    complexity_score: Percentage = Field(description="複雑度スコア")
+    overall_score: float = Field(ge=0.0, le=1.0, description="総合スコア（0.0-1.0）")
+    type_coverage: float = Field(ge=0.0, le=1.0, description="型定義カバー率")
+    documentation_coverage: float = Field(
+        ge=0.0, le=1.0, description="ドキュメントカバー率"
+    )
+    type_level_balance: float = Field(
+        ge=0.0, le=1.0, description="型レベルバランススコア"
+    )
+    maintainability_score: float = Field(ge=0.0, le=1.0, description="保守性スコア")
+    complexity_score: float = Field(ge=0.0, le=1.0, description="複雑度スコア")
 
     class Config:
         """Pydantic設定"""
