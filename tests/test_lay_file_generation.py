@@ -8,7 +8,17 @@ from pathlib import Path
 
 
 class TestLayPyGeneration:
-    """.lay.py ファイル生成のテスト"""
+    """.lay.py ファイル生成のテスト
+
+    Issue #51: .lay.py拡張子による自動生成ファイルの明示化に関するテスト群。
+    YAML仕様からPython型への変換、警告ヘッダーの付与、拡張子の自動付与を検証します。
+
+    検証項目:
+    - .lay.py拡張子の自動付与
+    - 警告ヘッダー（編集禁止メッセージ）の付与
+    - ソースファイルパスの記録
+    - 生成時刻の記録
+    """
 
     def test_lay_py_file_has_warning_header(self, tmp_path: Path) -> None:
         """生成された.lay.pyファイルに警告ヘッダーが含まれることを確認"""
