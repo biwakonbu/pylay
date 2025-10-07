@@ -85,13 +85,10 @@ pylay docs -i examples/sample_types.yaml -o docs/api
 pylay docs -i types.yaml --format single
 ```
 
-### 型ドキュメント生成（レガシーコマンド）
+### その他のドキュメント生成（補助コマンド）
 ```bash
 # Python ファイルからMarkdownドキュメントを生成
 pylay generate type-docs --input src/core/schemas/yaml_type_spec.py --output docs/types.md
-
-# YAML ファイルからMarkdownドキュメントを生成
-pylay generate yaml-docs --input examples/sample_types.yaml --output docs/pylay-types/documents/yaml_docs.md
 
 # テストカタログを生成
 pylay generate test-catalog --input tests/ --output docs/test_catalog.md
@@ -211,9 +208,11 @@ pylay project project-analyze --output docs/  # docs/pylay-types/ にグラフ�
 pylay --help
 
 # サブコマンドのヘルプ
-pylay generate --help
+pylay yaml --help
+pylay types --help
+pylay docs --help
+pylay quality --help
 pylay analyze --help
-pylay convert --help
 ```
 
 ## pylay による自己解析結果

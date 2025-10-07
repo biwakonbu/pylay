@@ -29,12 +29,26 @@ class TestCLI:
         assert result.exit_code == 0
         assert "型解析・依存関係分析コマンド" in result.stdout
 
-    def test_convert_help(self):
-        """convertコマンドのヘルプが表示されることを確認"""
+    def test_yaml_help(self):
+        """yamlコマンドのヘルプが表示されることを確認"""
         runner = CliRunner()
-        result = runner.invoke(cli, ["convert", "--help"])
+        result = runner.invoke(cli, ["yaml", "--help"])
         assert result.exit_code == 0
-        assert "型と YAML の相互変換" in result.stdout
+        assert "Python型からYAML仕様を生成" in result.stdout
+
+    def test_types_help(self):
+        """typesコマンドのヘルプが表示されることを確認"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["types", "--help"])
+        assert result.exit_code == 0
+        assert "YAML仕様からPython型を生成" in result.stdout
+
+    def test_docs_help(self):
+        """docsコマンドのヘルプが表示されることを確認"""
+        runner = CliRunner()
+        result = runner.invoke(cli, ["docs", "--help"])
+        assert result.exit_code == 0
+        assert "ドキュメント生成" in result.stdout
 
     def test_generate_type_docs_help(self):
         """generate type-docsコマンドのヘルプが表示されることを確認"""
@@ -49,20 +63,6 @@ class TestCLI:
         result = runner.invoke(cli, ["analyze", "infer-deps", "--help"])
         assert result.exit_code == 0
         assert "型推論と依存関係抽出を実行" in result.stdout
-
-    def test_convert_to_yaml_help(self):
-        """convert to-yamlコマンドのヘルプが表示されることを確認"""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["convert", "to-yaml", "--help"])
-        assert result.exit_code == 0
-        assert "Python 型を YAML に変換" in result.stdout
-
-    def test_convert_to_type_help(self):
-        """convert to-typeコマンドのヘルプが表示されることを確認"""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["convert", "to-type", "--help"])
-        assert result.exit_code == 0
-        assert "YAML を Pydantic BaseModel に変換" in result.stdout
 
     def test_cli_version(self):
         """CLIのバージョン情報が表示されることを確認"""
@@ -83,16 +83,16 @@ class TestCLI:
         result = runner.invoke(cli, ["analyze", "infer-deps", "nonexistent.py"])
         assert result.exit_code != 0  # エラーが発生することを期待
 
-    def test_convert_to_yaml_with_invalid_input(self):
+    def test_yaml_with_invalid_input(self):
         """無効な入力ファイルでエラーが発生することを確認"""
         runner = CliRunner()
-        result = runner.invoke(cli, ["convert", "to-yaml", "nonexistent.py"])
+        result = runner.invoke(cli, ["yaml", "nonexistent.py"])
         assert result.exit_code != 0  # エラーが発生することを期待
 
-    def test_convert_to_type_with_invalid_input(self):
+    def test_types_with_invalid_input(self):
         """無効な入力YAMLファイルでエラーが発生することを確認"""
         runner = CliRunner()
-        result = runner.invoke(cli, ["convert", "to-type", "nonexistent.yaml"])
+        result = runner.invoke(cli, ["types", "nonexistent.yaml"])
         assert result.exit_code != 0  # エラーが発生することを期待
 
     def test_analyze_infer_deps_with_visualize_option(self, tmp_path):
