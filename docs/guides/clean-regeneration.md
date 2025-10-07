@@ -18,6 +18,7 @@
 クリーン再生成は、古い `.lay.*` ファイルを削除してから新しいファイルを生成する機能です。
 
 **目的**:
+
 - 古い型定義ファイルの削除
 - ファイル名変更の追跡
 - 一貫性のある型定義の維持
@@ -29,19 +30,22 @@
 クリーン再生成は以下の状況で使用します：
 
 1. **型定義ファイル名を変更したとき**
-   ```
+
+   ```text
    old_types.lay.py → new_types.lay.py
    # old_types.lay.pyは削除されるべき
    ```
 
 2. **複数の型定義を統合したとき**
-   ```
+
+   ```text
    user.lay.py + profile.lay.py → user_profile.lay.py
    # user.lay.pyとprofile.lay.pyは削除されるべき
    ```
 
 3. **プロジェクト構造を大幅に変更したとき**
-   ```
+
+   ```text
    src/models/ → src/core/models/
    # 古いsrc/models/*.lay.pyは削除されるべき
    ```
@@ -66,6 +70,7 @@ pylay自動生成ファイル
 ```
 
 **判定基準**:
+
 - `"pylay自動生成ファイル"` が含まれる
 - `"このファイルを直接編集しないでください"` が含まれる
 
@@ -80,6 +85,7 @@ class User(BaseModel):
 ```
 
 **判定基準**:
+
 - 警告ヘッダーが**ない**
 - → 手動実装ファイルとみなし、削除しない
 
@@ -118,7 +124,8 @@ for file in deleted_files:
 ```
 
 **出力例**:
-```
+
+```text
 削除されたファイル: 3個
   - src/generated/old_types.lay.py
   - src/generated/deprecated.lay.py
@@ -138,7 +145,8 @@ print(f"削除されたファイル: {len(deleted_files)}個")
 ```
 
 **ディレクトリ構造**:
-```
+
+```text
 src/
 ├── models.py              # 保護（手動実装）
 ├── types.lay.py          # 削除
@@ -246,6 +254,7 @@ if __name__ == "__main__":
 ```
 
 **CI設定例**:
+
 ```yaml
 # .github/workflows/regenerate-types.yml
 name: Regenerate Types
@@ -319,6 +328,7 @@ except OSError:
 以下のファイルは**絶対に削除されません**：
 
 1. **警告ヘッダーがないファイル**
+
    ```python
    # models.py（手動実装）
    from pydantic import BaseModel
@@ -328,12 +338,14 @@ except OSError:
    ```
 
 2. **拡張子が一致しないファイル**
+
    ```python
    # api.py（.lay.py ではない）
    from fastapi import FastAPI
    ```
 
 3. **読み込みエラーが発生したファイル**
+
    ```python
    # バイナリファイル、アクセス権限エラー等
    ```
@@ -503,6 +515,7 @@ files = dry_run_clean(output_dir, ".lay.py")
 **A**: 警告ヘッダーが含まれていた可能性があります。
 
 **確認方法**:
+
 ```bash
 # Gitで復元
 git checkout HEAD -- src/models.py
@@ -512,6 +525,7 @@ cat src/models.py | head -20
 ```
 
 **予防策**:
+
 - 手動実装ファイルには警告ヘッダーを書かない
 - バックアップ機能を使用
 
@@ -520,6 +534,7 @@ cat src/models.py | head -20
 **A**: 警告ヘッダーがない、または形式が不正です。
 
 **確認方法**:
+
 ```python
 from pathlib import Path
 from src.core.converters.clean_regeneration import is_lay_generated_file
@@ -535,6 +550,7 @@ with open(file_path) as f:
 ```
 
 **解決策**:
+
 - `pylay` コマンドで再生成し、警告ヘッダーを追加
 - 手動で削除
 
@@ -543,6 +559,7 @@ with open(file_path) as f:
 **A**: ファイルアクセス権限またはファイルが使用中の可能性があります。
 
 **確認方法**:
+
 ```bash
 # ファイル権限を確認
 ls -la src/generated/types.lay.py
@@ -552,6 +569,7 @@ lsof src/generated/types.lay.py
 ```
 
 **解決策**:
+
 ```bash
 # 権限を変更
 chmod 644 src/generated/types.lay.py
@@ -564,6 +582,7 @@ chmod 644 src/generated/types.lay.py
 **A**: 再帰的削除を使用した可能性があります。
 
 **復元方法**:
+
 ```bash
 # Gitで復元
 git checkout HEAD -- src/
@@ -573,6 +592,7 @@ git checkout HEAD -- src/models.py
 ```
 
 **予防策**:
+
 - `clean_lay_files()` を使用（再帰的ではない）
 - ドライランで確認
 - バックアップを作成
