@@ -8,6 +8,12 @@
 - すべての実装/編集/生成タスクは、まず [AGENTS.md](AGENTS.md) のプロジェクト概要、アーキテクチャ、技術スタックを確認してください
 - 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](AGENTS.md) に記載された方法を使用してください
 - コーディング規約、命名規則、テスト指針は [AGENTS.md](AGENTS.md) に厳密に従ってください
+- **ドキュメント参照**: docs配下のドキュメントについては [docs/README.md](docs/README.md) で全体構造を確認してください
+  - 型定義ルール: [docs/typing-rule.md](docs/typing-rule.md)
+  - 開発環境: [docs/development/](docs/development/)
+  - 機能詳細: [docs/features/](docs/features/)
+  - 実践ガイド: [docs/guides/](docs/guides/)
+  - 技術リファレンス: [docs/reference/](docs/reference/)
 - セキュリティ考慮事項、環境変数設定は [AGENTS.md](AGENTS.md) に記載されたポリシーを遵守してください
 - プロジェクトステータス（実装済み/開発予定）を確認し、未実装の機能に対しては「未実装/計画中」と明記してください
 - シェルコマンド実行の制限事項（単一コマンドの実行、環境変数の設定制限）を厳守してください

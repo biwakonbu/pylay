@@ -8,6 +8,12 @@
 - すべての実装/編集/生成タスクは、まず [AGENTS.md](AGENTS.md) のプロジェクト概要、アーキテクチャ、技術スタックを確認してください
 - 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](AGENTS.md) に記載された方法を使用してください
 - コーディング規約、命名規則、テスト指針は [AGENTS.md](AGENTS.md) に厳密に従ってください
+- **ドキュメント参照**: docs配下のドキュメントについては [docs/README.md](docs/README.md) で全体構造を確認してください
+  - 型定義ルール: [docs/typing-rule.md](docs/typing-rule.md)
+  - 開発環境: [docs/development/](docs/development/)
+  - 機能詳細: [docs/features/](docs/features/)
+  - 実践ガイド: [docs/guides/](docs/guides/)
+  - 技術リファレンス: [docs/reference/](docs/reference/)
 - **型定義ルール**: [docs/typing-rule.md](docs/typing-rule.md) に記載された型定義の4つの核心原則を必ず遵守してください
   1. **個別型をちゃんと定義し、primitive型を直接使わない**
      - `str`, `int` などをそのまま使わず、ドメイン型を定義（`type UserId = str` や `Annotated` を活用）
