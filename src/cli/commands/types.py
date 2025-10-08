@@ -231,17 +231,23 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
         if header:
             code_lines.append(header)
 
+        # 前方参照を有効にする（型定義の順序に依存しない）
+        code_lines.append("from __future__ import annotations")
+        code_lines.append("")
+
         # インポート文を生成（YAMLから読み取り）
-        # ただし、YAML内で定義されている型はインポートから除外
+        # YAML内で定義されている型はimportしない（型定義を優先）
         defined_types = set()
-        if isinstance(spec, TypeRoot):
-            defined_types = set(spec.types.keys())
-        elif raw_yaml_data:
+
+        if raw_yaml_data:
             # YAMLデータから定義されている型名を抽出（_importsや_metadataは除外）
             defined_types = {k for k in raw_yaml_data.keys() if not k.startswith("_")}
 
+        # 除外する型 = YAML内で定義されている型
+        exclude_types = defined_types
+
         # Literalなどの型は _imports に含まれているので、動的チェックは不要
-        import_lines = _generate_imports_from_yaml(spec, exclude_types=defined_types)
+        import_lines = _generate_imports_from_yaml(spec, exclude_types=exclude_types)
         code_lines.extend(import_lines)
         code_lines.append("")
 
@@ -320,7 +326,21 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
             lines.append(f"class {name}({base_classes_str}):")
             if "description" in spec_data:
-                lines.append(f'    """{spec_data["description"]}"""')
+                # 複数行docstringの場合、適切にインデントを追加
+                description = spec_data["description"]
+                if "\n" in description:
+                    # 複数行の場合
+                    doc_lines = description.split("\n")
+                    lines.append(f'    """{doc_lines[0]}')
+                    for line in doc_lines[1:]:
+                        if line.strip():  # 空行でない場合のみインデント追加
+                            lines.append(f"    {line}")
+                        else:
+                            lines.append("")
+                    lines.append('    """')
+                else:
+                    # 単一行の場合
+                    lines.append(f'    """{description}"""')
             lines.append("")
 
             # fieldsセクションから直接フィールド情報を取得
@@ -352,9 +372,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
                     # description
                     if "description" in field_spec:
-                        field_params.append(
-                            f'description="{field_spec["description"]}"'
-                        )
+                        field_params.append(f'description="{field_spec["description"]}"')
 
                     # その他のバリデーション制約
                     for key, value in field_info_data.items():
@@ -409,15 +427,11 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                     else:
                         # 旧形式（propertiesセクション）はmodel_dump()を使用
                         code_lines.append("")  # PEP 8: クラス定義前に2行空行
-                        code_lines.extend(
-                            generate_class_code(type_name, type_spec.model_dump())
-                        )
+                        code_lines.extend(generate_class_code(type_name, type_spec.model_dump()))
                     progress.advance(task)
             elif spec is not None:
                 # 単一型仕様
-                code_lines.extend(
-                    generate_class_code("GeneratedType", spec.model_dump())
-                )
+                code_lines.extend(generate_class_code("GeneratedType", spec.model_dump()))
                 progress.advance(task)
 
         # ファイルまたは標準出力に書き込み
