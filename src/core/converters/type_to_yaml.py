@@ -298,17 +298,44 @@ def type_to_yaml(
     typ: type[Any], output_file: str | None = None, as_root: bool = True
 ) -> str | dict[str, dict[str, Any]]:
     """型をYAML文字列に変換、またはファイル出力 (v1.1対応)"""
+    from io import StringIO
+
+    from ruamel.yaml.comments import CommentedMap, CommentedSeq
+    from ruamel.yaml.scalarstring import LiteralScalarString
+
+    def _prepare_yaml_data(data: Any) -> Any:
+        """複数行文字列を| 形式に変換し、CommentedMap/Seqに変換"""
+        if isinstance(data, dict):
+            cm = CommentedMap()
+            for k, v in data.items():
+                cm[k] = _prepare_yaml_data(v)
+            return cm
+        elif isinstance(data, list):
+            cs = CommentedSeq()
+            for v in data:
+                cs.append(_prepare_yaml_data(v))
+            return cs
+        elif isinstance(data, str) and "\n" in data:
+            # 改行を含む文字列はヒアドキュメント形式（| 形式）で出力
+            return LiteralScalarString(data)
+        else:
+            return data
+
     spec = type_to_spec(typ)
 
     # v1.1構造: nameフィールドを除外して出力
     spec_data = _recursive_dump(spec.model_dump(exclude={"name"}))
+    spec_data = _prepare_yaml_data(spec_data)
 
     if as_root:
         # 単一型: 型名をキーとして出力
-        yaml_data = {_get_type_name(typ): spec_data}
+        yaml_data = CommentedMap()
+        yaml_data[_get_type_name(typ)] = spec_data
         yaml_parser = YAML()
         yaml_parser.preserve_quotes = True
-        from io import StringIO
+        yaml_parser.default_flow_style = False
+        yaml_parser.width = 4096  # 行折り返しを防止
+        yaml_parser.indent(mapping=2, sequence=2, offset=0)
 
         output = StringIO()
         yaml_parser.dump(yaml_data, output)
@@ -317,7 +344,9 @@ def type_to_yaml(
         # 従来形式 (互換性用)
         yaml_parser = YAML()
         yaml_parser.preserve_quotes = True
-        from io import StringIO
+        yaml_parser.default_flow_style = False
+        yaml_parser.width = 4096  # 行折り返しを防止
+        yaml_parser.indent(mapping=2, sequence=2, offset=0)
 
         output = StringIO()
         yaml_parser.dump(spec.model_dump(), output)
@@ -332,17 +361,46 @@ def type_to_yaml(
 
 def types_to_yaml(types: dict[str, type[Any]], output_file: str | None = None) -> str:
     """複数型をYAML文字列に変換 (v1.1対応)"""
-    specs = {}
+    from io import StringIO
+
+    from ruamel.yaml.comments import CommentedMap, CommentedSeq
+    from ruamel.yaml.scalarstring import LiteralScalarString
+
+    def _prepare_yaml_data(data: Any) -> Any:
+        """複数行文字列を| 形式に変換し、CommentedMap/Seqに変換"""
+        if isinstance(data, dict):
+            cm = CommentedMap()
+            for k, v in data.items():
+                cm[k] = _prepare_yaml_data(v)
+            return cm
+        elif isinstance(data, list):
+            cs = CommentedSeq()
+            for v in data:
+                cs.append(_prepare_yaml_data(v))
+            return cs
+        elif isinstance(data, str) and "\n" in data:
+            # 改行を含む文字列はヒアドキュメント形式（| 形式）で出力
+            return LiteralScalarString(data)
+        else:
+            return data
+
+    specs = CommentedMap()
     for name, typ in types.items():
         spec = type_to_spec(typ)
         # nameフィールドを除外
         spec_data = spec.model_dump(exclude={"name"})
-        specs[name] = spec_data
+        # 複数行文字列をLiteralScalarStringに変換
+        specs[name] = _prepare_yaml_data(spec_data)
 
     # types: を省略して直接型定義を出力
     yaml_parser = YAML()
     yaml_parser.preserve_quotes = True
-    from io import StringIO
+    yaml_parser.default_flow_style = False
+    yaml_parser.width = 4096  # 行折り返しを防止
+    # mapping: 辞書のインデント幅
+    # sequence: リストのインデント幅
+    # offset: リストハイフンと最初のキーの間のスペース数（0=改行してインデント）
+    yaml_parser.indent(mapping=2, sequence=2, offset=0)
 
     output = StringIO()
     yaml_parser.dump(specs, output)
