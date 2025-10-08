@@ -182,9 +182,9 @@ problem_details:
 ### オプション
 
 - `-v`: 問題箇所の詳細（ファイルパス、行番号、コード内容）を表示
+  - 実装: [src/cli/commands/check.py](../../src/cli/commands/check.py)
 - `--output PATH`: 問題詳細をYAMLファイルにエクスポート
-- `--no-stats`: 統計情報を非表示（詳細のみ表示）
-  - 実装: [src/cli/commands/analyze_types.py:79-82](../../src/cli/commands/analyze_types.py#L79-L82)
+  - 実装: [src/cli/commands/check.py](../../src/cli/commands/check.py)
 
 ## アーキテクチャ
 
