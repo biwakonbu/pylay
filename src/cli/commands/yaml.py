@@ -26,40 +26,65 @@ from src.core.converters.type_to_yaml import types_to_yaml
 from src.core.schemas.pylay_config import PylayConfig
 
 
-def _has_pydantic_models(file_path: Path) -> bool:
-    """ファイルにPydantic BaseModelが定義されているかチェック
+def _has_type_definitions(file_path: Path) -> bool:
+    """ファイルに型定義が含まれているかチェック
+
+    以下の型定義構文を検出:
+    - BaseModel (Pydantic)
+    - type文（型エイリアス）
+    - NewType
+    - dataclass
+    - Enum
 
     Args:
         file_path: チェック対象のPythonファイル
 
     Returns:
-        BaseModelが定義されている場合True
+        型定義が含まれている場合True
     """
     try:
-        # ファイルを読み込んでBaseModelのimportとクラス定義をチェック
+        import re
+
+        # ファイルを読み込んで型定義構文をチェック
         content = file_path.read_text(encoding="utf-8")
 
-        # BaseModelのimportチェック
-        has_basemodel_import = (
-            "from pydantic import" in content and "BaseModel" in content
-        ) or "from pydantic.main import BaseModel" in content
+        # 1. BaseModel
+        has_basemodel = (
+            ("from pydantic import" in content and "BaseModel" in content)
+            or "from pydantic.main import BaseModel" in content
+        ) and "class " in content
 
-        # クラス定義チェック
-        has_class_def = "class " in content and "BaseModel" in content
+        # 2. type文（型エイリアス）
+        # 例: type UserId = str
+        has_type_alias = bool(re.search(r"^type\s+\w+\s*=", content, re.MULTILINE))
 
-        return has_basemodel_import and has_class_def
+        # 3. NewType
+        # 例: UserId = NewType('UserId', str)
+        has_newtype = "NewType" in content and "NewType(" in content
+
+        # 4. dataclass
+        # 例: @dataclass class User:
+        has_dataclass = "@dataclass" in content
+
+        # 5. Enum
+        # 例: class Status(Enum):
+        has_enum = "Enum" in content and "class " in content
+
+        return any(
+            [has_basemodel, has_type_alias, has_newtype, has_dataclass, has_enum]
+        )
     except Exception:
         return False
 
 
-def _find_python_files_with_models(directory: Path) -> list[Path]:
-    """ディレクトリ内のBaseModelを含むPythonファイルを再帰的に検索
+def _find_python_files_with_type_definitions(directory: Path) -> list[Path]:
+    """ディレクトリ内の型定義を含むPythonファイルを再帰的に検索
 
     Args:
         directory: 検索対象のディレクトリ
 
     Returns:
-        BaseModelを含むPythonファイルのリスト
+        型定義を含むPythonファイルのリスト
     """
     python_files = []
 
@@ -72,7 +97,7 @@ def _find_python_files_with_models(directory: Path) -> list[Path]:
         ):
             continue
 
-        if _has_pydantic_models(py_file):
+        if _has_type_definitions(py_file):
             python_files.append(py_file)
 
     return python_files
@@ -305,8 +330,8 @@ def run_yaml(
                     )
                     continue
 
-                # ディレクトリ内のBaseModelを含むファイルを検索
-                py_files = _find_python_files_with_models(target_dir)
+                # ディレクトリ内の型定義を含むファイルを検索
+                py_files = _find_python_files_with_type_definitions(target_dir)
 
                 for py_file in py_files:
                     # 絶対パスに変換
@@ -381,12 +406,12 @@ def run_yaml(
                 )
             )
 
-            # ディレクトリ内のBaseModelを含むファイルを検索
-            py_files = _find_python_files_with_models(input_path)
+            # ディレクトリ内の型定義を含むファイルを検索
+            py_files = _find_python_files_with_type_definitions(input_path)
 
             if not py_files:
                 console.print(
-                    "[yellow]警告: BaseModelを含むPythonファイルが"
+                    "[yellow]警告: 型定義を含むPythonファイルが"
                     "見つかりませんでした[/yellow]"
                 )
                 return
