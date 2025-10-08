@@ -99,25 +99,21 @@ pylay generate dependency-graph --input src/ --output docs/dependency_graph.png
 
 ### 型解析と変換
 ```bash
-# モジュールから型を解析してYAML出力
-pylay analyze types --input src/core/schemas/yaml_type_spec.py --output-yaml types.yaml
+# Python型をYAMLに変換（推奨コマンド）
+pylay yaml                                   # pyproject.toml の target_dirs を使用
+pylay yaml src/core/schemas/yaml_spec.py     # 単一ファイル変換
+pylay yaml src/core/schemas/                 # ディレクトリ再帰変換
+pylay yaml src/core/schemas/yaml_spec.py -o types.yaml  # 出力先指定
 
-# mypyによる型推論を実行
-pylay analyze types --input src/core/schemas/yaml_type_spec.py --infer
+# YAMLをPydantic BaseModelに変換
+pylay types types.yaml                       # 標準出力
+pylay types types.yaml -o model.py           # ファイル出力
 
-# 新機能: 高度な型推論と依存抽出（analyzer使用）
-pylay infer-deps --input src/core/schemas/yaml_type_spec.py --visualize
+# プロジェクト全体解析（統計・品質分析）
+pylay project-analyze                         # プロジェクト全体を解析
 
-# 解析モード指定（types_only, deps_only, full）
-pylay analyze types --input src/core/schemas/yaml_type_spec.py --mode full
-
-# Python型をYAMLに変換（新コマンド）
-pylay yaml src/core/schemas/yaml_type_spec.py
-pylay yaml src/core/schemas/yaml_type_spec.py -o types.yaml
-
-# YAMLをPydantic BaseModelに変換（新コマンド）
-pylay types types.yaml
-pylay types types.yaml -o model.py
+# 高度な型推論と依存抽出
+pylay analyze infer-deps --input src/core/schemas/yaml_spec.py --visualize
 ```
 
 ### 型定義レベル分析
@@ -248,6 +244,58 @@ pylay project project-analyze
 find docs/pylay-types -name "*.yaml" | wc -l
 ls docs/pylay-types/src/
 ```
+
+## プロジェクト全体のYAML型定義管理
+
+pylayは、プロジェクト全体の型定義をYAML形式で一元管理する仕組みを提供します。
+
+### ディレクトリ構造の保持
+
+`pylay yaml`コマンドは、ソースディレクトリの構造を保持したままYAMLを生成します：
+
+```bash
+# プロジェクト全体の型定義を一括YAML化
+pylay yaml
+
+# 出力構造（docs/pylay/ 配下にソース構造をミラーリング）
+docs/pylay/
+├── src/
+│   ├── core/
+│   │   ├── schemas/
+│   │   │   ├── yaml_spec.lay.yaml
+│   │   │   └── pylay_config.lay.yaml
+│   │   ├── converters/
+│   │   │   └── models.lay.yaml
+│   │   └── analyzer/
+│   │       └── models.lay.yaml
+└── scripts/
+    └── (型定義があればYAML生成)
+```
+
+### Git管理との統合
+
+- **`.lay.yaml`ファイル**: Git管理対象（型仕様の変更履歴を追跡）
+- **`.lay.py`ファイル**: 除外（YAMLから再生成可能）
+
+```gitignore
+# 自動生成されたその他のファイルは除外
+docs/pylay/**/*.md
+docs/pylay/**/*.json
+
+# YAML型仕様ファイルは管理対象
+!docs/pylay/**/*.lay.yaml
+
+# 自動生成されたPython型定義は除外
+*.lay.py
+```
+
+### 型仕様のバージョン管理
+
+YAMLファイルをGit管理することで以下のメリットがあります：
+
+1. **型構造の変更履歴追跡**: `git diff` で型の変更を確認
+2. **PRレビューの容易性**: YAMLのdiffで型構造の変更を確認
+3. **ラウンドトリップ変換**: YAML → Python型の再生成が可能
 
 ## ORM/フレームワーク統合
 
