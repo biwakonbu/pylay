@@ -227,6 +227,12 @@ docs/test_catalog.md
 docs/debug_catalog.md
 docs/static-type-index-guide.md
 
+# Generated pylay documentation artifacts
+docs/pylay/**/*.png
+docs/pylay/**/*.dot
+docs/pylay/**/*.svg
+!docs/pylay/**/*.lay.yaml
+
 # reviewtask data directory
 .pr-review/
 
