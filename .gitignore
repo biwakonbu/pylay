@@ -223,14 +223,19 @@ docs/types/
 docs/core/
 docs/yaml_types/
 docs/v1/
-docs/pylay/
-# ただし、YAMLスキーマファイルは管理対象
-!docs/pylay/schemas/
-!docs/pylay/schemas/*.lay.yaml
-!docs/pylay/schemas/README.md
 docs/test_catalog.md
 docs/debug_catalog.md
 docs/static-type-index-guide.md
+
+# pylay generated files in docs/pylay/
+# YAML型仕様ファイル（.lay.yaml）はGit管理対象
+# 自動生成されたその他のファイルは除外
+docs/pylay/**/*.md
+docs/pylay/**/*.json
+docs/pylay/**/*.png
+docs/pylay/**/*.dot
+# .lay.yamlファイルは管理対象（型仕様のバージョン管理）
+!docs/pylay/**/*.lay.yaml
 
 # reviewtask data directory
 .pr-review/
