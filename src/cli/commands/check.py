@@ -20,19 +20,21 @@ console = Console()
 
 
 def _load_config() -> PylayConfig:
-    """設定を読み込む"""
-    try:
-        import tomllib
-    except ImportError:
-        import tomli as tomllib  # type: ignore
+    """設定を読み込む
 
-    config_path = Path("pyproject.toml")
-    if config_path.exists():
-        with open(config_path, "rb") as f:
-            data = tomllib.load(f)
-            pylay_config = data.get("tool", {}).get("pylay", {})
-            return PylayConfig(**pylay_config)
-    return PylayConfig()
+    Returns:
+        PylayConfig: プロジェクト設定（pyproject.tomlが存在しない場合はデフォルト設定）
+
+    Raises:
+        なし（エラー時はデフォルト設定にフォールバック）
+    """
+    try:
+        return PylayConfig.from_pyproject_toml(Path("pyproject.toml"))
+    except FileNotFoundError:
+        return PylayConfig()
+    except Exception:
+        # 設定ファイルの解析に失敗した場合はデフォルト設定にフォールバック
+        return PylayConfig()
 
 
 @click.command("check")
@@ -142,9 +144,7 @@ def _run_type_analysis(target_path: Path, verbose: bool) -> None:
     if target_path.is_file():
         report = analyzer.analyze_file(target_path)
     else:
-        report = analyzer.analyze_directory(
-            target_path, include_upgrade_recommendations=verbose
-        )
+        report = analyzer.analyze_directory(target_path, include_upgrade_recommendations=verbose)
 
     # 対象ディレクトリを決定（詳細表示用）
     if target_path.is_file():
@@ -158,19 +158,11 @@ def _run_type_analysis(target_path: Path, verbose: bool) -> None:
     # 推奨事項を条件付きで表示
     if verbose and report.upgrade_recommendations:
         console.print()
-        console.print(
-            reporter.generate_upgrade_recommendations_report(
-                report.upgrade_recommendations
-            )
-        )
+        console.print(reporter.generate_upgrade_recommendations_report(report.upgrade_recommendations))
 
     if verbose and report.docstring_recommendations:
         console.print()
-        console.print(
-            reporter.generate_docstring_recommendations_report(
-                report.docstring_recommendations
-            )
-        )
+        console.print(reporter.generate_docstring_recommendations_report(report.docstring_recommendations))
 
 
 def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
