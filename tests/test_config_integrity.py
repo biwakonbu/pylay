@@ -231,7 +231,7 @@ class TestPyprojectConfig:
     def test_pylay_output_dir(self, pyproject_config: dict) -> None:
         """出力ディレクトリが正しく設定されていることを確認."""
         output_dir = pyproject_config["tool"]["pylay"]["output_dir"]
-        assert output_dir == "docs/pylay-types"
+        assert output_dir == "docs/pylay"
 
     def test_pylay_feature_flags(self, pyproject_config: dict) -> None:
         """機能フラグが正しく設定されていることを確認."""
