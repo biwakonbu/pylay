@@ -46,9 +46,7 @@ def extract_imports_from_file(file_path: Path) -> dict[str, str]:
                         continue
                     # 実際の名前（asがあればその名前）
                     imported_name = alias.asname if alias.asname else alias.name
-                    import_map[imported_name] = (
-                        f"{module}.{alias.name}" if module else alias.name
-                    )
+                    import_map[imported_name] = f"{module}.{alias.name}" if module else alias.name
 
             # import X
             elif isinstance(node, ast.Import):
@@ -63,9 +61,7 @@ def extract_imports_from_file(file_path: Path) -> dict[str, str]:
     return import_map
 
 
-def _resolve_type_import_path(
-    typ: type[Any], source_module_path: str | None = None
-) -> tuple[str, str | None]:
+def _resolve_type_import_path(typ: type[Any], source_module_path: str | None = None) -> tuple[str, str | None]:
     """型のインポートパスを解決
 
     Args:
@@ -292,9 +288,7 @@ def _get_simple_type_name_with_imports(
             imports_map["Literal"] = "typing.Literal"
         if args:
             # Literal値を保持
-            literal_values = ", ".join(
-                f'"{arg}"' if isinstance(arg, str) else str(arg) for arg in args
-            )
+            literal_values = ", ".join(f'"{arg}"' if isinstance(arg, str) else str(arg) for arg in args)
             return f"Literal[{literal_values}]"
         return "str"  # 空のLiteralはstrにフォールバック
 
@@ -302,10 +296,7 @@ def _get_simple_type_name_with_imports(
     if origin is TypingUnion or str(origin) == "<class 'types.UnionType'>":
         if args:
             arg_names = [
-                _get_simple_type_name_with_imports(
-                    arg, source_module_path, imports_map, file_imports
-                )
-                for arg in args
+                _get_simple_type_name_with_imports(arg, source_module_path, imports_map, file_imports) for arg in args
             ]
             return " | ".join(arg_names)
         return "Union"
@@ -313,21 +304,15 @@ def _get_simple_type_name_with_imports(
     # List型の場合
     if origin is list:
         if args:
-            item_type = _get_simple_type_name_with_imports(
-                args[0], source_module_path, imports_map, file_imports
-            )
+            item_type = _get_simple_type_name_with_imports(args[0], source_module_path, imports_map, file_imports)
             return f"list[{item_type}]"
         return "list"
 
     # Dict型の場合
     if origin is dict:
         if args and len(args) >= 2:
-            key_type = _get_simple_type_name_with_imports(
-                args[0], source_module_path, imports_map, file_imports
-            )
-            value_type = _get_simple_type_name_with_imports(
-                args[1], source_module_path, imports_map, file_imports
-            )
+            key_type = _get_simple_type_name_with_imports(args[0], source_module_path, imports_map, file_imports)
+            value_type = _get_simple_type_name_with_imports(args[1], source_module_path, imports_map, file_imports)
             return f"dict[{key_type}, {value_type}]"
         return "dict"
 
@@ -371,10 +356,7 @@ def _extract_pydantic_field_info(cls: type[Any]) -> dict[str, dict[str, Any]]:
             if not field_info.is_required():
                 from pydantic_core import PydanticUndefined
 
-                if (
-                    field_info.default is not None
-                    and field_info.default is not PydanticUndefined
-                ):
+                if field_info.default is not None and field_info.default is not PydanticUndefined:
                     field_data["default"] = str(field_info.default)
 
             # バリデーション制約を取得
@@ -472,7 +454,24 @@ def _extract_pydantic_field_info_with_imports(
             # バリデーション制約を取得
             if hasattr(field_info, "metadata"):
                 for metadata in field_info.metadata:
-                    if hasattr(metadata, "__dict__"):
+                    # annotated_types の制約 (Ge, Le, Gt, Lt, MultipleOf, etc.)
+                    metadata_type = type(metadata).__name__
+                    if metadata_type in ["Ge", "Gt", "Le", "Lt"]:
+                        # ge, gt, le, lt 制約
+                        constraint_name = metadata_type.lower()
+                        if hasattr(metadata, constraint_name):
+                            field_info_dict[constraint_name] = getattr(metadata, constraint_name)
+                    elif metadata_type == "MultipleOf":
+                        if hasattr(metadata, "multiple_of"):
+                            field_info_dict["multiple_of"] = metadata.multiple_of
+                    elif metadata_type == "MinLen":
+                        if hasattr(metadata, "min_length"):
+                            field_info_dict["min_length"] = metadata.min_length
+                    elif metadata_type == "MaxLen":
+                        if hasattr(metadata, "max_length"):
+                            field_info_dict["max_length"] = metadata.max_length
+                    elif hasattr(metadata, "__dict__"):
+                        # その他のメタデータ
                         for key, value in metadata.__dict__.items():
                             if value is not None and key not in ["type", "annotation"]:
                                 field_info_dict[key] = value
@@ -658,9 +657,7 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
                 }:
                     # 各プロパティの型名をキーとして参照を保持
                     # （実際のプロパティ解決は別途）
-                    dict_properties[_get_type_name(value_type)] = _get_type_name(
-                        value_type
-                    )
+                    dict_properties[_get_type_name(value_type)] = _get_type_name(value_type)
                 else:
                     # 基本型の場合、TypeSpecとして展開
                     value_spec = type_to_spec(value_type)
@@ -827,9 +824,7 @@ def types_to_yaml_simple(
             for base in typ.__bases__:
                 if base.__name__ == "object":
                     continue
-                base_name, base_import_path = _resolve_type_import_path(
-                    base, source_module_path
-                )
+                base_name, base_import_path = _resolve_type_import_path(base, source_module_path)
                 base_classes.append(base_name)
                 if base_import_path:
                     imports_map[base_name] = base_import_path
@@ -838,9 +833,7 @@ def types_to_yaml_simple(
 
         # Pydantic BaseModelの場合
         if isinstance(typ, type) and issubclass(typ, BaseModel):
-            fields_info = _extract_pydantic_field_info_with_imports(
-                typ, source_module_path, imports_map, file_imports
-            )
+            fields_info = _extract_pydantic_field_info_with_imports(typ, source_module_path, imports_map, file_imports)
             if fields_info:
                 type_data["fields"] = CommentedMap(fields_info)
             yaml_data[type_name] = type_data
