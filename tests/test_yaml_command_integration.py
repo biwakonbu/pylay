@@ -293,8 +293,9 @@ class User(BaseModel):
         # 引数なしで実行
         run_yaml(None, None)
 
-        # アサーション: ディレクトリ全体の型が schema.lay.yaml に集約される
-        expected_output = output_dir / "src" / "schema.lay.yaml"
+        # アサーション: 階層ごとに schema.lay.yaml が生成される（新仕様）
+        # src/core/ にファイルがあるので、そこにschema.lay.yamlが生成される
+        expected_output = output_dir / "src" / "core" / "schema.lay.yaml"
         assert expected_output.exists()
 
 
@@ -343,11 +344,12 @@ class Converter(BaseModel):
         # ディレクトリ変換実行
         run_yaml(str(tmp_path / "src"), None)
 
-        # アサーション: ディレクトリ全体の型が schema.lay.yaml に集約される
-        # src/ ディレクトリ全体が単一のschema.lay.yamlに集約される
-        assert (output_dir / "src" / "schema.lay.yaml").exists()
+        # アサーション: 階層ごとに schema.lay.yaml が生成される（新仕様）
+        # 各ディレクトリ階層ごとに個別のschema.lay.yamlが生成される
+        assert (output_dir / "src" / "core" / "schemas" / "schema.lay.yaml").exists()
+        assert (output_dir / "src" / "core" / "converters" / "schema.lay.yaml").exists()
 
-        # 個別のファイルごとのYAMLは生成されない（新仕様）
+        # 個別のファイルごとのYAMLは生成されない
         assert not (
             output_dir / "src" / "core" / "schemas" / "models.lay.yaml"
         ).exists()

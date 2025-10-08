@@ -103,6 +103,50 @@ def _find_python_files_with_type_definitions(directory: Path) -> list[Path]:
     return python_files
 
 
+def _find_python_files_in_directory_only(directory: Path) -> list[Path]:
+    """ディレクトリ直下のPythonファイルのみを検索（サブディレクトリは除外）
+
+    Args:
+        directory: 検索対象のディレクトリ
+
+    Returns:
+        型定義を含むPythonファイルのリスト（直下のみ）
+    """
+    python_files = []
+
+    for py_file in directory.glob("*.py"):
+        # テストファイルは除外
+        if py_file.name.startswith("test_") or py_file.name == "__init__.py":
+            continue
+
+        if _has_type_definitions(py_file):
+            python_files.append(py_file)
+
+    return python_files
+
+
+def _find_all_subdirectories(directory: Path) -> list[Path]:
+    """ディレクトリ内の全サブディレクトリを取得（再帰的）
+
+    Args:
+        directory: 検索対象のディレクトリ
+
+    Returns:
+        サブディレクトリのリスト（自身も含む）
+    """
+    directories = [directory]
+
+    for item in directory.rglob("*"):
+        if (
+            item.is_dir()
+            and "__pycache__" not in str(item)
+            and "tests" not in str(item)
+        ):
+            directories.append(item)
+
+    return sorted(directories)
+
+
 def _calculate_file_hash(file_path: Path) -> str:
     """ファイルのSHA256ハッシュ値を計算
 
@@ -242,8 +286,8 @@ def _process_directory(
     )
     console.print(start_panel)
 
-    # ディレクトリ内のPythonファイルを検索
-    py_files = _find_python_files_with_type_definitions(directory)
+    # ディレクトリ直下のPythonファイルのみを検索（サブディレクトリは除外）
+    py_files = _find_python_files_in_directory_only(directory)
 
     if not py_files:
         console.print(
@@ -572,31 +616,35 @@ def run_yaml(
                     )
                     continue
 
-                # 出力パスを計算（schema.lay.yamlに集約）
-                if config.output.yaml_output_dir is None:
-                    # Noneの場合：Pythonソースと同じディレクトリに出力
-                    # 例: src/core/schemas/ → src/core/schemas/schema.lay.yaml
-                    output_path = (
-                        target_dir / f"schema{config.generation.lay_yaml_suffix}"
-                    )
-                else:
-                    # 指定がある場合：指定ディレクトリに構造をミラーリングして出力
-                    # 例: src/core/schemas/ →
-                    #     docs/pylay/src/core/schemas/schema.lay.yaml
-                    try:
-                        relative_path = target_dir.relative_to(Path.cwd())
-                    except ValueError:
-                        # 現在のディレクトリの外の場合は、ディレクトリ名のみを使用
-                        relative_path = Path(target_dir.name)
+                # 全サブディレクトリを取得（階層ごとに処理）
+                all_dirs = _find_all_subdirectories(target_dir)
 
-                    output_path = (
-                        Path(config.output.yaml_output_dir)
-                        / relative_path
-                        / f"schema{config.generation.lay_yaml_suffix}"
-                    )
+                for current_dir in all_dirs:
+                    # 出力パスを計算（schema.lay.yamlに集約）
+                    if config.output.yaml_output_dir is None:
+                        # Noneの場合：Pythonソースと同じディレクトリに出力
+                        # 例: src/core/schemas/ → src/core/schemas/schema.lay.yaml
+                        output_path = (
+                            current_dir / f"schema{config.generation.lay_yaml_suffix}"
+                        )
+                    else:
+                        # 指定がある場合：指定ディレクトリに構造をミラーリングして出力
+                        # 例: src/core/schemas/ →
+                        #     docs/pylay/src/core/schemas/schema.lay.yaml
+                        try:
+                            relative_path = current_dir.relative_to(Path.cwd())
+                        except ValueError:
+                            # 現在のディレクトリの外の場合は、ディレクトリ名のみを使用
+                            relative_path = Path(current_dir.name)
 
-                # ディレクトリ全体を処理（schema.lay.yamlに集約）
-                _process_directory(target_dir, output_path, config, console)
+                        output_path = (
+                            Path(config.output.yaml_output_dir)
+                            / relative_path
+                            / f"schema{config.generation.lay_yaml_suffix}"
+                        )
+
+                    # 各ディレクトリを処理（直下のファイルのみ）
+                    _process_directory(current_dir, output_path, config, console)
 
             return
 
@@ -697,8 +745,42 @@ def run_yaml(
                             config.generation.lay_yaml_suffix
                         )
 
-            # ディレクトリ全体を処理（schema.lay.yamlに集約）
-            _process_directory(input_path_resolved, output_path, config, console)
+            # 全サブディレクトリを取得（階層ごとに処理）
+            all_dirs = _find_all_subdirectories(input_path_resolved)
+
+            for current_dir in all_dirs:
+                # 出力パスを計算
+                if output_file is None:
+                    # 出力先が未指定の場合の処理
+                    if config.output.yaml_output_dir is None:
+                        # Noneの場合：Pythonソースと同じディレクトリに出力
+                        dir_output_path = (
+                            current_dir / f"schema{config.generation.lay_yaml_suffix}"
+                        )
+                    else:
+                        # 指定がある場合：指定ディレクトリに構造をミラーリングして出力
+                        try:
+                            relative_path = current_dir.relative_to(Path.cwd())
+                        except ValueError:
+                            # 現在のディレクトリの外の場合は、ディレクトリ名のみを使用
+                            relative_path = Path(current_dir.name)
+
+                        dir_output_path = (
+                            Path(config.output.yaml_output_dir)
+                            / relative_path
+                            / f"schema{config.generation.lay_yaml_suffix}"
+                        )
+                else:
+                    # 出力先が明示的に指定されている場合は従来の動作
+                    # （全階層を1つのファイルに集約）
+                    dir_output_path = output_path
+
+                # 各ディレクトリを処理（直下のファイルのみ）
+                _process_directory(current_dir, dir_output_path, config, console)
+
+                # 出力先が指定されている場合は1回だけ処理
+                if output_file is not None:
+                    break
 
         else:
             console.print(
