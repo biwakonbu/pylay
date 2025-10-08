@@ -241,6 +241,80 @@ find docs/pylay-types -name "*.yaml" | wc -l
 ls docs/pylay-types/src/
 ```
 
+## ラウンドトリップ変換（Python ⇄ YAML ⇄ Python）
+
+pylayは完全なラウンドトリップ変換をサポートしています。Python型定義をYAMLに変換し、YAMLから再びPython型定義を完全再現できます。
+
+### Makefileコマンド（推奨）
+
+```bash
+# srcディレクトリ全体をYAMLに変換
+make analyze-yaml
+
+# YAMLからPython型を再生成
+make analyze-python
+
+# 一括実行（YAML生成 + Python再生成）
+make analyze-roundtrip
+```
+
+### 保持される情報
+
+ラウンドトリップ変換では、以下の情報が完全に保持されます：
+
+- ✅ **Field制約**: `ge`, `le`, `gt`, `lt`, `min_length`, `max_length`, `pattern`, `multiple_of`
+- ✅ **デフォルト値**: `default` と `default_factory`
+- ✅ **複数行docstring**: インデントを保持したまま再現
+- ✅ **import情報**: AST解析による正確な抽出
+- ✅ **base_classes情報**: 継承構造の保持
+- ✅ **型の依存関係**: トポロジカルソートによる正しい順序
+
+### 生成例
+
+**元のPythonコード:**
+```python
+from pydantic import BaseModel, Field
+
+class QualityCheckResult(BaseModel):
+    """品質チェックの結果"""
+
+    total_issues: int = Field(ge=0, description="総問題数")
+    error_count: int = Field(ge=0, description="エラー数")
+    overall_score: float = Field(ge=0.0, le=1.0, description="全体スコア（0.0〜1.0）")
+```
+
+**生成されたPython（YAML経由）:**
+```python
+from __future__ import annotations
+
+from pydantic import BaseModel, Field
+
+class QualityCheckResult(BaseModel):
+    """品質チェックの結果"""
+
+    total_issues: int = Field(ge=0, description="総問題数")
+    error_count: int = Field(ge=0, description="エラー数")
+    overall_score: float = Field(ge=0.0, le=1.0, description="全体スコア（0.0〜1.0）")
+```
+
+### 技術的な特徴
+
+- **前方参照対応**: `from __future__ import annotations` により型定義の順序に依存しない
+- **トポロジカルソート**: 型の依存関係を解析し、正しい定義順序で生成
+- **Field統一記法**: `Annotated`ではなく`Field()`に統一（description含め全てField内に集約）
+- **AST解析**: 実際の`import`文を正確に抽出（使用されていない型のimportは除外）
+
+### 自動生成ファイル管理
+
+生成されたPythonファイル（`.lay.py`）は自動生成ファイルとして扱われます：
+
+```bash
+# .gitignore に追加済み
+**/schema.lay.py
+```
+
+YAMLファイル（`.lay.yaml`）のみをGit管理し、Pythonファイルは必要に応じて再生成する運用を推奨します。
+
 ## プロジェクト全体のYAML型定義管理
 
 pylayは、プロジェクト全体の型定義をYAML形式で一元管理する仕組みを提供します。
