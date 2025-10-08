@@ -55,8 +55,8 @@ pylay check --focus ignore src/core/converters/type_to_yaml.py
 # 解決策を含む詳細表示
 pylay check --focus ignore -v
 
-# JSON形式で出力
-pylay check --focus ignore --format json --output report.json
+# JSON形式で出力（準備中：実装未完了）
+# pylay check --focus ignore --format json --output report.json
 ```
 
 #### オプション一覧
@@ -66,8 +66,8 @@ pylay check --focus ignore --format json --output report.json
 | `TARGET` | 解析対象のファイルまたはディレクトリ（指定しない場合はカレントディレクトリ） |
 | `--focus ignore` | type-ignore診断を実行 |
 | `-v`, `--verbose` | 解決策を含む詳細情報を表示 |
-| `--format` | 出力形式（console/json、デフォルト: console） |
-| `--output`, `-o` | 出力ファイルパス（format=jsonの場合に使用） |
+| `--format` | **（準備中）** 出力形式（console/json、デフォルト: console） |
+| `--output`, `-o` | **（準備中）** 出力ファイルパス（format=jsonの場合に使用） |
 
 ### Makeターゲット
 
