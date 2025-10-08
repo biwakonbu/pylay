@@ -202,6 +202,7 @@ Tasks are automatically categorized for custom verification:
 - Done workflow settings stored in `.pr-review/config.json`
 
 **Done Workflow Configuration Example:**
+
 ```json
 {
   "done_workflow": {
@@ -330,6 +331,7 @@ You can now safely complete this task with: reviewtask done task-001
 ```
 
 **`reviewtask done` output example:**
+
 ```text
 🔍 Phase 1/5: Verification
   ✓ Running verification checks...
