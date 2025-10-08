@@ -249,6 +249,75 @@ find docs/pylay-types -name "*.yaml" | wc -l
 ls docs/pylay-types/src/
 ```
 
+## ORM/フレームワーク統合
+
+pylayのドメイン型は、主要なPythonフレームワークやORMと統合できます。
+
+### FastAPI統合
+
+```python
+from typing import NewType, Annotated
+from pydantic import BaseModel, Field, TypeAdapter
+from fastapi import FastAPI
+
+# ドメイン型の定義
+UserId = NewType('UserId', int)
+UserIdValidator: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(gt=0)])
+
+def create_user_id(value: int) -> UserId:
+    """ユーザーIDを生成"""
+    return UserId(UserIdValidator.validate_python(value))
+
+# APIモデル
+class UserResponse(BaseModel):
+    """ユーザーレスポンス"""
+    id: UserId
+    name: str
+
+app = FastAPI()
+
+@app.get("/users/{user_id}")
+def get_user(user_id: int) -> UserResponse:
+    """ユーザーを取得"""
+    return UserResponse(id=create_user_id(user_id), name="田中太郎")
+```
+
+### SQLAlchemy統合
+
+```python
+from sqlalchemy import TypeDecorator, Integer
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+# TypeDecoratorでドメイン型を使用
+class UserIdType(TypeDecorator):
+    """UserId型のTypeDecorator"""
+    impl = Integer
+    cache_ok = True
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            return create_user_id(value)
+        return None
+
+class Base(DeclarativeBase):
+    pass
+
+class User(Base):
+    """ユーザーモデル（全レイヤーでドメイン型を使用）"""
+    __tablename__ = 'users'
+    id: Mapped[UserId] = mapped_column(UserIdType, primary_key=True)
+```
+
+### その他のフレームワーク/ORM
+
+- **Django ORM**: カスタムフィールド型で対応
+- **Tortoise ORM**: Fieldサブクラスで対応
+- **Flask**: 手動バリデーションで統合
+
+詳細は以下のガイドを参照してください：
+- [ORM統合ガイド](docs/guides/orm-integration.md): TypeDecorator、レイヤー分離パターン等の実装例
+- [フレームワーク別パターン集](docs/guides/framework-patterns.md): FastAPI、Flask、Django統合の詳細
+
 ## 開発者向けドキュメント
 
 このプロジェクトを開発・貢献したい場合は、[AGENTS.md](AGENTS.md) と [PRD.md](PRD.md) を参照してください。

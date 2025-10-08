@@ -20,9 +20,7 @@ class TestInitCommand:
 
         # 空の pyproject.toml を作成
         pyproject = tmp_path / "pyproject.toml"
-        pyproject.write_text(
-            "[project]\n" 'name = "test-project"\n' 'version = "0.1.0"\n'
-        )
+        pyproject.write_text('[project]\nname = "test-project"\nversion = "0.1.0"\n')
 
         # init コマンド実行
         run_init()
@@ -83,11 +81,7 @@ class TestInitCommand:
         # 既存の設定を持つ pyproject.toml を作成
         pyproject = tmp_path / "pyproject.toml"
         pyproject.write_text(
-            "[project]\n"
-            'name = "test-project"\n'
-            "\n"
-            "[tool.pylay]\n"
-            'target_dirs = ["old"]\n'
+            '[project]\nname = "test-project"\n\n[tool.pylay]\ntarget_dirs = ["old"]\n'
         )
 
         # force オプションで init コマンド実行
@@ -108,11 +102,7 @@ class TestInitCommand:
         # 既存の設定を持つ pyproject.toml を作成
         pyproject = tmp_path / "pyproject.toml"
         original_pylay_config = (
-            "[project]\n"
-            'name = "test-project"\n'
-            "\n"
-            "[tool.pylay]\n"
-            'target_dirs = ["old"]\n'
+            '[project]\nname = "test-project"\n\n[tool.pylay]\ntarget_dirs = ["old"]\n'
         )
         pyproject.write_text(original_pylay_config)
 
@@ -128,7 +118,7 @@ class TestInitCommand:
         monkeypatch.chdir(tmp_path)
 
         pyproject = tmp_path / "pyproject.toml"
-        pyproject.write_text("[project]\n" 'name = "test"\n')
+        pyproject.write_text('[project]\nname = "test"\n')
 
         run_init()
 
@@ -149,7 +139,7 @@ class TestInitCommand:
 
         # 空のpyproject.tomlを作成
         pyproject = tmp_path / "pyproject.toml"
-        pyproject.write_text("[project]\n" 'name = "test"\n')
+        pyproject.write_text('[project]\nname = "test"\n')
 
         # initコマンド実行
         run_init()

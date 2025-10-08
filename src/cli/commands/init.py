@@ -129,10 +129,7 @@ def _generate_config_text(config: PylayConfig) -> str:
             f"add_generation_header = "
             f"{str(config.generation.add_generation_header).lower()}"
         ),
-        (
-            f"include_source_path = "
-            f"{str(config.generation.include_source_path).lower()}"
-        ),
+        (f"include_source_path = {str(config.generation.include_source_path).lower()}"),
         "",
         "# 出力設定",
         "[tool.pylay.output]",
@@ -142,7 +139,7 @@ def _generate_config_text(config: PylayConfig) -> str:
             f"{str(config.output.mirror_package_structure).lower()}"
         ),
         f"include_metadata = {str(config.output.include_metadata).lower()}",
-        (f"preserve_docstrings = " f"{str(config.output.preserve_docstrings).lower()}"),
+        (f"preserve_docstrings = {str(config.output.preserve_docstrings).lower()}"),
         "",
         "# import設定",
         "[tool.pylay.imports]",
