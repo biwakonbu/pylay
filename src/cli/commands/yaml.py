@@ -105,9 +105,7 @@ def _has_type_definitions(file_path: Path) -> bool:
         # 例: class Status(Enum):
         has_enum = "Enum" in content and "class " in content
 
-        return any(
-            [has_basemodel, has_type_alias, has_newtype, has_dataclass, has_enum]
-        )
+        return any([has_basemodel, has_type_alias, has_newtype, has_dataclass, has_enum])
     except Exception:
         return False
 
@@ -125,11 +123,7 @@ def _find_python_files_with_type_definitions(directory: Path) -> list[Path]:
 
     for py_file in directory.rglob("*.py"):
         # テストファイルや__pycache__は除外
-        if (
-            py_file.name.startswith("test_")
-            or "__pycache__" in str(py_file)
-            or py_file.name == "__init__.py"
-        ):
+        if py_file.name.startswith("test_") or "__pycache__" in str(py_file) or py_file.name == "__init__.py":
             continue
 
         if _has_type_definitions(py_file):
@@ -172,11 +166,7 @@ def _find_all_subdirectories(directory: Path) -> list[Path]:
     directories = [directory]
 
     for item in directory.rglob("*"):
-        if (
-            item.is_dir()
-            and "__pycache__" not in str(item)
-            and "tests" not in str(item)
-        ):
+        if item.is_dir() and "__pycache__" not in str(item) and "tests" not in str(item):
             directories.append(item)
 
     return sorted(directories)
@@ -201,9 +191,7 @@ def _calculate_file_hash(file_path: Path) -> str:
     return sha256_hash.hexdigest()
 
 
-def _validate_metadata(
-    source_file: str, generated_at: str, pylay_version: str
-) -> list[str]:
+def _validate_metadata(source_file: str, generated_at: str, pylay_version: str) -> list[str]:
     """メタデータのバリデーション
 
     Args:
@@ -274,9 +262,7 @@ def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
         source_size = source_path.stat().st_size
 
         # 最終更新日時
-        source_modified_at = datetime.fromtimestamp(
-            source_path.stat().st_mtime, tz=UTC
-        ).isoformat()
+        source_modified_at = datetime.fromtimestamp(source_path.stat().st_mtime, tz=UTC).isoformat()
 
     # バリデーション
     if validate:
@@ -314,8 +300,7 @@ def _process_directory(
     """
     # 処理開始時のPanel表示
     start_panel = Panel(
-        f"[bold cyan]ディレクトリ:[/bold cyan] {directory}\n"
-        f"[bold cyan]出力先:[/bold cyan] {output_path}",
+        f"[bold cyan]ディレクトリ:[/bold cyan] {directory}\n" f"[bold cyan]出力先:[/bold cyan] {output_path}",
         title="[bold green]🚀 ディレクトリ型収集開始[/bold green]",
         border_style="green",
     )
@@ -325,10 +310,7 @@ def _process_directory(
     py_files = _find_python_files_in_directory_only(directory)
 
     if not py_files:
-        console.print(
-            f"[yellow]警告: {directory} "
-            "内に型定義を含むファイルが見つかりませんでした[/yellow]"
-        )
+        console.print(f"[yellow]警告: {directory} " "内に型定義を含むファイルが見つかりませんでした[/yellow]")
         return
 
     # 全ファイルから型を収集
@@ -358,21 +340,15 @@ def _process_directory(
                 # 型を抽出
                 for name, obj in module.__dict__.items():
                     if isinstance(obj, type):
-                        is_pydantic_model = hasattr(obj, "__annotations__") and hasattr(
-                            obj, "__pydantic_core_schema__"
-                        )
+                        is_pydantic_model = hasattr(obj, "__annotations__") and hasattr(obj, "__pydantic_core_schema__")
                         is_enum = issubclass(obj, Enum)
-                        is_user_defined = (
-                            getattr(obj, "__module__", None) == module_name
-                        )
+                        is_user_defined = getattr(obj, "__module__", None) == module_name
 
                         if (is_pydantic_model or is_enum) and is_user_defined:
                             all_types[name] = obj
 
             except Exception as e:
-                console.print(
-                    f"[yellow]⚠️ 警告: {py_file.name}の処理に失敗しました[/yellow]"
-                )
+                console.print(f"[yellow]⚠️ 警告: {py_file.name}の処理に失敗しました[/yellow]")
                 console.print(f"[dim]詳細: {e}[/dim]")
 
             progress.advance(task)
@@ -489,6 +465,9 @@ def _process_single_file(
     with console.status(f"[bold green]モジュール '{module_name}' をインポート中..."):
         module = importlib.import_module(module_name)
 
+    # 同名モジュールの再利用を防ぐため、sys.modulesから削除
+    sys.modules.pop(module_name, None)
+
     # モジュール内の全型アノテーションを検索
     types_dict = {}
 
@@ -522,9 +501,7 @@ def _process_single_file(
                     try:
                         types_dict[name] = obj
                     except Exception as e:
-                        console.print(
-                            f"[yellow]⚠️ 警告: {name}の処理に失敗しました[/yellow]"
-                        )
+                        console.print(f"[yellow]⚠️ 警告: {name}の処理に失敗しました[/yellow]")
                         console.print(f"[dim]詳細: {e}[/dim]")
 
             progress.advance(task)
@@ -532,9 +509,7 @@ def _process_single_file(
     if not types_dict:
         console.rule("[bold red]エラー[/bold red]")
         console.print("[red]変換可能な型がモジュール内に見つかりませんでした[/red]")
-        console.print(
-            "[dim]PydanticモデルまたはEnumが定義されていることを確認してください[/dim]"
-        )
+        console.print("[dim]PydanticモデルまたはEnumが定義されていることを確認してください[/dim]")
         return
 
     # 型をYAMLに変換（シンプル形式）
@@ -603,6 +578,10 @@ def _process_single_file(
     )
     console.print(complete_panel)
 
+    # sys.pathのクリーンアップ
+    if str(input_path.parent) in sys.path:
+        sys.path.remove(str(input_path.parent))
+
 
 def run_yaml(
     input_file: str | None = None,
@@ -632,8 +611,7 @@ def run_yaml(
         if input_file is None:
             console.print(
                 Panel(
-                    "[bold cyan]引数が指定されていません。\n"
-                    "pyproject.tomlのtarget_dirsを使用します。[/bold cyan]",
+                    "[bold cyan]引数が指定されていません。\n" "pyproject.tomlのtarget_dirsを使用します。[/bold cyan]",
                     title="[bold green]📋 設定ファイル使用モード[/bold green]",
                     border_style="green",
                 )
@@ -641,19 +619,14 @@ def run_yaml(
 
             # pyproject.tomlからtarget_dirsを取得
             if not config.target_dirs:
-                console.print(
-                    "[red]エラー: pyproject.tomlにtarget_dirsが設定されていません[/red]"
-                )
+                console.print("[red]エラー: pyproject.tomlにtarget_dirsが設定されていません[/red]")
                 return
 
             # 各target_dirを処理
             for target_dir_str in config.target_dirs:
                 target_dir = Path(target_dir_str).resolve()
                 if not target_dir.exists():
-                    console.print(
-                        f"[yellow]警告: ディレクトリが存在しません: "
-                        f"{target_dir}[/yellow]"
-                    )
+                    console.print(f"[yellow]警告: ディレクトリが存在しません: " f"{target_dir}[/yellow]")
                     continue
 
                 # 全サブディレクトリを取得（階層ごとに処理）
@@ -664,9 +637,7 @@ def run_yaml(
                     if config.output.yaml_output_dir is None:
                         # Noneの場合：Pythonソースと同じディレクトリに出力
                         # 例: src/core/schemas/ → src/core/schemas/schema.lay.yaml
-                        output_path = (
-                            current_dir / f"schema{config.generation.lay_yaml_suffix}"
-                        )
+                        output_path = current_dir / f"schema{config.generation.lay_yaml_suffix}"
                     else:
                         # 指定がある場合：指定ディレクトリに構造をミラーリングして出力
                         # 例: src/core/schemas/ →
@@ -700,10 +671,7 @@ def run_yaml(
                 # 出力先が未指定の場合の処理
                 if config.output.yaml_output_dir is None:
                     # Noneの場合：Pythonソースと同じディレクトリに出力
-                    output_path = (
-                        input_path.parent
-                        / f"{input_path.stem}{config.generation.lay_yaml_suffix}"
-                    )
+                    output_path = input_path.parent / f"{input_path.stem}{config.generation.lay_yaml_suffix}"
                 else:
                     # 指定がある場合：指定ディレクトリに構造をミラーリングして出力
                     try:
@@ -722,13 +690,9 @@ def run_yaml(
                 # .lay.yaml拡張子を自動付与
                 if not str(output_path).endswith(config.generation.lay_yaml_suffix):
                     if not output_path.suffix:
-                        output_path = output_path.with_suffix(
-                            config.generation.lay_yaml_suffix
-                        )
+                        output_path = output_path.with_suffix(config.generation.lay_yaml_suffix)
                     else:
-                        output_path = output_path.with_suffix(
-                            config.generation.lay_yaml_suffix
-                        )
+                        output_path = output_path.with_suffix(config.generation.lay_yaml_suffix)
 
             _process_single_file(input_path, output_path, config, console, root_key)
 
@@ -752,10 +716,7 @@ def run_yaml(
                 # 出力先が未指定の場合の処理
                 if config.output.yaml_output_dir is None:
                     # Noneの場合：Pythonソースと同じディレクトリに出力
-                    output_path = (
-                        input_path_resolved
-                        / f"schema{config.generation.lay_yaml_suffix}"
-                    )
+                    output_path = input_path_resolved / f"schema{config.generation.lay_yaml_suffix}"
                 else:
                     # 指定がある場合：指定ディレクトリに構造をミラーリングして出力
                     try:
@@ -776,14 +737,10 @@ def run_yaml(
                 if not str(output_path).endswith(config.generation.lay_yaml_suffix):
                     if output_path.is_dir() or not output_path.suffix:
                         # ディレクトリまたは拡張子なし → schema.lay.yamlを追加
-                        output_path = (
-                            output_path / f"schema{config.generation.lay_yaml_suffix}"
-                        )
+                        output_path = output_path / f"schema{config.generation.lay_yaml_suffix}"
                     else:
                         # 拡張子あり → .lay.yamlに変更
-                        output_path = output_path.with_suffix(
-                            config.generation.lay_yaml_suffix
-                        )
+                        output_path = output_path.with_suffix(config.generation.lay_yaml_suffix)
 
             # 全サブディレクトリを取得（階層ごとに処理）
             all_dirs = _find_all_subdirectories(input_path_resolved)
@@ -794,9 +751,7 @@ def run_yaml(
                     # 出力先が未指定の場合の処理
                     if config.output.yaml_output_dir is None:
                         # Noneの場合：Pythonソースと同じディレクトリに出力
-                        dir_output_path = (
-                            current_dir / f"schema{config.generation.lay_yaml_suffix}"
-                        )
+                        dir_output_path = current_dir / f"schema{config.generation.lay_yaml_suffix}"
                     else:
                         # 指定がある場合：指定ディレクトリに構造をミラーリングして出力
                         try:
@@ -823,9 +778,7 @@ def run_yaml(
                     break
 
         else:
-            console.print(
-                f"[red]エラー: 指定されたパスが存在しません: {input_path}[/red]"
-            )
+            console.print(f"[red]エラー: 指定されたパスが存在しません: {input_path}[/red]")
 
     except Exception as e:
         # エラーメッセージのPanel
