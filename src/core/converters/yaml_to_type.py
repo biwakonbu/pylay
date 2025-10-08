@@ -35,7 +35,12 @@ def yaml_to_spec(
             return type_root.__class__(types=resolved_types)
         elif len(data) > 1:
             # 新形式: 複数型（トップレベルに直接型名キー）
-            types_dict = {k: _create_spec_from_data(v, k) for k, v in data.items()}
+            # _metadata キーは除外（メタデータセクション）
+            types_dict = {
+                k: _create_spec_from_data(v, k)
+                for k, v in data.items()
+                if not k.startswith("_")
+            }
             type_root = TypeRoot(types=types_dict)
             # 参照解決を実行
             resolved_types = _resolve_all_refs(type_root.types)
