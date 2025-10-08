@@ -223,10 +223,19 @@ docs/types/
 docs/core/
 docs/yaml_types/
 docs/v1/
-docs/pylay-types/
+docs/pylay/
+# ただし、YAMLスキーマファイルは管理対象
+!docs/pylay/schemas/
+!docs/pylay/schemas/*.lay.yaml
+!docs/pylay/schemas/README.md
 docs/test_catalog.md
 docs/debug_catalog.md
 docs/static-type-index-guide.md
 
 # reviewtask data directory
 .pr-review/
+
+# pylay generated files
+# YAMLスキーマファイル（.lay.yaml）は管理対象に含める
+# 自動生成されたPython型定義（.lay.py）は除外
+*.lay.py
