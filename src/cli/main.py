@@ -222,25 +222,25 @@ analyze.add_command(quality)
 
 # 新しい1語コマンドを登録
 @cli.command("yaml")
-@click.argument("target", type=click.Path(exists=True))
+@click.argument("target", type=click.Path(exists=True), required=False)
 @click.option(
     "--output",
     "-o",
     type=click.Path(),
-    help="出力YAMLファイルのパス (デフォルト: stdout)",
+    help="出力YAMLファイルのパス (デフォルト: docs/pylay/)",
 )
 @click.option("--root-key", help="YAML構造のルートキー")
-def yaml(target: str, output: str | None, root_key: str | None) -> None:
+def yaml(target: str | None, output: str | None, root_key: str | None) -> None:
     """Python型からYAML仕様を生成
 
     Pythonモジュールの型定義をYAML形式に変換します。
 
     使用例:
-        pylay yaml src/core/schemas/types.py
-        pylay yaml src/core/schemas/types.py -o types.yaml
+        pylay yaml                                    # pyproject.toml使用
+        pylay yaml src/core/schemas/types.py          # 単一ファイル
+        pylay yaml src/core/schemas/                  # ディレクトリ再帰
+        pylay yaml src/core/schemas/types.py -o types.yaml  # 出力先指定
     """
-    if output is None:
-        output = "-"  # stdout
     run_yaml(target, output, root_key)
 
 
