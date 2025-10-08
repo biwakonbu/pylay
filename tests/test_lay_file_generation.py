@@ -6,6 +6,8 @@ Issue #51: クリーン再生成、警告ヘッダー、拡張子の検証
 
 from pathlib import Path
 
+import pytest
+
 
 class TestLayPyGeneration:
     """.lay.py ファイル生成のテスト
@@ -203,7 +205,9 @@ class User(BaseModel):
         assert "このファイルを直接編集しないでください" in content
         assert "次回の pylay yaml 実行時に削除・再生成されます" in content
 
-    def test_lay_yaml_file_has_metadata(self, tmp_path: Path, monkeypatch) -> None:
+    def test_lay_yaml_file_has_metadata(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """生成された.lay.yamlファイルに_metadataセクションが含まれることを確認"""
         from src.cli.commands.yaml import run_yaml
 
@@ -313,7 +317,9 @@ class TestConfigIntegration:
     - PylayConfig.from_pyproject_toml()による設定読み込み
     """
 
-    def test_generation_config_is_used(self, tmp_path: Path, monkeypatch) -> None:
+    def test_generation_config_is_used(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """PylayConfigのgeneration設定が使用されることを確認"""
         from src.cli.commands.types import run_types
 
@@ -354,7 +360,9 @@ User:
         assert "pylay自動生成ファイル" in content
         assert "Source:" in content  # include_source_path = true
 
-    def test_output_config_is_used(self, tmp_path: Path, monkeypatch) -> None:
+    def test_output_config_is_used(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """PylayConfigのoutput設定が使用されることを確認"""
         from src.core.schemas.pylay_config import PylayConfig
 
@@ -382,7 +390,7 @@ preserve_docstrings = true
         assert config.output.preserve_docstrings is True
 
     def test_init_command_writes_output_config(
-        self, tmp_path: Path, monkeypatch
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """CLI initコマンドがoutput設定をpyproject.tomlに書き込むことを確認
 
