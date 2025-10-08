@@ -197,7 +197,7 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
 # convert グループは削除（yaml/types コマンドに統合）
 
 
-# project-analyze コマンドを追加
+# stats コマンドを追加（プロジェクト統計情報表示）
 cli.add_command(project_analyze)
 
 

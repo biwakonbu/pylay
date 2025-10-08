@@ -40,22 +40,14 @@ from ...core.project_scanner import ProjectScanner
 console = Console()
 
 
-@click.command("project-analyze")
+@click.command("stats")
 @click.option(
     "--config-path",
     type=click.Path(exists=True),
     help="pyproject.tomlのパス（デフォルト: 自動検出）",
 )
-@click.option(
-    "--dry-run", is_flag=True, help="実際の処理を行わず、解析対象ファイルのみ表示"
-)
 @click.option("--verbose", "-v", is_flag=True, help="詳細なログを出力")
-@click.option(
-    "--clean", is_flag=True, help="（非推奨）このオプションは効果がありません"
-)
-def project_analyze(
-    config_path: str | None, dry_run: bool, verbose: bool, clean: bool
-) -> None:
+def project_analyze(config_path: str | None, verbose: bool) -> None:
     """
     プロジェクト全体を解析し、統計情報と品質指標を表示します。
 
@@ -72,13 +64,10 @@ def project_analyze(
 
     使用例:
         # プロジェクト全体の統計を表示
-        uv run pylay project-analyze
+        uv run pylay stats
 
         # 詳細情報を表示
-        uv run pylay project-analyze -v
-
-        # 対象ファイルのみ表示（実行なし）
-        uv run pylay project-analyze --dry-run
+        uv run pylay stats -v
     """
     try:
         # 設定の読み込み（共通ユーティリティを使用）
@@ -92,41 +81,9 @@ def project_analyze(
         if verbose:
             console.print("[bold blue]Configuration loaded:[/bold blue]")
             console.print(f"  Target directories: {config.target_dirs}")
-            console.print(f"  Output directory: {config.output_dir}")
-            console.print(f"  Markdown generation: {config.generate_markdown}")
             console.print(f"  Dependency extraction: {config.extract_deps}")
-            console.print(f"  Auto cleanup: {config.clean_output_dir}")
-            structure = output_manager.get_output_structure()
-            console.print(f"  YAML output: {structure['yaml']}")
-            console.print(f"  Markdown output: {structure['markdown']}")
-            console.print(f"  Graph output: {structure['graph']}")
+            console.print(f"  Type inference level: {config.infer_level}")
             console.print()
-
-        # dry-runの場合は実際の処理をスキップ
-        if dry_run:
-            # プロジェクトスキャナーを作成
-            scanner = ProjectScanner(config)
-
-            # パスの検証
-            validation = scanner.validate_paths()
-            if not validation["valid"]:
-                error_panel = Panel(
-                    "\n".join([f"• {error}" for error in validation["errors"]]),
-                    title="[bold red]❌ Configuration Error[/bold red]",
-                    border_style="red",
-                )
-                console.print(error_panel)
-                return
-
-            # 解析対象ファイルの取得
-            python_files = scanner.get_python_files()
-
-            console.print(
-                f"[bold blue]解析対象ファイル ({len(python_files)}個):[/bold blue]"
-            )
-            for file_path in python_files:
-                console.print(f"  {file_path}")
-            return
 
         # プロジェクトスキャナーを作成
         scanner = ProjectScanner(config)
@@ -159,18 +116,9 @@ def project_analyze(
             )
             return
 
-        if dry_run:
-            console.print(
-                f"[bold blue]Target files ({len(python_files)} files):[/bold blue]"
-            )
-            for file_path in python_files:
-                console.print(f"  {file_path}")
-            return
-
         # 開始メッセージをPanelで表示
         start_panel = Panel(
-            f"[bold cyan]Target:[/bold cyan] {len(python_files)} Python files\n"
-            f"[bold cyan]Output:[/bold cyan] {config.output_dir}",
+            f"[bold cyan]Target:[/bold cyan] {len(python_files)} Python files",
             title="[bold green]🚀 Project Analysis[/bold green]",
             border_style="green",
         )
