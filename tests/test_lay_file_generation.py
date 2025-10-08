@@ -380,3 +380,65 @@ preserve_docstrings = true
         assert config.output.mirror_package_structure is True
         assert config.output.include_metadata is True
         assert config.output.preserve_docstrings is True
+
+    def test_init_command_writes_output_config(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        """CLI initコマンドがoutput設定をpyproject.tomlに書き込むことを確認
+
+        検証項目:
+        - pylay initコマンド実行後、pyproject.tomlに
+          [tool.pylay.output]セクションが作成される
+        - yaml_output_dir, mirror_package_structure, include_metadata,
+          preserve_docstringsが正しく書き込まれる
+        """
+        import tomllib
+
+        from click.testing import CliRunner
+
+        from src.cli.main import cli
+
+        monkeypatch.chdir(tmp_path)
+
+        # 基本的なpyproject.tomlを作成（pylay設定なし）
+        pyproject = tmp_path / "pyproject.toml"
+        pyproject.write_text(
+            """
+[project]
+name = "test-project"
+version = "0.1.0"
+"""
+        )
+
+        # pylay initコマンドを実行
+        runner = CliRunner()
+        result = runner.invoke(cli, ["init"])
+
+        # コマンドが成功することを確認
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        # pyproject.tomlが更新されていることを確認
+        assert pyproject.exists()
+
+        # 書き込まれた設定を読み込み
+        with open(pyproject, "rb") as f:
+            config_data = tomllib.load(f)
+
+        # [tool.pylay.output]セクションが存在することを確認
+        assert "tool" in config_data
+        assert "pylay" in config_data["tool"]
+        assert "output" in config_data["tool"]["pylay"]
+
+        output_config = config_data["tool"]["pylay"]["output"]
+
+        # 各設定値が正しく書き込まれていることを確認
+        assert "yaml_output_dir" in output_config
+        assert "mirror_package_structure" in output_config
+        assert "include_metadata" in output_config
+        assert "preserve_docstrings" in output_config
+
+        # デフォルト値が正しく設定されていることを確認
+        assert output_config["yaml_output_dir"] == "docs/pylay"
+        assert output_config["mirror_package_structure"] is True
+        assert output_config["include_metadata"] is True
+        assert output_config["preserve_docstrings"] is True
