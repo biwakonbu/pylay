@@ -235,6 +235,72 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
         code_lines.append("from __future__ import annotations")
         code_lines.append("")
 
+        def extract_type_dependencies(type_name: str, type_data: dict) -> set[str]:
+            """型定義から依存している他の型を抽出"""
+            dependencies = set()
+            fields = type_data.get("fields", type_data.get("properties", {}))
+
+            for field_name, field_spec in fields.items():
+                field_type = field_spec.get("type", "")
+                # list[TypeName], dict[str, TypeName] などから型名を抽出
+                import re
+
+                # 型名のパターン: 大文字で始まる識別子
+                type_names = re.findall(r"\b([A-Z][a-zA-Z0-9]*)\b", str(field_type))
+                for dep_type in type_names:
+                    # 組み込み型や標準ライブラリ型は除外
+                    if dep_type not in [
+                        "Field",
+                        "List",
+                        "Dict",
+                        "Set",
+                        "Tuple",
+                        "Optional",
+                        "Union",
+                        "Any",
+                        "None",
+                        "Literal",
+                        "BaseModel",
+                    ]:
+                        dependencies.add(dep_type)
+
+            return dependencies
+
+        def topological_sort(types_dict: dict[str, dict]) -> list[str]:
+            """型定義をトポロジカルソートして依存関係順に並べる"""
+            # 各型の依存関係を抽出
+            dependencies = {name: extract_type_dependencies(name, data) for name, data in types_dict.items()}
+
+            # YAML内で定義されていない型（import済み）を依存関係から除外
+            defined_type_names = set(types_dict.keys())
+            for name in dependencies:
+                dependencies[name] = dependencies[name] & defined_type_names
+
+            # トポロジカルソート
+            sorted_types = []
+            visited = set()
+
+            def visit(name: str, path: set[str]) -> None:
+                if name in visited:
+                    return
+                if name in path:
+                    # 循環参照検出（from __future__ import annotationsで解決済み）
+                    return
+
+                path.add(name)
+                for dep in dependencies.get(name, set()):
+                    if dep in types_dict:  # YAML内で定義されている型のみ
+                        visit(dep, path.copy())
+                path.remove(name)
+
+                visited.add(name)
+                sorted_types.append(name)
+
+            for name in types_dict.keys():
+                visit(name, set())
+
+            return sorted_types
+
         # インポート文を生成（YAMLから読み取り）
         # YAML内で定義されている型はimportしない（型定義を優先）
         defined_types = set()
@@ -417,7 +483,18 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
             if spec is not None and isinstance(spec, TypeRoot):
                 # 複数型仕様
-                for type_name, type_spec in spec.types.items():
+                # 型定義を依存関係順にソート
+                sorted_type_names = topological_sort(raw_yaml_data if raw_yaml_data else {})
+
+                # ソート結果がない場合（raw_yaml_dataが空など）は元の順序を使用
+                if not sorted_type_names:
+                    sorted_type_names = list(spec.types.keys())
+
+                for type_name in sorted_type_names:
+                    if type_name not in spec.types:
+                        continue  # YAML内には定義があるがspecにない場合スキップ
+
+                    type_spec = spec.types[type_name]
                     # 元のYAMLデータから該当型の定義を取得（新形式対応）
                     raw_type_data = raw_yaml_data.get(type_name, {})
                     # raw_type_dataが新形式（fieldsセクション含む）ならそちらを優先
