@@ -238,9 +238,13 @@ type UserId = str
         output_dir.mkdir()
 
         # pyproject.tomlを設定（モック）
+        from src.core.schemas.pylay_config import OutputConfig
+
+        config = PylayConfig(output_dir=str(output_dir))
+        config.output = OutputConfig(yaml_output_dir=str(output_dir))
         monkeypatch.setattr(
             "src.cli.commands.yaml.PylayConfig.from_pyproject_toml",
-            lambda: PylayConfig(output_dir=str(output_dir)),
+            lambda: config,
         )
 
         # ディレクトリ変換実行
@@ -271,12 +275,16 @@ class User(BaseModel):
         output_dir.mkdir(parents=True)
 
         # pyproject.toml設定をモック
+        from src.core.schemas.pylay_config import OutputConfig
+
+        config = PylayConfig(
+            target_dirs=["src"],
+            output_dir=str(output_dir),
+        )
+        config.output = OutputConfig(yaml_output_dir=str(output_dir))
         monkeypatch.setattr(
             "src.cli.commands.yaml.PylayConfig.from_pyproject_toml",
-            lambda: PylayConfig(
-                target_dirs=["src"],
-                output_dir=str(output_dir),
-            ),
+            lambda: config,
         )
 
         # 作業ディレクトリを変更
@@ -322,9 +330,13 @@ class Converter(BaseModel):
         output_dir.mkdir(parents=True)
 
         # 設定をモック
+        from src.core.schemas.pylay_config import OutputConfig
+
+        config = PylayConfig(output_dir=str(output_dir))
+        config.output = OutputConfig(yaml_output_dir=str(output_dir))
         monkeypatch.setattr(
             "src.cli.commands.yaml.PylayConfig.from_pyproject_toml",
-            lambda: PylayConfig(output_dir=str(output_dir)),
+            lambda: config,
         )
         monkeypatch.chdir(tmp_path)
 

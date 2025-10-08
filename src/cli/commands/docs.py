@@ -10,23 +10,45 @@ from rich.table import Table
 
 from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.doc_generators.yaml_doc_generator import YamlDocGenerator
+from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.yaml_spec import TypeRoot
 
 
-def run_docs(input_file: str, output_dir: str, format_type: str = "single") -> None:
+def run_docs(
+    input_file: str, output_dir: str | None = None, format_type: str = "single"
+) -> None:
     """Generate documentation from YAML specification
 
     Args:
         input_file: Path to input YAML file
         output_dir: Output directory for documentation
+                   (Noneの場合はYAMLと同じディレクトリ)
         format_type: Output format ("single" or "multiple")
     """
     console = Console()
 
     try:
+        # 設定を読み込み
+        try:
+            config = PylayConfig.from_pyproject_toml()
+        except FileNotFoundError:
+            config = PylayConfig()
+
         # 処理開始時のPanel表示
-        input_path = Path(input_file)
-        output_path = Path(output_dir)
+        input_path = Path(input_file).resolve()
+
+        # 出力先の決定
+        if output_dir is None:
+            # 設定ファイルから読み込み
+            if config.output.markdown_output_dir is None:
+                # Noneの場合：YAMLと同じディレクトリに出力
+                output_path = input_path.parent
+            else:
+                # 指定がある場合：指定ディレクトリに出力
+                output_path = Path(config.output.markdown_output_dir)
+        else:
+            # 引数で指定されている場合
+            output_path = Path(output_dir)
 
         start_panel = Panel(
             f"[bold cyan]入力ファイル:[/bold cyan] {input_path.name}\n"

@@ -573,19 +573,27 @@ def run_yaml(
                     continue
 
                 # 出力パスを計算（schema.lay.yamlに集約）
-                # 例: src/core/schemas/ →
-                #     docs/pylay/src/core/schemas/schema.lay.yaml
-                try:
-                    relative_path = target_dir.relative_to(Path.cwd())
-                except ValueError:
-                    # 現在のディレクトリの外の場合は、ディレクトリ名のみを使用
-                    relative_path = Path(target_dir.name)
+                if config.output.yaml_output_dir is None:
+                    # Noneの場合：Pythonソースと同じディレクトリに出力
+                    # 例: src/core/schemas/ → src/core/schemas/schema.lay.yaml
+                    output_path = (
+                        target_dir / f"schema{config.generation.lay_yaml_suffix}"
+                    )
+                else:
+                    # 指定がある場合：指定ディレクトリに構造をミラーリングして出力
+                    # 例: src/core/schemas/ →
+                    #     docs/pylay/src/core/schemas/schema.lay.yaml
+                    try:
+                        relative_path = target_dir.relative_to(Path.cwd())
+                    except ValueError:
+                        # 現在のディレクトリの外の場合は、ディレクトリ名のみを使用
+                        relative_path = Path(target_dir.name)
 
-                output_path = (
-                    Path(config.output_dir)
-                    / relative_path
-                    / f"schema{config.generation.lay_yaml_suffix}"
-                )
+                    output_path = (
+                        Path(config.output.yaml_output_dir)
+                        / relative_path
+                        / f"schema{config.generation.lay_yaml_suffix}"
+                    )
 
                 # ディレクトリ全体を処理（schema.lay.yamlに集約）
                 _process_directory(target_dir, output_path, config, console)
@@ -601,18 +609,26 @@ def run_yaml(
 
             # 出力先の決定
             if output_file is None:
-                # 出力先が未指定の場合、ディレクトリ構造を保持してdocs/pylay/に出力
-                try:
-                    relative_path = input_path.relative_to(Path.cwd())
-                except ValueError:
-                    # 現在のディレクトリの外の場合は、ファイル名のみを使用
-                    relative_path = Path(input_path.name)
+                # 出力先が未指定の場合の処理
+                if config.output.yaml_output_dir is None:
+                    # Noneの場合：Pythonソースと同じディレクトリに出力
+                    output_path = (
+                        input_path.parent
+                        / f"{input_path.stem}{config.generation.lay_yaml_suffix}"
+                    )
+                else:
+                    # 指定がある場合：指定ディレクトリに構造をミラーリングして出力
+                    try:
+                        relative_path = input_path.relative_to(Path.cwd())
+                    except ValueError:
+                        # 現在のディレクトリの外の場合は、ファイル名のみを使用
+                        relative_path = Path(input_path.name)
 
-                output_path = (
-                    Path(config.output_dir)
-                    / relative_path.parent
-                    / f"{input_path.stem}{config.generation.lay_yaml_suffix}"
-                )
+                    output_path = (
+                        Path(config.output.yaml_output_dir)
+                        / relative_path.parent
+                        / f"{input_path.stem}{config.generation.lay_yaml_suffix}"
+                    )
             else:
                 output_path = Path(output_file)
                 # .lay.yaml拡張子を自動付与
@@ -645,18 +661,26 @@ def run_yaml(
 
             # 出力パスを計算（schema.lay.yamlに集約）
             if output_file is None:
-                # 出力先が未指定の場合、ディレクトリ構造を保持してdocs/pylay/に出力
-                try:
-                    relative_path = input_path_resolved.relative_to(Path.cwd())
-                except ValueError:
-                    # 現在のディレクトリの外の場合は、ディレクトリ名のみを使用
-                    relative_path = Path(input_path_resolved.name)
+                # 出力先が未指定の場合の処理
+                if config.output.yaml_output_dir is None:
+                    # Noneの場合：Pythonソースと同じディレクトリに出力
+                    output_path = (
+                        input_path_resolved
+                        / f"schema{config.generation.lay_yaml_suffix}"
+                    )
+                else:
+                    # 指定がある場合：指定ディレクトリに構造をミラーリングして出力
+                    try:
+                        relative_path = input_path_resolved.relative_to(Path.cwd())
+                    except ValueError:
+                        # 現在のディレクトリの外の場合は、ディレクトリ名のみを使用
+                        relative_path = Path(input_path_resolved.name)
 
-                output_path = (
-                    Path(config.output_dir)
-                    / relative_path
-                    / f"schema{config.generation.lay_yaml_suffix}"
-                )
+                    output_path = (
+                        Path(config.output.yaml_output_dir)
+                        / relative_path
+                        / f"schema{config.generation.lay_yaml_suffix}"
+                    )
             else:
                 # 出力先が指定されている場合
                 output_path = Path(output_file)

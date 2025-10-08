@@ -362,7 +362,9 @@ class TestPylayNewConfig:
         from src.core.schemas.pylay_config import OutputConfig
 
         config = OutputConfig()
-        assert config.yaml_output_dir == "docs/pylay"
+        # 新仕様：デフォルトはNone（Pythonソースと同じディレクトリ）
+        assert config.yaml_output_dir is None
+        assert config.markdown_output_dir is None
         assert config.mirror_package_structure is True
         assert config.include_metadata is True
         assert config.preserve_docstrings is True
@@ -385,5 +387,7 @@ class TestPylayNewConfig:
 
         # デフォルト値の確認
         assert config.generation.lay_suffix == ".lay.py"
-        assert config.output.yaml_output_dir == "docs/pylay"
+        # 新仕様：デフォルトはNone（Pythonソースと同じディレクトリ）
+        assert config.output.yaml_output_dir is None
+        assert config.output.markdown_output_dir is None
         assert config.imports.use_relative_imports is True

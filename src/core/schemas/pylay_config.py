@@ -105,9 +105,13 @@ class GenerationConfig(BaseModel):
 class OutputConfig(BaseModel):
     """出力設定"""
 
-    yaml_output_dir: str = Field(
-        default="docs/pylay",
-        description="YAML出力先ディレクトリ",
+    yaml_output_dir: str | None = Field(
+        default=None,
+        description="YAML出力先ディレクトリ（Noneの場合はPythonソースと同じディレクトリ）",
+    )
+    markdown_output_dir: str | None = Field(
+        default=None,
+        description="Markdown出力先ディレクトリ（Noneの場合はPythonソースと同じディレクトリ）",
     )
     mirror_package_structure: bool = Field(
         default=True,

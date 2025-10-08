@@ -150,9 +150,11 @@ class TestInitCommand:
         # output設定セクションの存在確認
         assert "[tool.pylay.output]" in content
 
-        # 各output設定キーの存在と値の確認
+        # 新仕様：デフォルトはコメントアウト（Pythonソースと同じディレクトリ）
         assert "yaml_output_dir" in content
-        assert 'yaml_output_dir = "docs/pylay"' in content
+        assert "# yaml_output_dir" in content  # コメントアウトされている
+        assert "markdown_output_dir" in content
+        assert "# markdown_output_dir" in content  # コメントアウトされている
 
         assert "mirror_package_structure" in content
         assert "mirror_package_structure = true" in content

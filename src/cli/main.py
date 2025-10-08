@@ -257,8 +257,8 @@ def types(yaml_file: str, output: str | None, root_key: str | None) -> None:
     "-o",
     "output_dir",
     type=click.Path(),
-    default="docs/api",
-    help="出力ディレクトリ",
+    default=None,
+    help="出力ディレクトリ（未指定時は設定ファイルまたはYAMLと同じディレクトリ）",
 )
 @click.option(
     "--format",
@@ -267,7 +267,7 @@ def types(yaml_file: str, output: str | None, root_key: str | None) -> None:
     default="single",
     help="出力フォーマット",
 )
-def docs(input_file: str | None, output_dir: str, format_type: str) -> None:
+def docs(input_file: str | None, output_dir: str | None, format_type: str) -> None:
     """ドキュメント生成
 
     YAML型仕様からMarkdownドキュメントを生成します。
