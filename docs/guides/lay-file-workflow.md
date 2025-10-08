@@ -16,7 +16,7 @@
 
 `.lay.py` / `.lay.yaml` は、pylayが自動生成するファイルを識別するための拡張子です。
 
-```
+```text
 プロジェクト/
 ├── src/
 │   ├── models.py           # 手動実装（あなたが書くコード）
@@ -239,7 +239,7 @@ print(f"削除されたファイル: {len(deleted)}個")
 
 Django風の「小さなパッケージ」アプローチを推奨：
 
-```
+```text
 src/
 ├── users/
 │   ├── models.py        # 手動実装（Pydantic BaseModel）
