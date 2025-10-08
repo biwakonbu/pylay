@@ -81,6 +81,57 @@ class ImprovementGuidance(BaseModel):
     suggestion: str = Field(description="改善のための具体的な提案")
 
 
+class GenerationConfig(BaseModel):
+    """ファイル生成設定"""
+
+    lay_suffix: str = Field(
+        default=".lay.py",
+        description="pylayが生成するPythonファイルの拡張子",
+    )
+    lay_yaml_suffix: str = Field(
+        default=".lay.yaml",
+        description="pylayが生成するYAMLファイルの拡張子",
+    )
+    add_generation_header: bool = Field(
+        default=True,
+        description="生成ファイルの先頭に警告ヘッダーを追加するか",
+    )
+    include_source_path: bool = Field(
+        default=True,
+        description="生成ファイルに元のソースファイルパスを記録するか",
+    )
+
+
+class OutputConfig(BaseModel):
+    """出力設定"""
+
+    yaml_output_dir: str = Field(
+        default="docs/pylay",
+        description="YAML出力先ディレクトリ",
+    )
+    mirror_package_structure: bool = Field(
+        default=True,
+        description="パッケージ構造をミラーリングするか",
+    )
+    include_metadata: bool = Field(
+        default=True,
+        description="YAMLに_metadataセクションを含めるか",
+    )
+    preserve_docstrings: bool = Field(
+        default=True,
+        description="Python→YAML変換時にdocstringを保持するか",
+    )
+
+
+class ImportsConfig(BaseModel):
+    """import設定"""
+
+    use_relative_imports: bool = Field(
+        default=True,
+        description="YAML→Python変換時に相対importを使用するか",
+    )
+
+
 class QualityCheckConfig(BaseModel):
     """品質チェック設定"""
 
@@ -193,6 +244,20 @@ class PylayConfig(BaseModel):
         default=None, description="型品質チェックの設定（オプション）"
     )
 
+    # Issue #51: .lay.py / .lay.yaml 方式の設定
+    generation: GenerationConfig = Field(
+        default_factory=GenerationConfig,
+        description="ファイル生成設定（.lay.py / .lay.yaml）",
+    )
+    output: OutputConfig = Field(
+        default_factory=OutputConfig,
+        description="出力設定（YAML出力先、ミラーリング等）",
+    )
+    imports: ImportsConfig = Field(
+        default_factory=ImportsConfig,
+        description="import設定（相対import等）",
+    )
+
     @field_validator("target_dirs", mode="before")
     @classmethod
     def normalize_target_dirs(cls, v: Any) -> list[str]:
@@ -255,19 +320,48 @@ class PylayConfig(BaseModel):
         # [tool.pylay] セクションを取得
         pylay_section = toml_data.get("tool", {}).get("pylay", {})
 
-        # ネストされたquality_check設定を抽出して処理
+        # ネストされた設定を抽出して処理
+        pylay_section = pylay_section.copy()
+
+        # quality_check設定の処理
         quality_check_data = pylay_section.get("quality_check")
         if quality_check_data and isinstance(quality_check_data, dict):
-            # quality_checkデータを削除して別途処理
-            pylay_section = pylay_section.copy()
             del pylay_section["quality_check"]
-
-            # QualityCheckConfigとしてパース
             try:
                 quality_check_config = QualityCheckConfig(**quality_check_data)
                 pylay_section["quality_check"] = quality_check_config
             except Exception as e:
                 raise ValueError(f"Failed to parse quality_check config: {e}")
+
+        # generation設定の処理
+        generation_data = pylay_section.get("generation")
+        if generation_data and isinstance(generation_data, dict):
+            del pylay_section["generation"]
+            try:
+                generation_config = GenerationConfig(**generation_data)
+                pylay_section["generation"] = generation_config
+            except Exception as e:
+                raise ValueError(f"Failed to parse generation config: {e}")
+
+        # output設定の処理
+        output_data = pylay_section.get("output")
+        if output_data and isinstance(output_data, dict):
+            del pylay_section["output"]
+            try:
+                output_config = OutputConfig(**output_data)
+                pylay_section["output"] = output_config
+            except Exception as e:
+                raise ValueError(f"Failed to parse output config: {e}")
+
+        # imports設定の処理
+        imports_data = pylay_section.get("imports")
+        if imports_data and isinstance(imports_data, dict):
+            del pylay_section["imports"]
+            try:
+                imports_config = ImportsConfig(**imports_data)
+                pylay_section["imports"] = imports_config
+            except Exception as e:
+                raise ValueError(f"Failed to parse imports config: {e}")
 
         return cls(**pylay_section)
 
