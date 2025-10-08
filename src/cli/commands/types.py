@@ -425,28 +425,38 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                     if field_type == "Literal":
                         field_type = "str"
 
-                    # Field()パラメータを構築
+                    # Field()パラメータを構築（Pydantic慣例順序: default系 → 制約 → description）
                     field_params = []
 
-                    # default_factory
+                    # 1. default/default_factory（最初）
                     if "default_factory" in field_info_data:
                         factory_value = field_info_data["default_factory"]
                         field_params.append(f"default_factory={factory_value}")
-                    # default
                     elif "default" in field_info_data:
                         field_params.append(f"default={field_info_data['default']}")
 
-                    # description
-                    if "description" in field_spec:
-                        field_params.append(f'description="{field_spec["description"]}"')
+                    # 2. バリデーション制約（中間）
+                    # 順序: ge, gt, le, lt, min_length, max_length, pattern, その他
+                    constraint_order = ["ge", "gt", "le", "lt", "min_length", "max_length", "pattern", "multiple_of"]
+                    for constraint in constraint_order:
+                        if constraint in field_info_data:
+                            value = field_info_data[constraint]
+                            if isinstance(value, str):
+                                field_params.append(f'{constraint}="{value}"')
+                            else:
+                                field_params.append(f"{constraint}={value}")
 
-                    # その他のバリデーション制約
+                    # その他の制約
                     for key, value in field_info_data.items():
-                        if key not in ["default", "default_factory", "description"]:
+                        if key not in ["default", "default_factory"] and key not in constraint_order:
                             if isinstance(value, str):
                                 field_params.append(f'{key}="{value}"')
                             else:
                                 field_params.append(f"{key}={value}")
+
+                    # 3. description（最後）
+                    if "description" in field_spec:
+                        field_params.append(f'description="{field_spec["description"]}"')
 
                     # フィールド定義を生成
                     if field_params:
