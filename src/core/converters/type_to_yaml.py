@@ -52,6 +52,10 @@ def _get_type_name(typ: type[Any]) -> str:
         # ForwardRefの場合、アンカー形式で出力
         return f"&{typ.__forward_arg__}"
 
+    # None型の特別処理
+    if typ is type(None) or typ is None:
+        return "null"
+
     # UnionTypeの場合、argsから動的名前生成
     origin = get_origin(typ)
     if origin is TypingUnion or str(origin) == "<class 'types.UnionType'>":
@@ -270,7 +274,15 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
             variants: list[TypeSpecOrRef] = []
 
             for arg in args:
-                if get_origin(arg) is None and arg not in {str, int, float, bool}:
+                # Noneやtype(None)は基本型として扱う
+                if arg is type(None) or arg is None:
+                    # None型は"null"として表現
+                    variants.append(
+                        TypeSpec(  # type: ignore[call-arg]
+                            name="null", type="null", description="None type"
+                        )
+                    )
+                elif get_origin(arg) is None and arg not in {str, int, float, bool}:
                     # カスタム型の場合、参照として保持
                     variants.append(_get_type_name(arg))
                 else:
