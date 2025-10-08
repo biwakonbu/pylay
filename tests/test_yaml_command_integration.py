@@ -246,9 +246,9 @@ type UserId = str
         # ディレクトリ変換実行
         run_yaml(str(tmp_path / "core"), None)
 
-        # アサーション: models.pyのYAMLのみ生成される（types.pyはBaseModelなし）
-        # 出力先は tmp_path/core の相対パスになるため、models.lay.yamlが直接生成される
-        assert (output_dir / "models.lay.yaml").exists()
+        # アサーション: ディレクトリ全体の型が schema.lay.yaml に集約される
+        # 出力先は tmp_path/core の相対パスになるため、core/schema.lay.yamlが生成される
+        assert (output_dir / "core" / "schema.lay.yaml").exists()
 
         # types.pyは型定義を含むが、BaseModelがないため変換されない
         # （現状の実装では_process_single_fileがBaseModel/Enumのみ対応）
@@ -285,8 +285,8 @@ class User(BaseModel):
         # 引数なしで実行
         run_yaml(None, None)
 
-        # アサーション
-        expected_output = output_dir / "src" / "core" / "models.lay.yaml"
+        # アサーション: ディレクトリ全体の型が schema.lay.yaml に集約される
+        expected_output = output_dir / "src" / "schema.lay.yaml"
         assert expected_output.exists()
 
 
@@ -331,9 +331,17 @@ class Converter(BaseModel):
         # ディレクトリ変換実行
         run_yaml(str(tmp_path / "src"), None)
 
-        # アサーション: ディレクトリ構造が保持される
-        assert (output_dir / "src" / "core" / "schemas" / "models.lay.yaml").exists()
-        assert (output_dir / "src" / "core" / "converters" / "models.lay.yaml").exists()
+        # アサーション: ディレクトリ全体の型が schema.lay.yaml に集約される
+        # src/ ディレクトリ全体が単一のschema.lay.yamlに集約される
+        assert (output_dir / "src" / "schema.lay.yaml").exists()
+
+        # 個別のファイルごとのYAMLは生成されない（新仕様）
+        assert not (
+            output_dir / "src" / "core" / "schemas" / "models.lay.yaml"
+        ).exists()
+        assert not (
+            output_dir / "src" / "core" / "converters" / "models.lay.yaml"
+        ).exists()
 
 
 class TestMetadataFunctions:

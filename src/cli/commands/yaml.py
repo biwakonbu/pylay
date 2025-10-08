@@ -219,6 +219,160 @@ def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
 """
 
 
+def _process_directory(
+    directory: Path,
+    output_path: Path,
+    config: PylayConfig,
+    console: Console,
+) -> None:
+    """ディレクトリ内の全ファイルから型を収集してschema.lay.yamlに集約
+
+    Args:
+        directory: 処理対象のディレクトリ
+        output_path: 出力YAMLファイルパス（schema.lay.yaml）
+        config: pylay設定
+        console: Richコンソール
+    """
+    # 処理開始時のPanel表示
+    start_panel = Panel(
+        f"[bold cyan]ディレクトリ:[/bold cyan] {directory}\n"
+        f"[bold cyan]出力先:[/bold cyan] {output_path}",
+        title="[bold green]🚀 ディレクトリ型収集開始[/bold green]",
+        border_style="green",
+    )
+    console.print(start_panel)
+
+    # ディレクトリ内のPythonファイルを検索
+    py_files = _find_python_files_with_type_definitions(directory)
+
+    if not py_files:
+        console.print(
+            f"[yellow]警告: {directory} "
+            "内に型定義を含むファイルが見つかりませんでした[/yellow]"
+        )
+        return
+
+    # 全ファイルから型を収集
+    all_types = {}
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TimeRemainingColumn(),
+        console=console,
+        transient=True,
+    ) as progress:
+        task = progress.add_task("型定義を収集中...", total=len(py_files))
+
+        for py_file in py_files:
+            progress.update(task, description=f"処理中: {py_file.name}")
+
+            try:
+                # モジュールをインポート
+                import importlib.util
+
+                sys.path.insert(0, str(py_file.parent))
+                module_name = py_file.stem
+                module = importlib.import_module(module_name)
+
+                # 型を抽出
+                for name, obj in module.__dict__.items():
+                    if isinstance(obj, type):
+                        is_pydantic_model = hasattr(obj, "__annotations__") and hasattr(
+                            obj, "__pydantic_core_schema__"
+                        )
+                        is_enum = issubclass(obj, Enum)
+                        is_user_defined = (
+                            getattr(obj, "__module__", None) == module_name
+                        )
+
+                        if (is_pydantic_model or is_enum) and is_user_defined:
+                            all_types[name] = obj
+
+            except Exception as e:
+                console.print(
+                    f"[yellow]⚠️ 警告: {py_file.name}の処理に失敗しました[/yellow]"
+                )
+                console.print(f"[dim]詳細: {e}[/dim]")
+
+            progress.advance(task)
+
+    if not all_types:
+        console.print("[yellow]警告: 変換可能な型が見つかりませんでした[/yellow]")
+        return
+
+    # 型をYAMLに変換
+    with console.status("[bold green]YAMLファイル生成中..."):
+        yaml_content = types_to_yaml(all_types)
+
+        # 警告ヘッダーを追加
+        header = generate_yaml_header(
+            str(directory),
+            add_header=config.generation.add_generation_header,
+            include_source=config.generation.include_source_path,
+        )
+
+        # メタデータセクションを生成（ディレクトリの情報）
+        metadata = ""
+        if config.output.include_metadata:
+            # ディレクトリの場合は、ファイルハッシュやサイズは計算しない
+            import importlib.metadata
+            from datetime import datetime
+
+            # pylayバージョン取得
+            try:
+                pylay_version = importlib.metadata.version("pylay")
+            except importlib.metadata.PackageNotFoundError:
+                pylay_version = "dev"
+
+            # 生成時刻
+            generated_at = datetime.now(UTC).isoformat()
+
+            # ディレクトリ情報
+            directory_str = str(directory)
+            file_count = len(py_files)
+
+            # YAML生成
+            metadata = f"""_metadata:
+  generated_by: pylay yaml
+  source: {directory_str}
+  source_type: directory
+  file_count: {file_count}
+  generated_at: {generated_at}
+  pylay_version: {pylay_version}
+
+"""
+
+        # 出力内容を組み立て
+        output_content_parts = []
+        if header:
+            output_content_parts.append(header)
+            output_content_parts.append("\n")
+        if metadata:
+            output_content_parts.append(metadata)
+        output_content_parts.append(yaml_content)
+        output_content = "".join(output_content_parts)
+
+        # 出力ディレクトリを作成
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # ファイルに書き込み
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(output_content)
+
+    # 完了メッセージ
+    complete_panel = Panel(
+        f"[bold green]✅ ディレクトリ型収集が完了しました[/bold green]\n\n"
+        f"[bold cyan]出力ファイル:[/bold cyan] {output_path}\n"
+        f"[bold cyan]収集型数:[/bold cyan] {len(all_types)} 個\n"
+        f"[bold cyan]処理ファイル数:[/bold cyan] {len(py_files)} ファイル",
+        title="[bold green]🎉 処理完了[/bold green]",
+        border_style="green",
+    )
+    console.print(complete_panel)
+
+
 def _process_single_file(
     input_path: Path,
     output_path: Path,
@@ -410,7 +564,7 @@ def run_yaml(
 
             # 各target_dirを処理
             for target_dir_str in config.target_dirs:
-                target_dir = Path(target_dir_str)
+                target_dir = Path(target_dir_str).resolve()
                 if not target_dir.exists():
                     console.print(
                         f"[yellow]警告: ディレクトリが存在しません: "
@@ -418,32 +572,23 @@ def run_yaml(
                     )
                     continue
 
-                # ディレクトリ内の型定義を含むファイルを検索
-                py_files = _find_python_files_with_type_definitions(target_dir)
+                # 出力パスを計算（schema.lay.yamlに集約）
+                # 例: src/core/schemas/ →
+                #     docs/pylay/src/core/schemas/schema.lay.yaml
+                try:
+                    relative_path = target_dir.relative_to(Path.cwd())
+                except ValueError:
+                    # 現在のディレクトリの外の場合は、ディレクトリ名のみを使用
+                    relative_path = Path(target_dir.name)
 
-                for py_file in py_files:
-                    # 絶対パスに変換
-                    py_file = py_file.resolve()
+                output_path = (
+                    Path(config.output_dir)
+                    / relative_path
+                    / f"schema{config.generation.lay_yaml_suffix}"
+                )
 
-                    # 出力パスを計算（ディレクトリ構造を保持）
-                    # 例: src/core/schemas/yaml_spec.py →
-                    #     docs/pylay/src/core/schemas/yaml_spec.lay.yaml
-                    try:
-                        relative_path = py_file.relative_to(Path.cwd())
-                    except ValueError:
-                        # 現在のディレクトリの外の場合は、ファイル名のみを使用
-                        relative_path = Path(py_file.name)
-
-                    output_path = (
-                        Path(config.output_dir)
-                        / relative_path.parent
-                        / f"{py_file.stem}{config.generation.lay_yaml_suffix}"
-                    )
-
-                    # 単一ファイル処理
-                    _process_single_file(
-                        py_file, output_path, config, console, root_key
-                    )
+                # ディレクトリ全体を処理（schema.lay.yamlに集約）
+                _process_directory(target_dir, output_path, config, console)
 
             return
 
@@ -488,60 +633,48 @@ def run_yaml(
             console.print(
                 Panel(
                     f"[bold cyan]ディレクトリ:[/bold cyan] {input_path}\n"
-                    "[bold cyan]モード:[/bold cyan] 再帰的YAML生成",
+                    "[bold cyan]モード:[/bold cyan] "
+                    "ディレクトリ型集約（schema.lay.yaml）",
                     title="[bold green]📁 ディレクトリ処理モード[/bold green]",
                     border_style="green",
                 )
             )
 
-            # ディレクトリ内の型定義を含むファイルを検索
-            py_files = _find_python_files_with_type_definitions(input_path)
+            # 絶対パスに変換
+            input_path_resolved = input_path.resolve()
 
-            if not py_files:
-                console.print(
-                    "[yellow]警告: 型定義を含むPythonファイルが"
-                    "見つかりませんでした[/yellow]"
+            # 出力パスを計算（schema.lay.yamlに集約）
+            if output_file is None:
+                # 出力先が未指定の場合、ディレクトリ構造を保持してdocs/pylay/に出力
+                try:
+                    relative_path = input_path_resolved.relative_to(Path.cwd())
+                except ValueError:
+                    # 現在のディレクトリの外の場合は、ディレクトリ名のみを使用
+                    relative_path = Path(input_path_resolved.name)
+
+                output_path = (
+                    Path(config.output_dir)
+                    / relative_path
+                    / f"schema{config.generation.lay_yaml_suffix}"
                 )
-                return
+            else:
+                # 出力先が指定されている場合
+                output_path = Path(output_file)
+                # schema.lay.yaml拡張子を自動付与
+                if not str(output_path).endswith(config.generation.lay_yaml_suffix):
+                    if output_path.is_dir() or not output_path.suffix:
+                        # ディレクトリまたは拡張子なし → schema.lay.yamlを追加
+                        output_path = (
+                            output_path / f"schema{config.generation.lay_yaml_suffix}"
+                        )
+                    else:
+                        # 拡張子あり → .lay.yamlに変更
+                        output_path = output_path.with_suffix(
+                            config.generation.lay_yaml_suffix
+                        )
 
-            console.print(f"[green]検出ファイル数: {len(py_files)} 個[/green]\n")
-
-            # 各ファイルを処理
-            for py_file in py_files:
-                # 絶対パスに変換
-                py_file = py_file.resolve()
-                input_path_resolved = input_path.resolve()
-
-                # 出力パスを計算（ディレクトリ構造を保持）
-                if output_file is None:
-                    # 出力先が未指定の場合、ディレクトリ構造を保持してdocs/pylay/に出力
-                    try:
-                        relative_path = py_file.relative_to(Path.cwd())
-                    except ValueError:
-                        # 現在のディレクトリの外の場合は、ファイル名のみを使用
-                        relative_path = Path(py_file.name)
-
-                    output_path = (
-                        Path(config.output_dir)
-                        / relative_path.parent
-                        / f"{py_file.stem}{config.generation.lay_yaml_suffix}"
-                    )
-                else:
-                    # 出力先が指定されている場合は、そのディレクトリ配下に構造を保持
-                    try:
-                        relative_path = py_file.relative_to(input_path_resolved)
-                    except ValueError:
-                        # ディレクトリ外の場合は、ファイル名のみを使用
-                        relative_path = Path(py_file.name)
-
-                    output_path = (
-                        Path(output_file)
-                        / relative_path.parent
-                        / f"{py_file.stem}{config.generation.lay_yaml_suffix}"
-                    )
-
-                # 単一ファイル処理
-                _process_single_file(py_file, output_path, config, console, root_key)
+            # ディレクトリ全体を処理（schema.lay.yamlに集約）
+            _process_directory(input_path_resolved, output_path, config, console)
 
         else:
             console.print(
