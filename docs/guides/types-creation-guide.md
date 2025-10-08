@@ -477,12 +477,21 @@ def create_source_path(value: Path | str) -> SourcePath:
 OutputPath = NewType('OutputPath', Path)
 """出力ファイルのパス"""
 
-@validate_call
-def OutputPath(value: Annotated[Path, Field()]) -> OutputPath:  # type: ignore[no-redef]
-    """出力ファイルパスを作成する"""
+OutputPathValidator = TypeAdapter(Annotated[Path, Field()])
+
+def create_output_path(value: Path | str) -> OutputPath:
+    """出力ファイルパスを作成する
+
+    Args:
+        value: パス（PathまたはString）
+
+    Returns:
+        検証済みの出力パス
+    """
     if isinstance(value, str):
         value = Path(value)
-    return NewType('OutputPath', Path)(value)
+    validated = OutputPathValidator.validate_python(value)
+    return OutputPath(validated)
 
 # --- Count型 ---
 
