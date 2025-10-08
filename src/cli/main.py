@@ -15,7 +15,6 @@ from .commands.analyze_types import analyze_types
 from .commands.diagnose_type_ignore import diagnose_type_ignore
 from .commands.docs import run_docs
 from .commands.init import run_init
-from .commands.project_analyze import project_analyze
 from .commands.quality import quality
 from .commands.types import run_types
 from .commands.yaml import run_yaml
@@ -195,10 +194,6 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
 
 
 # convert グループは削除（yaml/types コマンドに統合）
-
-
-# stats コマンドを追加（プロジェクト統計情報表示）
-cli.add_command(project_analyze)
 
 
 @cli.group()
