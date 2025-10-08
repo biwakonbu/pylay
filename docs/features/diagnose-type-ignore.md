@@ -2,7 +2,7 @@
 
 ## 概要
 
-`diagnose-type-ignore` コマンドは、プロジェクト内で使用されている `# type: ignore` コメントの原因を自動的に特定し、具体的な解決策を提案する機能です。
+`pylay check --focus ignore` コマンドは、プロジェクト内で使用されている `# type: ignore` コメントの原因を自動的に特定し、具体的な解決策を提案する機能です。
 
 ## 背景と目的
 
@@ -47,28 +47,25 @@
 #### 基本的な使い方
 ```bash
 # プロジェクト全体を診断
-pylay diagnose-type-ignore
+pylay check --focus ignore
 
 # 特定ファイルを診断
-pylay diagnose-type-ignore --file src/core/converters/type_to_yaml.py
-
-# 高優先度のみ表示
-pylay diagnose-type-ignore --priority high
+pylay check --focus ignore src/core/converters/type_to_yaml.py
 
 # 解決策を含む詳細表示
-pylay diagnose-type-ignore --solutions
+pylay check --focus ignore -v
 
 # JSON形式で出力
-pylay diagnose-type-ignore --format json --output report.json
+pylay check --focus ignore --format json --output report.json
 ```
 
 #### オプション一覧
 
 | オプション | 説明 |
 |----------|------|
-| `--file`, `-f` | 解析対象のファイル（指定しない場合はプロジェクト全体） |
-| `--priority`, `-p` | 表示する優先度（high/medium/low/all、デフォルト: all） |
-| `--solutions`, `-s` | 解決策を表示 |
+| `TARGET` | 解析対象のファイルまたはディレクトリ（指定しない場合はカレントディレクトリ） |
+| `--focus ignore` | type-ignore診断を実行 |
+| `-v`, `--verbose` | 解決策を含む詳細情報を表示 |
 | `--format` | 出力形式（console/json、デフォルト: console） |
 | `--output`, `-o` | 出力ファイルパス（format=jsonの場合に使用） |
 
@@ -235,7 +232,7 @@ def _determine_priority(
 make diagnose-ignore
 
 # 結果をJSON形式で保存
-pylay diagnose-type-ignore --format json --output tech-debt.json
+pylay check --focus ignore --format json --output tech-debt.json
 ```
 
 ### 2. 優先的な修正対象の特定
@@ -249,7 +246,7 @@ make diagnose-ignore-high
 ### 3. コードレビューでの活用
 ```bash
 # PRで追加されたtype: ignoreを診断
-pylay diagnose-type-ignore --file path/to/changed_file.py --solutions
+pylay check --focus ignore --file path/to/changed_file.py --solutions
 
 # 解決策を参考に修正
 ```
@@ -259,7 +256,7 @@ pylay diagnose-type-ignore --file path/to/changed_file.py --solutions
 # .github/workflows/type-check.yml
 - name: Diagnose type: ignore
   run: |
-    pylay diagnose-type-ignore --format json --output type-ignore-report.json
+    pylay check --focus ignore --format json --output type-ignore-report.json
     # レポートをアーティファクトとして保存
 ```
 

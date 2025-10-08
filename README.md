@@ -119,66 +119,62 @@ pylay analyze infer-deps --input src/core/schemas/yaml_spec.py --visualize
 ### 型定義レベル分析
 ```bash
 # ファイルの型定義レベルを分析
-pylay analyze analyze-types src/core/schemas/types.py
+pylay check --focus types src/core/schemas/types.py
 
 # ディレクトリ全体を分析
-pylay analyze analyze-types src/core/analyzer/
+pylay check --focus types src/core/analyzer/
 
-# 型レベルアップ推奨を含めて分析
-pylay analyze analyze-types src/core/analyzer/ --recommendations
-
-# 問題箇所の詳細表示（NEW!）
-pylay analyze analyze-types src/ --show-details
-
-# 問題詳細をYAMLファイルにエクスポート（NEW!）
-pylay analyze analyze-types src/ --export-details=./analysis-details.yaml
+# 詳細情報を含めて分析
+pylay check --focus types src/core/analyzer/ -v
 
 # JSON形式で出力
-pylay analyze analyze-types src/core/schemas/types.py --format json --output type_analysis.json
+pylay check --focus types src/core/schemas/types.py --format json --output type_analysis.json
 
 # Markdown形式で出力
-pylay analyze analyze-types src/ --format markdown --output docs/type_analysis.md
+pylay check --focus types src/ --format markdown --output docs/type_analysis.md
 ```
 
-#### 新機能: 警告箇所の詳細表示
+#### 新機能: 詳細情報表示
 
-`--show-details` オプションを使用すると、以下の問題箇所を詳細に表示できます：
+`-v` (`--verbose`) オプションを使用すると、以下の問題箇所を詳細に表示できます：
 - Primitive型の直接使用（ファイルパス、行番号、コード内容）
 - Level 1型の長期放置（使用箇所の例を最大3件表示）
 - 被参照0の型定義（削除または調査推奨の判定理由）
 - 非推奨typing使用（Python 3.13標準構文への移行推奨）
-
-`--export-details` オプションでYAML形式で問題詳細をエクスポートし、AI修正やCI/CD統合に活用できます。
 
 詳細は [型レベル分析: 警告箇所の詳細表示機能](docs/features/type-analysis-details.md) を参照してください。
 
 ### type: ignore 診断（NEW!）
 ```bash
 # プロジェクト全体のtype: ignoreを診断
-pylay diagnose-type-ignore
+pylay check --focus ignore
 
-# 特定ファイルのtype: ignoreを診断（解決策付き）
-pylay diagnose-type-ignore --file src/core/converters/type_to_yaml.py --solutions
-
-# 高優先度のみ表示
-pylay diagnose-type-ignore --priority high --solutions
+# 特定ファイルのtype: ignoreを診断（詳細情報付き）
+pylay check --focus ignore src/core/converters/type_to_yaml.py -v
 
 # JSON形式で出力
-pylay diagnose-type-ignore --format json --output report.json
-
-# Makeターゲットで利用
-make diagnose-ignore
-make diagnose-ignore-file FILE=src/cli/analyze_issues.py
-make diagnose-ignore-high
+pylay check --focus ignore --format json --output report.json
 ```
 
 `# type: ignore` が使用されている箇所の原因を自動的に特定し、具体的な解決策を提案します：
 - **優先度判定**: HIGH/MEDIUM/LOW で問題を分類
 - **原因特定**: mypy実行による型エラー情報の取得と紐付け
-- **解決策提案**: コンテキストに応じた具体的な修正方法を提示
+- **解決策提案**: コンテキストに応じた具体的な修正方法を提示（`-v`オプションで表示）
 - **モダンUI**: Richベースの見やすいコンソール出力
 
 詳細は [type: ignore診断機能](docs/features/diagnose-type-ignore.md) を参照してください。
+
+### 品質チェック
+```bash
+# プロジェクト全体の品質をチェック
+pylay check --focus quality
+
+# 特定ディレクトリの品質チェック（詳細情報付き）
+pylay check --focus quality src/core/ -v
+
+# 全てのチェックを実行（型定義レベル + type-ignore + 品質）
+pylay check
+```
 
 ### プロジェクト全体解析
 ```bash
@@ -207,8 +203,8 @@ pylay --help
 pylay yaml --help
 pylay types --help
 pylay docs --help
-pylay quality --help
-pylay analyze --help
+pylay check --help
+pylay infer-deps --help
 ```
 
 ## pylay による自己解析結果
