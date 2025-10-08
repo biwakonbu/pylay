@@ -208,7 +208,7 @@ def run_yaml(input_file: str, output_file: str, root_key: str | None = None) -> 
                 with open(output_path, "w", encoding="utf-8") as f:
                     f.write(output_content)
 
-        if not is_stdout:
+        if not is_stdout and output_path is not None:
             # 結果表示用のTable
             result_table = Table(
                 title="変換結果サマリー",
