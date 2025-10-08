@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+---
+
+## [0.5.0] - 2025年10月
+
 ### 破壊的変更 (BREAKING CHANGES)
 - **CLIコマンドを1語形式に統一** (#50): ハイフン区切りの2語コマンドを廃止し、シンプルな1語コマンドに統一
   - 旧: `pylay convert to-yaml` → 新: `pylay yaml`
