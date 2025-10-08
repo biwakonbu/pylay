@@ -6,8 +6,11 @@
 from pathlib import Path
 
 from src.cli.commands.yaml import (
+    _calculate_file_hash,
     _find_python_files_with_type_definitions,
+    _generate_metadata_section,
     _has_type_definitions,
+    _validate_metadata,
     run_yaml,
 )
 from src.core.schemas.pylay_config import PylayConfig
@@ -331,3 +334,121 @@ class Converter(BaseModel):
         # アサーション: ディレクトリ構造が保持される
         assert (output_dir / "src" / "core" / "schemas" / "models.lay.yaml").exists()
         assert (output_dir / "src" / "core" / "converters" / "models.lay.yaml").exists()
+
+
+class TestMetadataFunctions:
+    """メタデータ関連機能のテスト"""
+
+    def test_calculate_file_hash(self, tmp_path: Path) -> None:
+        """ファイルハッシュ計算"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("print('hello')")
+
+        hash1 = _calculate_file_hash(test_file)
+
+        # ハッシュは64文字の16進数文字列
+        assert len(hash1) == 64
+        assert all(c in "0123456789abcdef" for c in hash1)
+
+        # 同じファイルは同じハッシュ
+        hash2 = _calculate_file_hash(test_file)
+        assert hash1 == hash2
+
+        # ファイル変更でハッシュが変わる
+        test_file.write_text("print('world')")
+        hash3 = _calculate_file_hash(test_file)
+        assert hash1 != hash3
+
+    def test_validate_metadata_success(self, tmp_path: Path) -> None:
+        """メタデータバリデーション成功"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# test")
+
+        errors = _validate_metadata(
+            str(test_file), "2025-10-08T12:00:00+00:00", "0.5.0"
+        )
+
+        assert len(errors) == 0
+
+    def test_validate_metadata_file_not_exists(self) -> None:
+        """ソースファイルが存在しない場合のバリデーション"""
+        errors = _validate_metadata(
+            "/nonexistent/file.py", "2025-10-08T12:00:00+00:00", "0.5.0"
+        )
+
+        assert len(errors) == 1
+        assert "does not exist" in errors[0]
+
+    def test_validate_metadata_invalid_datetime(self, tmp_path: Path) -> None:
+        """無効な日時形式のバリデーション"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# test")
+
+        errors = _validate_metadata(str(test_file), "invalid-datetime", "0.5.0")
+
+        assert len(errors) == 1
+        assert "Invalid generated_at format" in errors[0]
+
+    def test_validate_metadata_empty_version(self, tmp_path: Path) -> None:
+        """空のバージョンのバリデーション"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("# test")
+
+        errors = _validate_metadata(str(test_file), "2025-10-08T12:00:00+00:00", "")
+
+        assert len(errors) == 1
+        assert "pylay_version is empty" in errors[0]
+
+    def test_generate_metadata_section(self, tmp_path: Path) -> None:
+        """メタデータセクション生成"""
+        test_file = tmp_path / "test.py"
+        test_file.write_text("from pydantic import BaseModel")
+
+        metadata = _generate_metadata_section(str(test_file), validate=True)
+
+        # 必須フィールドの存在確認
+        assert "_metadata:" in metadata
+        assert "generated_by: pylay yaml" in metadata
+        assert f"source: {test_file}" in metadata
+        assert "source_hash:" in metadata
+        assert "source_size:" in metadata
+        assert "source_modified_at:" in metadata
+        assert "generated_at:" in metadata
+        assert "pylay_version:" in metadata
+
+    def test_generate_metadata_section_validation_error(self) -> None:
+        """バリデーションエラーが発生する場合"""
+        import pytest
+
+        with pytest.raises(ValueError, match="Metadata validation failed"):
+            _generate_metadata_section("/nonexistent/file.py", validate=True)
+
+    def test_yaml_output_contains_metadata(self, tmp_path: Path) -> None:
+        """YAML出力にメタデータが含まれることを確認"""
+        # テストファイル作成
+        input_file = tmp_path / "models.py"
+        input_file.write_text(
+            """
+from pydantic import BaseModel
+
+class User(BaseModel):
+    id: int
+"""
+        )
+
+        # 出力ファイルパス
+        output_file = tmp_path / "models.lay.yaml"
+
+        # YAML変換実行
+        run_yaml(str(input_file), str(output_file))
+
+        # 出力ファイルを読み込んで確認
+        content = output_file.read_text()
+
+        # メタデータフィールドの存在確認
+        assert "_metadata:" in content
+        assert "source_hash:" in content
+        assert "source_size:" in content
+        assert "source_modified_at:" in content
+        assert "generated_at:" in content
+        assert "pylay_version:" in content

@@ -103,28 +103,116 @@ def _find_python_files_with_type_definitions(directory: Path) -> list[Path]:
     return python_files
 
 
-def _generate_metadata_section(source_file: str) -> str:
+def _calculate_file_hash(file_path: Path) -> str:
+    """ファイルのSHA256ハッシュ値を計算
+
+    Args:
+        file_path: ハッシュ計算対象のファイル
+
+    Returns:
+        SHA256ハッシュ値（16進数文字列）
+    """
+    import hashlib
+
+    sha256_hash = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        # ファイルをチャンク単位で読み込んでハッシュ計算
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+
+def _validate_metadata(
+    source_file: str, generated_at: str, pylay_version: str
+) -> list[str]:
+    """メタデータのバリデーション
+
+    Args:
+        source_file: ソースファイルのパス
+        generated_at: 生成時刻（ISO形式）
+        pylay_version: pylayバージョン
+
+    Returns:
+        バリデーションエラーのリスト（空の場合は正常）
+    """
+    from datetime import datetime
+
+    errors = []
+
+    # ソースファイルの存在確認
+    if not Path(source_file).exists():
+        errors.append(f"Source file does not exist: {source_file}")
+
+    # 生成時刻の形式チェック
+    try:
+        datetime.fromisoformat(generated_at)
+    except ValueError:
+        errors.append(f"Invalid generated_at format: {generated_at}")
+
+    # バージョン形式の簡易チェック
+    if not pylay_version:
+        errors.append("pylay_version is empty")
+
+    return errors
+
+
+def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
     """YAMLメタデータセクションを生成
 
     Args:
         source_file: ソースファイルのパス
+        validate: バリデーションを実行するかどうか
 
     Returns:
         _metadataセクションのYAML文字列
+
+    Raises:
+        ValueError: バリデーションエラーが発生した場合
     """
     import importlib.metadata
     from datetime import datetime
 
+    # pylayバージョン取得
     try:
         pylay_version = importlib.metadata.version("pylay")
     except importlib.metadata.PackageNotFoundError:
         pylay_version = "dev"
 
+    # 生成時刻
     generated_at = datetime.now(UTC).isoformat()
 
+    # ソースファイル情報
+    source_path = Path(source_file)
+    source_hash = ""
+    source_size = 0
+    source_modified_at = ""
+
+    if source_path.exists():
+        # ファイルハッシュ
+        source_hash = _calculate_file_hash(source_path)
+
+        # ファイルサイズ（バイト）
+        source_size = source_path.stat().st_size
+
+        # 最終更新日時
+        source_modified_at = datetime.fromtimestamp(
+            source_path.stat().st_mtime, tz=UTC
+        ).isoformat()
+
+    # バリデーション
+    if validate:
+        errors = _validate_metadata(source_file, generated_at, pylay_version)
+        if errors:
+            error_msg = "\n".join(errors)
+            raise ValueError(f"Metadata validation failed:\n{error_msg}")
+
+    # YAML生成
     return f"""_metadata:
   generated_by: pylay yaml
   source: {source_file}
+  source_hash: {source_hash}
+  source_size: {source_size}
+  source_modified_at: {source_modified_at}
   generated_at: {generated_at}
   pylay_version: {pylay_version}
 
