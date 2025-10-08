@@ -87,23 +87,31 @@ def create_user_id(value: str) -> UserId:
     return UserId(validated)
 ```
 
-### @validate_call パターン
+### ファクトリ関数パターン（標準）
 
-関数デコレーターを使用するパターンもあります:
+TypeAdapterとファクトリ関数を使用した標準パターン:
 
 ```python
-from pydantic import validate_call
+from pydantic import TypeAdapter, validate_call
 
 Count = NewType('Count', int)
+CountValidator = TypeAdapter(Annotated[int, Field(ge=0)])
 
-@validate_call
-def Count(value: Annotated[int, Field(ge=0)]) -> Count:  # type: ignore[no-redef]
-    """非負整数のカウント型を作成する"""
-    return NewType('Count', int)(value)
+def create_count(value: int) -> Count:
+    """非負整数のカウント型を作成する
+
+    Args:
+        value: カウント値（非負整数）
+
+    Returns:
+        検証済みのカウント値
+    """
+    validated = CountValidator.validate_python(value)
+    return Count(validated)
 
 # 使用例
-count = Count(10)  # OK
-count = Count(-1)  # ValidationError
+count = create_count(10)  # OK
+count = create_count(-1)  # ValidationError
 ```
 
 **どちらを選ぶか？**
