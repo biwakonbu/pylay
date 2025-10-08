@@ -145,6 +145,7 @@ pylay check --focus types src/ --format markdown --output docs/type_analysis.md
 詳細は [型レベル分析: 警告箇所の詳細表示機能](docs/features/type-analysis-details.md) を参照してください。
 
 ### type: ignore 診断（NEW!）
+
 ```bash
 # プロジェクト全体のtype: ignoreを診断
 pylay check --focus ignore
