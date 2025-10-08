@@ -1,7 +1,7 @@
 """
 プロジェクト品質チェックコマンド
 
-型定義レベル、type: ignore、品質チェックを統合した診断コマンド。
+型定義レベル、type-ignore、品質チェックを統合した診断コマンド。
 """
 
 from __future__ import annotations
@@ -11,20 +11,37 @@ from pathlib import Path
 import click
 from rich.console import Console
 
-from .analyze_types import analyze_types
-from .diagnose_type_ignore import diagnose_type_ignore
-from .quality import quality
+from ...core.analyzer.quality_checker import QualityChecker
+from ...core.analyzer.type_ignore_analyzer import TypeIgnoreAnalyzer
+from ...core.analyzer.type_level_analyzer import TypeLevelAnalyzer
+from ...core.schemas.pylay_config import PylayConfig
 
 console = Console()
+
+
+def _load_config() -> PylayConfig:
+    """設定を読み込む"""
+    try:
+        import tomllib
+    except ImportError:
+        import tomli as tomllib  # type: ignore
+
+    config_path = Path("pyproject.toml")
+    if config_path.exists():
+        with open(config_path, "rb") as f:
+            data = tomllib.load(f)
+            pylay_config = data.get("tool", {}).get("pylay", {})
+            return PylayConfig(**pylay_config)
+    return PylayConfig()
 
 
 @click.command("check")
 @click.argument("target", type=click.Path(exists=True), required=False)
 @click.option(
     "--focus",
-    type=click.Choice(["types", "ignore", "quality", "all"], case_sensitive=False),
-    default="all",
-    help="チェック対象を指定（デフォルト: all）",
+    type=click.Choice(["types", "ignore", "quality"], case_sensitive=False),
+    default=None,
+    help="特定のチェックのみ実行（未指定の場合は全チェック）",
 )
 @click.option(
     "-f",
@@ -37,7 +54,7 @@ console = Console()
 @click.option("-v", "--verbose", is_flag=True, help="詳細なログを出力")
 def check(
     target: str | None,
-    focus: str,
+    focus: str | None,
     format: str,
     output: str | None,
     verbose: bool,
@@ -45,18 +62,18 @@ def check(
     """
     プロジェクトの品質をチェックし、改善提案を表示します。
 
-    型定義レベル、type: ignore診断、品質チェックを統合した診断コマンドです。
+    型定義レベル、type-ignore診断、品質チェックを統合した診断コマンドです。
 
     TARGET: 解析対象のディレクトリまたはファイル（デフォルト: カレントディレクトリ）
 
     使用例:
-        # 全てのチェックを実行（推奨）
+        # 全てのチェックを実行（デフォルト）
         uv run pylay check
 
         # 型定義レベル統計のみ
         uv run pylay check --focus types
 
-        # type: ignore 診断のみ
+        # type-ignore 診断のみ
         uv run pylay check --focus ignore
 
         # 品質チェックのみ
@@ -65,12 +82,13 @@ def check(
         # 特定のディレクトリをチェック
         uv run pylay check src/core
 
-        # Markdown形式で出力
-        uv run pylay check --format markdown --output report.md
+        # 詳細情報を表示
+        uv run pylay check -v
     """
     target_path = Path(target) if target else Path.cwd()
+    config = _load_config()
 
-    if focus == "all":
+    if focus is None:
         # 全てのチェックを実行
         console.print()
         console.rule("[bold cyan]🔍 プロジェクト品質チェック[/bold cyan]")
@@ -79,36 +97,16 @@ def check(
         # 1. 型定義レベル統計
         console.print("[bold blue]1/3: 型定義レベル統計[/bold blue]")
         console.print()
-        ctx = click.Context(analyze_types)
-        ctx.invoke(
-            analyze_types,
-            target=str(target_path),
-            format=format,
-            output=output,
-            recommendations=False,
-            docstring_recommendations=False,
-            all_recommendations=False,
-            show_details=False,
-            export_details=None,
-            show_stats=True,
-        )
+        _run_type_analysis(target_path, verbose)
 
         console.print()
         console.rule()
         console.print()
 
         # 2. type-ignore 診断
-        console.print("[bold yellow]2/3: type: ignore 診断[/bold yellow]")
+        console.print("[bold yellow]2/3: type-ignore 診断[/bold yellow]")
         console.print()
-        ctx = click.Context(diagnose_type_ignore)
-        ctx.invoke(
-            diagnose_type_ignore,
-            file=str(target_path) if target_path.is_file() else None,
-            priority="all",
-            solutions=False,
-            format=format,
-            output=None,  # 統合レポートに含めるため個別出力なし
-        )
+        _run_type_ignore_analysis(target_path, verbose)
 
         console.print()
         console.rule()
@@ -117,60 +115,108 @@ def check(
         # 3. 品質チェック
         console.print("[bold green]3/3: 品質チェック[/bold green]")
         console.print()
-        ctx = click.Context(quality)
-        ctx.invoke(
-            quality,
-            target=str(target_path),
-            config=None,
-            strict=False,
-            show_details=False,
-            severity=None,
-            issue_type=None,
-            fail_on_error=False,
-        )
+        _run_quality_check(target_path, config, verbose)
 
         console.print()
         console.rule("[bold cyan]✅ チェック完了[/bold cyan]")
         console.print()
 
     elif focus == "types":
-        # 型定義レベル統計のみ
-        ctx = click.Context(analyze_types)
-        ctx.invoke(
-            analyze_types,
-            target=str(target_path),
-            format=format,
-            output=output,
-            recommendations=True,
-            docstring_recommendations=True,
-            all_recommendations=False,
-            show_details=verbose,
-            export_details=None,
-            show_stats=True,
-        )
+        _run_type_analysis(target_path, verbose)
 
     elif focus == "ignore":
-        # type-ignore 診断のみ
-        ctx = click.Context(diagnose_type_ignore)
-        ctx.invoke(
-            diagnose_type_ignore,
-            file=str(target_path) if target_path.is_file() else None,
-            priority="all",
-            solutions=verbose,
-            format=format,
-            output=output,
-        )
+        _run_type_ignore_analysis(target_path, verbose)
 
     elif focus == "quality":
-        # 品質チェックのみ
-        ctx = click.Context(quality)
-        ctx.invoke(
-            quality,
-            target=str(target_path),
-            config=None,
-            strict=False,
-            show_details=verbose,
-            severity=None,
-            issue_type=None,
-            fail_on_error=False,
+        _run_quality_check(target_path, config, verbose)
+
+
+def _run_type_analysis(target_path: Path, verbose: bool) -> None:
+    """型定義レベル統計を実行"""
+    from ...core.analyzer.type_reporter import TypeReporter
+
+    console.print(f"🔍 解析中: {target_path}")
+
+    analyzer = TypeLevelAnalyzer()
+
+    if target_path.is_file():
+        report = analyzer.analyze_file(target_path)
+    else:
+        report = analyzer.analyze_directory(
+            target_path, include_upgrade_recommendations=verbose
         )
+
+    # 対象ディレクトリを決定（詳細表示用）
+    if target_path.is_file():
+        target_dirs = [str(target_path.parent)]
+    else:
+        target_dirs = [str(target_path)]
+
+    reporter = TypeReporter(target_dirs=target_dirs)
+    reporter.generate_detailed_report(report, show_details=verbose, show_stats=True)
+
+    # 推奨事項を条件付きで表示
+    if verbose and report.upgrade_recommendations:
+        console.print()
+        console.print(
+            reporter.generate_upgrade_recommendations_report(
+                report.upgrade_recommendations
+            )
+        )
+
+    if verbose and report.docstring_recommendations:
+        console.print()
+        console.print(
+            reporter.generate_docstring_recommendations_report(
+                report.docstring_recommendations
+            )
+        )
+
+
+def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
+    """type-ignore 診断を実行"""
+    from ...core.analyzer.type_ignore_reporter import TypeIgnoreReporter
+
+    console.print(f"🔍 解析中: {target_path}")
+
+    analyzer = TypeIgnoreAnalyzer()
+
+    if target_path.is_file():
+        issues = analyzer.analyze_file(str(target_path))
+    else:
+        issues = analyzer.analyze_project(target_path)
+
+    # サマリー情報を生成
+    summary = analyzer.generate_summary(issues)
+
+    reporter = TypeIgnoreReporter()
+    reporter.generate_console_report(issues, summary, show_solutions=verbose)
+
+
+def _run_quality_check(target_path: Path, config: PylayConfig, verbose: bool) -> None:
+    """品質チェックを実行"""
+    from ...core.analyzer.code_locator import CodeLocator
+    from ...core.analyzer.quality_reporter import QualityReporter
+
+    console.print(f"🔍 解析中: {target_path}")
+
+    # 型レベル解析を実行
+    analyzer = TypeLevelAnalyzer()
+
+    if target_path.is_file():
+        report = analyzer.analyze_file(target_path)
+        target_dirs = [str(target_path.parent)]
+    else:
+        report = analyzer.analyze_directory(target_path)
+        target_dirs = [str(target_path)]
+
+    # 品質チェッカーを初期化
+    checker = QualityChecker(config)
+    checker.code_locator = CodeLocator([Path(d) for d in target_dirs])
+
+    # 品質チェックを実行
+    check_result = checker.check_quality(report)
+
+    # レポートを生成
+    reporter = QualityReporter(target_dirs=target_dirs)
+    reporter.generate_console_report(check_result, report, show_details=verbose)
