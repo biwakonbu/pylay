@@ -621,7 +621,7 @@ class User(Model):
 
 4. **型チェッカーの活用**
    - mypy、pyrightで型チェックを実行
-   - pylayの品質チェック機能を活用（`pylay quality`）
+   - pylayの品質チェック機能を活用（`pylay check --focus quality`）
 
 5. **テストの充実**
    - ドメイン型のバリデーションテスト
@@ -693,10 +693,10 @@ def get_user(user_id: int) -> UserResponse:
 
 ```bash
 # プロジェクト全体の型品質チェック
-pylay quality
+pylay check --focus quality
 
 # ORM層のファイルを指定
-pylay quality src/models/orm.py
+pylay check --focus quality src/models/orm.py
 ```
 
 レイヤー分離パターンの場合、API層（ドメイン型）とORM層（プリミティブ型）で品質スコアが異なる可能性があります。これは設計上の意図であり、問題ありません。
