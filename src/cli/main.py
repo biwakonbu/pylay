@@ -12,6 +12,7 @@ from ..core.converters.extract_deps import extract_dependencies_from_file
 from ..core.doc_generators.test_catalog_generator import CatalogGenerator
 from ..core.doc_generators.type_doc_generator import LayerDocGenerator
 from .commands.analyze_types import analyze_types
+from .commands.check import check
 from .commands.diagnose_type_ignore import diagnose_type_ignore
 from .commands.docs import run_docs
 from .commands.init import run_init
@@ -194,6 +195,9 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
 
 
 # convert グループは削除（yaml/types コマンドに統合）
+
+# check コマンドを追加（診断系コマンドの統合）
+cli.add_command(check)
 
 
 @cli.group()
