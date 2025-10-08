@@ -165,6 +165,7 @@ pylay check --focus ignore --format json --output report.json
 詳細は [type: ignore診断機能](docs/features/diagnose-type-ignore.md) を参照してください。
 
 ### 品質チェック
+
 ```bash
 # プロジェクト全体の品質をチェック
 pylay check --focus quality
@@ -175,6 +176,7 @@ pylay check --focus quality src/core/ -v
 # 全てのチェックを実行（型定義レベル + type-ignore + 品質）
 pylay check
 ```
+
 
 ### プロジェクト全体解析
 ```bash
