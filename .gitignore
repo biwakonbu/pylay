@@ -227,20 +227,8 @@ docs/test_catalog.md
 docs/debug_catalog.md
 docs/static-type-index-guide.md
 
-# pylay generated files in docs/pylay/
-# YAML型仕様ファイル（.lay.yaml）はGit管理対象
-# 自動生成されたその他のファイルは除外
-docs/pylay/**/*.md
-docs/pylay/**/*.json
-docs/pylay/**/*.png
-docs/pylay/**/*.dot
-# .lay.yamlファイルは管理対象（型仕様のバージョン管理）
-!docs/pylay/**/*.lay.yaml
-
 # reviewtask data directory
 .pr-review/
 
-# pylay generated files
-# YAMLスキーマファイル（.lay.yaml）は管理対象に含める
-# 自動生成されたPython型定義（.lay.py）は除外
-*.lay.py
+# Auto-generated Python files from YAML (schema.lay.py)
+**/schema.lay.py

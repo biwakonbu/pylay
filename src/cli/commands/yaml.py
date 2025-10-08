@@ -22,8 +22,43 @@ from rich.progress import (
 from rich.table import Table
 
 from src.core.converters.generation_header import generate_yaml_header
-from src.core.converters.type_to_yaml import types_to_yaml
+from src.core.converters.type_to_yaml import (
+    PROJECT_ROOT_PACKAGE,
+    types_to_yaml_simple,
+)
 from src.core.schemas.pylay_config import PylayConfig
+
+
+def _path_to_module_path(file_path: Path) -> str | None:
+    """ファイルパスからPythonモジュールパスを構築
+
+    Args:
+        file_path: Pythonファイルのパス
+
+    Returns:
+        モジュールパス（例: "src.core.analyzer.models"）、変換できない場合はNone
+    """
+    try:
+        # 絶対パスに変換
+        abs_path = file_path.resolve()
+
+        # プロジェクトルートを見つける（src/が含まれる最初のパス）
+        parts = abs_path.parts
+        if PROJECT_ROOT_PACKAGE not in parts:
+            return None
+
+        # srcから始まるパスを抽出
+        src_index = parts.index(PROJECT_ROOT_PACKAGE)
+        module_parts = parts[src_index:]
+
+        # .pyを除去
+        if module_parts[-1].endswith(".py"):
+            module_parts_list = list(module_parts[:-1]) + [module_parts[-1][:-3]]
+            module_parts = tuple(module_parts_list)
+
+        return ".".join(module_parts)
+    except (ValueError, IndexError):
+        return None
 
 
 def _has_type_definitions(file_path: Path) -> bool:
@@ -346,9 +381,12 @@ def _process_directory(
         console.print("[yellow]警告: 変換可能な型が見つかりませんでした[/yellow]")
         return
 
-    # 型をYAMLに変換
+    # 型をYAMLに変換（シンプル形式）
     with console.status("[bold green]YAMLファイル生成中..."):
-        yaml_content = types_to_yaml(all_types)
+        # ディレクトリからモジュールパスを構築
+        # （複数ファイルの型が混在するため、ディレクトリレベルで指定）
+        source_module_path = _path_to_module_path(directory)
+        yaml_content = types_to_yaml_simple(all_types, source_module_path)
 
         # 警告ヘッダーを追加
         header = generate_yaml_header(
@@ -499,9 +537,11 @@ def _process_single_file(
         )
         return
 
-    # 型をYAMLに変換
+    # 型をYAMLに変換（シンプル形式）
     with console.status("[bold green]YAMLファイル生成中..."):
-        yaml_content = types_to_yaml(types_dict)
+        # ファイルパスからモジュールパスを構築
+        source_module_path = _path_to_module_path(input_path)
+        yaml_content = types_to_yaml_simple(types_dict, source_module_path, input_path)
 
         # 警告ヘッダーを追加
         header = generate_yaml_header(

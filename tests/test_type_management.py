@@ -5,7 +5,7 @@ import pytest
 
 from src.core.converters.type_to_yaml import type_to_yaml, types_to_yaml
 from src.core.converters.yaml_to_type import validate_with_spec, yaml_to_spec
-from src.core.schemas.yaml_spec import DictTypeSpec, TypeSpec
+from src.core.schemas.yaml_spec import DictTypeSpec, TypeRoot, TypeSpec
 
 
 @pytest.fixture
@@ -482,15 +482,22 @@ def test_error_handling():
     with pytest.raises(Exception):  # ValidationError
         yaml_to_spec(invalid_yaml)
 
-    # 未定義の参照
+    # 未定義の参照（型エイリアスなどは文字列として残る）
     yaml_with_undefined_ref = """
     types:
       Test:
         type: list
         items: NonExistentType
     """
-    with pytest.raises(ValueError, match="Undefined type reference"):
-        yaml_to_spec(yaml_with_undefined_ref)
+    spec = yaml_to_spec(yaml_with_undefined_ref)
+    # 未定義の型参照は文字列として残る
+    assert spec is not None
+    if isinstance(spec, TypeRoot):
+        test_spec = spec.types.get("Test")
+        assert test_spec is not None
+        # ListTypeSpecのitemsが文字列として残っている
+        assert isinstance(test_spec.items, str)
+        assert test_spec.items == "NonExistentType"
 
     # 必須フィールドの欠如
     incomplete_yaml = """

@@ -27,6 +27,9 @@ help: ## このMakefileのヘルプを表示
 	@echo ""
 	@echo "🔍 プロジェクト解析:"
 	@echo "  analyze            プロジェクト全体を解析"
+	@echo "  analyze-yaml       プロジェクト全体をYAMLに変換"
+	@echo "  analyze-python     YAMLからPythonを再生成"
+	@echo "  analyze-roundtrip  ラウンドトリップ変換（YAML + Python）"
 	@echo "  check              品質チェック（型レベル + type-ignore + 品質）"
 	@echo "  check-types        型定義レベルを分析"
 	@echo "  check-ignore       type: ignore の原因を診断"
@@ -108,6 +111,24 @@ coverage: test ## カバレッジレポートを開く
 analyze: ## プロジェクト全体を解析
 	@echo "🔍 プロジェクトを解析中..."
 	uv run pylay project-analyze
+
+analyze-yaml: ## srcディレクトリのPython型をYAMLに変換
+	@echo "🔍 srcディレクトリのPython型をYAMLに変換中..."
+	uv run pylay yaml src/
+	@echo "✅ YAML変換完了"
+
+analyze-python: ## YAMLからPython型を再生成
+	@echo "🔍 YAMLからPython型を再生成中..."
+	@find src -name "schema.lay.yaml" -type f | while read yaml_file; do \
+		dir_path=$$(dirname $$yaml_file); \
+		py_file="$$dir_path/schema.lay.py"; \
+		echo "  変換中: $$yaml_file -> $$py_file"; \
+		uv run pylay types "$$yaml_file" -o "$$py_file"; \
+	done
+	@echo "✅ Python再生成完了"
+
+analyze-roundtrip: analyze-yaml analyze-python ## ラウンドトリップ変換（YAML生成 + Python再生成）
+	@echo "✅ ラウンドトリップ変換完了"
 
 check: ## 品質チェック（型レベル + type-ignore + 品質）
 	@echo "🔍 品質チェック中..."

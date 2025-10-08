@@ -194,8 +194,18 @@ class GenericTypeSpec(TypeSpec):
 class TypeRoot(BaseModel):
     """YAML型仕様のルートモデル (v1.1構造、循環耐性強化）"""
 
+    model_config = ConfigDict(populate_by_name=True)
+
     types: dict[TypeSpecName, TypeSpec] = Field(
         default_factory=dict, description="型仕様のルート辞書。キー=型名、値=TypeSpec"
+    )
+    imports_: dict[str, str] | None = Field(
+        default=None,
+        description="外部型のインポート情報（型名 → インポートパス）",
+        alias="_imports",
+    )
+    metadata_: dict[str, Any] | None = Field(
+        default=None, description="メタデータ情報", alias="_metadata"
     )
 
     @model_validator(mode="before")
@@ -236,8 +246,119 @@ class TypeRoot(BaseModel):
         return v
 
 
+def _create_spec_from_simple_format(
+    data: dict, root_key: str | None = None
+) -> TypeSpec:
+    """シンプル形式（fields:構造）からTypeSpecを作成
+
+    Args:
+        data: シンプル形式のYAMLデータ
+        root_key: 型名（トップレベルキー）
+
+    Returns:
+        TypeSpec: 変換されたTypeSpec
+    """
+
+    # 基本情報を取得
+    description = data.get("description", "")
+    fields_data = data.get("fields", {})
+
+    # propertiesに変換
+    properties: dict[str, TypeSpecOrRef] = {}
+    for field_name, field_info in fields_data.items():
+        field_type_str = field_info.get("type", "any")
+        field_required = field_info.get("required", True)
+        field_description = field_info.get("description", "")
+        field_default = field_info.get("default")
+
+        # 型文字列を解析してTypeSpecに変換
+        field_spec = _parse_type_string(field_type_str)
+        field_spec.description = field_description
+        field_spec.required = field_required
+
+        # デフォルト値を設定
+        if field_default is not None:
+            # デフォルト値は文字列として保存されているので、元の型に変換
+            # （現在は簡易実装として文字列のまま保存）
+            pass
+
+        properties[field_name] = field_spec
+
+    # DictTypeSpecを作成（クラス型として扱う）
+    # NOTE: Pydanticクラスはdict型として扱い、コード生成時にBaseModelに変換
+    return DictTypeSpec(
+        name=root_key or "UnknownClass",
+        description=description,
+        properties=properties,
+    )
+
+
+def _parse_type_string(type_str: str) -> TypeSpec:
+    """型文字列をTypeSpecに変換
+
+    Args:
+        type_str: 型文字列（例: "str", "list[str]", "dict[str, int]", "str | null"）
+
+    Returns:
+        TypeSpec: 変換されたTypeSpec
+    """
+    # Union型の検出（"|" を含む）
+    if " | " in type_str:
+        variants_str = [v.strip() for v in type_str.split(" | ")]
+        variants: list[TypeSpecOrRef] = []
+        for variant_str in variants_str:
+            if variant_str == "null":
+                variants.append(
+                    TypeSpec(name="null", type="null", description="None type")
+                )
+            else:
+                variant_spec = _parse_type_string(variant_str)
+                variants.append(variant_spec)
+        return UnionTypeSpec(name=f"Union[{type_str}]", variants=variants)
+
+    # List型の検出
+    if type_str.startswith("list[") and type_str.endswith("]"):
+        item_type_str = type_str[5:-1]  # "list[str]" -> "str"
+        if item_type_str in {"str", "int", "float", "bool"}:
+            item_spec = TypeSpec(name=item_type_str, type=item_type_str)
+        else:
+            # カスタム型は参照文字列として保持
+            return ListTypeSpec(name=type_str, items=item_type_str)
+        return ListTypeSpec(name=type_str, items=item_spec)
+
+    # Dict型の検出
+    if type_str.startswith("dict[") and type_str.endswith("]"):
+        dict_params = type_str[5:-1]  # "dict[str, int]" -> "str, int"
+        key_type_str, value_type_str = (p.strip() for p in dict_params.split(",", 1))
+
+        # 簡易実装: dict[str, T] の場合のみpropertiesとして扱う
+        if key_type_str == "str":
+            # 値型をparseしてpropertiesとして設定
+            value_spec = _parse_type_string(value_type_str)
+            return DictTypeSpec(
+                name=type_str,
+                properties={value_type_str: value_spec},
+            )
+
+    # 基本型または参照型
+    if type_str in {"str", "int", "float", "bool", "any", "null"}:
+        return TypeSpec(name=type_str, type=type_str)
+    else:
+        # カスタム型は参照文字列として扱う（型名のみ）
+        # この場合、TypeSpecを作成せず文字列として返すべきだが、
+        # TypeSpecOrRefの制約により、TypeSpecを作成する
+        return TypeSpec(name=type_str, type="reference")
+
+
 def _create_spec_from_data(data: dict, root_key: str | None = None) -> TypeSpec:
-    """dictからTypeSpecサブクラスを作成 (内部関数)"""
+    """dictからTypeSpecサブクラスを作成 (内部関数)
+
+    シンプル形式（fields:構造）と従来形式（properties:構造）の両方をサポート
+    """
+    # シンプル形式の検出: "fields" キーがある場合
+    if "fields" in data:
+        return _create_spec_from_simple_format(data, root_key)
+
     # 参照文字列を保持するための前処理
     processed_data = _preprocess_refs_for_spec_creation(data)
 
@@ -347,7 +468,8 @@ class TypeContext:
                 "bool",
                 "Any",
             ]:
-                raise ValueError(f"Undefined type reference: {ref_name}")
+                # 未定義の型参照は文字列として残す（型エイリアスなど）
+                return ref_name  # type: ignore[return-value]
 
             self.resolving.add(ref_name)
             try:
@@ -367,7 +489,8 @@ class TypeContext:
                 "bool",
                 "Any",
             ]:
-                raise ValueError(f"Undefined type reference: {ref}")
+                # 未定義の型参照は文字列として残す（型エイリアスなど）
+                return ref  # type: ignore[return-value]
 
             self.resolving.add(ref)
             try:

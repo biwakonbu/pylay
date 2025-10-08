@@ -19,9 +19,133 @@ from rich.progress import (
 from rich.table import Table
 
 from src.core.converters.generation_header import generate_python_header
+from src.core.converters.type_to_yaml import PROJECT_ROOT_PACKAGE
 from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.schemas.pylay_config import PylayConfig
-from src.core.schemas.yaml_spec import TypeRoot
+from src.core.schemas.yaml_spec import TypeRoot, TypeSpec
+
+
+def _generate_imports_from_yaml(
+    spec: TypeSpec | TypeRoot | None,
+    exclude_types: set[str] | None = None,
+) -> list[str]:
+    """YAMLから必要なインポート文を生成（PEP 8準拠）
+
+    Args:
+        spec: TypeSpecまたはTypeRoot
+        exclude_types: 除外する型名のセット（YAML内で定義されている型）
+
+    Returns:
+        インポート文のリスト
+
+    PEP 8インポート順序:
+    1. 標準ライブラリ
+    2. サードパーティライブラリ
+    3. ローカルアプリケーション/ライブラリ
+    各グループ内はアルファベット順
+    """
+    from collections import defaultdict
+
+    if exclude_types is None:
+        exclude_types = set()
+
+    # specがNoneの場合は基本インポートのみ
+    if spec is None:
+        return ["from pydantic import BaseModel, Field"]
+
+    # TypeRootから_importsを取得
+    imports_dict: dict[str, str] = {}
+    if isinstance(spec, TypeRoot):
+        # TypeRoot.imports_フィールドから取得
+        if spec.imports_:
+            imports_dict = spec.imports_
+    elif hasattr(spec, "imports_"):
+        if spec.imports_:
+            imports_dict = spec.imports_
+
+    if not imports_dict:
+        return []
+
+    # モジュール別にグループ化
+    stdlib_imports: dict[str, list[str]] = defaultdict(list)
+    thirdparty_imports: dict[str, list[str]] = defaultdict(list)
+    local_imports: dict[str, list[str]] = defaultdict(list)
+
+    for type_name, full_path in imports_dict.items():
+        # YAML内で定義されている型は除外（重複定義を避ける）
+        if type_name in exclude_types:
+            continue
+        # full_path: ".core.schemas.types.FilePath" or "pydantic.main.BaseModel"
+        if not full_path:
+            continue
+
+        # 相対パス（プロジェクト内）か判定
+        if full_path.startswith("."):
+            # 相対パス → ローカルインポート
+            # ".core.schemas.types.TypeName" → "src.core.schemas.types"
+            module_path = PROJECT_ROOT_PACKAGE + full_path.rsplit(".", 1)[0]
+            local_imports[module_path].append(type_name)
+        else:
+            # 絶対パス
+            parts = full_path.rsplit(".", 1)
+            if len(parts) != 2:
+                continue
+            module_path, class_name = parts
+
+            # 内部モジュール（._で始まるサブモジュール）をクリーンアップ
+            # pathlib._local.Path → pathlib.Path
+            if "._" in module_path:
+                module_path = module_path.split("._")[0]
+
+            # 標準ライブラリかサードパーティか判定（簡易版）
+            if module_path.split(".")[0] in {
+                "typing",
+                "pathlib",
+                "enum",
+                "dataclasses",
+                "collections",
+                "datetime",
+                "re",
+                "json",
+                "os",
+                "sys",
+            }:
+                stdlib_imports[module_path].append(class_name)
+            else:
+                thirdparty_imports[module_path].append(class_name)
+
+    # インポート文を生成（PEP 8順序）
+    result_imports = []
+
+    # 1. 標準ライブラリ（_importsから自動検出）
+    if stdlib_imports:
+        for module_path in sorted(stdlib_imports.keys()):
+            types = sorted(set(stdlib_imports[module_path]))
+            result_imports.append(f"from {module_path} import {', '.join(types)}")
+
+    # 2. サードパーティライブラリ（Pydanticを常に含む）
+    if result_imports:  # 標準ライブラリがある場合は空行
+        result_imports.append("")
+
+    # Pydanticインポートを追加（必須）
+    result_imports.append("from pydantic import BaseModel, Field")
+
+    # その他のサードパーティライブラリ
+    if thirdparty_imports:
+        for module_path in sorted(thirdparty_imports.keys()):
+            if module_path.startswith("pydantic"):
+                continue  # 既に追加済み
+            types = sorted(set(thirdparty_imports[module_path]))
+            result_imports.append(f"from {module_path} import {', '.join(types)}")
+
+    # 3. ローカルアプリケーション
+    if local_imports:
+        result_imports.append("")  # 空行
+        for module_path in sorted(local_imports.keys()):
+            types = sorted(set(local_imports[module_path]))
+            result_imports.append(f"from {module_path} import {', '.join(types)}")
+
+    return result_imports
 
 
 def run_types(input_file: str, output_file: str, root_key: str | None = None) -> None:
@@ -89,6 +213,12 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
         with console.status("[bold green]型情報解析中..."):
             spec = yaml_to_spec(yaml_str, root_key)
 
+        # 元のYAMLデータをパースして保持（新形式フィールド用）
+        import yaml as pyyaml
+
+        with open(input_file, encoding="utf-8") as f:
+            raw_yaml_data = pyyaml.safe_load(f.read())
+
         # Pythonコードを生成
         code_lines = []
 
@@ -101,7 +231,18 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
         if header:
             code_lines.append(header)
 
-        code_lines.append("from pydantic import BaseModel")
+        # インポート文を生成（YAMLから読み取り）
+        # ただし、YAML内で定義されている型はインポートから除外
+        defined_types = set()
+        if isinstance(spec, TypeRoot):
+            defined_types = set(spec.types.keys())
+        elif raw_yaml_data:
+            # YAMLデータから定義されている型名を抽出（_importsや_metadataは除外）
+            defined_types = {k for k in raw_yaml_data.keys() if not k.startswith("_")}
+
+        # Literalなどの型は _imports に含まれているので、動的チェックは不要
+        import_lines = _generate_imports_from_yaml(spec, exclude_types=defined_types)
+        code_lines.extend(import_lines)
         code_lines.append("")
 
         def spec_to_type_annotation(spec_data: dict | str) -> str:
@@ -153,6 +294,10 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                     return "str | Status"
                 return "Any"
 
+            elif spec_type == "reference":
+                # reference型の場合、spec_nameをそのまま使用
+                return spec_name if spec_name else "Any"
+
             else:
                 # 基本型
                 return spec_type
@@ -168,18 +313,68 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                 生成されたコード行のリスト
             """
             lines = []
-            lines.append(f"class {name}(BaseModel):")
+
+            # base_classesを取得（デフォルトはBaseModel）
+            base_classes = spec_data.get("base_classes", ["BaseModel"])
+            base_classes_str = ", ".join(base_classes)
+
+            lines.append(f"class {name}({base_classes_str}):")
             if "description" in spec_data:
                 lines.append(f'    """{spec_data["description"]}"""')
             lines.append("")
 
-            if "properties" in spec_data:
-                for prop_name, prop_spec in spec_data["properties"].items():
-                    prop_type = spec_to_type_annotation(prop_spec)
-                    if prop_spec.get("required", True):
-                        lines.append(f"    {prop_name}: {prop_type}")
+            # fieldsセクションから直接フィールド情報を取得
+            fields = spec_data.get("fields", spec_data.get("properties", {}))
+
+            if fields:
+                for field_name, field_spec in fields.items():
+                    # 型アノテーション文字列を取得（YAMLのtype値がそのまま使われる）
+                    field_type_raw = field_spec.get("type", "str")
+                    is_required = field_spec.get("required", True)
+                    field_info_data = field_spec.get("field_info", {})
+
+                    # 型名をそのまま使用（YAMLには既に正しい型名が格納されている）
+                    field_type = field_type_raw
+                    # 空のLiteral型のみ str に変換（値が失われている場合の暫定対処）
+                    if field_type == "Literal":
+                        field_type = "str"
+
+                    # Field()パラメータを構築
+                    field_params = []
+
+                    # default_factory
+                    if "default_factory" in field_info_data:
+                        factory_value = field_info_data["default_factory"]
+                        field_params.append(f"default_factory={factory_value}")
+                    # default
+                    elif "default" in field_info_data:
+                        field_params.append(f"default={field_info_data['default']}")
+
+                    # description
+                    if "description" in field_spec:
+                        field_params.append(
+                            f'description="{field_spec["description"]}"'
+                        )
+
+                    # その他のバリデーション制約
+                    for key, value in field_info_data.items():
+                        if key not in ["default", "default_factory", "description"]:
+                            if isinstance(value, str):
+                                field_params.append(f'{key}="{value}"')
+                            else:
+                                field_params.append(f"{key}={value}")
+
+                    # フィールド定義を生成
+                    if field_params:
+                        # Field()を使用
+                        field_def = f"Field({', '.join(field_params)})"
+                        lines.append(f"    {field_name}: {field_type} = {field_def}")
+                    elif is_required:
+                        # required=True かつ Field()不要
+                        lines.append(f"    {field_name}: {field_type}")
                     else:
-                        lines.append(f"    {prop_name}: {prop_type} | None = None")
+                        # required=False かつ Field()不要
+                        lines.append(f"    {field_name}: {field_type} | None = None")
 
             lines.append("")
             return lines
@@ -205,9 +400,18 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             if spec is not None and isinstance(spec, TypeRoot):
                 # 複数型仕様
                 for type_name, type_spec in spec.types.items():
-                    code_lines.extend(
-                        generate_class_code(type_name, type_spec.model_dump())
-                    )
+                    # 元のYAMLデータから該当型の定義を取得（新形式対応）
+                    raw_type_data = raw_yaml_data.get(type_name, {})
+                    # raw_type_dataが新形式（fieldsセクション含む）ならそちらを優先
+                    if raw_type_data and "fields" in raw_type_data:
+                        code_lines.append("")  # PEP 8: クラス定義前に2行空行
+                        code_lines.extend(generate_class_code(type_name, raw_type_data))
+                    else:
+                        # 旧形式（propertiesセクション）はmodel_dump()を使用
+                        code_lines.append("")  # PEP 8: クラス定義前に2行空行
+                        code_lines.extend(
+                            generate_class_code(type_name, type_spec.model_dump())
+                        )
                     progress.advance(task)
             elif spec is not None:
                 # 単一型仕様
