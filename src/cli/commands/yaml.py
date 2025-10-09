@@ -4,6 +4,7 @@ Pythonの型定義をYAML形式に変換するCLIコマンドです。
 """
 
 import importlib
+import importlib.metadata
 import sys
 from datetime import UTC
 from enum import Enum
@@ -110,6 +111,28 @@ def _has_type_definitions(file_path: Path) -> bool:
         return False
 
 
+def _find_python_files_with_type_definitions(directory: Path) -> list[Path]:
+    """ディレクトリ内の型定義を含むPythonファイルを再帰的に検索
+
+    Args:
+        directory: 検索対象のディレクトリ
+
+    Returns:
+        型定義を含むPythonファイルのリスト
+    """
+    python_files = []
+
+    for py_file in directory.rglob("*.py"):
+        # テストファイルや__pycache__は除外
+        if py_file.name.startswith("test_") or "__pycache__" in str(py_file) or py_file.name == "__init__.py":
+            continue
+
+        if _has_type_definitions(py_file):
+            python_files.append(py_file)
+
+    return python_files
+
+
 def _find_python_files_in_directory_only(directory: Path) -> list[Path]:
     """ディレクトリ直下のPythonファイルのみを検索（サブディレクトリは除外）
 
@@ -214,7 +237,6 @@ def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
     Raises:
         ValueError: バリデーションエラーが発生した場合
     """
-    import importlib.metadata
     from datetime import datetime
 
     # pylayバージョン取得
@@ -351,7 +373,6 @@ def _process_directory(
         metadata = ""
         if config.output.include_metadata:
             # ディレクトリの場合は、ファイルハッシュやサイズは計算しない
-            import importlib.metadata
             from datetime import datetime
 
             # pylayバージョン取得
