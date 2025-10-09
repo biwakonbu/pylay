@@ -29,7 +29,9 @@ def _load_config() -> PylayConfig:
         なし（エラー時はデフォルト設定にフォールバック）
     """
     try:
-        return PylayConfig.from_pyproject_toml(Path("pyproject.toml"))
+        # from_pyproject_toml の引数は project_root であり、pyproject.toml のパスではない
+        # None を渡すとカレントディレクトリから自動探索される
+        return PylayConfig.from_pyproject_toml()
     except FileNotFoundError:
         return PylayConfig()
     except Exception:
