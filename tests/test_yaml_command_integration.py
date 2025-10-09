@@ -423,11 +423,13 @@ class TestMetadataFunctions:
         # 必須フィールドの存在確認
         assert "_metadata:" in metadata
         assert "generated_by: pylay yaml" in metadata
-        assert f"source: {test_file}" in metadata
+        # sourceは相対パスに変換されるため、完全一致チェックは避ける
+        assert "source:" in metadata
         assert "source_hash:" in metadata
         assert "source_size:" in metadata
         assert "source_modified_at:" in metadata
-        assert "generated_at:" in metadata
+        # generated_atは再現性向上のため削除済み
+        # assert "generated_at:" in metadata
         assert "pylay_version:" in metadata
 
     def test_generate_metadata_section_validation_error(self) -> None:
@@ -464,5 +466,6 @@ class User(BaseModel):
         assert "source_hash:" in content
         assert "source_size:" in content
         assert "source_modified_at:" in content
-        assert "generated_at:" in content
+        # generated_atは再現性向上のため削除済み
+        # assert "generated_at:" in content
         assert "pylay_version:" in content

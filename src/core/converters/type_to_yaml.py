@@ -133,14 +133,14 @@ def _get_basic_type_str(typ: type[Any]) -> str:
     return basic_type_mapping.get(typ, "any")
 
 
-def _get_type_name(typ: type[Any]) -> str:
+def _get_type_name(typ: type[Any] | None) -> str:
     """型名を取得（ジェネリック型の場合も考慮）"""
     if isinstance(typ, ForwardRef):
         # ForwardRefの場合、アンカー形式で出力
         return f"&{typ.__forward_arg__}"
 
     # None型の特別処理
-    if typ is type(None) or typ is None:  # pyright: ignore[reportUnnecessaryComparison]
+    if typ is type(None) or typ is None:
         return "null"
 
     # UnionTypeの場合、argsから動的名前生成
@@ -226,9 +226,9 @@ def _get_field_docstring(cls: type[Any], field_name: str) -> str | None:
     return None
 
 
-def _get_simple_type_name(typ: type[Any]) -> str:
+def _get_simple_type_name(typ: type[Any] | None) -> str:
     """型の簡潔な名前を取得（Union[str, None]のような形式）"""
-    if typ is type(None) or typ is None:  # pyright: ignore[reportUnnecessaryComparison]
+    if typ is type(None) or typ is None:
         return "None"
 
     origin = get_origin(typ)
@@ -264,7 +264,7 @@ def _get_simple_type_name(typ: type[Any]) -> str:
 
 
 def _get_simple_type_name_with_imports(
-    typ: type[Any],
+    typ: type[Any] | None,
     source_module_path: str | None,
     imports_map: dict[str, str],
     file_imports: dict[str, str] | None = None,
@@ -280,7 +280,7 @@ def _get_simple_type_name_with_imports(
     Returns:
         型名文字列（例: "str", "list[str]", "LineNumber"）
     """
-    if typ is type(None) or typ is None:  # pyright: ignore[reportUnnecessaryComparison]
+    if typ is type(None) or typ is None:
         return "None"
 
     if file_imports is None:

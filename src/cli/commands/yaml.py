@@ -111,15 +111,19 @@ def _has_type_definitions(file_path: Path) -> bool:
         return False
 
 
-def find_python_files_with_type_definitions(directory: Path) -> list[Path]:
+def find_python_files_with_type_definitions(directory: Path, exclude_patterns: list[str] | None = None) -> list[Path]:
     """ディレクトリ内の型定義を含むPythonファイルを再帰的に検索
 
     Args:
         directory: 検索対象のディレクトリ
+        exclude_patterns: 除外するglobパターンのリスト
 
     Returns:
         型定義を含むPythonファイルのリスト
     """
+    if exclude_patterns is None:
+        exclude_patterns = []
+
     python_files = []
 
     for py_file in directory.rglob("*.py"):
@@ -127,26 +131,14 @@ def find_python_files_with_type_definitions(directory: Path) -> list[Path]:
         if py_file.name.startswith("test_") or "__pycache__" in str(py_file) or py_file.name == "__init__.py":
             continue
 
-        if _has_type_definitions(py_file):
-            python_files.append(py_file)
+        # exclude_patternsに一致するファイルを除外
+        excluded = False
+        for pattern in exclude_patterns:
+            if py_file.match(pattern):
+                excluded = True
+                break
 
-    return python_files
-
-
-def _find_python_files_in_directory_only(directory: Path) -> list[Path]:
-    """ディレクトリ直下のPythonファイルのみを検索（サブディレクトリは除外）
-
-    Args:
-        directory: 検索対象のディレクトリ
-
-    Returns:
-        型定義を含むPythonファイルのリスト（直下のみ）
-    """
-    python_files = []
-
-    for py_file in directory.glob("*.py"):
-        # テストファイルは除外
-        if py_file.name.startswith("test_") or py_file.name == "__init__.py":
+        if excluded:
             continue
 
         if _has_type_definitions(py_file):
@@ -155,19 +147,73 @@ def _find_python_files_in_directory_only(directory: Path) -> list[Path]:
     return python_files
 
 
-def _find_all_subdirectories(directory: Path) -> list[Path]:
+def _find_python_files_in_directory_only(directory: Path, exclude_patterns: list[str] | None = None) -> list[Path]:
+    """ディレクトリ直下のPythonファイルのみを検索（サブディレクトリは除外）
+
+    Args:
+        directory: 検索対象のディレクトリ
+        exclude_patterns: 除外するglobパターンのリスト
+
+    Returns:
+        型定義を含むPythonファイルのリスト（直下のみ）
+    """
+    if exclude_patterns is None:
+        exclude_patterns = []
+
+    python_files = []
+
+    for py_file in directory.glob("*.py"):
+        # テストファイルは除外
+        if py_file.name.startswith("test_") or py_file.name == "__init__.py":
+            continue
+
+        # exclude_patternsに一致するファイルを除外
+        excluded = False
+        for pattern in exclude_patterns:
+            if py_file.match(pattern):
+                excluded = True
+                break
+
+        if excluded:
+            continue
+
+        if _has_type_definitions(py_file):
+            python_files.append(py_file)
+
+    return python_files
+
+
+def _find_all_subdirectories(directory: Path, exclude_patterns: list[str] | None = None) -> list[Path]:
     """ディレクトリ内の全サブディレクトリを取得（再帰的）
 
     Args:
         directory: 検索対象のディレクトリ
+        exclude_patterns: 除外するglobパターンのリスト
 
     Returns:
         サブディレクトリのリスト（自身も含む）
     """
+    if exclude_patterns is None:
+        exclude_patterns = []
+
     directories = [directory]
 
     for item in directory.rglob("*"):
-        if item.is_dir() and "__pycache__" not in str(item) and "tests" not in str(item):
+        if not item.is_dir():
+            continue
+
+        # __pycache__ と tests は常に除外
+        if "__pycache__" in str(item) or "tests" in str(item):
+            continue
+
+        # exclude_patternsに一致するディレクトリを除外
+        excluded = False
+        for pattern in exclude_patterns:
+            if item.match(pattern):
+                excluded = True
+                break
+
+        if not excluded:
             directories.append(item)
 
     return sorted(directories)
@@ -245,11 +291,17 @@ def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
     except importlib.metadata.PackageNotFoundError:
         pylay_version = "dev"
 
-    # 生成時刻
-    generated_at = datetime.now(UTC).isoformat()
-
     # ソースファイル情報
     source_path = Path(source_file)
+
+    # 相対パスに変換（カレントディレクトリからの相対パス）
+    try:
+        source_relative = source_path.relative_to(Path.cwd())
+        source_file_display = str(source_relative)
+    except ValueError:
+        # 相対パスに変換できない場合は絶対パスをそのまま使用
+        source_file_display = str(source_path)
+
     source_hash = ""
     source_size = 0
     source_modified_at = ""
@@ -264,21 +316,21 @@ def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
         # 最終更新日時
         source_modified_at = datetime.fromtimestamp(source_path.stat().st_mtime, tz=UTC).isoformat()
 
-    # バリデーション
+    # バリデーション（相対パスでバリデーション）
     if validate:
-        errors = _validate_metadata(source_file, generated_at, pylay_version)
+        validation_time = source_modified_at if source_modified_at else datetime.now(UTC).isoformat()
+        errors = _validate_metadata(source_file, validation_time, pylay_version)
         if errors:
             error_msg = "\n".join(errors)
             raise ValueError(f"Metadata validation failed:\n{error_msg}")
 
-    # YAML生成
+    # YAML生成（generated_atは削除して再現性を向上）
     return f"""_metadata:
   generated_by: pylay yaml
-  source: {source_file}
+  source: {source_file_display}
   source_hash: {source_hash}
   source_size: {source_size}
   source_modified_at: {source_modified_at}
-  generated_at: {generated_at}
   pylay_version: {pylay_version}
 
 """
@@ -307,7 +359,7 @@ def _process_directory(
     console.print(start_panel)
 
     # ディレクトリ直下のPythonファイルのみを検索（サブディレクトリは除外）
-    py_files = _find_python_files_in_directory_only(directory)
+    py_files = _find_python_files_in_directory_only(directory, config.exclude_patterns)
 
     if not py_files:
         console.print(f"[yellow]警告: {directory} " "内に型定義を含むファイルが見つかりませんでした[/yellow]")
@@ -341,13 +393,16 @@ def _process_directory(
                 module = importlib.import_module(module_name)  # noqa: F823
 
                 # 型を抽出
+                from dataclasses import is_dataclass
+
                 for name, obj in module.__dict__.items():
                     if isinstance(obj, type):
                         is_pydantic_model = hasattr(obj, "__annotations__") and hasattr(obj, "__pydantic_core_schema__")
                         is_enum = issubclass(obj, Enum)
+                        is_dataclass_type = is_dataclass(obj)
                         is_user_defined = getattr(obj, "__module__", None) == module_name
 
-                        if (is_pydantic_model or is_enum) and is_user_defined:
+                        if (is_pydantic_model or is_enum or is_dataclass_type) and is_user_defined:
                             all_types[name] = obj
 
             except Exception as e:
@@ -383,7 +438,6 @@ def _process_directory(
         metadata = ""
         if config.output.include_metadata:
             # ディレクトリの場合は、ファイルハッシュやサイズは計算しない
-            from datetime import datetime
 
             # pylayバージョン取得
             try:
@@ -391,20 +445,22 @@ def _process_directory(
             except importlib.metadata.PackageNotFoundError:
                 pylay_version = "dev"
 
-            # 生成時刻
-            generated_at = datetime.now(UTC).isoformat()
+            # ディレクトリ情報（相対パスに変換）
+            try:
+                directory_relative = directory.relative_to(Path.cwd())
+                directory_str = str(directory_relative)
+            except ValueError:
+                # 相対パスに変換できない場合は絶対パスをそのまま使用
+                directory_str = str(directory)
 
-            # ディレクトリ情報
-            directory_str = str(directory)
             file_count = len(py_files)
 
-            # YAML生成
+            # YAML生成（generated_atは削除して再現性を向上）
             metadata = f"""_metadata:
   generated_by: pylay yaml
   source: {directory_str}
   source_type: directory
   file_count: {file_count}
-  generated_at: {generated_at}
   pylay_version: {pylay_version}
 
 """
@@ -494,7 +550,7 @@ def _process_single_file(
 
         for name, obj in module_items:
             # ユーザ定義クラスをフィルタリング:
-            # このモジュールで定義されたPydanticモデルまたはEnum
+            # このモジュールで定義されたPydanticモデル、Enum、またはdataclass
             if isinstance(obj, type):
                 # Pydanticモデルかどうかをチェック（BaseModelのサブクラス判定）
                 try:
@@ -509,9 +565,14 @@ def _process_single_file(
                 except TypeError:
                     is_enum = False
 
+                # dataclassかどうかをチェック
+                from dataclasses import is_dataclass
+
+                is_dataclass_type = is_dataclass(obj)
+
                 is_user_defined = getattr(obj, "__module__", None) == module_name
 
-                if (is_pydantic_model or is_enum) and is_user_defined:
+                if (is_pydantic_model or is_enum or is_dataclass_type) and is_user_defined:
                     try:
                         types_dict[name] = obj
                     except Exception as e:
@@ -646,7 +707,7 @@ def run_yaml(
                     continue
 
                 # 全サブディレクトリを取得（階層ごとに処理）
-                all_dirs = _find_all_subdirectories(target_dir)
+                all_dirs = _find_all_subdirectories(target_dir, config.exclude_patterns)
 
                 for current_dir in all_dirs:
                     # 出力パスを計算（schema.lay.yamlに集約）
@@ -759,7 +820,7 @@ def run_yaml(
                         output_path = output_path.with_suffix(config.generation.lay_yaml_suffix)
 
             # 全サブディレクトリを取得（階層ごとに処理）
-            all_dirs = _find_all_subdirectories(input_path_resolved)
+            all_dirs = _find_all_subdirectories(input_path_resolved, config.exclude_patterns)
 
             for current_dir in all_dirs:
                 # 出力パスを計算

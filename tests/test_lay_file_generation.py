@@ -106,12 +106,8 @@ User:
         # 既存の.lay.pyファイルを作成（警告ヘッダー付き）
         old_file1 = output_dir / "old1.lay.py"
         old_file2 = output_dir / "old2.lay.py"
-        old_file1.write_text(
-            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""'
-        )
-        old_file2.write_text(
-            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""'
-        )
+        old_file1.write_text('"""\n' "pylay自動生成ファイル\n" "このファイルを直接編集しないでください\n" '"""')
+        old_file2.write_text('"""\n' "pylay自動生成ファイル\n" "このファイルを直接編集しないでください\n" '"""')
 
         # クリーン再生成前に削除
         deleted = clean_lay_files(output_dir, ".lay.py")
@@ -151,9 +147,7 @@ NewType:
 
         # .lay.pyファイルも作成
         lay_file = output_dir / "types.lay.py"
-        lay_file.write_text(
-            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""'
-        )
+        lay_file.write_text('"""\n' "pylay自動生成ファイル\n" "このファイルを直接編集しないでください\n" '"""')
 
         # クリーン再生成実行
         deleted = clean_lay_files(output_dir, ".lay.py")
@@ -205,9 +199,7 @@ class User(BaseModel):
         assert "このファイルを直接編集しないでください" in content
         assert "次回の pylay yaml 実行時に削除・再生成されます" in content
 
-    def test_lay_yaml_file_has_metadata(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_lay_yaml_file_has_metadata(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """生成された.lay.yamlファイルに_metadataセクションが含まれることを確認"""
         from src.cli.commands.yaml import run_yaml
 
@@ -245,7 +237,8 @@ class Product(BaseModel):
         assert "generated_by: pylay yaml" in content
         assert "source:" in content
         assert "test_product.py" in content
-        assert "generated_at:" in content
+        # generated_atは再現性向上のため削除済み
+        # assert "generated_at:" in content
         assert "pylay_version:" in content
 
     def test_lay_yaml_extension_is_enforced(self, tmp_path: Path) -> None:
@@ -293,9 +286,7 @@ class User(BaseModel):
 
         # パッケージ構造ミラーリングのテスト
         output_base = project_root / "docs" / "pylay"
-        expected_output = mirror_package_path(
-            py_file, project_root, output_base, ".lay.yaml"
-        )
+        expected_output = mirror_package_path(py_file, project_root, output_base, ".lay.yaml")
 
         # 期待される出力パスを確認
         expected_path = output_base / "src" / "core" / "schemas" / "user.lay.yaml"
@@ -317,9 +308,7 @@ class TestConfigIntegration:
     - PylayConfig.from_pyproject_toml()による設定読み込み
     """
 
-    def test_generation_config_is_used(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_generation_config_is_used(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """PylayConfigのgeneration設定が使用されることを確認"""
         from src.cli.commands.types import run_types
 
@@ -360,9 +349,7 @@ User:
         assert "pylay自動生成ファイル" in content
         assert "Source:" in content  # include_source_path = true
 
-    def test_output_config_is_used(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_output_config_is_used(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """PylayConfigのoutput設定が使用されることを確認"""
         from src.core.schemas.pylay_config import PylayConfig
 
@@ -389,9 +376,7 @@ preserve_docstrings = true
         assert config.output.include_metadata is True
         assert config.output.preserve_docstrings is True
 
-    def test_init_command_writes_output_config(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_init_command_writes_output_config(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """CLI initコマンドがoutput設定をpyproject.tomlに書き込むことを確認
 
         検証項目:
