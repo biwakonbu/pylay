@@ -9,7 +9,7 @@
 - [統合パターン](#統合パターン)
   - [パターン1: TypeDecorator（型の一貫性重視）](#パターン1-typedecorator型の一貫性重視)
   - [パターン2: hybrid_property（互換性重視）](#パターン2-hybrid_property互換性重視)
-  - [パターン3: composite types（DDD重視）](#パターン3-composite-typesdd重視)
+  - [パターン3: composite types（DDD重視）](#パターン3-composite-types-ddd重視)
   - [パターン4: レイヤー分離（シンプルさ重視）](#パターン4-レイヤー分離シンプルさ重視)
 - [設計パターンの選択基準](#設計パターンの選択基準)
 - [ORM別実装例](#orm別実装例)
