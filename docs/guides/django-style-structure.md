@@ -88,11 +88,11 @@ def create_source_path(value: Path | str) -> SourcePath:
 ConversionCount = NewType('ConversionCount', int)
 
 @validate_call
-def ConversionCount(  # type: ignore[no-redef]
+def create_conversion_count(
     value: Annotated[int, Field(ge=0)]
 ) -> ConversionCount:
     """変換回数を作成する"""
-    return NewType('ConversionCount', int)(value)
+    return ConversionCount(value)
 ```
 
 ### protocols.py
@@ -253,10 +253,10 @@ def OutputPath(value: Annotated[Path, Field()]) -> OutputPath:  # type: ignore[n
 ConversionCount = NewType('ConversionCount', int)
 
 @validate_call
-def ConversionCount(  # type: ignore[no-redef]
+def create_conversion_count(
     value: Annotated[int, Field(ge=0)]
 ) -> ConversionCount:
-    return NewType('ConversionCount', int)(value)
+    return ConversionCount(value)
 ```
 
 **protocols.py**:
