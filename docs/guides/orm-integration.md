@@ -491,6 +491,9 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from your_app.models import Base  # TypeDecoratorを使用したモデル
 
+# Alembic設定オブジェクト
+config = context.config
+
 # ターゲットメタデータを設定
 target_metadata = Base.metadata
 
