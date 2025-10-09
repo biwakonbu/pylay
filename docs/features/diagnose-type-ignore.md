@@ -246,7 +246,7 @@ make diagnose-ignore-high
 ### 3. コードレビューでの活用
 ```bash
 # PRで追加されたtype: ignoreを診断
-pylay check --focus ignore --file path/to/changed_file.py --solutions
+pylay check --focus ignore path/to/changed_file.py -v
 
 # 解決策を参考に修正
 ```
