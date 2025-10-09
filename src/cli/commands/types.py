@@ -391,7 +391,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             base_classes_str = ", ".join(base_classes)
 
             lines.append(f"class {name}({base_classes_str}):")
-            if "description" in spec_data:
+            if "description" in spec_data and spec_data["description"]:
                 # 複数行docstringの場合、適切にインデントを追加
                 description = spec_data["description"]
                 if "\n" in description:
