@@ -124,6 +124,7 @@ uv run pylay yaml src/core/schemas/types.py -o custom/output/types.lay.yaml
 - **Enum**: Enum継承クラス
 
 **除外される**:
+
 - テストファイル（`test_*.py`）
 - `__init__.py`
 
@@ -271,6 +272,7 @@ _metadata:
 ```
 
 **活用例**:
+
 - `source_hash`: ソースファイルが変更されたかチェック
 - `source_modified_at`: 最終更新日時の追跡
 - `pylay_version`: 生成に使用したpylayバージョンの記録
