@@ -489,11 +489,13 @@ def _process_single_file(
             # ユーザ定義クラスをフィルタリング:
             # このモジュールで定義されたPydanticモデルまたはEnum
             if isinstance(obj, type):
-                # Pydanticモデルかどうかをチェック
-                # （BaseModelのサブクラスでアノテーションを持つ）
-                is_pydantic_model = hasattr(obj, "__annotations__") and hasattr(
-                    obj, "__pydantic_core_schema__"
-                )  # Pydantic v2
+                # Pydanticモデルかどうかをチェック（BaseModelのサブクラス判定）
+                try:
+                    from pydantic import BaseModel
+
+                    is_pydantic_model = issubclass(obj, BaseModel)
+                except Exception:
+                    is_pydantic_model = False
                 is_enum = issubclass(obj, Enum)
                 is_user_defined = getattr(obj, "__module__", None) == module_name
 
