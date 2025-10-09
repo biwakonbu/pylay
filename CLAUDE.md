@@ -8,6 +8,12 @@
 - すべての実装/編集/生成タスクは、まず [AGENTS.md](AGENTS.md) のプロジェクト概要、アーキテクチャ、技術スタックを確認してください
 - 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](AGENTS.md) に記載された方法を使用してください
 - コーディング規約、命名規則、テスト指針は [AGENTS.md](AGENTS.md) に厳密に従ってください
+- **ドキュメント参照**: docs配下のドキュメントについては [docs/README.md](docs/README.md) で全体構造を確認してください
+  - 型定義ルール: [docs/typing-rule.md](docs/typing-rule.md)
+  - 開発環境: [docs/development/](docs/development/)
+  - 機能詳細: [docs/features/](docs/features/)
+  - 実践ガイド: [docs/guides/](docs/guides/)
+  - 技術リファレンス: [docs/reference/](docs/reference/)
 - **型定義ルール**: [docs/typing-rule.md](docs/typing-rule.md) に記載された型定義の4つの核心原則を必ず遵守してください
   1. **個別型をちゃんと定義し、primitive型を直接使わない**
      - `str`, `int` などをそのまま使わず、ドメイン型を定義（`type UserId = str` や `Annotated` を活用）
@@ -53,9 +59,14 @@
 - YAML型仕様からPydantic BaseModelとしてパース・バリデーション
 - YAML型仕様からMarkdownドキュメントを自動生成
 - 型推論と依存関係抽出（mypy + ASTハイブリッド）
+- **完全なラウンドトリップ変換**（Python型 → YAML → Python型の完全再現）
+  - Field制約（ge, le, gt, lt, min_length, max_length, pattern, multiple_of）の保持
+  - 複数行docstringのインデント保持
+  - AST解析による正確なimport抽出
+  - トポロジカルソートによる依存関係順の型定義
+  - 前方参照サポート（`from __future__ import annotations`）
 - 型定義レベル分析・監視機能（Level 1/2/3の自動分類と昇格/降格推奨）
 - type: ignore 原因診断機能（優先度判定、解決策提案）
-- 型 <-> YAML <-> 型 <-> Markdownのラウンドトリップ変換
 
 ### 1.2 対象ユーザー
 - Python開発者（特に型安全性を重視するプロジェクト）
@@ -64,13 +75,17 @@
 
 ### 1.3 範囲
 **実装済み**:
-- 型 <-> YAML 相互変換
+- 型 <-> YAML 相互変換（完全なラウンドトリップ変換）
+  - Field制約の完全保持（ge, le, gt, lt, min_length, max_length, pattern, multiple_of）
+  - 複数行docstringのインデント保持
+  - AST解析による正確なimport抽出
+  - トポロジカルソートによる依存関係順の型定義
 - Pydantic v2による高速バリデーション
 - YAML -> Markdownドキュメント生成
-- 基本的なテストと相互変換の整合性検証
-- 型推論と依存関係抽出（mypy + astハイブリッド）— Phase 5 完了
+- 型推論と依存関係抽出（mypy + ASTハイブリッド）
 - CLI（コマンドラインインターフェース）
 - TUI（テキストユーザーインターフェース）の基盤
+- 基本的なテストと相互変換の整合性検証
 
 **範囲外**:
 - 高度なロジック処理（YAMLは状態表現のみ）
@@ -89,13 +104,13 @@ pylay/
 │   │       ├── type_to_yaml.py   # 型→YAML変換コマンド
 │   │       └── yaml_to_type.py   # YAML→型変換コマンド
 │   ├── core/              # コア機能
-│   │   ├── converters/    # 型変換機能（★types.py未作成）
+│   │   ├── converters/    # 型変換機能
 │   │   │   ├── type_to_yaml.py   # Python型 → YAML変換
 │   │   │   ├── yaml_to_type.py   # YAML → Python型変換
 │   │   │   ├── extract_deps.py   # 依存関係抽出
 │   │   │   ├── mypy_type_extractor.py  # mypy型抽出
 │   │   │   └── ast_dependency_extractor.py  # AST依存抽出
-│   │   ├── analyzer/      # 型解析（★types.py未作成、protocols.py/models.pyは存在）
+│   │   ├── analyzer/      # 型解析
 │   │   │   ├── protocols.py      # Protocolインターフェース
 │   │   │   ├── models.py         # ドメインモデル
 │   │   │   ├── base.py           # 基底クラス
@@ -105,7 +120,7 @@ pylay/
 │   │   │   ├── type_level_analyzer.py  # 型レベル解析
 │   │   │   ├── docstring_analyzer.py  # docstring解析
 │   │   │   └── ... (その他解析関連ファイル)
-│   │   ├── doc_generators/ # ドキュメント生成（★types.py未作成）
+│   │   ├── doc_generators/ # ドキュメント生成
 │   │   │   ├── base.py           # 基底クラス
 │   │   │   ├── config.py         # 設定管理
 │   │   │   ├── filesystem.py     # ファイルシステム操作
@@ -146,8 +161,6 @@ pylay/
 └── uv.lock               # uv依存関係ロックファイル
 ```
 
-**注**: ★マークは、issue #18で推奨されている構造に未対応の箇所を示します。
-
 ### 2.2 主要コンポーネント
 - **cli/**: コマンドラインインターフェース
 - **core/converters/**: 型とYAML間の相互変換機能
@@ -185,12 +198,13 @@ pylay/
 ### 3.1 言語/フレームワーク
 - **Python 3.13+** (必須、開発基準)
 - **Pydantic v2**: バリデーションとドメイン型定義
-- **Python 3.13標準型システム**: 組み込み型ジェネリクス、Union型簡潔表記、型パラメータ構文
+- **Python 3.13標準型システム**: 組み込み型ジェネリクス、Union型簡潔表記、型パラメータ構文（PEP 695）
 
 ### 3.2 主要ライブラリ
 - **PyYAML/ruamel.yaml**: YAML形式データの処理
 - **pytest**: テスト実行フレームワーク
-- **mypy**: 型推論と静的型検査
+- **mypy**: 型推論と静的型検査（Python標準的な解釈）
+- **Pyright**: 厳格な型チェック（Microsoft製、VSCode統合）
 - **ast/NetworkX**: 依存関係の抽出とグラフ構造化
 - **Ruff**: 高速なリンターとコードフォーマッター
 - **uv**: Pythonパッケージ管理ツール（推奨）
@@ -201,6 +215,7 @@ pylay/
 - **pre-commit**: コード品質の自動チェック
 - **Makefile**: 統一された開発用コマンド集
 - **VSCode**: 推奨エディタ（タスク設定済み）
+- **型チェック**: mypy + Pyright のダブルチェック体制
 
 ### 3.4 外部サービス
 - なし（スタンドアローン）
@@ -211,6 +226,7 @@ pylay/
 - Python 3.13+
 - [uv](https://github.com/astral-sh/uv)
 - [pre-commit](https://pre-commit.com/)
+- [Node.js](https://nodejs.org/) (pyrightを使用する場合、npx経由で自動インストール可能)
 
 ### 4.2 Pythonランタイム管理ポリシー
 **重要**: OSに直接インストールされたシステムPythonは使用せず、常にuv管理の仮想環境を使用してください。
@@ -261,7 +277,6 @@ Makefile は開発コマンドを統一的に管理するためのツールで�
 
 - **make type-check**: mypy + Pyrightで型チェックを実行します（一括実行、推奨）。
   使用例: `make type-check`
-  **重要**: 個別実行（mypy単独、pyright単独）は不要です。常にこのコマンドを使用してください。
 
 - **make test**: pytestでテストを実行し、カバレッジレポートを生成します。
   使用例: `make test`
@@ -292,15 +307,21 @@ Makefile は開発コマンドを統一的に管理するためのツールで�
 ### 4.6 VSCode設定
 VSCodeを使用する場合、以下の拡張機能が推奨されます：
 - Python（Microsoft社提供）
+- Pylance（Pyrightベース、推奨型チェッカー）
 - Pylint
 - MyPy Type Checker
 - Prettier
+
+**型チェック設定**:
+- IDE: Pyrightを使用（pyrightconfig.json で設定、standardモード）
+- CLI/CI: mypy + Pyright のダブルチェック（Makefileで統合）
+- 両方を通過することで高い型安全性を保証
 
 ## 5. コーディング規約
 
 ### 5.1 基本原則
 - **日本語**でコメント、ドキュメント、コミットメッセージを記述
-- **型アノテーション完全**: mypyのstrictモードを遵守
+- **型アノテーション完全**: mypy strictモード + Pyright standardモードを遵守
 - **docstring必須**: Google形式で全モジュール/クラス/関数に記述
 - Pythonのコメントは、docstringをGoogle Styleで記述し、内容は日本語で記述する
 - **インポート順序**: standard library → third party → local imports
@@ -325,21 +346,55 @@ _private_method()
 - 引用符スタイル: ダブルクォート
 - 末尾カンマ: 許可（フォーマッタ管理）
 
-### 5.4 型定義の詳細
+### 5.4 型定義ルール（重要）
 **型定義の詳細なルールは [docs/typing-rule.md](docs/typing-rule.md) を必ず参照してください。**
 
-本プロジェクトはPython 3.13を開発基準とし、以下の原則を厳守します：
+#### 核心原則（4つの必須事項）
 
-#### 4つの核心原則
-1. **primitive型を直接使わない** → ドメイン型を定義（`NewType` + `Annotated`、`dataclass`、`BaseModel`）
-2. **Pydanticによる厳密な型定義** → 3つのレベルを適切に使い分ける
-   - Level 1: `type` エイリアス（制約なし）
-   - Level 2: `NewType` + ファクトリ関数 + `TypeAdapter`（★プリミティブ型代替、最頻出、PEP 484準拠）
-   - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
-3. **typing モジュールは最小限** → Python 3.13標準構文を優先
-4. **型と実装を分離** → types.py, protocols.py, models.py, services.py
+**重要**: このプロジェクトの設計思想は、**型を軸にした依存関係の洗い出し**と**丁寧な型付けによる設計からの自動実装**です。そのため、個別型（ドメイン型）の定義を積極的に推奨しています。
 
-#### Python 3.13型構文（推奨）
+1. **個別型をちゃんと定義し、primitive型を直接使わない**
+   - `str`, `int` などをそのまま使わず、ドメイン型を定義
+   - 例: `type UserId = str` （制約なし）、`type Email = Annotated[str, AfterValidator(...)]` （制約あり）
+   - **低レベル放置を好ましくないとする**: Level 1（単純な型エイリアス）の状態で長期間放置されていることは推奨されない
+     - Level 1は一時的な状態であり、適切な制約（Level 2）やビジネスロジック（Level 3）への昇格を検討すべき
+     - 型定義レベルの適切性は状況に応じて自動判断可能（Level 3 ↔ Level 2）
+     - Level 1やその他への判断はdocstringで制御可能（`@target-level: level1`, `@keep-as-is: true`）
+   - **被参照0の型**: なぜ使われていないか調査し、適切なレベルへの昇格を検討する
+     - 実装途中の可能性 → Level 2/3への昇格を推奨
+     - 認知不足で既存のprimitive型使用箇所が置き換えられていない → 使用箇所を置き換え
+     - 将来の拡張性を考えた設計意図 → docstringで設計意図を明記し、`@keep-as-is: true`で現状維持を宣言
+
+2. **Pydanticによる厳密な型定義でドメイン型を作成する**
+   - **3つのレベル**を適切に使い分ける：
+     - Level 1: `type` エイリアス（制約なし）
+     - Level 2: `NewType` + ファクトリ関数 + `TypeAdapter`（★プリミティブ型代替、最頻出パターン、PEP 484準拠）
+     - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型・ビジネスロジック）
+       - 3a: `dataclass(frozen=True)` - 不変値オブジェクト
+       - 3b: `dataclass` - 状態管理エンティティ
+       - 3c: `BaseModel` - 複雑なドメインモデル
+   - Fieldによるバリデーション（`min_length`, `ge`, `pattern` など）
+
+3. **typing モジュールは必要最小限に留める（Python 3.13標準を優先）**
+   - ❌ `Union[X, Y]` → ✅ `X | Y`
+   - ❌ `Optional[X]` → ✅ `X | None`
+   - ❌ `List[X]` → ✅ `list[X]`
+   - ❌ `Dict[K, V]` → ✅ `dict[K, V]`
+   - ❌ `TypeVar('T')` + `Generic[T]` → ✅ `class Container[T]`
+   - ❌ `TypeAlias` → ✅ `type Point = tuple[float, float]`
+
+4. **型と実装を分離し、循環参照を防ぐ**
+   - **設計思想**: Djangoのアプリケーション構造のように、各モジュールが独立したパッケージとして完結
+   - **モジュール単位構造**: converters/, analyzer/, doc_generators/ は以下の4ファイル構造を目指す
+     - `types.py`: モジュール固有の型定義（Level 1/2を優先）
+     - `protocols.py`: Protocolインターフェース定義
+     - `models.py`: Pydanticモデル（Level 3: BaseModel、型+軽いロジック）
+     - 実装ファイル（type_to_yaml.py等）: ビジネスロジック実装
+   - **依存関係の方向**: 実装 → models.py → types.py、実装 → protocols.py
+   - **schemas/の役割**: 複数モジュールで共有される共通型のみ配置（types.py, graph.py, yaml_spec.py等）
+
+#### Python 3.13基準の型定義
+本プロジェクトはPython 3.13を開発基準とし、以下の新機能を活用します：
 ```python
 from typing import NewType, Annotated
 from pydantic import AfterValidator, Field, BaseModel
@@ -388,17 +443,20 @@ def process(data: str | int | None) -> list[str]:
 class Container[T](BaseModel):
     items: list[T]
 
-# ✅ type文
+# ✅ type文（PEP 695）
 type Point = tuple[float, float]
+type JSONValue = str | int | float | bool | None | dict[str, "JSONValue"]
 
-# ❌ 非推奨
-from typing import Union, Optional, List, NewType
+# ❌ 非推奨（Python 3.9以前の書き方）
+from typing import Union, Optional, List, TypeVar, Generic, NewType
 def process(data: Union[str, int, None]) -> List[str]:
     pass
 Email = NewType('Email', str)  # Annotated を使用
 ```
 
 **重要**: 型定義の厳密性 = ドキュメント生成の精度
+
+詳細は **[docs/typing-rule.md](docs/typing-rule.md)** を参照してください。
 
 ## 6. テスト指針
 
@@ -554,11 +612,18 @@ export MYPY_INFER_LEVEL=2
 2. **CHANGELOG更新**: `CHANGELOG.md` に変更内容を追加
 3. **ドキュメント更新**: 必要に応じてREADME.mdやドキュメントを更新
 4. **テスト実行**: `make test` で全テストが通過することを確認
-5. **ビルド確認**: `make build` でパッケージが正常にビルドされることを確認
+5. **リリース準備**: `make release-prepare` でタグ設定とビルドを実行
+- 自動的にgitタグを作成・プッシュ（`v{バージョン番号}`）
+  - タグメッセージにCHANGELOGの内容を自動的に含める
+- パッケージをビルド
 
 #### 12.3.3 PyPI公開
 1. **テストPyPI公開**: `make publish-test` でテストPyPIに公開して動作確認
+   - 自動的にgitタグを設定（既に設定済みの場合はスキップ）
+   - タグメッセージにCHANGELOGの内容を自動的に含める
 2. **本番PyPI公開**: `make publish` で本番PyPIに公開
+   - 自動的にgitタグを設定（既に設定済みの場合はスキップ）
+   - タグメッセージにCHANGELOGの内容を自動的に含める
 3. **公開確認**: `make check-pypi` で公開状況を確認
 
 #### 12.3.4 リリース完了
@@ -602,6 +667,7 @@ export MYPY_INFER_LEVEL=2
 - [Python 3.13 型ヒント](https://docs.python.org/3.13/library/typing.html)
 - [mypy ドキュメント](https://mypy.readthedocs.io/en/stable/)
 - [PEP 695: Type Parameter Syntax](https://peps.python.org/pep-0695/)
+- [PEP 604: Union Type as X | Y](https://peps.python.org/pep-0604/)
 
 ---
 

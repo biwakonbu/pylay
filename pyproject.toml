@@ -82,7 +82,7 @@ pytest-cov = ">=4.0.0"
 pytest-xdist = ">=3.0.0"
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -151,7 +151,7 @@ ignore_missing_imports = true
 [tool.pylay]
 # pylay プロジェクト全体解析設定
 target_dirs = ["src", "scripts", "utils"]
-output_dir = "docs/pylay-types"
+output_dir = "docs/pylay"
 generate_markdown = true
 extract_deps = true
 infer_level = "strict"

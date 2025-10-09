@@ -223,10 +223,18 @@ docs/types/
 docs/core/
 docs/yaml_types/
 docs/v1/
-docs/pylay-types/
 docs/test_catalog.md
 docs/debug_catalog.md
 docs/static-type-index-guide.md
 
+# Generated pylay documentation artifacts
+docs/pylay/**/*.png
+docs/pylay/**/*.dot
+docs/pylay/**/*.svg
+!docs/pylay/**/*.lay.yaml
+
 # reviewtask data directory
 .pr-review/
+
+# Auto-generated Python files from YAML (schema.lay.py)
+**/schema.lay.py

@@ -11,12 +11,9 @@ from rich.table import Table
 from ..core.converters.extract_deps import extract_dependencies_from_file
 from ..core.doc_generators.test_catalog_generator import CatalogGenerator
 from ..core.doc_generators.type_doc_generator import LayerDocGenerator
-from .commands.analyze_types import analyze_types
-from .commands.diagnose_type_ignore import diagnose_type_ignore
+from .commands.check import check
 from .commands.docs import run_docs
 from .commands.init import run_init
-from .commands.project_analyze import project_analyze
-from .commands.quality import quality
 from .commands.types import run_types
 from .commands.yaml import run_yaml
 
@@ -196,51 +193,31 @@ def generate_dependency_graph(input_dir: str, output: str) -> None:
 
 # convert グループは削除（yaml/types コマンドに統合）
 
-
-# project-analyze コマンドを追加
-cli.add_command(project_analyze)
-
-
-@cli.group()
-def analyze() -> None:
-    """型解析・依存関係分析コマンド"""
-
-
-# analyze-typesコマンドを登録
-# トップレベルにも登録して `pylay analyze-types` で呼び出せるようにする
-cli.add_command(analyze_types)
-analyze.add_command(analyze_types)
-
-# diagnose-type-ignoreコマンドを登録
-cli.add_command(diagnose_type_ignore)
-analyze.add_command(diagnose_type_ignore)
-
-# qualityコマンドを登録
-cli.add_command(quality)
-analyze.add_command(quality)
+# check コマンドを追加（診断系コマンドの統合）
+cli.add_command(check)
 
 
 # 新しい1語コマンドを登録
 @cli.command("yaml")
-@click.argument("target", type=click.Path(exists=True))
+@click.argument("target", type=click.Path(exists=True), required=False)
 @click.option(
     "--output",
     "-o",
     type=click.Path(),
-    help="出力YAMLファイルのパス (デフォルト: stdout)",
+    help="出力YAMLファイルのパス (デフォルト: docs/pylay/)",
 )
 @click.option("--root-key", help="YAML構造のルートキー")
-def yaml(target: str, output: str | None, root_key: str | None) -> None:
+def yaml(target: str | None, output: str | None, root_key: str | None) -> None:
     """Python型からYAML仕様を生成
 
     Pythonモジュールの型定義をYAML形式に変換します。
 
     使用例:
-        pylay yaml src/core/schemas/types.py
-        pylay yaml src/core/schemas/types.py -o types.yaml
+        pylay yaml                                    # pyproject.toml使用
+        pylay yaml src/core/schemas/types.py          # 単一ファイル
+        pylay yaml src/core/schemas/                  # ディレクトリ再帰
+        pylay yaml src/core/schemas/types.py -o types.yaml  # 出力先指定
     """
-    if output is None:
-        output = "-"  # stdout
     run_yaml(target, output, root_key)
 
 
@@ -280,8 +257,8 @@ def types(yaml_file: str, output: str | None, root_key: str | None) -> None:
     "-o",
     "output_dir",
     type=click.Path(),
-    default="docs/api",
-    help="出力ディレクトリ",
+    default=None,
+    help="出力ディレクトリ（未指定時は設定ファイルまたはYAMLと同じディレクトリ）",
 )
 @click.option(
     "--format",
@@ -290,7 +267,7 @@ def types(yaml_file: str, output: str | None, root_key: str | None) -> None:
     default="single",
     help="出力フォーマット",
 )
-def docs(input_file: str | None, output_dir: str, format_type: str) -> None:
+def docs(input_file: str | None, output_dir: str | None, format_type: str) -> None:
     """ドキュメント生成
 
     YAML型仕様からMarkdownドキュメントを生成します。
@@ -316,7 +293,7 @@ def docs(input_file: str | None, output_dir: str, format_type: str) -> None:
     run_docs(input_file, output_dir, format_type)
 
 
-@analyze.command("infer-deps")
+@cli.command("infer-deps")
 @click.argument("input_file", type=click.Path(exists=True))
 @click.option("--visualize", "-v", is_flag=True, help="Graphvizで依存関係を視覚化")
 @click.pass_context

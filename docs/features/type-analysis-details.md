@@ -75,14 +75,14 @@
 
 ```bash
 # 統計情報と推奨事項のみ表示
-uv run pylay analyze analyze-types src/
+uv run pylay check --focus types src/
 ```
 
 ### 詳細表示付き
 
 ```bash
 # 統計情報 + 問題箇所の詳細テーブル
-uv run pylay analyze analyze-types src/ --show-details
+uv run pylay check --focus types src/ -v
 ```
 
 **出力例**:
@@ -110,7 +110,7 @@ uv run pylay analyze analyze-types src/ --show-details
 
 ```bash
 # 詳細情報をYAMLファイルにエクスポート
-uv run pylay analyze analyze-types src/ --export-details=./analysis-details.yaml
+uv run pylay check --focus types src/ --output=./analysis-details.yaml
 ```
 
 **YAML出力例**:
@@ -181,10 +181,10 @@ problem_details:
 
 ### オプション
 
-- `--show-details`: 問題箇所の詳細（ファイルパス、行番号、コード内容）を表示
-- `--export-details PATH`: 問題詳細をYAMLファイルにエクスポート
-- `--no-stats`: 統計情報を非表示（詳細のみ表示）
-  - 実装: [src/cli/commands/analyze_types.py:79-82](../../src/cli/commands/analyze_types.py#L79-L82)
+- `-v`: 問題箇所の詳細（ファイルパス、行番号、コード内容）を表示
+  - 実装: [src/cli/commands/check.py](../../src/cli/commands/check.py)
+- `--output PATH`: 問題詳細をYAMLファイルにエクスポート
+  - 実装: [src/cli/commands/check.py](../../src/cli/commands/check.py)
 
 ## アーキテクチャ
 
@@ -261,13 +261,13 @@ class CodeLocator:
 
 ```python
 @click.option(
-    "--show-details",
+    "-v",
     is_flag=True,
     default=False,
     help="問題箇所の詳細（ファイルパス、行番号、コード内容）を表示",
 )
 @click.option(
-    "--export-details",
+    "--output",
     type=click.Path(),
     default=None,
     help="問題詳細をYAMLファイルにエクスポート（指定したパスに保存）",
@@ -284,13 +284,13 @@ class CodeLocator:
 ### 処理順序の最適化
 
 1. 統計情報の計算（既存）
-2. 問題箇所の特定（新規、`--show-details`指定時のみ）
-3. 詳細テーブルの生成（新規、`--show-details`指定時のみ）
+2. 問題箇所の特定（新規、`-v`指定時のみ）
+3. 詳細テーブルの生成（新規、`-v`指定時のみ）
 
 ### 大規模プロジェクト対応
 
 - 問題数が多い場合（100件以上）は、優先度の高いもの（primitive型、Level 1放置）から最大50件表示
-- YAML出力では全件出力（`--export-details`）
+- YAML出力では全件出力（`--output`）
 
 ## 使用例
 
@@ -298,20 +298,20 @@ class CodeLocator:
 
 ```bash
 # 1. 問題箇所を特定
-uv run pylay analyze analyze-types src/ --show-details
+uv run pylay check --focus types src/ -v
 
 # 2. 該当ファイルを直接編集
 vim src/core/models.py +42
 
 # 3. 修正後、再度分析
-uv run pylay analyze analyze-types src/ --show-details
+uv run pylay check --focus types src/ -v
 ```
 
 ### AI修正用
 
 ```bash
 # 1. 詳細YAMLを生成
-uv run pylay analyze analyze-types src/ --export-details=./analysis-details.yaml
+uv run pylay check --focus types src/ --output=./analysis-details.yaml
 
 # 2. AIがYAMLを読み込んで自動修正
 # （別のツールやスクリプトで実装）
@@ -321,7 +321,7 @@ uv run pylay analyze analyze-types src/ --export-details=./analysis-details.yaml
 
 ```bash
 # プルリクエスト時に問題箇所をチェック
-uv run pylay analyze analyze-types src/ --export-details=./analysis.yaml
+uv run pylay check --focus types src/ --output=./analysis.yaml
 
 # 問題数をカウント
 problem_count=$(yq '.problem_details.primitive_usage | length' analysis.yaml)

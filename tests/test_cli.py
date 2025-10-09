@@ -22,12 +22,54 @@ class TestCLI:
         assert result.exit_code == 0
         assert "ドキュメント/型生成コマンド" in result.stdout
 
-    def test_analyze_help(self):
-        """analyzeコマンドのヘルプが表示されることを確認"""
+    def test_check_help(self):
+        """checkコマンドのヘルプが表示されることを確認"""
         runner = CliRunner()
-        result = runner.invoke(cli, ["analyze", "--help"])
+        result = runner.invoke(cli, ["check", "--help"])
         assert result.exit_code == 0
-        assert "型解析・依存関係分析コマンド" in result.stdout
+        assert "品質をチェック" in result.stdout
+
+    def test_check_focus_types(self, tmp_path):
+        """check --focus typesオプションが動作することを確認"""
+        runner = CliRunner()
+        # テスト用のPythonファイルを作成
+        test_file = tmp_path / "test.py"
+        test_file.write_text("""
+from typing import NewType
+UserId = NewType('UserId', str)
+""")
+        result = runner.invoke(cli, ["check", "--focus", "types", str(test_file)])
+        assert result.exit_code == 0
+        # 型定義レベル統計が実行されることを確認
+        assert "型定義レベル統計" in result.stdout or "解析中" in result.stdout
+
+    def test_check_focus_ignore(self, tmp_path):
+        """check --focus ignoreオプションが動作することを確認"""
+        runner = CliRunner()
+        # テスト用のPythonファイルを作成
+        test_file = tmp_path / "test.py"
+        test_file.write_text("""
+def test_func(x):  # type: ignore
+    return x + 1
+""")
+        result = runner.invoke(cli, ["check", "--focus", "ignore", str(test_file)])
+        assert result.exit_code == 0
+        # type-ignore診断が実行されることを確認
+        assert "type-ignore" in result.stdout or "解析中" in result.stdout
+
+    def test_check_focus_quality(self, tmp_path):
+        """check --focus qualityオプションが動作することを確認"""
+        runner = CliRunner()
+        # テスト用のPythonファイルを作成
+        test_file = tmp_path / "test.py"
+        test_file.write_text("""
+from typing import NewType
+UserId = NewType('UserId', str)
+""")
+        result = runner.invoke(cli, ["check", "--focus", "quality", str(test_file)])
+        assert result.exit_code == 0
+        # 品質チェックが実行されることを確認
+        assert "品質チェック" in result.stdout or "解析中" in result.stdout
 
     def test_yaml_help(self):
         """yamlコマンドのヘルプが表示されることを確認"""
@@ -57,10 +99,10 @@ class TestCLI:
         assert result.exit_code == 0
         assert "Python 型から Markdown ドキュメントを生成" in result.stdout
 
-    def test_analyze_infer_deps_help(self):
-        """analyze infer-depsコマンドのヘルプが表示されることを確認"""
+    def test_infer_deps_help(self):
+        """infer-depsコマンドのヘルプが表示されることを確認"""
         runner = CliRunner()
-        result = runner.invoke(cli, ["analyze", "infer-deps", "--help"])
+        result = runner.invoke(cli, ["infer-deps", "--help"])
         assert result.exit_code == 0
         assert "型推論と依存関係抽出を実行" in result.stdout
 
@@ -77,10 +119,10 @@ class TestCLI:
         result = runner.invoke(cli, ["generate", "type-docs", "nonexistent.py"])
         assert result.exit_code != 0  # エラーが発生することを期待
 
-    def test_analyze_infer_deps_with_invalid_input(self):
+    def test_infer_deps_with_invalid_input(self):
         """無効な入力ファイルでエラーが発生することを確認"""
         runner = CliRunner()
-        result = runner.invoke(cli, ["analyze", "infer-deps", "nonexistent.py"])
+        result = runner.invoke(cli, ["infer-deps", "nonexistent.py"])
         assert result.exit_code != 0  # エラーが発生することを期待
 
     def test_yaml_with_invalid_input(self):
@@ -95,8 +137,8 @@ class TestCLI:
         result = runner.invoke(cli, ["types", "nonexistent.yaml"])
         assert result.exit_code != 0  # エラーが発生することを期待
 
-    def test_analyze_infer_deps_with_visualize_option(self, tmp_path):
-        """visualizeオプション付きでanalyze infer-depsが動作することを確認"""
+    def test_infer_deps_with_visualize_option(self, tmp_path):
+        """visualizeオプション付きでinfer-depsが動作することを確認"""
         test_file = tmp_path / "test.py"
         test_file.write_text("""
 class User:
@@ -105,9 +147,7 @@ class User:
 """)
 
         runner = CliRunner()
-        result = runner.invoke(
-            cli, ["analyze", "infer-deps", str(test_file), "--visualize"]
-        )
+        result = runner.invoke(cli, ["infer-deps", str(test_file), "--visualize"])
         # 実際の動作確認のため、exit_code=0を期待（エラーがなければOK）
         # 依存関係抽出が実行されることを確認
         assert result.exit_code == 0 or "依存関係抽出" in result.output

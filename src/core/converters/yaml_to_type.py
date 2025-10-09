@@ -35,12 +35,27 @@ def yaml_to_spec(
             return type_root.__class__(types=resolved_types)
         elif len(data) > 1:
             # 新形式: 複数型（トップレベルに直接型名キー）
-            types_dict = {k: _create_spec_from_data(v, k) for k, v in data.items()}
-            type_root = TypeRoot(types=types_dict)
+            # _metadata, _imports キーは特別扱い
+            types_dict = {
+                k: _create_spec_from_data(v, k)
+                for k, v in data.items()
+                if not k.startswith("_")
+            }
+            # _importsと_metadataを取得
+            imports_dict = data.get("_imports")
+            metadata_dict = data.get("_metadata")
+
+            type_root = TypeRoot(
+                types=types_dict, _imports=imports_dict, _metadata=metadata_dict
+            )
             # 参照解決を実行
             resolved_types = _resolve_all_refs(type_root.types)
-            # 参照解決されたTypeRootを返す
-            return type_root.__class__(types=resolved_types)
+            # 参照解決されたTypeRootを返す（_imports, _metadataも保持）
+            return type_root.__class__(
+                types=resolved_types,
+                _imports=type_root.imports_,
+                _metadata=type_root.metadata_,
+            )
         else:
             # 従来v1または指定root_key: nameフィールドで処理
             if len(data) == 1 and "type" not in data:

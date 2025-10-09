@@ -8,6 +8,12 @@
 - すべての実装/編集/生成タスクは、まず [AGENTS.md](AGENTS.md) のプロジェクト概要、アーキテクチャ、技術スタックを確認してください
 - 開発環境のセットアップ、ビルド・テスト・開発コマンドは [AGENTS.md](AGENTS.md) に記載された方法を使用してください
 - コーディング規約、命名規則、テスト指針は [AGENTS.md](AGENTS.md) に厳密に従ってください
+- **ドキュメント参照**: docs配下のドキュメントについては [docs/README.md](docs/README.md) で全体構造を確認してください
+  - 型定義ルール: [docs/typing-rule.md](docs/typing-rule.md)
+  - 開発環境: [docs/development/](docs/development/)
+  - 機能詳細: [docs/features/](docs/features/)
+  - 実践ガイド: [docs/guides/](docs/guides/)
+  - 技術リファレンス: [docs/reference/](docs/reference/)
 - セキュリティ考慮事項、環境変数設定は [AGENTS.md](AGENTS.md) に記載されたポリシーを遵守してください
 - プロジェクトステータス（実装済み/開発予定）を確認し、未実装の機能に対しては「未実装/計画中」と明記してください
 - シェルコマンド実行の制限事項（単一コマンドの実行、環境変数の設定制限）を厳守してください
@@ -24,7 +30,12 @@
 - YAML型仕様からPydantic BaseModelとしてパース・バリデーション
 - YAML型仕様からMarkdownドキュメントを自動生成
 - 型推論と依存関係抽出（mypy + ASTハイブリッド）
-- 型 <-> YAML <-> 型 <-> Markdownのラウンドトリップ変換
+- **完全なラウンドトリップ変換**（Python型 → YAML → Python型の完全再現）
+  - Field制約（ge, le, gt, lt, min_length, max_length, pattern, multiple_of）の保持
+  - 複数行docstringのインデント保持
+  - AST解析による正確なimport抽出
+  - トポロジカルソートによる依存関係順の型定義
+  - 前方参照サポート（`from __future__ import annotations`）
 - 型定義レベル分析・監視機能（Level 1/2/3の自動分類と昇格/降格推奨）
 - type: ignore 原因診断機能（優先度判定、解決策提案）
 
@@ -35,17 +46,17 @@
 
 ### 1.3 範囲
 **実装済み**:
-- 型 <-> YAML 相互変換
+- 型 <-> YAML 相互変換（完全なラウンドトリップ変換）
+  - Field制約の完全保持（ge, le, gt, lt, min_length, max_length, pattern, multiple_of）
+  - 複数行docstringのインデント保持
+  - AST解析による正確なimport抽出
+  - トポロジカルソートによる依存関係順の型定義
 - Pydantic v2による高速バリデーション
 - YAML -> Markdownドキュメント生成
-- 基本的なテストと相互変換の整合性検証
-
-**開発中**:
-- 型推論と依存関係抽出（mypy + astハイブリッド）
-
-**実装済み**:
+- 型推論と依存関係抽出（mypy + ASTハイブリッド）
 - CLI（コマンドラインインターフェース）
 - TUI（テキストユーザーインターフェース）の基盤
+- 基本的なテストと相互変換の整合性検証
 
 **範囲外**:
 - 高度なロジック処理（YAMLは状態表現のみ）
@@ -64,13 +75,13 @@ pylay/
 │   │       ├── type_to_yaml.py   # 型→YAML変換コマンド
 │   │       └── yaml_to_type.py   # YAML→型変換コマンド
 │   ├── core/              # コア機能
-│   │   ├── converters/    # 型変換機能（★types.py/protocols.py/models.py未作成）
+│   │   ├── converters/    # 型変換機能
 │   │   │   ├── type_to_yaml.py   # Python型 → YAML変換
 │   │   │   ├── yaml_to_type.py   # YAML → Python型変換
 │   │   │   ├── extract_deps.py   # 依存関係抽出
 │   │   │   ├── mypy_type_extractor.py  # mypy型抽出
 │   │   │   └── ast_dependency_extractor.py  # AST依存抽出
-│   │   ├── analyzer/      # 型解析（★types.py未作成、protocols.py/models.pyは存在）
+│   │   ├── analyzer/      # 型解析
 │   │   │   ├── protocols.py      # Protocolインターフェース
 │   │   │   ├── models.py         # ドメインモデル
 │   │   │   ├── base.py           # 基底クラス
@@ -80,7 +91,7 @@ pylay/
 │   │   │   ├── type_level_analyzer.py  # 型レベル解析
 │   │   │   ├── docstring_analyzer.py  # docstring解析
 │   │   │   └── ... (その他解析関連ファイル)
-│   │   ├── doc_generators/ # ドキュメント生成（★types.py/protocols.py/models.py未作成）
+│   │   ├── doc_generators/ # ドキュメント生成
 │   │   │   ├── base.py           # 基底クラス
 │   │   │   ├── config.py         # 設定管理
 │   │   │   ├── filesystem.py     # ファイルシステム操作
@@ -120,8 +131,6 @@ pylay/
 ├── pyrightconfig.json     # Pyright設定
 └── uv.lock               # uv依存関係ロックファイル
 ```
-
-**注**: ★マークは、[GitHub issue #18](https://github.com/biwakonbu/pylay/issues/18) で推奨されている構造に未対応の箇所を示します。
 
 ### 2.2 主要コンポーネント
 - **cli/**: コマンドラインインターフェース

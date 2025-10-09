@@ -231,7 +231,7 @@ class TestPyprojectConfig:
     def test_pylay_output_dir(self, pyproject_config: dict) -> None:
         """出力ディレクトリが正しく設定されていることを確認."""
         output_dir = pyproject_config["tool"]["pylay"]["output_dir"]
-        assert output_dir == "docs/pylay-types"
+        assert output_dir == "docs/pylay"
 
     def test_pylay_feature_flags(self, pyproject_config: dict) -> None:
         """機能フラグが正しく設定されていることを確認."""
@@ -362,7 +362,9 @@ class TestPylayNewConfig:
         from src.core.schemas.pylay_config import OutputConfig
 
         config = OutputConfig()
-        assert config.yaml_output_dir == "docs/pylay"
+        # 新仕様：デフォルトはNone（Pythonソースと同じディレクトリ）
+        assert config.yaml_output_dir is None
+        assert config.markdown_output_dir is None
         assert config.mirror_package_structure is True
         assert config.include_metadata is True
         assert config.preserve_docstrings is True
@@ -385,5 +387,7 @@ class TestPylayNewConfig:
 
         # デフォルト値の確認
         assert config.generation.lay_suffix == ".lay.py"
-        assert config.output.yaml_output_dir == "docs/pylay"
+        # 新仕様：デフォルトはNone（Pythonソースと同じディレクトリ）
+        assert config.output.yaml_output_dir is None
+        assert config.output.markdown_output_dir is None
         assert config.imports.use_relative_imports is True

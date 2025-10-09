@@ -440,13 +440,18 @@ version = "0.1.0"
         output_config = config_data["tool"]["pylay"]["output"]
 
         # 各設定値が正しく書き込まれていることを確認
-        assert "yaml_output_dir" in output_config
+        # 新仕様：yaml_output_dirとmarkdown_output_dirはデフォルトでコメントアウト
         assert "mirror_package_structure" in output_config
         assert "include_metadata" in output_config
         assert "preserve_docstrings" in output_config
 
         # デフォルト値が正しく設定されていることを確認
-        assert output_config["yaml_output_dir"] == "docs/pylay"
         assert output_config["mirror_package_structure"] is True
         assert output_config["include_metadata"] is True
         assert output_config["preserve_docstrings"] is True
+
+        # コメントアウトされているため、TOMLパーサーでは読み込まれない
+        # （生成されたファイルの内容確認は文字列レベルで行う）
+        pyproject_content = pyproject.read_text()
+        assert "# yaml_output_dir" in pyproject_content
+        assert "# markdown_output_dir" in pyproject_content

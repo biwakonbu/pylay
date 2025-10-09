@@ -1,8 +1,8 @@
-# 品質チェック機能 (pylay quality)
+# 品質チェック機能 (pylay check --focus quality)
 
 ## 概要
 
-`pylay quality` コマンドは、プロジェクトの型定義品質を分析し、問題箇所を検出して改善プランを提示する機能です。テンプレートベースの実装により、LLMを使用せずに実用的な品質チェックツールとして機能します。
+`pylay check --focus quality` コマンドは、プロジェクトの型定義品質を分析し、問題箇所を検出して改善プランを提示する機能です。テンプレートベースの実装により、LLMを使用せずに実用的な品質チェックツールとして機能します。
 
 **設計方針**: 型安全性（mypy/pyright静的解析）を最優先とし、バリデーションは補助的保証として位置づけます。
 
@@ -61,39 +61,26 @@
 
 ```bash
 # 基本的な品質チェック
-pylay quality src/
+pylay check --focus quality src/
 
 # 詳細な問題箇所を表示（コード周辺を含む）
-pylay quality --show-details src/
-
-# 厳格モードで実行（エラー時は終了コード1）
-pylay quality --strict src/
+pylay check --focus quality -v src/
 ```
 
 ### 出力形式の指定
 
 ```bash
 # コンソール出力（デフォルト）
-pylay quality src/
+pylay check --focus quality src/
 
 # Markdownレポート出力
-pylay quality --format markdown --output report.md src/
+pylay check --focus quality --format markdown --output report.md src/
 
 # JSON形式で出力
-pylay quality --format json --output report.json src/
-
-# YAML形式で問題詳細をエクスポート（修正計画含む）
-pylay quality --export-details problems.yaml src/
-```
-
-### カスタム設定の使用
-
-```bash
-# カスタム設定ファイル使用
-pylay quality --config custom.toml src/
+pylay check --focus quality --format json --output report.json src/
 
 # pyproject.tomlの設定を使用（デフォルト）
-pylay quality src/
+pylay check --focus quality src/
 ```
 
 ## 設定ファイル（pyproject.toml）
@@ -396,7 +383,7 @@ jobs:
 
       - name: Run quality check
         run: |
-          uv run pylay quality --strict --format markdown --output quality-report.md src/
+          uv run pylay check --focus quality --strict --format markdown --output quality-report.md src/
 
       - name: Upload quality report
         if: always()
@@ -428,8 +415,8 @@ repos:
   - repo: local
     hooks:
       - id: pylay-quality-check
-        name: pylay quality check
-        entry: uv run pylay quality --strict
+        name: pylay check --focus quality check
+        entry: uv run pylay check --focus quality --strict
         language: system
         types: [python]
         pass_filenames: false

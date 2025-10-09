@@ -27,9 +27,12 @@ help: ## このMakefileのヘルプを表示
 	@echo ""
 	@echo "🔍 プロジェクト解析:"
 	@echo "  analyze            プロジェクト全体を解析"
-	@echo "  analyze-types      型定義レベルを分析"
-	@echo "  analyze-types-all  詳細な型レベル分析（推奨事項含む）"
-	@echo "  diagnose-ignore    type: ignore の原因を診断"
+	@echo "  analyze-yaml       プロジェクト全体をYAMLに変換"
+	@echo "  analyze-python     YAMLからPythonを再生成"
+	@echo "  analyze-roundtrip  ラウンドトリップ変換（YAML + Python）"
+	@echo "  check              品質チェック（型レベル + type-ignore + 品質）"
+	@echo "  check-types        型定義レベルを分析"
+	@echo "  check-ignore       type: ignore の原因を診断"
 	@echo ""
 	@echo "🧹 クリーンアップ:"
 	@echo "  clean              キャッシュと一時ファイルを削除"
@@ -77,7 +80,7 @@ quality-check: ## 品質チェック（型チェック + リンター + pylay品
 	$(MAKE) type-check
 	$(MAKE) lint
 	@echo "🔍 pylay品質チェック中（pyproject.toml の target_dirs を使用）..."
-	uv run pylay quality
+	uv run pylay check
 
 # =============================================================================
 # テスト実行
@@ -109,30 +112,56 @@ analyze: ## プロジェクト全体を解析
 	@echo "🔍 プロジェクトを解析中..."
 	uv run pylay project-analyze
 
-analyze-types: ## 型定義レベルを分析（デフォルト: src/）
+analyze-yaml: ## srcディレクトリのPython型をYAMLに変換
+	@echo "🔍 srcディレクトリのPython型をYAMLに変換中..."
+	uv run pylay yaml src/
+	@echo "✅ YAML変換完了"
+
+analyze-python: ## YAMLからPython型を再生成
+	@echo "🔍 YAMLからPython型を再生成中..."
+	@find src -name "schema.lay.yaml" -type f | while read yaml_file; do \
+		dir_path=$$(dirname $$yaml_file); \
+		py_file="$$dir_path/schema.lay.py"; \
+		echo "  変換中: $$yaml_file -> $$py_file"; \
+		uv run pylay types "$$yaml_file" -o "$$py_file"; \
+	done
+	@echo "✅ Python再生成完了"
+
+analyze-roundtrip: analyze-yaml analyze-python ## ラウンドトリップ変換（YAML生成 + Python再生成）
+	@echo "✅ ラウンドトリップ変換完了"
+
+check: ## 品質チェック（型レベル + type-ignore + 品質）
+	@echo "🔍 品質チェック中..."
+	uv run pylay check
+
+check-types: ## 型定義レベルを分析（デフォルト: src/）
 	@echo "🔍 型定義レベルを分析中..."
-	uv run pylay analyze analyze-types src/
+	uv run pylay check --focus types src/
 
-analyze-types-all: ## 全ての推奨事項を含む詳細な型レベル分析
+check-types-verbose: ## 詳細な型レベル分析（推奨事項含む）
 	@echo "🔍 詳細な型定義レベル分析中..."
-	uv run pylay analyze analyze-types src/ --all-recommendations
+	uv run pylay check --focus types src/ -v
 
-diagnose-ignore: ## type: ignore の原因を診断（デフォルト: プロジェクト全体）
+check-ignore: ## type: ignore の原因を診断（デフォルト: カレントディレクトリ）
 	@echo "🔍 type: ignore の原因を診断中..."
-	uv run pylay diagnose-type-ignore
+	uv run pylay check --focus ignore
 
-diagnose-ignore-file: ## 特定ファイルの type: ignore を診断（FILE変数で指定）
+check-ignore-file: ## 特定ファイルの type: ignore を診断（FILE変数で指定）
 	@if [ -z "$(FILE)" ]; then \
 		echo "❌ エラー: FILE変数を指定してください"; \
-		echo "使用例: make diagnose-ignore-file FILE=src/cli/analyze_issues.py"; \
+		echo "使用例: make check-ignore-file FILE=src/cli/commands/check.py"; \
 		exit 1; \
 	fi; \
 	echo "🔍 type: ignore の原因を診断中: $(FILE)"; \
-	uv run pylay diagnose-type-ignore --file $(FILE) --solutions
+	uv run pylay check --focus ignore $(FILE) -v
 
-diagnose-ignore-high: ## 高優先度の type: ignore のみ診断
-	@echo "🔍 高優先度の type: ignore を診断中..."
-	uv run pylay diagnose-type-ignore --priority high --solutions
+check-ignore-verbose: ## 解決策を含む詳細な type: ignore 診断
+	@echo "🔍 詳細な type: ignore 診断中..."
+	uv run pylay check --focus ignore -v
+
+check-quality: ## 型定義品質チェック（デフォルト: カレントディレクトリ）
+	@echo "🔍 型定義品質チェック中..."
+	uv run pylay check --focus quality
 
 # =============================================================================
 # クリーンアップ
