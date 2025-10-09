@@ -7,10 +7,10 @@ from pathlib import Path
 
 from src.cli.commands.yaml import (
     _calculate_file_hash,
-    _find_python_files_with_type_definitions,
     _generate_metadata_section,
     _has_type_definitions,
     _validate_metadata,
+    find_python_files_with_type_definitions,
     run_yaml,
 )
 from src.core.schemas.pylay_config import PylayConfig
@@ -128,7 +128,7 @@ def helper():
         )
 
         # 検索実行
-        files = _find_python_files_with_type_definitions(tmp_path)
+        files = find_python_files_with_type_definitions(tmp_path)
 
         # アサーション
         assert len(files) == 2
@@ -147,7 +147,7 @@ class User(BaseModel):
 """
         )
 
-        files = _find_python_files_with_type_definitions(tmp_path)
+        files = find_python_files_with_type_definitions(tmp_path)
         assert len(files) == 0
 
     def test_exclude_init_files(self, tmp_path: Path) -> None:
@@ -161,7 +161,7 @@ class User(BaseModel):
 """
         )
 
-        files = _find_python_files_with_type_definitions(tmp_path)
+        files = find_python_files_with_type_definitions(tmp_path)
         assert len(files) == 0
 
     def test_recursive_search(self, tmp_path: Path) -> None:
@@ -179,7 +179,7 @@ class User(BaseModel):
 """
         )
 
-        files = _find_python_files_with_type_definitions(tmp_path)
+        files = find_python_files_with_type_definitions(tmp_path)
         assert len(files) == 1
         assert files[0].name == "models.py"
         assert "core/schemas" in str(files[0])
@@ -350,12 +350,8 @@ class Converter(BaseModel):
         assert (output_dir / "src" / "core" / "converters" / "schema.lay.yaml").exists()
 
         # 個別のファイルごとのYAMLは生成されない
-        assert not (
-            output_dir / "src" / "core" / "schemas" / "models.lay.yaml"
-        ).exists()
-        assert not (
-            output_dir / "src" / "core" / "converters" / "models.lay.yaml"
-        ).exists()
+        assert not (output_dir / "src" / "core" / "schemas" / "models.lay.yaml").exists()
+        assert not (output_dir / "src" / "core" / "converters" / "models.lay.yaml").exists()
 
 
 class TestMetadataFunctions:
@@ -386,17 +382,13 @@ class TestMetadataFunctions:
         test_file = tmp_path / "test.py"
         test_file.write_text("# test")
 
-        errors = _validate_metadata(
-            str(test_file), "2025-10-08T12:00:00+00:00", "0.5.0"
-        )
+        errors = _validate_metadata(str(test_file), "2025-10-08T12:00:00+00:00", "0.5.0")
 
         assert len(errors) == 0
 
     def test_validate_metadata_file_not_exists(self) -> None:
         """ソースファイルが存在しない場合のバリデーション"""
-        errors = _validate_metadata(
-            "/nonexistent/file.py", "2025-10-08T12:00:00+00:00", "0.5.0"
-        )
+        errors = _validate_metadata("/nonexistent/file.py", "2025-10-08T12:00:00+00:00", "0.5.0")
 
         assert len(errors) == 1
         assert "does not exist" in errors[0]

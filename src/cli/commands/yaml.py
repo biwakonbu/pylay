@@ -111,7 +111,7 @@ def _has_type_definitions(file_path: Path) -> bool:
         return False
 
 
-def _find_python_files_with_type_definitions(directory: Path) -> list[Path]:
+def find_python_files_with_type_definitions(directory: Path) -> list[Path]:
     """ディレクトリ内の型定義を含むPythonファイルを再帰的に検索
 
     Args:
