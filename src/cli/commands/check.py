@@ -45,20 +45,10 @@ def _load_config() -> PylayConfig:
     default=None,
     help="特定のチェックのみ実行（未指定の場合は全チェック）",
 )
-@click.option(
-    "-f",
-    "--format",
-    type=click.Choice(["console", "markdown", "json"], case_sensitive=False),
-    default="console",
-    help="出力形式（デフォルト: console）※準備中",
-)
-@click.option("-o", "--output", type=click.Path(), help="出力ファイルパス ※準備中")
 @click.option("-v", "--verbose", is_flag=True, help="詳細なログを出力")
 def check(
     target: str | None,
     focus: str | None,
-    format: str,
-    output: str | None,
     verbose: bool,
 ) -> None:
     """プロジェクトの品質をチェックし、改善提案を表示します。
@@ -68,8 +58,6 @@ def check(
     Args:
         target: 解析対象のディレクトリまたはファイル（デフォルト: カレントディレクトリ）
         focus: 特定のチェックのみ実行（types/ignore/quality、デフォルト: None=全チェック）
-        format: 出力形式（console/markdown/json、デフォルト: console）※準備中
-        output: 出力ファイルパス（デフォルト: None=標準出力）※準備中
         verbose: 詳細なログを出力（デフォルト: False）
 
     Returns:
