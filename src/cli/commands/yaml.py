@@ -90,8 +90,8 @@ def _has_type_definitions(file_path: Path) -> bool:
         ) and "class " in content
 
         # 2. type文（型エイリアス）
-        # 例: type UserId = str
-        has_type_alias = bool(re.search(r"^type\s+\w+\s*=", content, re.MULTILINE))
+        # 例: type UserId = str, type Alias[T] = dict[str, T]
+        has_type_alias = bool(re.search(r"^type\s+\w+(?:\[[^\]]+\])?\s*=", content, re.MULTILINE))
 
         # 3. NewType
         # 例: UserId = NewType('UserId', str)
