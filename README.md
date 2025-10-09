@@ -110,10 +110,8 @@ pylay types types.yaml                       # 標準出力
 pylay types types.yaml -o model.py           # ファイル出力
 
 # プロジェクト全体解析（統計・品質分析）
-pylay project-analyze                         # プロジェクト全体を解析
-
-# 高度な型推論と依存抽出
-pylay analyze infer-deps --input src/core/schemas/yaml_spec.py --visualize
+pylay check                                   # プロジェクト全体を解析（型定義レベル + type-ignore + 品質）
+pylay check --focus quality                   # 品質チェックのみ
 ```
 
 ### 型定義レベル分析

@@ -270,8 +270,20 @@ def _validate_metadata(source_file: str, generated_at: str, pylay_version: str) 
     return errors
 
 
+def _get_pylay_version() -> str:
+    """pylayのバージョンを取得
+
+    Returns:
+        pylayバージョン（開発版の場合は "dev"）
+    """
+    try:
+        return importlib.metadata.version("pylay")
+    except importlib.metadata.PackageNotFoundError:
+        return "dev"
+
+
 def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
-    """YAMLメタデータセクションを生成
+    """YAMLメタデータセクションを生成（単一ファイル用）
 
     Args:
         source_file: ソースファイルのパス
@@ -285,26 +297,23 @@ def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
     """
     from datetime import datetime
 
-    # pylayバージョン取得
-    try:
-        pylay_version = importlib.metadata.version("pylay")
-    except importlib.metadata.PackageNotFoundError:
-        pylay_version = "dev"
+    pylay_version: str = _get_pylay_version()
 
     # ソースファイル情報
-    source_path = Path(source_file)
+    source_path: Path = Path(source_file)
 
     # 相対パスに変換（カレントディレクトリからの相対パス）
+    source_file_display: str
     try:
-        source_relative = source_path.relative_to(Path.cwd())
+        source_relative: Path = source_path.relative_to(Path.cwd())
         source_file_display = str(source_relative)
     except ValueError:
         # 相対パスに変換できない場合は絶対パスをそのまま使用
         source_file_display = str(source_path)
 
-    source_hash = ""
-    source_size = 0
-    source_modified_at = ""
+    source_hash: str = ""
+    source_size: int = 0
+    source_modified_at: str = ""
 
     if source_path.exists():
         # ファイルハッシュ
@@ -318,10 +327,10 @@ def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
 
     # バリデーション（相対パスでバリデーション）
     if validate:
-        validation_time = source_modified_at if source_modified_at else datetime.now(UTC).isoformat()
-        errors = _validate_metadata(source_file, validation_time, pylay_version)
+        validation_time: str = source_modified_at if source_modified_at else datetime.now(UTC).isoformat()
+        errors: list[str] = _validate_metadata(source_file, validation_time, pylay_version)
         if errors:
-            error_msg = "\n".join(errors)
+            error_msg: str = "\n".join(errors)
             raise ValueError(f"Metadata validation failed:\n{error_msg}")
 
     # YAML生成（generated_atは削除して再現性を向上）
@@ -331,6 +340,38 @@ def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
   source_hash: {source_hash}
   source_size: {source_size}
   source_modified_at: {source_modified_at}
+  pylay_version: {pylay_version}
+
+"""
+
+
+def _generate_directory_metadata(directory: Path, file_count: int) -> str:
+    """YAMLメタデータセクションを生成（ディレクトリ用）
+
+    Args:
+        directory: ソースディレクトリ
+        file_count: 処理ファイル数
+
+    Returns:
+        _metadataセクションのYAML文字列
+    """
+    pylay_version: str = _get_pylay_version()
+
+    # 相対パスに変換
+    directory_str: str
+    try:
+        directory_relative: Path = directory.relative_to(Path.cwd())
+        directory_str = str(directory_relative)
+    except ValueError:
+        # 相対パスに変換できない場合は絶対パスをそのまま使用
+        directory_str = str(directory)
+
+    # YAML生成（generated_atは削除して再現性を向上）
+    return f"""_metadata:
+  generated_by: pylay yaml
+  source: {directory_str}
+  source_type: directory
+  file_count: {file_count}
   pylay_version: {pylay_version}
 
 """
@@ -435,35 +476,9 @@ def _process_directory(
         )
 
         # メタデータセクションを生成（ディレクトリの情報）
-        metadata = ""
+        metadata: str = ""
         if config.output.include_metadata:
-            # ディレクトリの場合は、ファイルハッシュやサイズは計算しない
-
-            # pylayバージョン取得
-            try:
-                pylay_version = importlib.metadata.version("pylay")
-            except importlib.metadata.PackageNotFoundError:
-                pylay_version = "dev"
-
-            # ディレクトリ情報（相対パスに変換）
-            try:
-                directory_relative = directory.relative_to(Path.cwd())
-                directory_str = str(directory_relative)
-            except ValueError:
-                # 相対パスに変換できない場合は絶対パスをそのまま使用
-                directory_str = str(directory)
-
-            file_count = len(py_files)
-
-            # YAML生成（generated_atは削除して再現性を向上）
-            metadata = f"""_metadata:
-  generated_by: pylay yaml
-  source: {directory_str}
-  source_type: directory
-  file_count: {file_count}
-  pylay_version: {pylay_version}
-
-"""
+            metadata = _generate_directory_metadata(directory, len(py_files))
 
         # 出力内容を組み立て
         output_content_parts = []

@@ -3,9 +3,12 @@
 YAML仕様をPython型に変換するCLIコマンドです。
 """
 
+import re
 import sys
+from collections import defaultdict
 from pathlib import Path
 
+import yaml as pyyaml
 from rich.box import SIMPLE
 from rich.console import Console
 from rich.panel import Panel
@@ -44,7 +47,6 @@ def _generate_imports_from_yaml(
     3. ローカルアプリケーション/ライブラリ
     各グループ内はアルファベット順
     """
-    from collections import defaultdict
 
     if exclude_types is None:
         exclude_types = set()
@@ -219,8 +221,6 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             spec = spec_result
 
         # 元のYAMLデータをパースして保持（新形式フィールド用）
-        import yaml as pyyaml
-
         with open(input_file, encoding="utf-8") as f:
             raw_yaml_data = pyyaml.safe_load(f.read())
 
@@ -242,14 +242,12 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
         def extract_type_dependencies(type_name: str, type_data: dict) -> set[str]:
             """型定義から依存している他の型を抽出"""
-            dependencies = set()
+            dependencies: set[str] = set()
             fields = type_data.get("fields", type_data.get("properties", {}))
 
             for _, field_spec in fields.items():
                 field_type = field_spec.get("type", "")
                 # list[TypeName], dict[str, TypeName] などから型名を抽出
-                import re
-
                 # 型名のパターン: 大文字で始まる識別子
                 type_names = re.findall(r"\b([A-Z][a-zA-Z0-9]*)\b", str(field_type))
                 for dep_type in type_names:

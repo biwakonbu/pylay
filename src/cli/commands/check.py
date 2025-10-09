@@ -144,7 +144,7 @@ def _run_type_analysis(target_path: Path, verbose: bool) -> None:
 
     console.print(f"🔍 解析中: {target_path}")
 
-    analyzer = TypeLevelAnalyzer()
+    analyzer: TypeLevelAnalyzer = TypeLevelAnalyzer()
 
     if target_path.is_file():
         report = analyzer.analyze_file(target_path)
@@ -152,12 +152,13 @@ def _run_type_analysis(target_path: Path, verbose: bool) -> None:
         report = analyzer.analyze_directory(target_path, include_upgrade_recommendations=verbose)
 
     # 対象ディレクトリを決定（詳細表示用）
+    target_dirs: list[str]
     if target_path.is_file():
         target_dirs = [str(target_path.parent)]
     else:
         target_dirs = [str(target_path)]
 
-    reporter = TypeReporter(target_dirs=target_dirs)
+    reporter: TypeReporter = TypeReporter(target_dirs=target_dirs)
     reporter.generate_detailed_report(report, show_details=verbose, show_stats=True)
 
     # 推奨事項を条件付きで表示
@@ -184,7 +185,7 @@ def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
 
     console.print(f"🔍 解析中: {target_path}")
 
-    analyzer = TypeIgnoreAnalyzer()
+    analyzer: TypeIgnoreAnalyzer = TypeIgnoreAnalyzer()
 
     if target_path.is_file():
         issues = analyzer.analyze_file(str(target_path))
@@ -194,7 +195,7 @@ def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
     # サマリー情報を生成
     summary = analyzer.generate_summary(issues)
 
-    reporter = TypeIgnoreReporter()
+    reporter: TypeIgnoreReporter = TypeIgnoreReporter()
     reporter.generate_console_report(issues, summary, show_solutions=verbose)
 
 
@@ -215,8 +216,9 @@ def _run_quality_check(target_path: Path, config: PylayConfig, verbose: bool) ->
     console.print(f"🔍 解析中: {target_path}")
 
     # 型レベル解析を実行
-    analyzer = TypeLevelAnalyzer()
+    analyzer: TypeLevelAnalyzer = TypeLevelAnalyzer()
 
+    target_dirs: list[str]
     if target_path.is_file():
         report = analyzer.analyze_file(target_path)
         target_dirs = [str(target_path.parent)]
@@ -225,12 +227,12 @@ def _run_quality_check(target_path: Path, config: PylayConfig, verbose: bool) ->
         target_dirs = [str(target_path)]
 
     # 品質チェッカーを初期化
-    checker = QualityChecker(config)
+    checker: QualityChecker = QualityChecker(config)
     checker.code_locator = CodeLocator([Path(d) for d in target_dirs])
 
     # 品質チェックを実行
     check_result = checker.check_quality(report)
 
     # レポートを生成
-    reporter = QualityReporter(target_dirs=target_dirs)
+    reporter: QualityReporter = QualityReporter(target_dirs=target_dirs)
     reporter.generate_console_report(check_result, report, show_details=verbose)
