@@ -469,7 +469,7 @@ def _process_single_file(
         module = importlib.import_module(module_name)
 
     # モジュール内の全型アノテーションを検索
-    types_dict = {}
+    types_dict: dict[str, type[object]] = {}
 
     # モジュール内のアイテム数を取得
     module_items = list(module.__dict__.items())
