@@ -22,7 +22,7 @@ from src.core.converters.generation_header import generate_python_header
 from src.core.converters.type_to_yaml import PROJECT_ROOT_PACKAGE
 from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.schemas.pylay_config import PylayConfig
-from src.core.schemas.yaml_spec import TypeRoot, TypeSpec
+from src.core.schemas.yaml_spec import RefPlaceholder, TypeRoot, TypeSpec
 
 
 def _generate_imports_from_yaml(
@@ -63,8 +63,8 @@ def _generate_imports_from_yaml(
         if spec.imports_:  # type: ignore[attr-defined]
             imports_dict = spec.imports_  # type: ignore[attr-defined]
 
-    if not imports_dict:
-        return []
+    # imports_dictが空でもPydanticの必須インポートは生成する
+    # （BaseModel, Fieldは常に必要）
 
     # モジュール別にグループ化
     stdlib_imports: dict[str, list[str]] = defaultdict(list)
@@ -211,7 +211,12 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
         # Python型に変換
         with console.status("[bold green]型情報解析中..."):
-            spec = yaml_to_spec(yaml_str, root_key)
+            spec_result = yaml_to_spec(yaml_str, root_key)
+            # RefPlaceholderは参照解決エラーを示すため、適切にエラー処理
+            if isinstance(spec_result, RefPlaceholder):
+                msg = f"参照解決エラー: {spec_result.ref}"
+                raise ValueError(msg)
+            spec = spec_result
 
         # 元のYAMLデータをパースして保持（新形式フィールド用）
         import yaml as pyyaml
@@ -394,7 +399,8 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             if "description" in spec_data and spec_data["description"]:
                 # 複数行docstringの場合、適切にインデントを追加
                 description = spec_data["description"]
-                if "\n" in description:
+                # descriptionがNoneの場合のTypeErrorを防ぐ
+                if description and "\n" in description:
                     # 複数行の場合
                     doc_lines = description.split("\n")
                     lines.append(f'    """{doc_lines[0]}')

@@ -333,6 +333,8 @@ def _process_directory(
                 # モジュールをインポート
                 sys.path.insert(0, str(py_file.parent))
                 module_name = py_file.stem
+                # 同名モジュールの再利用を防ぐため、インポート前にsys.modulesから削除
+                sys.modules.pop(module_name, None)
                 module = importlib.import_module(module_name)  # noqa: F823
 
                 # 型を抽出
@@ -348,6 +350,11 @@ def _process_directory(
             except Exception as e:
                 console.print(f"[yellow]⚠️ 警告: {py_file.name}の処理に失敗しました[/yellow]")
                 console.print(f"[dim]詳細: {e}[/dim]")
+            finally:
+                # 処理完了後もsys.modulesとsys.pathをクリーンアップ
+                sys.modules.pop(module_name, None)
+                if str(py_file.parent) in sys.path:
+                    sys.path.remove(str(py_file.parent))
 
             progress.advance(task)
 
@@ -599,7 +606,7 @@ def run_yaml(
     Args:
         input_file: Pythonモジュールファイルまたはディレクトリのパス
                     （Noneの場合はpyproject.toml使用）
-        output_file: 出力YAMLファイルのパス または "-" で標準出力
+        output_file: 出力YAMLファイルのパス
         root_key: YAML構造のルートキー
     """
     console = Console()
