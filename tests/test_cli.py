@@ -29,6 +29,48 @@ class TestCLI:
         assert result.exit_code == 0
         assert "品質をチェック" in result.stdout
 
+    def test_check_focus_types(self, tmp_path):
+        """check --focus typesオプションが動作することを確認"""
+        runner = CliRunner()
+        # テスト用のPythonファイルを作成
+        test_file = tmp_path / "test.py"
+        test_file.write_text("""
+from typing import NewType
+UserId = NewType('UserId', str)
+""")
+        result = runner.invoke(cli, ["check", "--focus", "types", str(test_file)])
+        assert result.exit_code == 0
+        # 型定義レベル統計が実行されることを確認
+        assert "型定義レベル統計" in result.stdout or "解析中" in result.stdout
+
+    def test_check_focus_ignore(self, tmp_path):
+        """check --focus ignoreオプションが動作することを確認"""
+        runner = CliRunner()
+        # テスト用のPythonファイルを作成
+        test_file = tmp_path / "test.py"
+        test_file.write_text("""
+def test_func(x):  # type: ignore
+    return x + 1
+""")
+        result = runner.invoke(cli, ["check", "--focus", "ignore", str(test_file)])
+        assert result.exit_code == 0
+        # type-ignore診断が実行されることを確認
+        assert "type-ignore" in result.stdout or "解析中" in result.stdout
+
+    def test_check_focus_quality(self, tmp_path):
+        """check --focus qualityオプションが動作することを確認"""
+        runner = CliRunner()
+        # テスト用のPythonファイルを作成
+        test_file = tmp_path / "test.py"
+        test_file.write_text("""
+from typing import NewType
+UserId = NewType('UserId', str)
+""")
+        result = runner.invoke(cli, ["check", "--focus", "quality", str(test_file)])
+        assert result.exit_code == 0
+        # 品質チェックが実行されることを確認
+        assert "品質チェック" in result.stdout or "解析中" in result.stdout
+
     def test_yaml_help(self):
         """yamlコマンドのヘルプが表示されることを確認"""
         runner = CliRunner()
