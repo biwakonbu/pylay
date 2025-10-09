@@ -74,7 +74,7 @@ uv run pylay yaml
 
 **例**:
 
-```
+```text
 プロジェクト構造:
 src/
 ├── core/
@@ -187,7 +187,7 @@ YAMLファイルがGit管理されているため、プルリクエストで型�
 
 ### ワークフロー
 
-```
+```text
 開発者A:
   1. 型定義を変更（types.py）
   2. YAML再生成（pylay yaml）
@@ -315,14 +315,17 @@ uv run pylay types docs/pylay/src/core/schemas/types.lay.yaml
 ### 問題1: YAMLが生成されない
 
 **症状**:
-```
+
+```text
 ℹ️  型定義なしのためスキップ: src/core/utils/helpers.py
 ```
 
 **原因**:
+
 ファイルに型定義（BaseModel, type文, NewType, dataclass, Enum）が含まれていない
 
 **解決策**:
+
 ```python
 # helpers.pyに型定義を追加
 from typing import NewType
@@ -336,10 +339,12 @@ UserId = NewType('UserId', str)
 YAMLファイルに大量の変更が発生
 
 **原因**:
+
 - メタデータの `generated_at` が毎回更新される
 - ソースファイルが変更されていないのにYAMLが再生成された
 
 **解決策**:
+
 ```bash
 # ソースファイルが変更された場合のみYAMLを再生成
 # メタデータのsource_hashで判定可能
@@ -354,9 +359,11 @@ git diff --ignore-matching-lines='generated_at:' docs/pylay/
 型定義があるのにYAMLが生成されない
 
 **原因**:
+
 検出パターンにマッチしない型定義の書き方
 
 **解決策**:
+
 ```python
 # ❌ 検出されない
 from typing import NewType as NT
@@ -373,9 +380,11 @@ UserId = NewType('UserId', str)
 YAMLが期待した場所に出力されない
 
 **原因**:
+
 相対パス/絶対パスの解釈が異なる
 
 **解決策**:
+
 ```bash
 # 絶対パスを使用
 uv run pylay yaml /full/path/to/src/core/schemas/types.py
