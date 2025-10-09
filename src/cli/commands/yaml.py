@@ -110,28 +110,6 @@ def _has_type_definitions(file_path: Path) -> bool:
         return False
 
 
-def _find_python_files_with_type_definitions(directory: Path) -> list[Path]:
-    """ディレクトリ内の型定義を含むPythonファイルを再帰的に検索
-
-    Args:
-        directory: 検索対象のディレクトリ
-
-    Returns:
-        型定義を含むPythonファイルのリスト
-    """
-    python_files = []
-
-    for py_file in directory.rglob("*.py"):
-        # テストファイルや__pycache__は除外
-        if py_file.name.startswith("test_") or "__pycache__" in str(py_file) or py_file.name == "__init__.py":
-            continue
-
-        if _has_type_definitions(py_file):
-            python_files.append(py_file)
-
-    return python_files
-
-
 def _find_python_files_in_directory_only(directory: Path) -> list[Path]:
     """ディレクトリ直下のPythonファイルのみを検索（サブディレクトリは除外）
 
@@ -331,11 +309,9 @@ def _process_directory(
 
             try:
                 # モジュールをインポート
-                import importlib.util
-
                 sys.path.insert(0, str(py_file.parent))
                 module_name = py_file.stem
-                module = importlib.import_module(module_name)
+                module = importlib.import_module(module_name)  # noqa: F823
 
                 # 型を抽出
                 for name, obj in module.__dict__.items():

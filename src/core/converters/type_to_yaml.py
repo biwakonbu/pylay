@@ -334,48 +334,6 @@ def _get_simple_type_name_with_imports(
     return str(typ)
 
 
-def _extract_pydantic_field_info(cls: type[Any]) -> dict[str, dict[str, Any]]:
-    """Pydanticモデルからフィールド情報を抽出（シンプル版）"""
-    from pydantic import BaseModel
-
-    fields_info: dict[str, dict[str, Any]] = {}
-
-    # Pydantic v2のmodel_fieldsを使用
-    if issubclass(cls, BaseModel):
-        for field_name, field_info in cls.model_fields.items():
-            field_data: dict[str, Any] = {
-                "type": _get_simple_type_name(field_info.annotation),
-                "required": field_info.is_required(),
-            }
-
-            # descriptionを取得
-            if field_info.description:
-                field_data["description"] = field_info.description
-
-            # デフォルト値を取得（PydanticUndefinedは除外）
-            if not field_info.is_required():
-                from pydantic_core import PydanticUndefined
-
-                if field_info.default is not None and field_info.default is not PydanticUndefined:
-                    field_data["default"] = str(field_info.default)
-
-            # バリデーション制約を取得
-            constraints = {}
-            if hasattr(field_info, "metadata"):
-                for metadata in field_info.metadata:
-                    if hasattr(metadata, "__dict__"):
-                        for key, value in metadata.__dict__.items():
-                            if value is not None and key not in ["type", "annotation"]:
-                                constraints[key] = value
-
-            if constraints:
-                field_data["validation"] = constraints
-
-            fields_info[field_name] = field_data
-
-    return fields_info
-
-
 def _extract_pydantic_field_info_with_imports(
     cls: type[Any],
     source_module_path: str | None,
