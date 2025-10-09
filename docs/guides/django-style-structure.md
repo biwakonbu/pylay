@@ -17,7 +17,7 @@ pylayプロジェクトでは、Djangoのアプリケーション構造に倣っ
 
 各モジュール（`converters/`, `analyzer/`, `doc_generators/`等）は、独立したパッケージとして完結します。
 
-```
+```text
 src/core/
 ├── converters/          # 型変換モジュール（独立パッケージ）
 │   ├── types.py        # モジュール固有の型定義
@@ -194,7 +194,7 @@ class TypeToYamlConverter:
 
 依存関係は以下の方向に制限されます:
 
-```
+```text
 実装ファイル
     ↓ import
 models.py
@@ -391,6 +391,7 @@ def create_file_path(value: str) -> FilePath:
 ### 3. 循環importを避ける
 
 **禁止**:
+
 ```python
 # types.py
 from .models import SomeModel  # ❌
