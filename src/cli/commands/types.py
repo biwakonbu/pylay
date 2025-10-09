@@ -60,8 +60,8 @@ def _generate_imports_from_yaml(
         if spec.imports_:
             imports_dict = spec.imports_
     elif hasattr(spec, "imports_"):
-        if spec.imports_:
-            imports_dict = spec.imports_
+        if spec.imports_:  # type: ignore[attr-defined]
+            imports_dict = spec.imports_  # type: ignore[attr-defined]
 
     if not imports_dict:
         return []
@@ -240,7 +240,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             dependencies = set()
             fields = type_data.get("fields", type_data.get("properties", {}))
 
-            for field_name, field_spec in fields.items():
+            for _, field_spec in fields.items():
                 field_type = field_spec.get("type", "")
                 # list[TypeName], dict[str, TypeName] などから型名を抽出
                 import re
@@ -313,7 +313,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
         exclude_types = defined_types
 
         # Literalなどの型は _imports に含まれているので、動的チェックは不要
-        import_lines = _generate_imports_from_yaml(spec, exclude_types=exclude_types)
+        import_lines = _generate_imports_from_yaml(spec, exclude_types=exclude_types)  # type: ignore[arg-type]
         code_lines.extend(import_lines)
         code_lines.append("")
 

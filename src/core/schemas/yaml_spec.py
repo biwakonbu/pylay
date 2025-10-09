@@ -44,16 +44,10 @@ class RefPlaceholder(BaseModel):
 class TypeSpec(BaseModel):
     """YAML形式の型仕様の基底モデル（v1.1対応、循環参照耐性強化）"""
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True
-    )  # 遅延型解決はmodel_rebuildで対応
+    model_config = ConfigDict(arbitrary_types_allowed=True)  # 遅延型解決はmodel_rebuildで対応
 
-    name: TypeSpecName | None = Field(
-        None, description="型の名前 (v1.1ではオプション。参照時は不要)"
-    )
-    type: TypeSpecType = Field(
-        ..., description="基本型 (str, int, float, bool, list, dict, union)"
-    )
+    name: TypeSpecName | None = Field(None, description="型の名前 (v1.1ではオプション。参照時は不要)")
+    type: TypeSpecType = Field(..., description="基本型 (str, int, float, bool, list, dict, union)")
     description: Description | None = Field(None, description="型の説明")
     required: RequiredFlag = Field(True, description="必須かどうか")
 
@@ -89,12 +83,8 @@ class DictTypeSpec(TypeSpec):
     #   - トラッキング: Issue #18 (型定義ファイル構造の整理) で
     #     バリデーション戦略を再設計
     #   - 担当: 型定義リファクタリングチーム
-    properties: dict[str, Any] = Field(
-        default_factory=dict, description="辞書のプロパティ (参照文字列またはTypeSpec)"
-    )
-    additional_properties: AdditionalPropertiesFlag = Field(
-        False, description="追加プロパティ許可"
-    )
+    properties: dict[str, Any] = Field(default_factory=dict, description="辞書のプロパティ (参照文字列またはTypeSpec)")
+    additional_properties: AdditionalPropertiesFlag = Field(False, description="追加プロパティ許可")
 
     @field_validator("properties", mode="before")
     @classmethod
@@ -122,9 +112,7 @@ class UnionTypeSpec(TypeSpec):
     """
 
     type: Literal["union"] = "union"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
-    variants: list[Any] = Field(
-        ..., description="Unionのバリアント (参照文字列またはTypeSpec)"
-    )
+    variants: list[Any] = Field(..., description="Unionのバリアント (参照文字列またはTypeSpec)")
 
     @field_validator("variants", mode="before")
     @classmethod
@@ -150,9 +138,7 @@ class GenericTypeSpec(TypeSpec):
     """
 
     type: Literal["generic"] = "generic"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
-    params: list[Any] = Field(
-        ..., description="Genericのパラメータ (参照文字列またはTypeSpec)"
-    )
+    params: list[Any] = Field(..., description="Genericのパラメータ (参照文字列またはTypeSpec)")
 
     @field_validator("params", mode="before")
     @classmethod
@@ -204,9 +190,7 @@ class TypeRoot(BaseModel):
         description="外部型のインポート情報（型名 → インポートパス）",
         alias="_imports",
     )
-    metadata_: dict[str, Any] | None = Field(
-        default=None, description="メタデータ情報", alias="_metadata"
-    )
+    metadata_: dict[str, Any] | None = Field(default=None, description="メタデータ情報", alias="_metadata")
 
     @model_validator(mode="before")
     @classmethod
@@ -246,9 +230,7 @@ class TypeRoot(BaseModel):
         return v
 
 
-def _create_spec_from_simple_format(
-    data: dict, root_key: str | None = None
-) -> TypeSpec:
+def _create_spec_from_simple_format(data: dict, root_key: str | None = None) -> TypeSpec:
     """シンプル形式（fields:構造）からTypeSpecを作成
 
     Args:
@@ -287,9 +269,12 @@ def _create_spec_from_simple_format(
     # DictTypeSpecを作成（クラス型として扱う）
     # NOTE: Pydanticクラスはdict型として扱い、コード生成時にBaseModelに変換
     return DictTypeSpec(
+        type="dict",
         name=root_key or "UnknownClass",
         description=description,
+        required=True,
         properties=properties,
+        additional_properties=False,
     )
 
 
@@ -309,22 +294,39 @@ def _parse_type_string(type_str: str) -> TypeSpec:
         for variant_str in variants_str:
             if variant_str == "null":
                 variants.append(
-                    TypeSpec(name="null", type="null", description="None type")
+                    TypeSpec(
+                        name="null",
+                        type="null",
+                        description="None type",
+                        required=True,
+                    )
                 )
             else:
                 variant_spec = _parse_type_string(variant_str)
                 variants.append(variant_spec)
-        return UnionTypeSpec(name=f"Union[{type_str}]", variants=variants)
+        return UnionTypeSpec(
+            type="union",
+            name=f"Union[{type_str}]",
+            description=None,
+            required=True,
+            variants=variants,
+        )
 
     # List型の検出
     if type_str.startswith("list[") and type_str.endswith("]"):
         item_type_str = type_str[5:-1]  # "list[str]" -> "str"
         if item_type_str in {"str", "int", "float", "bool"}:
-            item_spec = TypeSpec(name=item_type_str, type=item_type_str)
+            item_spec = TypeSpec(name=item_type_str, type=item_type_str, description=None, required=True)
         else:
             # カスタム型は参照文字列として保持
-            return ListTypeSpec(name=type_str, items=item_type_str)
-        return ListTypeSpec(name=type_str, items=item_spec)
+            return ListTypeSpec(
+                type="list",
+                name=type_str,
+                description=None,
+                required=True,
+                items=item_type_str,
+            )
+        return ListTypeSpec(type="list", name=type_str, description=None, required=True, items=item_spec)
 
     # Dict型の検出
     if type_str.startswith("dict[") and type_str.endswith("]"):
@@ -336,18 +338,22 @@ def _parse_type_string(type_str: str) -> TypeSpec:
             # 値型をparseしてpropertiesとして設定
             value_spec = _parse_type_string(value_type_str)
             return DictTypeSpec(
+                type="dict",
                 name=type_str,
+                description=None,
+                required=True,
                 properties={value_type_str: value_spec},
+                additional_properties=False,
             )
 
     # 基本型または参照型
     if type_str in {"str", "int", "float", "bool", "any", "null"}:
-        return TypeSpec(name=type_str, type=type_str)
+        return TypeSpec(name=type_str, type=type_str, description=None, required=True)
     else:
         # カスタム型は参照文字列として扱う（型名のみ）
         # この場合、TypeSpecを作成せず文字列として返すべきだが、
         # TypeSpecOrRefの制約により、TypeSpecを作成する
-        return TypeSpec(name=type_str, type="reference")
+        return TypeSpec(name=type_str, type="reference", description=None, required=True)
 
 
 def _create_spec_from_data(data: dict, root_key: str | None = None) -> TypeSpec:
@@ -452,9 +458,7 @@ class TypeContext:
         """型をコンテキストに追加"""
         self.type_map[name] = spec
 
-    def resolve_ref(
-        self, ref: TypeSpecOrRef
-    ) -> TypeSpec | RefPlaceholder:  # 循環時はValueErrorを発生
+    def resolve_ref(self, ref: TypeSpecOrRef) -> TypeSpec | RefPlaceholder:  # 循環時はValueErrorを発生
         """参照を解決してTypeSpecを返す（Annotated型対応）"""
         if isinstance(ref, RefPlaceholder):
             ref_name = ref.ref_name

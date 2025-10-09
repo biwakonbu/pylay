@@ -140,7 +140,7 @@ def _get_type_name(typ: type[Any]) -> str:
         return f"&{typ.__forward_arg__}"
 
     # None型の特別処理
-    if typ is type(None) or typ is None:
+    if typ is type(None) or typ is None:  # pyright: ignore[reportUnnecessaryComparison]
         return "null"
 
     # UnionTypeの場合、argsから動的名前生成
@@ -215,7 +215,7 @@ def _get_field_docstring(cls: type[Any], field_name: str) -> str | None:
 
 def _get_simple_type_name(typ: type[Any]) -> str:
     """型の簡潔な名前を取得（Union[str, None]のような形式）"""
-    if typ is type(None) or typ is None:
+    if typ is type(None) or typ is None:  # pyright: ignore[reportUnnecessaryComparison]
         return "None"
 
     origin = get_origin(typ)
@@ -267,7 +267,7 @@ def _get_simple_type_name_with_imports(
     Returns:
         型名文字列（例: "str", "list[str]", "LineNumber"）
     """
-    if typ is type(None) or typ is None:
+    if typ is type(None) or typ is None:  # pyright: ignore[reportUnnecessaryComparison]
         return "None"
 
     if file_imports is None:
@@ -362,9 +362,8 @@ def _extract_pydantic_field_info_with_imports(
     if issubclass(cls, BaseModel):
         for field_name, field_info in cls.model_fields.items():
             # 型名を取得し、インポート情報を収集
-            type_str = _get_simple_type_name_with_imports(
-                field_info.annotation, source_module_path, imports_map, file_imports
-            )
+            annotation = field_info.annotation if field_info.annotation is not None else type(None)
+            type_str = _get_simple_type_name_with_imports(annotation, source_module_path, imports_map, file_imports)
 
             field_data: dict[str, Any] = {
                 "type": type_str,
@@ -458,7 +457,7 @@ def _extract_dataclass_field_info(cls: type[Any]) -> dict[str, dict[str, Any]]:
 
     for field in fields(cls):
         field_data: dict[str, Any] = {
-            "type": _get_simple_type_name(field.type),
+            "type": _get_simple_type_name(field.type),  # type: ignore[arg-type]
             "required": field.default is MISSING and field.default_factory is MISSING,
         }
 
