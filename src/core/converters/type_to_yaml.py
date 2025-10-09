@@ -182,8 +182,21 @@ def _recurse_generic_args(args: tuple[Any, ...], depth: int = 0) -> list[TypeSpe
 
 
 def _get_docstring(typ: type[Any]) -> str | None:
-    """型またはクラスのdocstringを取得"""
-    return inspect.getdoc(typ)
+    """型またはクラスのdocstringを取得（冗長なBaseModel docstringは除外）"""
+    docstring = inspect.getdoc(typ)
+
+    # BaseModelやその他のフレームワーク基底クラスの冗長なdocstringを検出
+    if docstring and any(
+        phrase in docstring
+        for phrase in [
+            '!!! abstract "Usage Documentation"',  # Pydantic BaseModel
+            "A base class for creating Pydantic models",
+            "__pydantic_",  # Pydanticの内部属性の説明
+        ]
+    ):
+        return None  # 冗長なdocstringは削除
+
+    return docstring
 
 
 def _get_field_docstring(cls: type[Any], field_name: str) -> str | None:
@@ -287,8 +300,9 @@ def _get_simple_type_name_with_imports(
             # フォールバック: typing.Literal
             imports_map["Literal"] = "typing.Literal"
         if args:
-            # Literal値を保持
+            # Literal値を保持（人間可読性を向上）
             literal_values = ", ".join(f'"{arg}"' if isinstance(arg, str) else str(arg) for arg in args)
+            # type フィールドに "literal" を設定し、候補を列挙
             return f"Literal[{literal_values}]"
         return "str"  # 空のLiteralはstrにフォールバック
 
@@ -773,7 +787,13 @@ def types_to_yaml_simple(
         # クラスのdocstringを取得
         docstring = _get_docstring(typ)
         if docstring:
-            type_data["description"] = docstring
+            # 複数行のdocstringはヒアドキュメント形式（| 形式）で出力
+            if "\n" in docstring:
+                from ruamel.yaml.scalarstring import LiteralScalarString
+
+                type_data["description"] = LiteralScalarString(docstring)
+            else:
+                type_data["description"] = docstring
 
         # base_classesを取得
         if hasattr(typ, "__bases__"):
