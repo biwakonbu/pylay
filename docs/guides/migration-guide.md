@@ -294,6 +294,8 @@ if result.is_success():
 - `pydantic`: バリデーション
 ```
 
+
+
 #### Step 5.2: AGENTS.mdの更新
 
 プロジェクトのAGENTS.mdに移行完了を記載します。
@@ -318,7 +320,7 @@ def new_function(path: FilePath) -> Count:
 
 ### 戦略2: ファイル単位で移行
 
-```
+```text
 Phase 1: types.py 作成
     ↓
 Phase 2: file_a.py を更新（新しい型を使用）
@@ -332,7 +334,7 @@ Phase 5: protocols.py, models.py 作成
 
 ### 戦略3: 型レベルごとに移行
 
-```
+```text
 Step 1: Level 1型の定義（type エイリアス）
     ↓
 Step 2: Level 2型への昇格（NewType + ファクトリ）
@@ -345,14 +347,17 @@ Step 3: Level 3型の抽出（BaseModel）
 ### 問題1: 循環import
 
 **症状**:
-```
+
+```text
 ImportError: cannot import name 'SomeType' from partially initialized module
 ```
 
 **原因**:
+
 types.py → models.py → types.py の循環import
 
 **解決策**:
+
 ```python
 # types.py
 from typing import TYPE_CHECKING
@@ -367,14 +372,17 @@ def process(model: "SomeModel") -> None:
 ### 問題2: 型チェックエラー
 
 **症状**:
-```
+
+```text
 error: Argument 1 has incompatible type "str"; expected "FilePath"
 ```
 
 **原因**:
+
 既存コードがプリミティブ型を使用している
 
 **解決策**:
+
 ```python
 # Before
 result = process_file("/path/to/file")  # str
@@ -388,14 +396,17 @@ result = process_file(create_file_path("/path/to/file"))  # FilePath
 ### 問題3: テスト失敗
 
 **症状**:
-```
+
+```text
 ValidationError: value is not a valid integer
 ```
 
 **原因**:
+
 ファクトリ関数のバリデーションが厳しすぎる
 
 **解決策**:
+
 ```python
 # Before（厳しすぎる）
 CountValidator = TypeAdapter(Annotated[int, Field(gt=0, lt=100)])
@@ -407,9 +418,11 @@ CountValidator = TypeAdapter(Annotated[int, Field(ge=0)])
 ### 問題4: パフォーマンス低下
 
 **症状**:
+
 バリデーションにより処理速度が低下
 
 **解決策**:
+
 ```python
 # パフォーマンスクリティカルな箇所では、バリデーションをスキップ
 from typing import cast
@@ -441,6 +454,7 @@ def convert_to_yaml(source: str, output: str) -> dict:
 #### 移行後
 
 **types.py**:
+
 ```python
 # src/core/converters/types.py
 from typing import NewType, Annotated
@@ -466,6 +480,7 @@ ConversionCount = NewType('ConversionCount', int)
 ```
 
 **models.py**:
+
 ```python
 # src/core/converters/models.py
 from pydantic import BaseModel
@@ -483,6 +498,7 @@ class ConversionResult(BaseModel):
 ```
 
 **type_to_yaml.py**:
+
 ```python
 # src/core/converters/type_to_yaml.py
 from pathlib import Path
@@ -522,6 +538,7 @@ class TypeInferrer:
 #### 移行後
 
 **types.py**:
+
 ```python
 # src/core/analyzer/types.py
 from typing import NewType, Literal, Annotated
@@ -545,6 +562,7 @@ def create_type_name(value: str) -> TypeName:
 ```
 
 **models.py**:
+
 ```python
 # src/core/analyzer/models.py
 from pydantic import BaseModel
@@ -562,6 +580,7 @@ class InferredType(BaseModel):
 ```
 
 **type_inferrer.py**:
+
 ```python
 # src/core/analyzer/type_inferrer.py
 from .types import create_type_name, create_type_level
