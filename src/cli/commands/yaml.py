@@ -329,10 +329,13 @@ def _process_directory(
         for py_file in py_files:
             progress.update(task, description=f"処理中: {py_file.name}")
 
+            # module_nameをtryブロックの外で定義（finallyで使用するため）
+            module_name = py_file.stem
+            parent_path = str(py_file.parent)
+
             try:
                 # モジュールをインポート
-                sys.path.insert(0, str(py_file.parent))
-                module_name = py_file.stem
+                sys.path.insert(0, parent_path)
                 # 同名モジュールの再利用を防ぐため、インポート前にsys.modulesから削除
                 sys.modules.pop(module_name, None)
                 module = importlib.import_module(module_name)  # noqa: F823
@@ -353,8 +356,8 @@ def _process_directory(
             finally:
                 # 処理完了後もsys.modulesとsys.pathをクリーンアップ
                 sys.modules.pop(module_name, None)
-                if str(py_file.parent) in sys.path:
-                    sys.path.remove(str(py_file.parent))
+                if parent_path in sys.path:
+                    sys.path.remove(parent_path)
 
             progress.advance(task)
 

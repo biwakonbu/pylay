@@ -214,7 +214,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             spec_result = yaml_to_spec(yaml_str, root_key)
             # RefPlaceholderは参照解決エラーを示すため、適切にエラー処理
             if isinstance(spec_result, RefPlaceholder):
-                msg = f"参照解決エラー: {spec_result.ref}"
+                msg = f"参照解決エラー: {spec_result.ref_name}"
                 raise ValueError(msg)
             spec = spec_result
 
