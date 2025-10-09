@@ -879,7 +879,7 @@ def downgrade():
 
 ```python
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from alembic import command
 from alembic.config import Config
 
@@ -897,7 +897,7 @@ def test_migration_upgrade():
 
     # テーブルが作成されたことを確認
     with engine.connect() as conn:
-        result = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
         tables = [row[0] for row in result]
         assert 'users' in tables
 
@@ -913,7 +913,7 @@ def test_migration_downgrade():
 
     # テーブルが削除されたことを確認
     with engine.connect() as conn:
-        result = conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        result = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table'"))
         tables = [row[0] for row in result]
         assert 'users' not in tables
 ```
