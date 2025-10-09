@@ -23,6 +23,15 @@ pylayの `pylay yaml` コマンドは、プロジェクト全体の型定義をY
 3. **ドキュメント生成**: YAMLからMarkdownドキュメントを自動生成
 4. **型の再生成**: YAMLからPython型定義を再生成可能（ラウンドトリップ変換）
 
+### YAMLファイルの人間可読性
+
+pylayは以下の工夫により、生成されたYAMLファイルの人間可読性を最大化しています：
+
+1. **Literal型の列挙候補明示**: `type: Literal["active", "inactive", "pending"]` のように取りうる値を明確に表示
+2. **冗長なdocstringの除外**: BaseModelなどのフレームワーク基底クラスの冗長な説明を自動除外
+3. **複数行docstringのヒアドキュメント形式**: Python上の見た目と同じ形式（`|-` 形式）で出力
+4. **カスタムdocstringの保持**: 開発者が記述した有用な型説明は完全に保持
+
 ### YAML管理の基本方針
 
 - **`.lay.yaml`ファイルはGit管理対象**: 型仕様の変更履歴を追跡
@@ -277,7 +286,54 @@ _metadata:
 - `source_modified_at`: 最終更新日時の追跡
 - `pylay_version`: 生成に使用したpylayバージョンの記録
 
-### 3. ディレクトリ別のYAML管理
+### 3. YAML出力形式の最適化
+
+生成されたYAMLは、人間が読みやすいように最適化されています：
+
+**Literal型の列挙候補**:
+```yaml
+Status:
+  fields:
+    state:
+      type: Literal["active", "inactive", "pending"]
+      required: true
+```
+
+**複数行docstringのヒアドキュメント形式**:
+```yaml
+GraphNode:
+  description: |-
+    グラフのノードを表すクラス
+
+    Attributes:
+        id: ノードの一意の識別子
+        name: ノードの名前
+        node_type: ノードの種類
+  base_classes:
+  - BaseModel
+```
+
+**カスタムdocstringの保持**:
+```yaml
+User:
+  description: ユーザー情報を表すモデル
+  base_classes:
+  - BaseModel
+```
+
+**冗長なdocstringの自動除外**:
+```yaml
+# docstringがない場合、BaseModelの冗長な説明は出力されない
+SimpleModel:
+  base_classes:
+  - BaseModel
+  fields:
+    name:
+      type: str
+      required: true
+```
+
+### 4. ディレクトリ別のYAML管理
 
 大規模プロジェクトでは、ディレクトリ別にYAMLを管理します。
 
