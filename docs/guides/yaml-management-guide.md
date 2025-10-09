@@ -291,6 +291,7 @@ _metadata:
 生成されたYAMLは、人間が読みやすいように最適化されています：
 
 **Literal型の列挙候補**:
+
 ```yaml
 Status:
   fields:
@@ -300,6 +301,7 @@ Status:
 ```
 
 **複数行docstringのヒアドキュメント形式**:
+
 ```yaml
 GraphNode:
   description: |-
@@ -314,6 +316,7 @@ GraphNode:
 ```
 
 **カスタムdocstringの保持**:
+
 ```yaml
 User:
   description: ユーザー情報を表すモデル
@@ -322,6 +325,7 @@ User:
 ```
 
 **冗長なdocstringの自動除外**:
+
 ```yaml
 # docstringがない場合、BaseModelの冗長な説明は出力されない
 SimpleModel:
