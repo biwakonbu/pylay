@@ -16,9 +16,7 @@ from src.core.schemas.yaml_spec import (
 )
 
 
-def yaml_to_spec(
-    yaml_str: str, root_key: str | None = None
-) -> TypeSpec | TypeRoot | RefPlaceholder | None:
+def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeRoot | RefPlaceholder | None:
     """YAML文字列からTypeSpecまたはTypeRootを生成 (v1.1対応、参照解決付き)"""
     yaml_parser = YAML()
     data = yaml_parser.load(yaml_str)
@@ -36,18 +34,14 @@ def yaml_to_spec(
         elif len(data) > 1:
             # 新形式: 複数型（トップレベルに直接型名キー）
             # _metadata, _imports キーは特別扱い
-            types_dict = {
-                k: _create_spec_from_data(v, k)
-                for k, v in data.items()
-                if not k.startswith("_")
-            }
+            # IMPORTANT: _で始まる型名（_BaseType等）を除外しないよう、特定キーのみ除外
+            reserved_keys = {"_metadata", "_imports"}
+            types_dict = {k: _create_spec_from_data(v, k) for k, v in data.items() if k not in reserved_keys}
             # _importsと_metadataを取得
             imports_dict = data.get("_imports")
             metadata_dict = data.get("_metadata")
 
-            type_root = TypeRoot(
-                types=types_dict, _imports=imports_dict, _metadata=metadata_dict
-            )
+            type_root = TypeRoot(types=types_dict, _imports=imports_dict, _metadata=metadata_dict)
             # 参照解決を実行
             resolved_types = _resolve_all_refs(type_root.types)
             # 参照解決されたTypeRootを返す（_imports, _metadataも保持）
@@ -172,9 +166,7 @@ def _collect_refs_from_spec(spec: TypeSpec) -> TypeRefList:
     return refs
 
 
-def validate_with_spec(
-    spec: TypeSpecOrRef, data: Any, max_depth: int = 10, current_depth: int = 0
-) -> bool:
+def validate_with_spec(spec: TypeSpecOrRef, data: Any, max_depth: int = 10, current_depth: int = 0) -> bool:
     """TypeSpecに基づいてデータをバリデーション
 
     TypeSpec定義に基づいて入力データをバリデーションします。
@@ -190,23 +182,15 @@ def validate_with_spec(
                 return False
             for key, prop_spec in spec.properties.items():
                 if key in data:
-                    if not validate_with_spec(
-                        prop_spec, data[key], max_depth, current_depth + 1
-                    ):
+                    if not validate_with_spec(prop_spec, data[key], max_depth, current_depth + 1):
                         return False
             return True
         elif isinstance(spec, ListTypeSpec):
             if not isinstance(data, list):
                 return False
-            return all(
-                validate_with_spec(spec.items, item, max_depth, current_depth + 1)
-                for item in data
-            )
+            return all(validate_with_spec(spec.items, item, max_depth, current_depth + 1) for item in data)
         elif isinstance(spec, UnionTypeSpec):
-            return any(
-                validate_with_spec(variant, data, max_depth, current_depth + 1)
-                for variant in spec.variants
-            )
+            return any(validate_with_spec(variant, data, max_depth, current_depth + 1) for variant in spec.variants)
         elif isinstance(spec, TypeSpec):
             # 基本型バリデーション
             if spec.type == "str":

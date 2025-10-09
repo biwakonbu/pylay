@@ -312,7 +312,9 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
         if raw_yaml_data:
             # YAMLデータから定義されている型名を抽出（_importsや_metadataは除外）
-            defined_types = {k for k in raw_yaml_data.keys() if not k.startswith("_")}
+            # IMPORTANT: _で始まる型名（_BaseType等）を除外しないよう、特定キーのみ除外
+            reserved_keys = {"_metadata", "_imports"}
+            defined_types = {k for k in raw_yaml_data.keys() if k not in reserved_keys}
 
         # 除外する型 = YAML内で定義されている型
         exclude_types = defined_types
@@ -448,7 +450,9 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                         if constraint in field_info_data:
                             value = field_info_data[constraint]
                             if isinstance(value, str):
-                                field_params.append(f'{constraint}="{value}"')
+                                # エスケープ処理
+                                value_escaped = value.replace('"', '\\"')
+                                field_params.append(f'{constraint}="{value_escaped}"')
                             else:
                                 field_params.append(f"{constraint}={value}")
 
@@ -456,13 +460,17 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                     for key, value in field_info_data.items():
                         if key not in ["default", "default_factory"] and key not in constraint_order:
                             if isinstance(value, str):
-                                field_params.append(f'{key}="{value}"')
+                                # エスケープ処理
+                                value_escaped = value.replace('"', '\\"')
+                                field_params.append(f'{key}="{value_escaped}"')
                             else:
                                 field_params.append(f"{key}={value}")
 
                     # 3. description（最後）
-                    if "description" in field_spec:
-                        field_params.append(f'description="{field_spec["description"]}"')
+                    if "description" in field_spec and field_spec["description"]:
+                        # エスケープ処理（"を\"に変換）
+                        description_escaped = field_spec["description"].replace('"', '\\"')
+                        field_params.append(f'description="{description_escaped}"')
 
                     # フィールド定義を生成
                     if field_params:
