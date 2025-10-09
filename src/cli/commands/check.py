@@ -61,14 +61,21 @@ def check(
     output: str | None,
     verbose: bool,
 ) -> None:
-    """
-    プロジェクトの品質をチェックし、改善提案を表示します。
+    """プロジェクトの品質をチェックし、改善提案を表示します。
 
     型定義レベル、type-ignore診断、品質チェックを統合した診断コマンドです。
 
-    TARGET: 解析対象のディレクトリまたはファイル（デフォルト: カレントディレクトリ）
+    Args:
+        target: 解析対象のディレクトリまたはファイル（デフォルト: カレントディレクトリ）
+        focus: 特定のチェックのみ実行（types/ignore/quality、デフォルト: None=全チェック）
+        format: 出力形式（console/markdown/json、デフォルト: console）※準備中
+        output: 出力ファイルパス（デフォルト: None=標準出力）※準備中
+        verbose: 詳細なログを出力（デフォルト: False）
 
-    使用例:
+    Returns:
+        None
+
+    Examples:
         # 全てのチェックを実行（デフォルト）
         uv run pylay check
 
@@ -134,7 +141,15 @@ def check(
 
 
 def _run_type_analysis(target_path: Path, verbose: bool) -> None:
-    """型定義レベル統計を実行"""
+    """型定義レベル統計を実行
+
+    Args:
+        target_path: 解析対象のパス
+        verbose: 詳細情報を表示するかどうか
+
+    Returns:
+        None
+    """
     from ...core.analyzer.type_reporter import TypeReporter
 
     console.print(f"🔍 解析中: {target_path}")
@@ -166,7 +181,15 @@ def _run_type_analysis(target_path: Path, verbose: bool) -> None:
 
 
 def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
-    """type-ignore 診断を実行"""
+    """type-ignore 診断を実行
+
+    Args:
+        target_path: 解析対象のパス
+        verbose: 詳細情報（解決策）を表示するかどうか
+
+    Returns:
+        None
+    """
     from ...core.analyzer.type_ignore_reporter import TypeIgnoreReporter
 
     console.print(f"🔍 解析中: {target_path}")
@@ -186,7 +209,16 @@ def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
 
 
 def _run_quality_check(target_path: Path, config: PylayConfig, verbose: bool) -> None:
-    """品質チェックを実行"""
+    """品質チェックを実行
+
+    Args:
+        target_path: 解析対象のパス
+        config: プロジェクト設定
+        verbose: 詳細情報を表示するかどうか
+
+    Returns:
+        None
+    """
     from ...core.analyzer.code_locator import CodeLocator
     from ...core.analyzer.quality_reporter import QualityReporter
 
