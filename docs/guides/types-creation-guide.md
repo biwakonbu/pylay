@@ -16,11 +16,13 @@
 `types.py` は、モジュール固有の型定義を集約し、**プリミティブ型の直接使用を防ぐ**ための中心的なファイルです。
 
 **目的**:
+
 - プリミティブ型（`str`, `int`, `float`等）の直接使用を避ける
 - ドメイン型を明確にする（`UserId`, `FilePath`等）
 - 型安全性を向上させる
 
 **配置する型のレベル**:
+
 - **Level 1**: `type` エイリアス（制約なし）— 一時的な状態
 - **Level 2**: `NewType` + ファクトリ関数 + `TypeAdapter`（★プリミティブ型代替、最頻出パターン）
 - Level 3は `models.py` に配置（`dataclass`, `BaseModel`）
@@ -92,11 +94,16 @@ def create_user_id(value: str) -> UserId:
 TypeAdapterとファクトリ関数を使用した標準パターン:
 
 ```python
-from pydantic import TypeAdapter, validate_call
+from typing import NewType, Annotated
+from pydantic import TypeAdapter, Field
 
+# NewType定義
 Count = NewType('Count', int)
+
+# バリデーター定義
 CountValidator = TypeAdapter(Annotated[int, Field(ge=0)])
 
+# ファクトリ関数定義
 def create_count(value: int) -> Count:
     """非負整数のカウント型を作成する
 
@@ -105,21 +112,49 @@ def create_count(value: int) -> Count:
 
     Returns:
         検証済みのカウント値
+
+    Raises:
+        ValidationError: valueが負の値の場合
+
+    Examples:
+        >>> count = create_count(10)  # OK
+        >>> count = create_count(-1)  # ValidationError
     """
     validated = CountValidator.validate_python(value)
     return Count(validated)
+```
 
-# 使用例
-count = create_count(10)  # OK
-count = create_count(-1)  # ValidationError
+#### @validate_callパターン（代替）
+
+```python
+from pydantic import validate_call
+
+# NewType定義
+Count = NewType('Count', int)
+
+# @validate_callデコレーターで型検証を自動化
+@validate_call
+def create_count(value: Annotated[int, Field(ge=0)]) -> Count:
+    """非負整数のカウント型を作成する（@validate_call版）
+
+    Args:
+        value: カウント値（非負整数）
+
+    Returns:
+        検証済みのカウント値
+    """
+    return Count(value)
 ```
 
 **どちらを選ぶか？**
 
-| パターン | 推奨ケース |
-|----------|-----------|
-| ファクトリ関数 | 明示的な型変換が必要な場合（推奨） |
-| @validate_call | 関数呼び出し構文を好む場合 |
+| パターン | メリット | デメリット | 推奨ケース |
+|----------|---------|-----------|-----------|
+| TypeAdapter + ファクトリ関数 | 明示的なバリデーション、再利用可能、柔軟 | やや冗長 | **デフォルト推奨** |
+| @validate_call | 簡潔な記述、Pydantic統合 | 再利用不可 | 簡潔さ優先 |
+
+**推奨**: プロジェクト全体で一貫性を保つため、
+**TypeAdapter + ファクトリ関数**パターンを標準とすることを推奨します。
 
 ## 実装パターン集
 

@@ -58,6 +58,7 @@ src/core/
 **目的**: モジュール固有の型定義（Level 1/2を優先）
 
 **配置する型**:
+
 - Level 1: `type` エイリアス（制約なし）
 - Level 2: `NewType` + ファクトリ関数 + `TypeAdapter`（★プリミティブ型代替、最頻出）
 - 簡単なドメイン型（`Annotated`を使った制約付き型）
@@ -87,9 +88,11 @@ def create_source_path(value: Path | str) -> SourcePath:
 ConversionCount = NewType('ConversionCount', int)
 
 @validate_call
-def ConversionCount(value: Annotated[int, Field(ge=0)]) -> ConversionCount:  # type: ignore[no-redef]
+def create_conversion_count(
+    value: Annotated[int, Field(ge=0)]
+) -> ConversionCount:
     """変換回数を作成する"""
-    return NewType('ConversionCount', int)(value)
+    return ConversionCount(value)
 ```
 
 ### protocols.py
@@ -97,6 +100,7 @@ def ConversionCount(value: Annotated[int, Field(ge=0)]) -> ConversionCount:  # t
 **目的**: Protocolインターフェース定義（抽象）
 
 **配置する型**:
+
 - `Protocol` クラス（構造的部分型）
 - `ABC` 抽象基底クラス（必要に応じて）
 
@@ -127,6 +131,7 @@ class TypeConverter(Protocol):
 **目的**: Pydanticモデル（Level 3: BaseModel）
 
 **配置する型**:
+
 - Level 3: `dataclass` + Pydantic または `BaseModel`（複雑なドメイン型）
 - ビジネスロジックを持つモデル
 
@@ -167,7 +172,12 @@ class ConversionResult(BaseModel):
 """型からYAMLへの変換実装"""
 
 from pathlib import Path
-from .types import SourcePath, create_source_path, ConversionCount
+from .types import (
+    SourcePath,
+    create_source_path,
+    ConversionCount,
+    create_conversion_count,
+)
 from .protocols import TypeConverter
 from .models import ConversionResult
 
@@ -181,7 +191,7 @@ class TypeToYamlConverter:
 
         # 変換処理...
         yaml_output = "..."
-        types_count = ConversionCount(10)
+        types_count = create_conversion_count(10)
 
         return ConversionResult(
             source=source_path,
@@ -207,6 +217,7 @@ protocols.py
 ```
 
 **禁止パターン**:
+
 - ❌ `types.py` → `models.py` のimport
 - ❌ `protocols.py` → `models.py` のimport
 - ❌ 循環import
@@ -247,8 +258,10 @@ def OutputPath(value: Annotated[Path, Field()]) -> OutputPath:  # type: ignore[n
 ConversionCount = NewType('ConversionCount', int)
 
 @validate_call
-def ConversionCount(value: Annotated[int, Field(ge=0)]) -> ConversionCount:  # type: ignore[no-redef]
-    return NewType('ConversionCount', int)(value)
+def create_conversion_count(
+    value: Annotated[int, Field(ge=0)]
+) -> ConversionCount:
+    return ConversionCount(value)
 ```
 
 **protocols.py**:
@@ -320,6 +333,7 @@ from .types import (
     YamlString,
     create_source_path,
     ConversionCount,
+    create_conversion_count,
 )
 from .protocols import TypeConverter
 from .models import ConversionResult, ConversionOptions
@@ -356,7 +370,7 @@ class TypeToYamlConverter:
     def _count_types(self, yaml: YamlString) -> ConversionCount:
         """型の数をカウント"""
         # 実装...
-        return ConversionCount(10)
+        return create_conversion_count(10)
 ```
 
 ## ベストプラクティス
@@ -366,6 +380,7 @@ class TypeToYamlConverter:
 新しい型定義を追加する際は、まず `types.py` への配置を検討します。
 
 **判断基準**:
+
 - プリミティブ型の代替 → `types.py` (Level 2: NewType)
 - 簡単なドメイン型 → `types.py` (Level 2: Annotated)
 - 複雑なドメイン型 → `models.py` (Level 3: BaseModel)
@@ -458,6 +473,178 @@ SourcePath = NewType('SourcePath', Path)
 - [types.py作成ガイドライン](./types-creation-guide.md)
 - [既存モジュールの移行手順](./migration-guide.md)
 - [型定義ルール](../typing-rule.md)
+
+## Protocolの詳細と利用シーン
+
+### Protocolの役割
+
+**protocols.py** で定義されるProtocolは、構造的部分型（Structural Subtyping）を実現するための抽象インターフェースです。Pythonの型システムにおいて、以下の重要な役割を果たします：
+
+1. **型チェックのための抽象インターフェース定義**
+   - 実装クラスとの疎結合を実現
+   - 明示的な継承なしに型互換性を提供
+
+2. **循環参照の回避**
+   - types.py → protocols.py の一方向依存を維持
+   - models.py や実装ファイルへの依存を排除
+
+3. **テスト可能性の向上**
+   - モックやスタブの作成が容易
+   - 依存性注入（DI）パターンの実装を支援
+
+### 具体的な利用シーン
+
+#### シーン1: 型変換器の抽象化
+
+```python
+# protocols.py
+from typing import Protocol
+from .types import SourcePath, YamlString
+
+class TypeConverter(Protocol):
+    """型変換器のプロトコル
+
+    複数の変換実装（AST変換、mypy変換等）を
+    統一的に扱うためのインターフェース
+    """
+
+    def convert(self, source: SourcePath) -> YamlString:
+        """型をYAML文字列に変換する"""
+        ...
+
+    def validate(self, source: SourcePath) -> bool:
+        """変換可能かチェックする"""
+        ...
+
+# 実装例1: AST変換器
+class AstTypeConverter:
+    def convert(self, source: SourcePath) -> YamlString:
+        # AST解析による変換
+        ...
+
+    def validate(self, source: SourcePath) -> bool:
+        # ASTで解析可能かチェック
+        ...
+
+# 実装例2: mypy変換器
+class MypyTypeConverter:
+    def convert(self, source: SourcePath) -> YamlString:
+        # mypy型推論による変換
+        ...
+
+    def validate(self, source: SourcePath) -> bool:
+        # mypy解析可能かチェック
+        ...
+
+# 利用側: どちらの実装でも同じインターフェースで使用可能
+def process_file(converter: TypeConverter, source: SourcePath) -> YamlString:
+    if not converter.validate(source):
+        raise ValueError(f"Cannot convert {source}")
+    return converter.convert(source)
+```
+
+#### シーン2: 依存性注入とテスト
+
+```python
+# protocols.py
+from typing import Protocol
+from .types import UserId
+
+class UserRepository(Protocol):
+    """ユーザーリポジトリのプロトコル"""
+
+    def find_by_id(self, user_id: UserId) -> dict | None:
+        """ユーザーIDでユーザーを検索"""
+        ...
+
+# 本番実装
+class SqlAlchemyUserRepository:
+    def find_by_id(self, user_id: UserId) -> dict | None:
+        # データベースアクセス
+        ...
+
+# テスト用モック
+class InMemoryUserRepository:
+    def __init__(self):
+        self.users: dict[UserId, dict] = {}
+
+    def find_by_id(self, user_id: UserId) -> dict | None:
+        return self.users.get(user_id)
+
+# サービス層: Protocolに依存
+class UserService:
+    def __init__(self, repo: UserRepository):
+        self.repo = repo  # 実装に依存せず、Protocolに依存
+
+    def get_user(self, user_id: UserId) -> dict:
+        user = self.repo.find_by_id(user_id)
+        if user is None:
+            raise ValueError(f"User {user_id} not found")
+        return user
+
+# テスト時は InMemoryUserRepository を注入
+# 本番時は SqlAlchemyUserRepository を注入
+```
+
+### モジュール間の依存関係図
+
+```text
+┌─────────────────────────────────────────────────┐
+│                  実装ファイル                      │
+│             (type_to_yaml.py等)                 │
+│                                                 │
+│  - ビジネスロジック実装                           │
+│  - Protocolインターフェースを実装                 │
+│  - models.py と types.py を使用                  │
+└────────────┬────────────────────────┬──────────┘
+             │                        │
+             │ import                 │ import
+             ↓                        ↓
+    ┌─────────────┐          ┌─────────────┐
+    │ models.py   │          │protocols.py │
+    │             │          │             │
+    │ Level 3型   │          │ Protocol    │
+    │ BaseModel   │          │ 定義        │
+    └──────┬──────┘          └──────┬──────┘
+           │                        │
+           │ import                 │ import
+           ↓                        ↓
+    ┌──────────────────────────────────┐
+    │           types.py               │
+    │                                  │
+    │  Level 1/2型定義                 │
+    │  (NewType, Annotated等)          │
+    └──────────────────────────────────┘
+```
+
+**依存方向のルール**:
+
+- ✅ 実装 → protocols.py（Protocolの実装）
+- ✅ 実装 → models.py（ドメインモデルの使用）
+- ✅ 実装 → types.py（基本型の使用）
+- ✅ models.py → types.py（基本型の使用）
+- ✅ protocols.py → types.py（基本型の使用）
+- ❌ types.py → models.py（禁止）
+- ❌ types.py → protocols.py（禁止）
+- ❌ protocols.py → models.py（禁止）
+
+### Protocolのベストプラクティス
+
+1. **メソッド定義は最小限に**
+   - 必要なメソッドのみを定義
+   - 単一責任原則（SRP）を遵守
+
+2. **型ヒントは厳格に**
+   - 引数と戻り値に明確な型を指定
+   - types.py の型を積極的に使用
+
+3. **docstringで契約を明示**
+   - メソッドの責務と期待動作を記述
+   - 例外の可能性を明記
+
+4. **実装の強制はしない**
+   - Protocolは構造的部分型
+   - 明示的な継承は不要（但し推奨）
 
 ## 参考資料
 
