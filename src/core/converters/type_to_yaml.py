@@ -787,7 +787,13 @@ def types_to_yaml_simple(
         # クラスのdocstringを取得
         docstring = _get_docstring(typ)
         if docstring:
-            type_data["description"] = docstring
+            # 複数行のdocstringはヒアドキュメント形式（| 形式）で出力
+            if "\n" in docstring:
+                from ruamel.yaml.scalarstring import LiteralScalarString
+
+                type_data["description"] = LiteralScalarString(docstring)
+            else:
+                type_data["description"] = docstring
 
         # base_classesを取得
         if hasattr(typ, "__bases__"):
