@@ -50,9 +50,9 @@ def _load_config() -> PylayConfig:
     "--format",
     type=click.Choice(["console", "markdown", "json"], case_sensitive=False),
     default="console",
-    help="出力形式（デフォルト: console）",
+    help="出力形式（デフォルト: console）※準備中",
 )
-@click.option("-o", "--output", type=click.Path(), help="出力ファイルパス")
+@click.option("-o", "--output", type=click.Path(), help="出力ファイルパス ※準備中")
 @click.option("-v", "--verbose", is_flag=True, help="詳細なログを出力")
 def check(
     target: str | None,
