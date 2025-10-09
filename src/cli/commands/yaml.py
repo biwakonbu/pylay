@@ -461,12 +461,12 @@ def _process_single_file(
     sys.path.insert(0, str(input_path.parent))
     module_name = input_path.stem
 
+    # 同名モジュールの再利用を防ぐため、インポート前にsys.modulesから削除
+    sys.modules.pop(module_name, None)
+
     # モジュールインポート中のプログレス表示
     with console.status(f"[bold green]モジュール '{module_name}' をインポート中..."):
         module = importlib.import_module(module_name)
-
-    # 同名モジュールの再利用を防ぐため、sys.modulesから削除
-    sys.modules.pop(module_name, None)
 
     # モジュール内の全型アノテーションを検索
     types_dict = {}
@@ -578,9 +578,11 @@ def _process_single_file(
     )
     console.print(complete_panel)
 
-    # sys.pathのクリーンアップ
+    # sys.pathとsys.modulesのクリーンアップ
     if str(input_path.parent) in sys.path:
         sys.path.remove(str(input_path.parent))
+    # 同名モジュールの再利用を防ぐため、処理完了後もsys.modulesから削除
+    sys.modules.pop(module_name, None)
 
 
 def run_yaml(
