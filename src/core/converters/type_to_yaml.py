@@ -181,90 +181,22 @@ def _recurse_generic_args(args: tuple[Any, ...], depth: int = 0) -> list[TypeSpe
     return result
 
 
-def _simplify_builtin_docstring(docstring: str | None, type_name: str) -> str | None:
-    """組み込み型のdocstringを短いラベルに置換
+def _get_docstring(typ: type[Any]) -> str | None:
+    """型またはクラスのdocstringを取得（冗長なBaseModel docstringは除外）"""
+    docstring = inspect.getdoc(typ)
 
-    Args:
-        docstring: 元のdocstring
-        type_name: 型名
-
-    Returns:
-        簡略化されたdocstring
-    """
-    if docstring is None:
-        return None
-
-    # 組み込み型の簡略化マッピング
-    builtin_descriptions = {
-        "str": "文字列型",
-        "int": "整数型",
-        "float": "浮動小数点数型",
-        "bool": "真偽値型",
-        "list": "リスト型",
-        "dict": "辞書型",
-        "set": "集合型",
-        "tuple": "タプル型",
-        "frozenset": "不変集合型",
-        "bytes": "バイト列型",
-        "bytearray": "バイト配列型",
-    }
-
-    # Pydantic型の説明
-    pydantic_descriptions = {
-        "BaseModel": "Pydanticモデルの基底クラス",
-        "Field": "フィールド制約とメタデータを定義",
-    }
-
-    # グラフ関連型の説明（グラフ文脈に即した説明）
-    graph_type_descriptions = {
-        "NodeId": "グラフのノード一意識別子",
-        "NodeType": "グラフのノード種別（class, function, module等）",
-        "NodeAttributes": "ノードの追加属性（カスタムデータ）",
-        "GraphMetadata": "グラフのメタデータ（バージョン、統計情報等）",
-        "RelationType": "ノード間の関係種別（depends_on, inherits_from等）",
-        "GraphNode": "グラフのノード（型情報を持つ）",
-        "GraphEdge": "グラフのエッジ（依存関係を表す）",
-        "TypeDependencyGraph": "型依存関係グラフ全体の構造",
-    }
-
-    # Pydantic型の場合、専用の説明を返す
-    if type_name in pydantic_descriptions:
-        return pydantic_descriptions[type_name]
-
-    # グラフ関連型の場合、専用の説明を返す
-    if type_name in graph_type_descriptions:
-        return graph_type_descriptions[type_name]
-
-    # 組み込み型の場合、簡略化された説明を返す
-    if type_name in builtin_descriptions:
-        return builtin_descriptions[type_name]
-
-    # Python組み込みdocstringの特徴的なフレーズを検出して簡略化
+    # BaseModelやその他のフレームワーク基底クラスの冗長なdocstringを検出
     if docstring and any(
         phrase in docstring
         for phrase in [
-            "built-in",
-            "Built-in",
-            "BUILTIN",
-            "str(object='') -> str",
-            "int([x]) -> integer",
-            "list() -> new empty list",
-            "dict() -> new empty dictionary",
-            "bool(x) -> bool",
+            '!!! abstract "Usage Documentation"',  # Pydantic BaseModel
+            "A base class for creating Pydantic models",
+            "__pydantic_",  # Pydanticの内部属性の説明
         ]
     ):
-        # 組み込み型として判定された場合、型名から推測
-        return builtin_descriptions.get(type_name, f"{type_name}型")
+        return None  # 冗長なdocstringは削除
 
-    # カスタム型の場合はそのまま返す
     return docstring
-
-
-def _get_docstring(typ: type[Any]) -> str | None:
-    """型またはクラスのdocstringを取得（組み込み型は簡略化）"""
-    docstring = inspect.getdoc(typ)
-    type_name = _get_type_name(typ)
-    return _simplify_builtin_docstring(docstring, type_name)
 
 
 def _get_field_docstring(cls: type[Any], field_name: str) -> str | None:
