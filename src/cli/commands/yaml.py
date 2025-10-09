@@ -494,9 +494,14 @@ def _process_single_file(
                     from pydantic import BaseModel
 
                     is_pydantic_model = issubclass(obj, BaseModel)
-                except Exception:
+                except (TypeError, ImportError):
                     is_pydantic_model = False
-                is_enum = issubclass(obj, Enum)
+
+                try:
+                    is_enum = issubclass(obj, Enum)
+                except TypeError:
+                    is_enum = False
+
                 is_user_defined = getattr(obj, "__module__", None) == module_name
 
                 if (is_pydantic_model or is_enum) and is_user_defined:
