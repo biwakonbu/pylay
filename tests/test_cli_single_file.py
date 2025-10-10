@@ -3,6 +3,7 @@
 pylay yaml コマンドの単一ファイルモード（pylay yaml src/core/schemas/types.py）向けのテストを提供します。
 """
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -26,7 +27,7 @@ class TestBasicTypeConversion:
         # フィクスチャファイルをコピー
         fixture_file = Path("tests/fixtures/type_alias.py")
         input_file = tmp_path / "type_alias.py"
-        input_file.write_text(fixture_file.read_text())
+        shutil.copyfile(fixture_file, input_file)
 
         # 出力ファイルパス
         output_file = tmp_path / "type_alias.lay.yaml"
@@ -36,7 +37,7 @@ class TestBasicTypeConversion:
 
         # アサーション
         assert output_file.exists()
-        content = output_file.read_text()
+        content = output_file.read_text(encoding="utf-8")
 
         # 型定義が含まれていることを確認
         assert "UserId:" in content
@@ -53,7 +54,7 @@ class TestBasicTypeConversion:
         # フィクスチャファイルをコピー
         fixture_file = Path("tests/fixtures/newtype.py")
         input_file = tmp_path / "newtype.py"
-        input_file.write_text(fixture_file.read_text())
+        shutil.copyfile(fixture_file, input_file)
 
         # 出力ファイルパス
         output_file = tmp_path / "newtype.lay.yaml"
@@ -63,7 +64,7 @@ class TestBasicTypeConversion:
 
         # アサーション
         assert output_file.exists()
-        content = output_file.read_text()
+        content = output_file.read_text(encoding="utf-8")
 
         # 型定義が含まれていることを確認
         assert "UserId:" in content
@@ -81,7 +82,7 @@ class TestBasicTypeConversion:
         # フィクスチャファイルをコピー
         fixture_file = Path("tests/fixtures/dataclass.py")
         input_file = tmp_path / "dataclass.py"
-        input_file.write_text(fixture_file.read_text())
+        shutil.copyfile(fixture_file, input_file)
 
         # 出力ファイルパス
         output_file = tmp_path / "dataclass.lay.yaml"
@@ -91,7 +92,7 @@ class TestBasicTypeConversion:
 
         # アサーション
         assert output_file.exists()
-        content = output_file.read_text()
+        content = output_file.read_text(encoding="utf-8")
 
         # 型定義が含まれていることを確認
         assert "Point:" in content
@@ -116,7 +117,7 @@ class TestMixedTypesConversion:
         # フィクスチャファイルをコピー
         fixture_file = Path("tests/fixtures/mixed_types.py")
         input_file = tmp_path / "mixed_types.py"
-        input_file.write_text(fixture_file.read_text())
+        shutil.copyfile(fixture_file, input_file)
 
         # 出力ファイルパス
         output_file = tmp_path / "mixed_types.lay.yaml"
@@ -126,7 +127,7 @@ class TestMixedTypesConversion:
 
         # アサーション
         assert output_file.exists()
-        content = output_file.read_text()
+        content = output_file.read_text(encoding="utf-8")
 
         # すべての型が含まれていることを確認
         # type文
@@ -156,7 +157,7 @@ class TestEdgeCases:
         # フィクスチャファイルをコピー
         fixture_file = Path("tests/fixtures/empty.py")
         input_file = tmp_path / "empty.py"
-        input_file.write_text(fixture_file.read_text())
+        shutil.copyfile(fixture_file, input_file)
 
         # 出力ファイルパス
         output_file = tmp_path / "empty.lay.yaml"
@@ -176,7 +177,7 @@ class TestEdgeCases:
         # フィクスチャファイルをコピー
         fixture_file = Path("tests/fixtures/invalid.py")
         input_file = tmp_path / "invalid.py"
-        input_file.write_text(fixture_file.read_text())
+        shutil.copyfile(fixture_file, input_file)
 
         # 出力ファイルパス
         output_file = tmp_path / "invalid.lay.yaml"
@@ -197,13 +198,13 @@ class TestRoundtrip:
         # 1. フィクスチャファイルからYAML生成
         fixture_file = Path("tests/fixtures/type_alias.py")
         input_file = tmp_path / "type_alias.py"
-        input_file.write_text(fixture_file.read_text())
+        shutil.copyfile(fixture_file, input_file)
 
         output_file = tmp_path / "type_alias.lay.yaml"
         run_yaml(str(input_file), str(output_file))
 
         # 2. YAML → Spec変換
-        yaml_content = output_file.read_text()
+        yaml_content = output_file.read_text(encoding="utf-8")
         result = yaml_to_spec(yaml_content)
 
         # 3. 型定義が正しく復元されていることを確認
@@ -229,13 +230,13 @@ class TestRoundtrip:
         # 1. フィクスチャファイルからYAML生成
         fixture_file = Path("tests/fixtures/newtype.py")
         input_file = tmp_path / "newtype.py"
-        input_file.write_text(fixture_file.read_text())
+        shutil.copyfile(fixture_file, input_file)
 
         output_file = tmp_path / "newtype.lay.yaml"
         run_yaml(str(input_file), str(output_file))
 
         # 2. YAML → Spec変換
-        yaml_content = output_file.read_text()
+        yaml_content = output_file.read_text(encoding="utf-8")
         result = yaml_to_spec(yaml_content)
 
         # 3. 型定義が正しく復元されていることを確認
@@ -261,13 +262,13 @@ class TestRoundtrip:
         # 1. フィクスチャファイルからYAML生成
         fixture_file = Path("tests/fixtures/dataclass.py")
         input_file = tmp_path / "dataclass.py"
-        input_file.write_text(fixture_file.read_text())
+        shutil.copyfile(fixture_file, input_file)
 
         output_file = tmp_path / "dataclass.lay.yaml"
         run_yaml(str(input_file), str(output_file))
 
         # 2. YAML → Spec変換
-        yaml_content = output_file.read_text()
+        yaml_content = output_file.read_text(encoding="utf-8")
         result = yaml_to_spec(yaml_content)
 
         # 3. 型定義が正しく復元されていることを確認
@@ -293,7 +294,3 @@ class TestRoundtrip:
         assert "name" in user_spec.fields
         assert isinstance(user_spec.fields["name"], TypeSpec)
         assert user_spec.fields["name"].type == "str"
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
