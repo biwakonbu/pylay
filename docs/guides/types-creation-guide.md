@@ -412,10 +412,12 @@ def create_user_id(value: str) -> UserId:
     validated = UserIdValidator.validate_python(value)
     return UserId(validated)
 
-# ⚠️ @validate_call（簡潔だがデコレーター必要）
+# ✅ @validate_call（簡潔版）
+UserId = NewType('UserId', str)
+
 @validate_call
-def UserId(value: Annotated[str, Field(min_length=8)]) -> UserId:  # type: ignore[no-redef]
-    return NewType('UserId', str)(value)
+def create_user_id(value: Annotated[str, Field(min_length=8)]) -> UserId:
+    return UserId(value)
 ```
 
 ### Q5: docstringには何を書くべきか？
