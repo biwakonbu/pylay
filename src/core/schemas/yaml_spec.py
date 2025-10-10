@@ -415,8 +415,28 @@ def _create_spec_from_data(data: dict, root_key: str | None = None) -> TypeSpec:
 
     シンプル形式(fields:構造)と従来形式(properties:構造)の両方をサポート
     """
-    # シンプル形式の検出: "fields" キーがある場合
-    if "fields" in data:
+    # typeキーがある場合は、そちらを優先して処理
+    type_key = data.get("type")
+
+    # dataclass/type_alias/newtypeは専用のSpecクラスで処理
+    if type_key == "type_alias":
+        processed_data = _preprocess_refs_for_spec_creation(data)
+        if "name" not in processed_data and root_key:
+            processed_data["name"] = root_key
+        return TypeAliasSpec(**processed_data)
+    elif type_key == "newtype":
+        processed_data = _preprocess_refs_for_spec_creation(data)
+        if "name" not in processed_data and root_key:
+            processed_data["name"] = root_key
+        return NewTypeSpec(**processed_data)
+    elif type_key == "dataclass":
+        processed_data = _preprocess_refs_for_spec_creation(data)
+        if "name" not in processed_data and root_key:
+            processed_data["name"] = root_key
+        return DataclassSpec(**processed_data)
+
+    # シンプル形式の検出: "fields" キーがある場合（type指定がない場合）
+    if "fields" in data and not type_key:
         return _create_spec_from_simple_format(data, root_key)
 
     # 参照文字列を保持するための前処理
@@ -446,15 +466,6 @@ def _create_spec_from_data(data: dict, root_key: str | None = None) -> TypeSpec:
         return UnionTypeSpec(**processed_data)
     elif type_key == "generic":
         return GenericTypeSpec(**processed_data)
-    elif type_key == "type_alias":
-        # type文(型エイリアス)の場合
-        return TypeAliasSpec(**processed_data)
-    elif type_key == "newtype":
-        # NewTypeの場合
-        return NewTypeSpec(**processed_data)
-    elif type_key == "dataclass":
-        # dataclassの場合
-        return DataclassSpec(**processed_data)
     else:
         # 基本型: nameをroot_keyから補完(v1.1対応)
         return TypeSpec(**processed_data)

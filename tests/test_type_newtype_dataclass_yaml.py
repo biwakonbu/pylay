@@ -251,5 +251,107 @@ class Product:
     assert "frozen: false" in yaml_output  # Product
 
 
+def test_yaml_roundtrip_with_type_alias_newtype_dataclass() -> None:
+    """ラウンドトリップテスト: YAML→Spec変換でTypeAliasSpec/NewTypeSpec/DataclassSpecが正しく生成されることを確認"""
+    from src.core.converters.yaml_to_type import yaml_to_spec
+    from src.core.schemas.yaml_spec import (
+        DataclassSpec,
+        NewTypeSpec,
+        TypeAliasSpec,
+    )
+
+    yaml_content = """
+UserId:
+  type: type_alias
+  target: str
+  description: ユーザーID
+
+Email:
+  type: newtype
+  base_type: str
+  description: メールアドレス
+
+Point:
+  type: dataclass
+  frozen: true
+  fields:
+    x:
+      type: float
+      required: true
+    y:
+      type: float
+      required: true
+  description: 2D座標点
+
+User:
+  type: dataclass
+  frozen: false
+  fields:
+    name:
+      type: str
+      required: true
+    age:
+      type: int
+      required: true
+  description: ユーザー情報
+"""
+
+    # YAML → Spec変換
+    result = yaml_to_spec(yaml_content)
+
+    # TypeRootから型定義を取得
+    from src.core.schemas.yaml_spec import TypeRoot
+
+    assert isinstance(result, TypeRoot)
+    specs = result.types
+
+    # 検証: TypeAliasSpec
+    assert "UserId" in specs
+    user_id_spec = specs["UserId"]
+    assert isinstance(user_id_spec, TypeAliasSpec)
+    assert user_id_spec.type == "type_alias"
+    assert user_id_spec.target == "str"
+    assert user_id_spec.description == "ユーザーID"
+
+    # 検証: NewTypeSpec
+    assert "Email" in specs
+    email_spec = specs["Email"]
+    assert isinstance(email_spec, NewTypeSpec)
+    assert email_spec.type == "newtype"
+    assert email_spec.base_type == "str"
+    assert email_spec.description == "メールアドレス"
+
+    # 検証: DataclassSpec（frozen=True）
+    assert "Point" in specs
+    point_spec = specs["Point"]
+    assert isinstance(point_spec, DataclassSpec)
+    assert point_spec.type == "dataclass"
+    assert point_spec.frozen is True
+    assert point_spec.description == "2D座標点"
+    assert "x" in point_spec.fields
+    assert "y" in point_spec.fields
+    # fieldsの値はTypeSpecオブジェクトなので、.typeでアクセス
+    from src.core.schemas.yaml_spec import TypeSpec
+
+    assert isinstance(point_spec.fields["x"], TypeSpec)
+    assert point_spec.fields["x"].type == "float"
+    assert isinstance(point_spec.fields["y"], TypeSpec)
+    assert point_spec.fields["y"].type == "float"
+
+    # 検証: DataclassSpec（frozen=False）
+    assert "User" in specs
+    user_spec = specs["User"]
+    assert isinstance(user_spec, DataclassSpec)
+    assert user_spec.type == "dataclass"
+    assert user_spec.frozen is False
+    assert user_spec.description == "ユーザー情報"
+    assert "name" in user_spec.fields
+    assert "age" in user_spec.fields
+    assert isinstance(user_spec.fields["name"], TypeSpec)
+    assert user_spec.fields["name"].type == "str"
+    assert isinstance(user_spec.fields["age"], TypeSpec)
+    assert user_spec.fields["age"].type == "int"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
