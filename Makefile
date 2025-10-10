@@ -201,7 +201,7 @@ radon-check: ## コード複雑度チェック
 
 interrogate-check: ## docstringカバレッジチェック
 	@echo "📝 docstringカバレッジをチェック中..."
-	uv run interrogate .
+	uv run interrogate . --exclude tests/fixtures/invalid.py
 
 infer-deps: ## 型推論と依存関係抽出を実行
 	@echo "🔍 型推論と依存関係抽出を実行中..."
