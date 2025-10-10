@@ -597,7 +597,7 @@ def _process_single_file(
     # AST解析でtype/NewType/dataclassを追加抽出
     with console.status("[bold green]AST解析で型定義を抽出中..."):
         ast_types = extract_type_definitions_from_ast(input_path)
-        # AST解析結果をtypes_dictにマージ（既存の型オブジェクトを優先）
+        # AST解析結果をtypes_dictにマージ(既存の型オブジェクトを優先)
         for type_name, type_info in ast_types.items():
             if type_name not in types_dict:
                 types_dict[type_name] = type_info
