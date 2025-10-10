@@ -979,8 +979,12 @@ def types_to_yaml_simple(
         elif is_dataclass_type(typ):
             type_data["type"] = "dataclass"
             # TypeGuardによりtypはtype型として扱われる
-            dataclass_params = typ.__dataclass_params__
-            type_data["frozen"] = dataclass_params.frozen
+            # __dataclass_params__ への安全なアクセス
+            if hasattr(typ, "__dataclass_params__"):
+                dataclass_params = typ.__dataclass_params__
+                type_data["frozen"] = dataclass_params.frozen
+            else:
+                type_data["frozen"] = False
 
             fields_info = _extract_dataclass_field_info(typ)
             if fields_info:
