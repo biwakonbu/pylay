@@ -84,7 +84,7 @@ class DictTypeSpec(TypeSpec):
     #     バリデーション戦略を再設計
     #   - 担当: 型定義リファクタリングチーム
     properties: dict[str, Any] = Field(default_factory=dict, description="辞書のプロパティ (参照文字列またはTypeSpec)")
-    additional_properties: AdditionalPropertiesFlag = Field(False, description="追加プロパティ許可")
+    additional_properties: AdditionalPropertiesFlag = Field(default=False, description="追加プロパティ許可")
 
     @field_validator("properties", mode="before")
     @classmethod
@@ -210,7 +210,7 @@ class DataclassSpec(TypeSpec):
     """
 
     type: Literal["dataclass"] = "dataclass"  # type: ignore[assignment]
-    frozen: bool = Field(False, description="不変（frozen）フラグ")
+    frozen: bool = Field(default=False, description="不変（frozen）フラグ")
     fields: dict[str, Any] = Field(default_factory=dict, description="フィールド定義")
 
     @field_validator("fields", mode="before")
