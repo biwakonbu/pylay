@@ -215,10 +215,10 @@ class DataclassSpec(TypeSpec):
 
     @field_validator("fields", mode="before")
     @classmethod
-    def validate_fields(cls, v: Any) -> Any:
+    def validate_fields(cls, v: object) -> object:
         """fieldsフィールドの前処理バリデーション"""
         if isinstance(v, dict):
-            result: dict[str, Any] = {}
+            result: dict[str, object] = {}
             for key, value in v.items():
                 if isinstance(value, str):
                     result[key] = value
