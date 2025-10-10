@@ -30,11 +30,11 @@ type Point = tuple[float, float]
     # 検証
     assert "UserId" in type_defs
     assert type_defs["UserId"]["kind"] == "type_alias"
-    assert type_defs["UserId"]["target"] == "str"
+    assert type_defs["UserId"]["target"] == "str"  # type: ignore[typeddict-item]
 
     assert "Point" in type_defs
     assert type_defs["Point"]["kind"] == "type_alias"
-    assert type_defs["Point"]["target"] == "tuple[float, float]"
+    assert type_defs["Point"]["target"] == "tuple[float, float]"  # type: ignore[typeddict-item]
 
 
 def test_extract_newtype_from_ast(tmp_path: Path) -> None:
@@ -56,11 +56,52 @@ Count = NewType('Count', int)
     # 検証
     assert "UserId" in type_defs
     assert type_defs["UserId"]["kind"] == "newtype"
-    assert type_defs["UserId"]["base_type"] == "str"
+    assert type_defs["UserId"]["base_type"] == "str"  # type: ignore[typeddict-item]
 
     assert "Count" in type_defs
     assert type_defs["Count"]["kind"] == "newtype"
-    assert type_defs["Count"]["base_type"] == "int"
+    assert type_defs["Count"]["base_type"] == "int"  # type: ignore[typeddict-item]
+
+
+def test_extract_newtype_with_attribute_reference(tmp_path: Path) -> None:
+    """typing.NewType や t.NewType などの属性参照形式のNewTypeが正しく抽出されることを確認（Issue #74）"""
+    # テストファイルを作成
+    test_file = tmp_path / "test_attribute_newtypes.py"
+    test_file.write_text(
+        """
+import typing
+import typing as t
+
+# typing.NewType(...) 形式
+UserId = typing.NewType('UserId', str)
+Count = typing.NewType('Count', int)
+
+# t.NewType(...) 形式（エイリアス）
+Email = t.NewType('Email', str)
+Score = t.NewType('Score', float)
+"""
+    )
+
+    # AST解析
+    type_defs = extract_type_definitions_from_ast(test_file)
+
+    # 検証: typing.NewType
+    assert "UserId" in type_defs
+    assert type_defs["UserId"]["kind"] == "newtype"
+    assert type_defs["UserId"]["base_type"] == "str"  # type: ignore[typeddict-item]
+
+    assert "Count" in type_defs
+    assert type_defs["Count"]["kind"] == "newtype"
+    assert type_defs["Count"]["base_type"] == "int"  # type: ignore[typeddict-item]
+
+    # 検証: t.NewType
+    assert "Email" in type_defs
+    assert type_defs["Email"]["kind"] == "newtype"
+    assert type_defs["Email"]["base_type"] == "str"  # type: ignore[typeddict-item]
+
+    assert "Score" in type_defs
+    assert type_defs["Score"]["kind"] == "newtype"
+    assert type_defs["Score"]["base_type"] == "float"  # type: ignore[typeddict-item]
 
 
 def test_extract_dataclass_from_ast(tmp_path: Path) -> None:
@@ -91,16 +132,16 @@ class User:
     # 検証
     assert "Point" in type_defs
     assert type_defs["Point"]["kind"] == "dataclass"
-    assert type_defs["Point"]["frozen"] is True
+    assert type_defs["Point"]["frozen"] is True  # type: ignore[typeddict-item]
     assert type_defs["Point"]["docstring"] == "2D座標点"
-    assert "x" in type_defs["Point"]["fields"]
-    assert type_defs["Point"]["fields"]["x"]["type"] == "float"
+    assert "x" in type_defs["Point"]["fields"]  # type: ignore[typeddict-item]
+    assert type_defs["Point"]["fields"]["x"]["type"] == "float"  # type: ignore[typeddict-item]
 
     assert "User" in type_defs
     assert type_defs["User"]["kind"] == "dataclass"
-    assert type_defs["User"]["frozen"] is False
+    assert type_defs["User"]["frozen"] is False  # type: ignore[typeddict-item]
     assert type_defs["User"]["docstring"] == "ユーザー情報"
-    assert "name" in type_defs["User"]["fields"]
+    assert "name" in type_defs["User"]["fields"]  # type: ignore[typeddict-item]
 
 
 def test_extract_dataclass_with_module_qualified_decorator(tmp_path: Path) -> None:
@@ -131,22 +172,22 @@ class Location:
     # 検証: Product（frozen=False）
     assert "Product" in type_defs
     assert type_defs["Product"]["kind"] == "dataclass"
-    assert type_defs["Product"]["frozen"] is False
+    assert type_defs["Product"]["frozen"] is False  # type: ignore[typeddict-item]
     assert type_defs["Product"]["docstring"] == "商品情報"
-    assert "name" in type_defs["Product"]["fields"]
-    assert type_defs["Product"]["fields"]["name"]["type"] == "str"
-    assert "price" in type_defs["Product"]["fields"]
-    assert type_defs["Product"]["fields"]["price"]["type"] == "int"
+    assert "name" in type_defs["Product"]["fields"]  # type: ignore[typeddict-item]
+    assert type_defs["Product"]["fields"]["name"]["type"] == "str"  # type: ignore[typeddict-item]
+    assert "price" in type_defs["Product"]["fields"]  # type: ignore[typeddict-item]
+    assert type_defs["Product"]["fields"]["price"]["type"] == "int"  # type: ignore[typeddict-item]
 
     # 検証: Location（frozen=True）
     assert "Location" in type_defs
     assert type_defs["Location"]["kind"] == "dataclass"
-    assert type_defs["Location"]["frozen"] is True
+    assert type_defs["Location"]["frozen"] is True  # type: ignore[typeddict-item]
     assert type_defs["Location"]["docstring"] == "位置情報"
-    assert "latitude" in type_defs["Location"]["fields"]
-    assert type_defs["Location"]["fields"]["latitude"]["type"] == "float"
-    assert "longitude" in type_defs["Location"]["fields"]
-    assert type_defs["Location"]["fields"]["longitude"]["type"] == "float"
+    assert "latitude" in type_defs["Location"]["fields"]  # type: ignore[typeddict-item]
+    assert type_defs["Location"]["fields"]["latitude"]["type"] == "float"  # type: ignore[typeddict-item]
+    assert "longitude" in type_defs["Location"]["fields"]  # type: ignore[typeddict-item]
+    assert type_defs["Location"]["fields"]["longitude"]["type"] == "float"  # type: ignore[typeddict-item]
 
 
 def test_types_to_yaml_simple_with_ast_types() -> None:

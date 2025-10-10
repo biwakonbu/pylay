@@ -1146,10 +1146,12 @@ def extract_type_definitions_from_ast(module_path: Path) -> dict[str, ASTEntry]:
                         func = node.value.func
                         is_newtype = False
 
-                        # NewType の検出(ast.Name または ast.Attribute)
+                        # NewType の検出
+                        # 1. from typing import NewType → NewType(...)
                         if isinstance(func, ast.Name) and func.id == "NewType":
                             is_newtype = True
-                        # typing.NewType, t.NewType などの属性参照
+                        # 2. import typing → typing.NewType(...)
+                        # 3. import typing as t → t.NewType(...)
                         elif isinstance(func, ast.Attribute) and func.attr == "NewType":
                             is_newtype = True
 
