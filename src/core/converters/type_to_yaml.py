@@ -449,7 +449,6 @@ def _extract_pydantic_field_info_with_imports(
     Returns:
         フィールド情報の辞書
     """
-    from pydantic import BaseModel
     from pydantic_core import PydanticUndefined
 
     if file_imports is None:
@@ -852,7 +851,6 @@ def types_to_yaml_simple(
     from dataclasses import is_dataclass
     from io import StringIO
 
-    from pydantic import BaseModel
     from ruamel.yaml.comments import CommentedMap
     from ruamel.yaml.scalarstring import LiteralScalarString
 
