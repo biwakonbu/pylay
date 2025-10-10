@@ -118,7 +118,7 @@ pylay generate yaml-docs input.yaml -o docs/   → pylay docs -i input.yaml -o d
 - **TypeReporterのコード品質**: docstring充実化、エッジケース処理の明確化、防御的プログラミングの実践
 - **疎結合アーキテクチャ**: 解析部分を他のコンポーネントから独立させ、拡張性を向上
 - **型安全性強化**: Pydanticで型安全性を維持しつつ、柔軟な依存処理を実現
-- **CLI/TUI強化**: `infer-deps` コマンドと `--mode` オプションを追加
+- **CLI強化**: `infer-deps` コマンドと `--mode` オプションを追加
 - **ドキュメント自動生成**: 解析結果にグラフ情報（循環、統計）を自動追加
 - **テストスイート拡張**: `test_analyzer.py` を追加し、19テストで完全網羅
 

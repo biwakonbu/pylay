@@ -146,7 +146,7 @@ Phase 5で実施したコード解析部分のリファクタリングにより�
 - **型推論/依存抽出の分離**: `TypeInferenceAnalyzer` (mypy + AST) と `DependencyExtractionAnalyzer` (AST + NetworkX) に分離。
 - **GraphProcessor**: NetworkXを活用したグラフ分析/視覚化/メトリクス計算を提供。循環検出を標準機能に。
 - **疎結合の接合**: `TypeDependencyGraph` を共通出力に統一。他コンポーネント（converters, doc_generators）はこれを入力に使用。
-- **CLI/TUI適応**: 直接的なAST/mypy呼び出しを削除し、analyzer経由に変更。
+- **CLI適応**: 直接的なAST/mypy呼び出しを削除し、analyzer経由に変更。
 - **スキーマ拡張**: `inferred_nodes` 追加と `weight` バリデーション（0-1範囲）。
 
 **効果**:

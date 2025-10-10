@@ -55,7 +55,6 @@
 - YAML -> Markdownドキュメント生成
 - 型推論と依存関係抽出（mypy + ASTハイブリッド）
 - CLI（コマンドラインインターフェース）
-- TUI（テキストユーザーインターフェース）の基盤
 - 基本的なテストと相互変換の整合性検証
 
 **範囲外**:
@@ -69,27 +68,38 @@
 pylay/
 ├── src/                    # ソースコード
 │   ├── cli/               # コマンドラインインターフェース
+│   │   ├── main.py        # CLIメインモジュール
+│   │   ├── utils.py       # CLI共通ユーティリティ
 │   │   ├── analyze_issues.py  # 問題分析ツール
 │   │   └── commands/      # CLIコマンド
-│   │       ├── generate_docs.py  # ドキュメント生成コマンド
-│   │       ├── type_to_yaml.py   # 型→YAML変換コマンド
-│   │       └── yaml_to_type.py   # YAML→型変換コマンド
+│   │       ├── check.py   # 品質チェックコマンド
+│   │       ├── docs.py    # ドキュメント生成コマンド
+│   │       ├── init.py    # プロジェクト初期化コマンド
+│   │       ├── types.py   # YAML→型変換コマンド
+│   │       └── yaml.py    # 型→YAML変換コマンド
 │   ├── core/              # コア機能
 │   │   ├── converters/    # 型変換機能
 │   │   │   ├── type_to_yaml.py   # Python型 → YAML変換
 │   │   │   ├── yaml_to_type.py   # YAML → Python型変換
 │   │   │   ├── extract_deps.py   # 依存関係抽出
 │   │   │   ├── mypy_type_extractor.py  # mypy型抽出
-│   │   │   └── ast_dependency_extractor.py  # AST依存抽出
+│   │   │   ├── ast_dependency_extractor.py  # AST依存抽出
+│   │   │   ├── protocols.py      # Protocolインターフェース
+│   │   │   ├── models.py         # ドメインモデル
+│   │   │   ├── types.py          # モジュール固有型定義
+│   │   │   └── ... (その他変換関連ファイル)
 │   │   ├── analyzer/      # 型解析
 │   │   │   ├── protocols.py      # Protocolインターフェース
 │   │   │   ├── models.py         # ドメインモデル
+│   │   │   ├── types.py          # モジュール固有型定義
 │   │   │   ├── base.py           # 基底クラス
 │   │   │   ├── type_inferrer.py  # 型推論エンジン
 │   │   │   ├── dependency_extractor.py  # 依存抽出
 │   │   │   ├── type_classifier.py  # 型分類
 │   │   │   ├── type_level_analyzer.py  # 型レベル解析
 │   │   │   ├── docstring_analyzer.py  # docstring解析
+│   │   │   ├── quality_checker.py  # 品質チェック
+│   │   │   ├── type_ignore_analyzer.py  # type:ignore診断
 │   │   │   └── ... (その他解析関連ファイル)
 │   │   ├── doc_generators/ # ドキュメント生成
 │   │   │   ├── base.py           # 基底クラス
@@ -100,7 +110,10 @@ pylay/
 │   │   │   ├── yaml_doc_generator.py  # YAMLドキュメント生成
 │   │   │   ├── graph_doc_generator.py # グラフドキュメント生成
 │   │   │   ├── test_catalog_generator.py # テストカタログ生成
-│   │   │   └── type_inspector.py  # 型インスペクタ
+│   │   │   ├── type_inspector.py  # 型インスペクタ
+│   │   │   ├── protocols.py      # Protocolインターフェース
+│   │   │   ├── models.py         # ドメインモデル
+│   │   │   └── types.py          # モジュール固有型定義
 │   │   ├── schemas/       # 共通型定義（複数モジュールで共有）
 │   │   │   ├── types.py          # 共通ドメイン型
 │   │   │   ├── graph.py          # グラフ型定義
@@ -108,12 +121,10 @@ pylay/
 │   │   │   ├── pylay_config.py   # プロジェクト設定型
 │   │   │   └── type_index.py     # 型インデックス
 │   │   ├── utils/         # ユーティリティ
+│   │   │   ├── io_helpers.py     # I/Oヘルパー
+│   │   │   └── type_parsing.py   # 型パースヘルパー
 │   │   ├── output_manager.py  # 出力管理
 │   │   └── project_scanner.py # プロジェクトスキャナ
-│   ├── tui/               # テキストユーザーインターフェース
-│   │   ├── main.py        # TUIメインモジュール
-│   │   ├── views/         # ビューモジュール
-│   │   └── widgets/       # ウィジェットモジュール
 │   └── infer_deps.py      # 型推論エントリーポイント
 ├── tests/                 # テストコード
 ├── docs/                  # 生成されたドキュメント
@@ -134,35 +145,28 @@ pylay/
 
 ### 2.2 主要コンポーネント
 - **cli/**: コマンドラインインターフェース
+  - **main.py**: CLIエントリーポイント（click使用）
+  - **commands/**: 各コマンドの実装（check, docs, init, types, yaml）
 - **core/converters/**: 型とYAML間の相互変換機能
-- **core/schemas/**: 型仕様のPydanticデータモデル
+  - Python型 → YAML変換（type_to_yaml.py）
+  - YAML → Python型変換（yaml_to_type.py）
+  - 依存関係抽出（extract_deps.py, mypy_type_extractor.py, ast_dependency_extractor.py）
+- **core/analyzer/**: 型解析・品質チェック
+  - 型レベル分析（type_level_analyzer.py, type_classifier.py）
+  - 品質チェック（quality_checker.py）
+  - type:ignore診断（type_ignore_analyzer.py）
+  - docstring解析（docstring_analyzer.py）
 - **core/doc_generators/**: ドキュメント生成システム
-- **core/extract_deps.py**: 依存関係抽出機能
-- **tui/**: テキストユーザーインターフェース
+  - Markdownドキュメント生成（type_doc_generator.py, yaml_doc_generator.py）
+  - グラフ生成（graph_doc_generator.py）
+  - テストカタログ生成（test_catalog_generator.py）
+- **core/schemas/**: 共通型定義（複数モジュールで共有）
+  - YAML型仕様（yaml_spec.py）
+  - プロジェクト設定（pylay_config.py）
+  - グラフ型定義（graph.py）
 - **tests/**: pytestによる包括的なテストスイート
 - **scripts/**: ユーティリティスクリプト
 - **utils/**: 補助ツール
-
-### 2.3 新機能詳細
-#### 2.3.1 CLI（コマンドラインインターフェース）
-**cli/** ディレクトリは、プロジェクトのコマンドライン機能を管理します：
-- **analyze_issues.py**: コードベースの問題分析ツール
-- **commands/**: 個別のCLIコマンド実装
-  - **generate_docs.py**: ドキュメント生成コマンド
-  - **type_to_yaml.py**: 型からYAMLへの変換コマンド
-  - **yaml_to_type.py**: YAMLから型への変換コマンド
-
-#### 2.3.2 TUI（テキストユーザーインターフェース）
-**tui/** ディレクトリは、テキストベースのユーザーインターフェース機能を提供します：
-- **main.py**: TUIアプリケーションのエントリーポイント
-- **views/**: 異なる画面/ビューの実装
-- **widgets/**: 再利用可能なUIコンポーネント
-
-#### 2.3.3 コア機能拡張
-**core/** ディレクトリには、従来の機能に加えて以下の拡張が含まれます：
-- **extract_deps.py**: ASTとNetworkXを活用した依存関係のグラフ構造化
-- **converters/infer_types.py**: 型推論機能の追加
-- **schemas/graph_types.py**: グラフ構造の型定義
 
 ## 3. 技術スタック
 
@@ -511,11 +515,11 @@ export MYPY_INFER_LEVEL=2
 ### 9.1 実装状況
 - ✅ **Phase 1**: 基本構造実装（型<->YAML, バリデーション）
 - ✅ **Phase 2**: Markdown生成と統合
-- ✅ **Phase 3**: CLI/TUIインターフェース実装 - 完了
-- ✅ **Phase 4**: テスト/ドキュメント/拡張 - 進行中（CI/CD実装完了）
+- ✅ **Phase 3**: CLIインターフェース実装 - 完了
+- ✅ **Phase 4**: テスト/ドキュメント/拡張 - 完了（CI/CD実装完了）
 - ✅ **Phase 5**: 型推論/依存抽出実装 - 完了（全機能統合）
-- ✅ **Phase 6**: CLIツール化とPyPI公開準備（GitHub Issues #1で完了）
-- 🚧 **Phase 7**: PyPI公開準備とパッケージング（GitHub Issues #3で進行中）
+- ✅ **Phase 6**: CLIツール化（GitHub Issues #1で完了）
+- ✅ **Phase 7**: PyPI公開とパッケージング完了（v0.1.0〜v0.1.4リリース済み）
 
 ### 9.2 未実装/計画中機能
 - Sphinxドキュメント統合

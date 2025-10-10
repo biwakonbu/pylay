@@ -22,12 +22,15 @@ Python型定義 → YAML型仕様 → Pydanticモデル → Markdownドキュメ
 - **`src/core/converters/`**: 型変換のコア機能
   - `type_to_yaml.py`: Python型 → YAML変換
   - `yaml_to_type.py`: YAML → Python型変換
-  - `infer_types.py`: mypyによる型推論
+  - `mypy_type_extractor.py`: mypyによる型推論
+- **`src/core/analyzer/`**: 型解析・品質チェック
+  - `type_level_analyzer.py`: 型レベル分析
+  - `quality_checker.py`: コード品質チェック
+  - `type_ignore_analyzer.py`: type:ignore診断
 - **`src/core/doc_generators/`**: ドキュメント生成
   - `type_doc_generator.py`: 型情報からMarkdown生成
   - `yaml_doc_generator.py`: YAMLからドキュメント生成
 - **`src/cli/`**: コマンドラインツール
-- **`src/tui/`**: 対話型ユーザーインターフェース
 
 ### 技術スタック
 - **Python 3.12+**: 最新の型ヒント機能を使用
@@ -62,10 +65,7 @@ make quality
 ### 実行確認
 ```bash
 # CLIツール
-uv run python -m src.cli.main --help
-
-# TUIツール
-uv run python -m src.tui.main
+uv run pylay --help
 
 # 型推論テスト
 uv run python src/infer_deps.py src/cli/main.py
@@ -79,9 +79,11 @@ pylay/
 │   ├── cli/               # コマンドラインインターフェース
 │   ├── core/              # コア機能
 │   │   ├── converters/    # 型変換機能
+│   │   ├── analyzer/      # 型解析・品質チェック
 │   │   ├── doc_generators/# ドキュメント生成
-│   │   └── schemas/       # 型定義
-│   └── tui/               # テキストユーザーインターフェース
+│   │   ├── schemas/       # 共通型定義
+│   │   └── utils/         # ユーティリティ
+│   └── infer_deps.py      # 型推論エントリーポイント
 ├── tests/                 # テストコード
 ├── docs/                  # ドキュメント
 │   ├── development/       # 開発者向けガイド

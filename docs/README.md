@@ -7,7 +7,7 @@ pylayプロジェクトのドキュメント一覧です。
 ### コアドキュメント
 
 - [typing-rule.md](typing-rule.md) - **型定義ルール（必読）**: Python 3.13準拠の型定義3レベル、ドメイン型定義の原則
-- [ui-guidelines.md](ui-guidelines.md) - **UI/UXガイドライン**: CLI/TUIのデザイン原則、Rich活用法
+- [ui-guidelines.md](ui-guidelines.md) - **UI/UXガイドライン**: CLIのデザイン原則、Rich活用法
 
 ### 開発ガイド
 
