@@ -853,18 +853,12 @@ def types_to_yaml_simple(
         # dataclassの場合（型オブジェクト）
         elif is_dataclass(typ):
             type_data["type"] = "dataclass"
-            # frozen属性をチェック
-            type_data["frozen"] = getattr(typ, "__dataclass_fields__", {}).get("__frozen__", False) or any(
-                hasattr(field, "frozen") and field.frozen for field in getattr(typ, "__dataclass_fields__", {}).values()
-            )
-            # より正確なfrozenチェック
-            import dataclasses
+            # frozen属性をチェック（getattr を使って型チェックを回避）
+            dataclass_params = getattr(typ, "__dataclass_params__", None)
+            type_data["frozen"] = bool(dataclass_params and getattr(dataclass_params, "frozen", False))
 
-            if hasattr(dataclasses, "fields"):
-                # dataclassesモジュールからfrozen属性を取得
-                type_data["frozen"] = typ.__dataclass_params__.frozen if hasattr(typ, "__dataclass_params__") else False
-
-            fields_info = _extract_dataclass_field_info(typ)
+            # 型チェック用に type[Any] としてキャスト
+            fields_info = _extract_dataclass_field_info(typ)  # type: ignore[arg-type]
             if fields_info:
                 type_data["fields"] = CommentedMap(fields_info)
             yaml_data[type_name] = type_data
