@@ -196,7 +196,7 @@ class NewTypeSpec(TypeSpec):
     """
 
     type: Literal["newtype"] = "newtype"  # type: ignore[assignment]
-    base_type: str = Field(..., description="基底型（例: str, int）")
+    base_type: str = Field(..., description="基底型(例: str, int)")
 
 
 class DataclassSpec(TypeSpec):
