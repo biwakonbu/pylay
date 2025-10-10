@@ -1,7 +1,7 @@
 """型定義が含まれないテストフィクスチャ"""
 
 
-def process_data(data):
+def process_data(data: str) -> str:
     """データを処理する"""
     return data.upper()
 
