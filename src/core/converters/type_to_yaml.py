@@ -974,11 +974,21 @@ def extract_type_definitions_from_ast(module_path: Path) -> dict[str, Any]:
                     # @dataclass
                     if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
                         is_dataclass = True
+                    # @dataclasses.dataclass, @dc.dataclass などの属性参照
+                    elif isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass":
+                        is_dataclass = True
                     # @dataclass(frozen=True)
                     elif isinstance(decorator, ast.Call):
-                        if isinstance(decorator.func, ast.Name) and decorator.func.id == "dataclass":
+                        func = decorator.func
+                        # 関数名が "dataclass" の場合
+                        if isinstance(func, ast.Name) and func.id == "dataclass":
                             is_dataclass = True
-                            # frozen引数をチェック
+                        # @dataclasses.dataclass(frozen=True) などの属性参照
+                        elif isinstance(func, ast.Attribute) and func.attr == "dataclass":
+                            is_dataclass = True
+
+                        # frozen引数をチェック
+                        if is_dataclass:
                             for keyword in decorator.keywords:
                                 if keyword.arg == "frozen":
                                     if isinstance(keyword.value, ast.Constant):
