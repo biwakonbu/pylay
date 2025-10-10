@@ -8,6 +8,14 @@ from pathlib import Path
 import pytest
 
 from src.cli.commands.yaml import run_yaml
+from src.core.converters.yaml_to_type import yaml_to_spec
+from src.core.schemas.yaml_spec import (
+    DataclassSpec,
+    NewTypeSpec,
+    TypeAliasSpec,
+    TypeRoot,
+    TypeSpec,
+)
 
 
 class TestBasicTypeConversion:
@@ -186,8 +194,6 @@ class TestRoundtrip:
 
     def test_roundtrip_type_alias(self, tmp_path: Path) -> None:
         """type文のラウンドトリップ変換"""
-        from src.core.converters.yaml_to_type import yaml_to_spec
-
         # 1. フィクスチャファイルからYAML生成
         fixture_file = Path("tests/fixtures/type_alias.py")
         input_file = tmp_path / "type_alias.py"
@@ -201,8 +207,6 @@ class TestRoundtrip:
         result = yaml_to_spec(yaml_content)
 
         # 3. 型定義が正しく復元されていることを確認
-        from src.core.schemas.yaml_spec import TypeAliasSpec, TypeRoot
-
         assert isinstance(result, TypeRoot)
         specs = result.types
 
@@ -222,8 +226,6 @@ class TestRoundtrip:
 
     def test_roundtrip_newtype(self, tmp_path: Path) -> None:
         """NewTypeのラウンドトリップ変換"""
-        from src.core.converters.yaml_to_type import yaml_to_spec
-
         # 1. フィクスチャファイルからYAML生成
         fixture_file = Path("tests/fixtures/newtype.py")
         input_file = tmp_path / "newtype.py"
@@ -237,8 +239,6 @@ class TestRoundtrip:
         result = yaml_to_spec(yaml_content)
 
         # 3. 型定義が正しく復元されていることを確認
-        from src.core.schemas.yaml_spec import NewTypeSpec, TypeRoot
-
         assert isinstance(result, TypeRoot)
         specs = result.types
 
@@ -258,8 +258,6 @@ class TestRoundtrip:
 
     def test_roundtrip_dataclass(self, tmp_path: Path) -> None:
         """dataclassのラウンドトリップ変換"""
-        from src.core.converters.yaml_to_type import yaml_to_spec
-
         # 1. フィクスチャファイルからYAML生成
         fixture_file = Path("tests/fixtures/dataclass.py")
         input_file = tmp_path / "dataclass.py"
@@ -273,8 +271,6 @@ class TestRoundtrip:
         result = yaml_to_spec(yaml_content)
 
         # 3. 型定義が正しく復元されていることを確認
-        from src.core.schemas.yaml_spec import DataclassSpec, TypeRoot, TypeSpec
-
         assert isinstance(result, TypeRoot)
         specs = result.types
 
