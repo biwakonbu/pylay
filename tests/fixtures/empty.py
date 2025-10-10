@@ -9,7 +9,7 @@ def process_data(data: str) -> str:
 class Helper:
     """ヘルパークラス"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
 
