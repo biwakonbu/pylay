@@ -151,7 +151,7 @@ class TestMixedTypesConversion:
 class TestEdgeCases:
     """エッジケースのテスト"""
 
-    def test_empty_file(self, tmp_path: Path, capsys) -> None:
+    def test_empty_file(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """型定義が含まれないファイルのエラーハンドリング"""
         # フィクスチャファイルをコピー
         fixture_file = Path("tests/fixtures/empty.py")
