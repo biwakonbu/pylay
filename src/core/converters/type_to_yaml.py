@@ -785,11 +785,11 @@ def types_to_yaml_simple(
     for type_name, typ in types.items():
         type_data = CommentedMap()
 
-        # AST解析結果（dict）の場合
+        # AST解析結果(dict)の場合
         if isinstance(typ, dict):
             kind = typ.get("kind")
 
-            # type文（型エイリアス）
+            # type文(型エイリアス)
             if kind == "type_alias":
                 type_data["type"] = "type_alias"
                 type_data["target"] = typ["target"]
@@ -805,7 +805,7 @@ def types_to_yaml_simple(
                     type_data["description"] = typ["docstring"]
                 yaml_data[type_name] = type_data
 
-            # dataclass（AST解析結果）
+            # dataclass(AST解析結果)
             elif kind == "dataclass":
                 type_data["type"] = "dataclass"
                 type_data["frozen"] = typ.get("frozen", False)
@@ -820,7 +820,7 @@ def types_to_yaml_simple(
 
             continue
 
-        # 型オブジェクトの場合（従来の処理）
+        # 型オブジェクトの場合(従来の処理)
         # クラスのdocstringを取得
         docstring = _get_docstring(typ)
         if docstring:
