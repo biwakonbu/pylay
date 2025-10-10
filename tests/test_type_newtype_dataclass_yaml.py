@@ -103,6 +103,52 @@ class User:
     assert "name" in type_defs["User"]["fields"]
 
 
+def test_extract_dataclass_with_module_qualified_decorator(tmp_path: Path) -> None:
+    """モジュール修飾付きdataclassデコレーター（@dataclasses.dataclass）が正しく抽出されることを確認"""
+    # テストファイルを作成
+    test_file = tmp_path / "test_qualified_dataclasses.py"
+    test_file.write_text(
+        '''
+import dataclasses
+
+@dataclasses.dataclass
+class Product:
+    """商品情報"""
+    name: str
+    price: int
+
+@dataclasses.dataclass(frozen=True)
+class Location:
+    """位置情報"""
+    latitude: float
+    longitude: float
+'''
+    )
+
+    # AST解析
+    type_defs = extract_type_definitions_from_ast(test_file)
+
+    # 検証: Product（frozen=False）
+    assert "Product" in type_defs
+    assert type_defs["Product"]["kind"] == "dataclass"
+    assert type_defs["Product"]["frozen"] is False
+    assert type_defs["Product"]["docstring"] == "商品情報"
+    assert "name" in type_defs["Product"]["fields"]
+    assert type_defs["Product"]["fields"]["name"]["type"] == "str"
+    assert "price" in type_defs["Product"]["fields"]
+    assert type_defs["Product"]["fields"]["price"]["type"] == "int"
+
+    # 検証: Location（frozen=True）
+    assert "Location" in type_defs
+    assert type_defs["Location"]["kind"] == "dataclass"
+    assert type_defs["Location"]["frozen"] is True
+    assert type_defs["Location"]["docstring"] == "位置情報"
+    assert "latitude" in type_defs["Location"]["fields"]
+    assert type_defs["Location"]["fields"]["latitude"]["type"] == "float"
+    assert "longitude" in type_defs["Location"]["fields"]
+    assert type_defs["Location"]["fields"]["longitude"]["type"] == "float"
+
+
 def test_types_to_yaml_simple_with_ast_types() -> None:
     """AST解析結果がtypes_to_yaml_simpleで正しくYAMLに変換されることを確認"""
     # AST解析結果のモックデータ
