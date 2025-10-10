@@ -751,14 +751,14 @@ def type_to_yaml(
 
 
 def types_to_yaml_simple(
-    types: dict[str, type[Any]],
+    types: dict[str, type[Any]] | dict[str, Any],
     source_module_path: str | None = None,
     source_file_path: Path | None = None,
 ) -> str:
-    """複数型をシンプルなYAML形式に変換（Pydantic/dataclass特化、完全版）
+    """複数型をシンプルなYAML形式に変換（Pydantic/dataclass/type/NewType対応、完全版）
 
     Args:
-        types: 型名と型オブジェクトの辞書
+        types: 型名と型オブジェクトの辞書、またはAST解析結果の辞書
         source_module_path: ソースモジュールパス（例: "src.core.analyzer.models"）
         source_file_path: ソースファイルパス（インポート情報抽出用）
 
@@ -770,6 +770,7 @@ def types_to_yaml_simple(
 
     from pydantic import BaseModel
     from ruamel.yaml.comments import CommentedMap
+    from ruamel.yaml.scalarstring import LiteralScalarString
 
     yaml_data = CommentedMap()
 
@@ -784,13 +785,47 @@ def types_to_yaml_simple(
     for type_name, typ in types.items():
         type_data = CommentedMap()
 
+        # AST解析結果（dict）の場合
+        if isinstance(typ, dict):
+            kind = typ.get("kind")
+
+            # type文（型エイリアス）
+            if kind == "type_alias":
+                type_data["type"] = "type_alias"
+                type_data["target"] = typ["target"]
+                if typ.get("docstring"):
+                    type_data["description"] = typ["docstring"]
+                yaml_data[type_name] = type_data
+
+            # NewType
+            elif kind == "newtype":
+                type_data["type"] = "newtype"
+                type_data["base_type"] = typ["base_type"]
+                if typ.get("docstring"):
+                    type_data["description"] = typ["docstring"]
+                yaml_data[type_name] = type_data
+
+            # dataclass（AST解析結果）
+            elif kind == "dataclass":
+                type_data["type"] = "dataclass"
+                type_data["frozen"] = typ.get("frozen", False)
+                if typ.get("docstring"):
+                    if "\n" in typ["docstring"]:
+                        type_data["description"] = LiteralScalarString(typ["docstring"])
+                    else:
+                        type_data["description"] = typ["docstring"]
+                if typ.get("fields"):
+                    type_data["fields"] = CommentedMap(typ["fields"])
+                yaml_data[type_name] = type_data
+
+            continue
+
+        # 型オブジェクトの場合（従来の処理）
         # クラスのdocstringを取得
         docstring = _get_docstring(typ)
         if docstring:
             # 複数行のdocstringはヒアドキュメント形式（| 形式）で出力
             if "\n" in docstring:
-                from ruamel.yaml.scalarstring import LiteralScalarString
-
                 type_data["description"] = LiteralScalarString(docstring)
             else:
                 type_data["description"] = docstring
@@ -815,8 +850,20 @@ def types_to_yaml_simple(
                 type_data["fields"] = CommentedMap(fields_info)
             yaml_data[type_name] = type_data
 
-        # dataclassの場合
+        # dataclassの場合（型オブジェクト）
         elif is_dataclass(typ):
+            type_data["type"] = "dataclass"
+            # frozen属性をチェック
+            type_data["frozen"] = getattr(typ, "__dataclass_fields__", {}).get("__frozen__", False) or any(
+                hasattr(field, "frozen") and field.frozen for field in getattr(typ, "__dataclass_fields__", {}).values()
+            )
+            # より正確なfrozenチェック
+            import dataclasses
+
+            if hasattr(dataclasses, "fields"):
+                # dataclassesモジュールからfrozen属性を取得
+                type_data["frozen"] = typ.__dataclass_params__.frozen if hasattr(typ, "__dataclass_params__") else False
+
             fields_info = _extract_dataclass_field_info(typ)
             if fields_info:
                 type_data["fields"] = CommentedMap(fields_info)
@@ -893,6 +940,96 @@ def types_to_yaml(types: dict[str, type[Any]], output_file: str | None = None) -
             f.write(yaml_str)
 
     return yaml_str
+
+
+def extract_type_definitions_from_ast(module_path: Path) -> dict[str, Any]:
+    """ASTを使って型定義を抽出（type/NewType/dataclass対応）
+
+    Args:
+        module_path: Pythonファイルのパス
+
+    Returns:
+        型名 → 型定義情報の辞書
+        例: {
+            "UserId": {"kind": "type_alias", "target": "str"},
+            "Point": {"kind": "dataclass", "frozen": True, "fields": {...}}
+        }
+    """
+    type_defs: dict[str, Any] = {}
+
+    try:
+        tree = ast.parse(module_path.read_text(encoding="utf-8"))
+
+        for node in ast.walk(tree):
+            # 1. type文の抽出（Python 3.12+）
+            if isinstance(node, ast.TypeAlias):
+                type_name = node.name.id if isinstance(node.name, ast.Name) else str(node.name)
+                target_type = ast.unparse(node.value)
+                type_defs[type_name] = {
+                    "kind": "type_alias",
+                    "target": target_type,
+                    "docstring": None,  # TypeAliasにはdocstringがない
+                }
+
+            # 2. dataclassの抽出
+            elif isinstance(node, ast.ClassDef):
+                is_dataclass = False
+                frozen = False
+
+                for decorator in node.decorator_list:
+                    # @dataclass
+                    if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
+                        is_dataclass = True
+                    # @dataclass(frozen=True)
+                    elif isinstance(decorator, ast.Call):
+                        if isinstance(decorator.func, ast.Name) and decorator.func.id == "dataclass":
+                            is_dataclass = True
+                            # frozen引数をチェック
+                            for keyword in decorator.keywords:
+                                if keyword.arg == "frozen":
+                                    if isinstance(keyword.value, ast.Constant):
+                                        frozen = bool(keyword.value.value)
+
+                if is_dataclass:
+                    # フィールド情報を抽出
+                    fields: dict[str, Any] = {}
+                    for item in node.body:
+                        if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+                            field_name = item.target.id
+                            field_type = ast.unparse(item.annotation)
+                            fields[field_name] = {
+                                "type": field_type,
+                                "required": item.value is None,  # デフォルト値がなければ必須
+                            }
+
+                    type_defs[node.name] = {
+                        "kind": "dataclass",
+                        "frozen": frozen,
+                        "fields": fields,
+                        "docstring": ast.get_docstring(node),
+                    }
+
+            # 3. NewTypeの抽出（変数代入を検索）
+            elif isinstance(node, ast.Assign):
+                # NewType('UserId', str) のパターン
+                if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+                    target_name = node.targets[0].id
+                    if isinstance(node.value, ast.Call):
+                        if isinstance(node.value.func, ast.Name) and node.value.func.id == "NewType":
+                            # NewType('UserId', str) の形式
+                            if len(node.value.args) >= 2:
+                                # 第2引数が基底型
+                                base_type = ast.unparse(node.value.args[1])
+                                type_defs[target_name] = {
+                                    "kind": "newtype",
+                                    "base_type": base_type,
+                                    "docstring": None,
+                                }
+
+    except Exception as e:
+        print(f"Warning: AST解析エラー ({module_path}): {e}")
+
+    return type_defs
 
 
 def extract_types_from_module(module_path: str | Path) -> str | None:

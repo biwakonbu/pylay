@@ -176,6 +176,60 @@ class GenericTypeSpec(TypeSpec):
         return self
 
 
+class TypeAliasSpec(TypeSpec):
+    """type文（型エイリアス）の仕様
+
+    Python 3.12+ の type 文で定義される型エイリアスを表現します。
+    例: type UserId = str
+        type Point = tuple[float, float]
+    """
+
+    type: Literal["type_alias"] = "type_alias"  # type: ignore[assignment]
+    target: str = Field(..., description="エイリアス先の型（例: str, tuple[float, float]）")
+
+
+class NewTypeSpec(TypeSpec):
+    """NewType の仕様
+
+    typing.NewType で定義される独自型を表現します。
+    例: UserId = NewType('UserId', str)
+    """
+
+    type: Literal["newtype"] = "newtype"  # type: ignore[assignment]
+    base_type: str = Field(..., description="基底型（例: str, int）")
+
+
+class DataclassSpec(TypeSpec):
+    """dataclass の仕様
+
+    dataclasses.dataclass で定義されるデータクラスを表現します。
+    例: @dataclass(frozen=True)
+        class Point:
+            x: float
+            y: float
+    """
+
+    type: Literal["dataclass"] = "dataclass"  # type: ignore[assignment]
+    frozen: bool = Field(False, description="不変（frozen）フラグ")
+    fields: dict[str, Any] = Field(default_factory=dict, description="フィールド定義")
+
+    @field_validator("fields", mode="before")
+    @classmethod
+    def validate_fields(cls, v: Any) -> Any:
+        """fieldsフィールドの前処理バリデーション"""
+        if isinstance(v, dict):
+            result: dict[str, Any] = {}
+            for key, value in v.items():
+                if isinstance(value, str):
+                    result[key] = value
+                elif isinstance(value, dict):
+                    result[key] = _create_spec_from_data(value)
+                else:
+                    result[key] = value
+            return result
+        return v
+
+
 # v1.1用: ルートモデル (複数型をキー=型名で管理)
 class TypeRoot(BaseModel):
     """YAML型仕様のルートモデル (v1.1構造、循環耐性強化）"""
@@ -568,6 +622,9 @@ ListTypeSpec.model_rebuild()
 DictTypeSpec.model_rebuild()
 UnionTypeSpec.model_rebuild()
 GenericTypeSpec.model_rebuild()
+TypeAliasSpec.model_rebuild()
+NewTypeSpec.model_rebuild()
+DataclassSpec.model_rebuild()
 TypeRoot.model_rebuild()
 
 # 例の使用: TypeSpecモデルをYAMLにシリアライズ可能

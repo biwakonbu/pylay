@@ -409,6 +409,9 @@ def _process_directory(
     # 全ファイルから型を収集
     all_types = {}
 
+    # AST解析用のインポート
+    from src.core.converters.type_to_yaml import extract_type_definitions_from_ast
+
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -445,6 +448,12 @@ def _process_directory(
 
                         if (is_pydantic_model or is_enum or is_dataclass_type) and is_user_defined:
                             all_types[name] = obj
+
+                # AST解析でtype/NewType/dataclassを追加抽出
+                ast_types = extract_type_definitions_from_ast(py_file)
+                for type_name, type_info in ast_types.items():
+                    if type_name not in all_types:
+                        all_types[type_name] = type_info
 
             except Exception as e:
                 console.print(f"[yellow]⚠️ 警告: {py_file.name}の処理に失敗しました[/yellow]")
@@ -601,6 +610,16 @@ def _process_single_file(
         console.print("[red]変換可能な型がモジュール内に見つかりませんでした[/red]")
         console.print("[dim]PydanticモデルまたはEnumが定義されていることを確認してください[/dim]")
         return
+
+    # AST解析でtype/NewType/dataclassを追加抽出
+    from src.core.converters.type_to_yaml import extract_type_definitions_from_ast
+
+    with console.status("[bold green]AST解析で型定義を抽出中..."):
+        ast_types = extract_type_definitions_from_ast(input_path)
+        # AST解析結果をtypes_dictにマージ（既存の型オブジェクトを優先）
+        for type_name, type_info in ast_types.items():
+            if type_name not in types_dict:
+                types_dict[type_name] = type_info
 
     # 型をYAMLに変換（シンプル形式）
     with console.status("[bold green]YAMLファイル生成中..."):
