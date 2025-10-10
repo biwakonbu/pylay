@@ -1019,16 +1019,24 @@ def extract_type_definitions_from_ast(module_path: Path) -> dict[str, Any]:
                 if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
                     target_name = node.targets[0].id
                     if isinstance(node.value, ast.Call):
-                        if isinstance(node.value.func, ast.Name) and node.value.func.id == "NewType":
-                            # NewType('UserId', str) の形式
-                            if len(node.value.args) >= 2:
-                                # 第2引数が基底型
-                                base_type = ast.unparse(node.value.args[1])
-                                type_defs[target_name] = {
-                                    "kind": "newtype",
-                                    "base_type": base_type,
-                                    "docstring": None,
-                                }
+                        func = node.value.func
+                        is_newtype = False
+
+                        # NewType の検出（ast.Name または ast.Attribute）
+                        if isinstance(func, ast.Name) and func.id == "NewType":
+                            is_newtype = True
+                        # typing.NewType, t.NewType などの属性参照
+                        elif isinstance(func, ast.Attribute) and func.attr == "NewType":
+                            is_newtype = True
+
+                        if is_newtype and len(node.value.args) >= 2:
+                            # 第2引数が基底型
+                            base_type = ast.unparse(node.value.args[1])
+                            type_defs[target_name] = {
+                                "kind": "newtype",
+                                "base_type": base_type,
+                                "docstring": None,
+                            }
 
     except Exception as e:
         print(f"Warning: AST解析エラー ({module_path}): {e}")
