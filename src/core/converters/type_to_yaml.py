@@ -1,7 +1,7 @@
 import ast
 import inspect
 from pathlib import Path
-from typing import Any, ForwardRef, Generic, NotRequired, TypedDict, get_args, get_origin
+from typing import Any, ForwardRef, Generic, NotRequired, TypedDict, TypeGuard, get_args, get_origin
 from typing import Union as TypingUnion
 
 from pydantic import BaseModel
@@ -56,6 +56,20 @@ class DataclassEntry(TypedDict):
 
 # AST解析結果の共用型
 ASTEntry = TypeAliasEntry | NewTypeEntry | DataclassEntry
+
+
+def is_dataclass_type(obj: object) -> TypeGuard[type]:
+    """dataclass型かどうかを判定（インスタンスは除外）
+
+    Args:
+        obj: 判定対象のオブジェクト
+
+    Returns:
+        objが型オブジェクトでかつdataclassの場合True
+    """
+    from dataclasses import is_dataclass
+
+    return isinstance(obj, type) and is_dataclass(obj)
 
 
 def extract_imports_from_file(file_path: Path) -> dict[str, str]:
@@ -848,7 +862,6 @@ def types_to_yaml_simple(
     Returns:
         シンプルな形式のYAML文字列(_imports, base_classes, field_info含む)
     """
-    from dataclasses import is_dataclass
     from io import StringIO
 
     from ruamel.yaml.comments import CommentedMap
@@ -963,11 +976,11 @@ def types_to_yaml_simple(
             yaml_data[type_name] = type_data
 
         # dataclassの場合(型オブジェクト)
-        elif isinstance(typ, type) and is_dataclass(typ):
+        elif is_dataclass_type(typ):
             type_data["type"] = "dataclass"
-            # frozen属性をチェック(getattr を使って型チェックを回避)
-            dataclass_params = getattr(typ, "__dataclass_params__", None)
-            type_data["frozen"] = bool(dataclass_params and getattr(dataclass_params, "frozen", False))
+            # TypeGuardによりtypはtype型として扱われる
+            dataclass_params = typ.__dataclass_params__
+            type_data["frozen"] = dataclass_params.frozen
 
             fields_info = _extract_dataclass_field_info(typ)
             if fields_info:
