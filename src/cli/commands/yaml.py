@@ -605,12 +605,6 @@ def _process_single_file(
 
             progress.advance(task)
 
-    if not types_dict:
-        console.rule("[bold red]エラー[/bold red]")
-        console.print("[red]変換可能な型がモジュール内に見つかりませんでした[/red]")
-        console.print("[dim]PydanticモデルまたはEnumが定義されていることを確認してください[/dim]")
-        return
-
     # AST解析でtype/NewType/dataclassを追加抽出
     from src.core.converters.type_to_yaml import extract_type_definitions_from_ast
 
@@ -620,6 +614,14 @@ def _process_single_file(
         for type_name, type_info in ast_types.items():
             if type_name not in types_dict:
                 types_dict[type_name] = type_info
+
+    if not types_dict:
+        console.rule("[bold red]エラー[/bold red]")
+        console.print("[red]変換可能な型がモジュール内に見つかりませんでした[/red]")
+        console.print(
+            "[dim]Pydantic/Enum/dataclass/type alias/NewType のいずれかが定義されていることを確認してください[/dim]"
+        )
+        return
 
     # 型をYAMLに変換（シンプル形式）
     with console.status("[bold green]YAMLファイル生成中..."):
