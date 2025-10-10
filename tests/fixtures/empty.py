@@ -14,5 +14,5 @@ class Helper:
 
 
 # 通常の変数
-value = 42
-message = "Hello, World!"
+value: int = 42
+message: str = "Hello, World!"
