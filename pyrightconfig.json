@@ -8,7 +8,9 @@
         "**/.git",
         "**/dist",
         "**/build",
-        "**/*.pyc"
+        "**/*.pyc",
+        "**/*.lay.py",
+        "tests/fixtures/invalid.py"
     ],
     "pythonVersion": "3.13",
     "typeCheckingMode": "standard",

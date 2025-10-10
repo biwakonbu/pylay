@@ -62,11 +62,11 @@ install: ## 依存関係をインストール
 
 format: ## コードを自動フォーマット
 	@echo "🎨 コードをフォーマット中..."
-	uv run ruff format .
+	uv run ruff format . --exclude tests/fixtures/invalid.py
 
 lint: ## リンターでコードチェック
 	@echo "🔍 リンターでコードチェック中..."
-	uv run ruff check . --fix
+	uv run ruff check . --fix --exclude tests/fixtures/invalid.py
 
 type-check: ## 型チェック（mypy + pyright）
 	@echo "🔍 型チェック中（mypy + pyright）..."
@@ -201,7 +201,7 @@ radon-check: ## コード複雑度チェック
 
 interrogate-check: ## docstringカバレッジチェック
 	@echo "📝 docstringカバレッジをチェック中..."
-	uv run interrogate .
+	uv run interrogate . --exclude tests/fixtures/invalid.py
 
 infer-deps: ## 型推論と依存関係抽出を実行
 	@echo "🔍 型推論と依存関係抽出を実行中..."

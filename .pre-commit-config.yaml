@@ -6,8 +6,10 @@ repos:
       # Ruff のリンター実行
       - id: ruff
         args: [--fix]
+        exclude: ^tests/fixtures/invalid\.py$
       # Ruff のフォーマッター実行
       - id: ruff-format
+        exclude: ^tests/fixtures/invalid\.py$
 
   # mypy (型チェック)
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -16,6 +18,7 @@ repos:
       - id: mypy
         additional_dependencies: [types-pyyaml, pydantic>=2.8.2, pyyaml>=6.0.2, ruamel-yaml>=0.18.6, networkx>=3.3, click>=8.3.0]
         args: [--config-file=mypy.ini]
+        exclude: ^tests/fixtures/invalid\.py$
 
   # コードメトリクス（複雑度、保守性）
   - repo: local
@@ -55,8 +58,11 @@ repos:
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^tests/fixtures/invalid\.py$
       - id: end-of-file-fixer
+        exclude: ^tests/fixtures/invalid\.py$
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: debug-statements
+        exclude: ^tests/fixtures/invalid\.py$

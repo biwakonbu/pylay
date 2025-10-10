@@ -37,27 +37,21 @@ class TestMypyConfig:
         """strictモードが有効化されていることを確認."""
         assert mypy_config.getboolean("mypy", "strict") is True
 
-    def test_mypy_warning_settings(
-        self, mypy_config: configparser.ConfigParser
-    ) -> None:
+    def test_mypy_warning_settings(self, mypy_config: configparser.ConfigParser) -> None:
         """警告設定が正しく設定されていることを確認."""
         assert mypy_config.getboolean("mypy", "warn_redundant_casts") is True
         assert mypy_config.getboolean("mypy", "warn_unused_ignores") is True
         assert mypy_config.getboolean("mypy", "warn_no_return") is True
         assert mypy_config.getboolean("mypy", "warn_unreachable") is True
 
-    def test_mypy_type_checking_strictness(
-        self, mypy_config: configparser.ConfigParser
-    ) -> None:
+    def test_mypy_type_checking_strictness(self, mypy_config: configparser.ConfigParser) -> None:
         """型チェックの厳格化設定を確認."""
         assert mypy_config.getboolean("mypy", "disallow_untyped_defs") is True
         assert mypy_config.getboolean("mypy", "disallow_incomplete_defs") is True
         assert mypy_config.getboolean("mypy", "check_untyped_defs") is True
         assert mypy_config.getboolean("mypy", "disallow_untyped_decorators") is True
 
-    def test_mypy_any_restrictions(
-        self, mypy_config: configparser.ConfigParser
-    ) -> None:
+    def test_mypy_any_restrictions(self, mypy_config: configparser.ConfigParser) -> None:
         """Any型の制限設定を確認（大幅緩和されていることを確認）."""
         assert mypy_config.getboolean("mypy", "disallow_any_generics") is False
         assert mypy_config.getboolean("mypy", "disallow_any_unimported") is False
@@ -85,9 +79,7 @@ class TestMypyConfig:
         assert mypy_config.get("mypy", "mypy_path") == "."
         assert mypy_config.getboolean("mypy", "explicit_package_bases") is True
 
-    def test_mypy_disabled_error_codes(
-        self, mypy_config: configparser.ConfigParser
-    ) -> None:
+    def test_mypy_disabled_error_codes(self, mypy_config: configparser.ConfigParser) -> None:
         """無効化されたエラーコードを確認."""
         disabled_codes = mypy_config.get("mypy", "disable_error_code")
         expected_codes = [
@@ -110,9 +102,7 @@ class TestMypyConfig:
         """テストファイル用の緩和設定を確認."""
         assert mypy_config.has_section("mypy-tests.*")
         assert mypy_config.getboolean("mypy-tests.*", "disallow_untyped_defs") is False
-        assert (
-            mypy_config.getboolean("mypy-tests.*", "disallow_incomplete_defs") is False
-        )
+        assert mypy_config.getboolean("mypy-tests.*", "disallow_incomplete_defs") is False
         assert mypy_config.getboolean("mypy-tests.*", "check_untyped_defs") is False
 
 
@@ -208,6 +198,8 @@ class TestPyrightConfig:
             "**/dist",
             "**/build",
             "**/*.pyc",
+            "**/*.lay.py",  # 自動生成ファイルを除外
+            "tests/fixtures/invalid.py",  # 意図的な構文エラーファイルを除外
         ]
         assert pyright_config["exclude"] == expected_excludes
 
@@ -266,18 +258,14 @@ class TestPyprojectConfig:
 
     def test_pylay_quality_check_level_thresholds(self, pyproject_config: dict) -> None:
         """品質チェックの型レベル閾値が正しく設定されていることを確認."""
-        thresholds = pyproject_config["tool"]["pylay"]["quality_check"][
-            "level_thresholds"
-        ]
+        thresholds = pyproject_config["tool"]["pylay"]["quality_check"]["level_thresholds"]
         assert thresholds["level1_max"] == 0.15
         assert thresholds["level2_min"] == 0.50
         assert thresholds["level3_min"] == 0.20
 
     def test_pylay_quality_check_error_conditions(self, pyproject_config: dict) -> None:
         """品質チェックのエラー条件が正しく設定されていることを確認."""
-        error_conditions = pyproject_config["tool"]["pylay"]["quality_check"][
-            "error_conditions"
-        ]
+        error_conditions = pyproject_config["tool"]["pylay"]["quality_check"]["error_conditions"]
         assert len(error_conditions) == 5
         # 各条件が必須フィールドを持つことを確認
         for condition in error_conditions:
@@ -286,9 +274,7 @@ class TestPyprojectConfig:
 
     def test_pylay_quality_check_severity_levels(self, pyproject_config: dict) -> None:
         """品質チェックの重要度レベルが正しく設定されていることを確認."""
-        severity_levels = pyproject_config["tool"]["pylay"]["quality_check"][
-            "severity_levels"
-        ]
+        severity_levels = pyproject_config["tool"]["pylay"]["quality_check"]["severity_levels"]
         assert len(severity_levels) == 3
         # 各レベルが必須フィールドを持つことを確認
         for level in severity_levels:
@@ -296,13 +282,9 @@ class TestPyprojectConfig:
             assert "color" in level
             assert "threshold" in level
 
-    def test_pylay_quality_check_improvement_guidance(
-        self, pyproject_config: dict
-    ) -> None:
+    def test_pylay_quality_check_improvement_guidance(self, pyproject_config: dict) -> None:
         """品質チェックの改善ガイダンスが正しく設定されていることを確認."""
-        improvement_guidance = pyproject_config["tool"]["pylay"]["quality_check"][
-            "improvement_guidance"
-        ]
+        improvement_guidance = pyproject_config["tool"]["pylay"]["quality_check"]["improvement_guidance"]
         assert len(improvement_guidance) == 5
         # 各ガイダンスが必須フィールドを持つことを確認
         for guidance in improvement_guidance:
