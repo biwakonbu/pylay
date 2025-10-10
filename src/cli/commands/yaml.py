@@ -3,13 +3,19 @@
 Pythonの型定義をYAML形式に変換するCLIコマンドです。
 """
 
+import hashlib
 import importlib
 import importlib.metadata
+import re
 import sys
-from datetime import UTC
+import traceback
+from dataclasses import is_dataclass
+from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
+from pydantic import BaseModel
 from rich.box import SIMPLE
 from rich.console import Console
 from rich.panel import Panel
@@ -25,6 +31,8 @@ from rich.table import Table
 from src.core.converters.generation_header import generate_yaml_header
 from src.core.converters.type_to_yaml import (
     PROJECT_ROOT_PACKAGE,
+    ASTEntry,
+    extract_type_definitions_from_ast,
     types_to_yaml_simple,
 )
 from src.core.schemas.pylay_config import PylayConfig
@@ -79,8 +87,6 @@ def _has_type_definitions(file_path: Path) -> bool:
         型定義が含まれている場合True
     """
     try:
-        import re
-
         # ファイルを読み込んで型定義構文をチェック
         content = file_path.read_text(encoding="utf-8")
 
@@ -228,8 +234,6 @@ def _calculate_file_hash(file_path: Path) -> str:
     Returns:
         SHA256ハッシュ値（16進数文字列）
     """
-    import hashlib
-
     sha256_hash = hashlib.sha256()
     with open(file_path, "rb") as f:
         # ファイルをチャンク単位で読み込んでハッシュ計算
@@ -249,8 +253,6 @@ def _validate_metadata(source_file: str, generated_at: str, pylay_version: str) 
     Returns:
         バリデーションエラーのリスト（空の場合は正常）
     """
-    from datetime import datetime
-
     errors = []
 
     # ソースファイルの存在確認
@@ -295,8 +297,6 @@ def _generate_metadata_section(source_file: str, validate: bool = True) -> str:
     Raises:
         ValueError: バリデーションエラーが発生した場合
     """
-    from datetime import datetime
-
     pylay_version: str = _get_pylay_version()
 
     # ソースファイル情報
@@ -407,7 +407,7 @@ def _process_directory(
         return
 
     # 全ファイルから型を収集
-    all_types = {}
+    all_types: dict[str, type | ASTEntry] = {}
 
     with Progress(
         SpinnerColumn(),
@@ -434,8 +434,6 @@ def _process_directory(
                 module = importlib.import_module(module_name)  # noqa: F823
 
                 # 型を抽出
-                from dataclasses import is_dataclass
-
                 for name, obj in module.__dict__.items():
                     if isinstance(obj, type):
                         is_pydantic_model = hasattr(obj, "__annotations__") and hasattr(obj, "__pydantic_core_schema__")
@@ -445,6 +443,12 @@ def _process_directory(
 
                         if (is_pydantic_model or is_enum or is_dataclass_type) and is_user_defined:
                             all_types[name] = obj
+
+                # AST解析でtype/NewType/dataclassを追加抽出
+                ast_types = extract_type_definitions_from_ast(py_file)
+                for type_name, type_info in ast_types.items():
+                    if type_name not in all_types:
+                        all_types[type_name] = type_info
 
             except Exception as e:
                 console.print(f"[yellow]⚠️ 警告: {py_file.name}の処理に失敗しました[/yellow]")
@@ -547,7 +551,7 @@ def _process_single_file(
         module = importlib.import_module(module_name)
 
     # モジュール内の全型アノテーションを検索
-    types_dict: dict[str, type[object]] = {}
+    types_dict: dict[str, type[Any] | ASTEntry] = {}
 
     # モジュール内のアイテム数を取得
     module_items = list(module.__dict__.items())
@@ -569,8 +573,6 @@ def _process_single_file(
             if isinstance(obj, type):
                 # Pydanticモデルかどうかをチェック（BaseModelのサブクラス判定）
                 try:
-                    from pydantic import BaseModel
-
                     is_pydantic_model = issubclass(obj, BaseModel)
                 except (TypeError, ImportError):
                     is_pydantic_model = False
@@ -581,8 +583,6 @@ def _process_single_file(
                     is_enum = False
 
                 # dataclassかどうかをチェック
-                from dataclasses import is_dataclass
-
                 is_dataclass_type = is_dataclass(obj)
 
                 is_user_defined = getattr(obj, "__module__", None) == module_name
@@ -596,10 +596,20 @@ def _process_single_file(
 
             progress.advance(task)
 
+    # AST解析でtype/NewType/dataclassを追加抽出
+    with console.status("[bold green]AST解析で型定義を抽出中..."):
+        ast_types = extract_type_definitions_from_ast(input_path)
+        # AST解析結果をtypes_dictにマージ(既存の型オブジェクトを優先)
+        for type_name, type_info in ast_types.items():
+            if type_name not in types_dict:
+                types_dict[type_name] = type_info
+
     if not types_dict:
         console.rule("[bold red]エラー[/bold red]")
         console.print("[red]変換可能な型がモジュール内に見つかりませんでした[/red]")
-        console.print("[dim]PydanticモデルまたはEnumが定義されていることを確認してください[/dim]")
+        console.print(
+            "[dim]Pydantic/Enum/dataclass/type alias/NewType のいずれかが定義されていることを確認してください[/dim]"
+        )
         return
 
     # 型をYAMLに変換（シンプル形式）
@@ -880,7 +890,5 @@ def run_yaml(
             border_style="red",
         )
         console.print(error_panel)
-        import traceback
-
         console.print(f"[dim]{traceback.format_exc()}[/dim]")
         sys.exit(1)
