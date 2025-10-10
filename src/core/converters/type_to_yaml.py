@@ -263,6 +263,53 @@ def _get_simple_type_name(typ: type[Any] | None) -> str:
     return str(typ)
 
 
+def _collect_imports_from_type_string(
+    type_str: str,
+    file_imports: dict[str, str],
+    imports_map: dict[str, str],
+) -> None:
+    """型文字列から外部型を抽出し、インポート情報を収集
+
+    Args:
+        type_str: 型文字列（例: "str", "list[UserId]", "dict[str, User]"）
+        file_imports: ファイルから抽出したインポート情報（型名 → インポートパス）
+        imports_map: インポート情報を格納する辞書（型名 → インポートパス）
+    """
+    import re
+
+    # 基本型（str, int, float, bool, list, dict, tuple, set等）はスキップ
+    builtin_types = {
+        "str",
+        "int",
+        "float",
+        "bool",
+        "list",
+        "dict",
+        "tuple",
+        "set",
+        "frozenset",
+        "bytes",
+        "bytearray",
+        "None",
+        "Any",
+        "object",
+    }
+
+    # 型文字列から型名を抽出（カッコや記号を除去）
+    # 例: "list[UserId]" → ["list", "UserId"]
+    # 例: "dict[str, User]" → ["dict", "str", "User"]
+    type_names = re.findall(r"\b([A-Za-z_][A-Za-z0-9_]*)\b", type_str)
+
+    for type_name in type_names:
+        # 基本型はスキップ
+        if type_name in builtin_types:
+            continue
+
+        # file_importsに存在する外部型のみimports_mapに追加
+        if type_name in file_imports:
+            imports_map[type_name] = file_imports[type_name]
+
+
 def _get_simple_type_name_with_imports(
     typ: type[Any] | None,
     source_module_path: str | None,
@@ -792,17 +839,27 @@ def types_to_yaml_simple(
             # type文(型エイリアス)
             if kind == "type_alias":
                 type_data["type"] = "type_alias"
-                type_data["target"] = typ["target"]
+                target = typ["target"]
+                type_data["target"] = target
                 if typ.get("docstring"):
                     type_data["description"] = typ["docstring"]
+
+                # targetに外部型が含まれる場合、_importsに追加
+                _collect_imports_from_type_string(target, file_imports, imports_map)
+
                 yaml_data[type_name] = type_data
 
             # NewType
             elif kind == "newtype":
                 type_data["type"] = "newtype"
-                type_data["base_type"] = typ["base_type"]
+                base_type = typ["base_type"]
+                type_data["base_type"] = base_type
                 if typ.get("docstring"):
                     type_data["description"] = typ["docstring"]
+
+                # base_typeに外部型が含まれる場合、_importsに追加
+                _collect_imports_from_type_string(base_type, file_imports, imports_map)
+
                 yaml_data[type_name] = type_data
 
             # dataclass(AST解析結果)
@@ -815,7 +872,12 @@ def types_to_yaml_simple(
                     else:
                         type_data["description"] = typ["docstring"]
                 if typ.get("fields"):
-                    type_data["fields"] = CommentedMap(typ["fields"])
+                    fields = typ["fields"]
+                    # 各フィールドの型から外部型を収集
+                    for field_info in fields.values():
+                        if isinstance(field_info, dict) and "type" in field_info:
+                            _collect_imports_from_type_string(field_info["type"], file_imports, imports_map)
+                    type_data["fields"] = CommentedMap(fields)
                 yaml_data[type_name] = type_data
 
             continue
