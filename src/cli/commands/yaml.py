@@ -13,6 +13,7 @@ from dataclasses import is_dataclass
 from datetime import UTC, datetime
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel
 from rich.box import SIMPLE
@@ -550,7 +551,7 @@ def _process_single_file(
         module = importlib.import_module(module_name)
 
     # モジュール内の全型アノテーションを検索
-    types_dict: dict[str, type[object] | ASTEntry] = {}
+    types_dict: dict[str, type[Any] | ASTEntry] = {}
 
     # モジュール内のアイテム数を取得
     module_items = list(module.__dict__.items())

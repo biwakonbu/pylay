@@ -882,8 +882,9 @@ def types_to_yaml_simple(
                 type_data["type"] = "type_alias"
                 target = type_alias_entry["target"]
                 type_data["target"] = target
-                if type_alias_entry.get("docstring"):
-                    type_data["description"] = type_alias_entry["docstring"]
+                docstring = type_alias_entry.get("docstring")
+                if docstring:
+                    type_data["description"] = docstring
 
                 # targetに外部型が含まれる場合、_importsに追加
                 _collect_imports_from_type_string(target, file_imports, imports_map)
@@ -899,8 +900,9 @@ def types_to_yaml_simple(
                 type_data["type"] = "newtype"
                 base_type = newtype_entry["base_type"]
                 type_data["base_type"] = base_type
-                if newtype_entry.get("docstring"):
-                    type_data["description"] = newtype_entry["docstring"]
+                docstring = newtype_entry.get("docstring")
+                if docstring:
+                    type_data["description"] = docstring
 
                 # base_typeに外部型が含まれる場合、_importsに追加
                 _collect_imports_from_type_string(base_type, file_imports, imports_map)
@@ -915,11 +917,11 @@ def types_to_yaml_simple(
 
                 type_data["type"] = "dataclass"
                 type_data["frozen"] = dataclass_entry.get("frozen", False)
-                if dataclass_entry.get("docstring"):
-                    docstring = dataclass_entry["docstring"]
-                    if docstring and "\n" in docstring:
+                docstring = dataclass_entry.get("docstring")
+                if docstring:
+                    if "\n" in docstring:
                         type_data["description"] = LiteralScalarString(docstring)
-                    elif docstring:
+                    else:
                         type_data["description"] = docstring
                 if "fields" in dataclass_entry:
                     fields = dataclass_entry["fields"]
