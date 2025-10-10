@@ -446,6 +446,15 @@ def _create_spec_from_data(data: dict, root_key: str | None = None) -> TypeSpec:
         return UnionTypeSpec(**processed_data)
     elif type_key == "generic":
         return GenericTypeSpec(**processed_data)
+    elif type_key == "type_alias":
+        # type文（型エイリアス）の場合
+        return TypeAliasSpec(**processed_data)
+    elif type_key == "newtype":
+        # NewTypeの場合
+        return NewTypeSpec(**processed_data)
+    elif type_key == "dataclass":
+        # dataclassの場合
+        return DataclassSpec(**processed_data)
     else:
         # 基本型: nameをroot_keyから補完（v1.1対応）
         return TypeSpec(**processed_data)
