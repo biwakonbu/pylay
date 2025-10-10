@@ -1,7 +1,7 @@
 import ast
 import inspect
 from pathlib import Path
-from typing import Any, ForwardRef, Generic, get_args, get_origin
+from typing import Any, ForwardRef, Generic, NotRequired, TypedDict, get_args, get_origin
 from typing import Union as TypingUnion
 
 from pydantic import BaseModel
@@ -19,6 +19,43 @@ from src.core.schemas.yaml_spec import (
 
 # プロジェクトルートパッケージ名
 PROJECT_ROOT_PACKAGE = "src"
+
+
+# AST解析結果の型定義
+class TypeAliasEntry(TypedDict):
+    """type文（型エイリアス）のAST解析結果"""
+
+    kind: str  # "type_alias"
+    target: str
+    docstring: NotRequired[str | None]
+
+
+class NewTypeEntry(TypedDict):
+    """NewTypeのAST解析結果"""
+
+    kind: str  # "newtype"
+    base_type: str
+    docstring: NotRequired[str | None]
+
+
+class DataclassFieldInfo(TypedDict):
+    """dataclassフィールド情報"""
+
+    type: str
+    required: bool
+
+
+class DataclassEntry(TypedDict):
+    """dataclassのAST解析結果"""
+
+    kind: str  # "dataclass"
+    frozen: bool
+    fields: dict[str, DataclassFieldInfo]
+    docstring: NotRequired[str | None]
+
+
+# AST解析結果の共用型
+ASTEntry = TypeAliasEntry | NewTypeEntry | DataclassEntry
 
 
 def extract_imports_from_file(file_path: Path) -> dict[str, str]:
@@ -798,7 +835,7 @@ def type_to_yaml(
 
 
 def types_to_yaml_simple(
-    types: dict[str, type[Any]] | dict[str, Any],
+    types: dict[str, type[Any] | ASTEntry],
     source_module_path: str | None = None,
     source_file_path: Path | None = None,
 ) -> str:
@@ -832,17 +869,21 @@ def types_to_yaml_simple(
     for type_name, typ in types.items():
         type_data = CommentedMap()
 
-        # AST解析結果(dict)の場合
+        # AST解析結果(ASTEntry)の場合
         if isinstance(typ, dict):
             kind = typ.get("kind")
 
             # type文(型エイリアス)
             if kind == "type_alias":
+                # 型ガード: TypeAliasEntry
+                assert "target" in typ
+                type_alias_entry: TypeAliasEntry = typ  # type: ignore[assignment]
+
                 type_data["type"] = "type_alias"
-                target = typ["target"]
+                target = type_alias_entry["target"]
                 type_data["target"] = target
-                if typ.get("docstring"):
-                    type_data["description"] = typ["docstring"]
+                if type_alias_entry.get("docstring"):
+                    type_data["description"] = type_alias_entry["docstring"]
 
                 # targetに外部型が含まれる場合、_importsに追加
                 _collect_imports_from_type_string(target, file_imports, imports_map)
@@ -851,11 +892,15 @@ def types_to_yaml_simple(
 
             # NewType
             elif kind == "newtype":
+                # 型ガード: NewTypeEntry
+                assert "base_type" in typ
+                newtype_entry: NewTypeEntry = typ  # type: ignore[assignment]
+
                 type_data["type"] = "newtype"
-                base_type = typ["base_type"]
+                base_type = newtype_entry["base_type"]
                 type_data["base_type"] = base_type
-                if typ.get("docstring"):
-                    type_data["description"] = typ["docstring"]
+                if newtype_entry.get("docstring"):
+                    type_data["description"] = newtype_entry["docstring"]
 
                 # base_typeに外部型が含まれる場合、_importsに追加
                 _collect_imports_from_type_string(base_type, file_imports, imports_map)
@@ -864,19 +909,24 @@ def types_to_yaml_simple(
 
             # dataclass(AST解析結果)
             elif kind == "dataclass":
+                # 型ガード: DataclassEntry
+                assert "frozen" in typ and "fields" in typ
+                dataclass_entry: DataclassEntry = typ  # type: ignore[assignment]
+
                 type_data["type"] = "dataclass"
-                type_data["frozen"] = typ.get("frozen", False)
-                if typ.get("docstring"):
-                    if "\n" in typ["docstring"]:
-                        type_data["description"] = LiteralScalarString(typ["docstring"])
-                    else:
-                        type_data["description"] = typ["docstring"]
-                if typ.get("fields"):
-                    fields = typ["fields"]
+                type_data["frozen"] = dataclass_entry.get("frozen", False)
+                if dataclass_entry.get("docstring"):
+                    docstring = dataclass_entry["docstring"]
+                    if docstring and "\n" in docstring:
+                        type_data["description"] = LiteralScalarString(docstring)
+                    elif docstring:
+                        type_data["description"] = docstring
+                if "fields" in dataclass_entry:
+                    fields = dataclass_entry["fields"]
                     # 各フィールドの型から外部型を収集
                     for field_info in fields.values():
-                        if isinstance(field_info, dict) and "type" in field_info:
-                            _collect_imports_from_type_string(field_info["type"], file_imports, imports_map)
+                        field_type = field_info["type"]
+                        _collect_imports_from_type_string(field_type, file_imports, imports_map)
                     type_data["fields"] = CommentedMap(fields)
                 yaml_data[type_name] = type_data
 
@@ -998,7 +1048,7 @@ def types_to_yaml(types: dict[str, type[Any]], output_file: str | None = None) -
     return yaml_str
 
 
-def extract_type_definitions_from_ast(module_path: Path) -> dict[str, Any]:
+def extract_type_definitions_from_ast(module_path: Path) -> dict[str, ASTEntry]:
     """ASTを使って型定義を抽出(type/NewType/dataclass対応)
 
     Args:
@@ -1011,7 +1061,7 @@ def extract_type_definitions_from_ast(module_path: Path) -> dict[str, Any]:
             "Point": {"kind": "dataclass", "frozen": True, "fields": {...}}
         }
     """
-    type_defs: dict[str, Any] = {}
+    type_defs: dict[str, ASTEntry] = {}
 
     try:
         tree = ast.parse(module_path.read_text(encoding="utf-8"))

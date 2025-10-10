@@ -30,6 +30,7 @@ from rich.table import Table
 from src.core.converters.generation_header import generate_yaml_header
 from src.core.converters.type_to_yaml import (
     PROJECT_ROOT_PACKAGE,
+    ASTEntry,
     extract_type_definitions_from_ast,
     types_to_yaml_simple,
 )
@@ -405,7 +406,7 @@ def _process_directory(
         return
 
     # 全ファイルから型を収集
-    all_types = {}
+    all_types: dict[str, type | ASTEntry] = {}
 
     with Progress(
         SpinnerColumn(),
@@ -549,7 +550,7 @@ def _process_single_file(
         module = importlib.import_module(module_name)
 
     # モジュール内の全型アノテーションを検索
-    types_dict: dict[str, type[object]] = {}
+    types_dict: dict[str, type[object] | ASTEntry] = {}
 
     # モジュール内のアイテム数を取得
     module_items = list(module.__dict__.items())
