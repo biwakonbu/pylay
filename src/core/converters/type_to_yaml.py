@@ -937,7 +937,7 @@ def types_to_yaml(types: dict[str, type[Any]], output_file: str | None = None) -
 
 
 def extract_type_definitions_from_ast(module_path: Path) -> dict[str, Any]:
-    """ASTを使って型定義を抽出（type/NewType/dataclass対応）
+    """ASTを使って型定義を抽出(type/NewType/dataclass対応)
 
     Args:
         module_path: Pythonファイルのパス
@@ -955,7 +955,7 @@ def extract_type_definitions_from_ast(module_path: Path) -> dict[str, Any]:
         tree = ast.parse(module_path.read_text(encoding="utf-8"))
 
         for node in ast.walk(tree):
-            # 1. type文の抽出（Python 3.12+）
+            # 1. type文の抽出(Python 3.12+)
             if isinstance(node, ast.TypeAlias):
                 type_name = node.name.id if isinstance(node.name, ast.Name) else str(node.name)
                 target_type = ast.unparse(node.value)
@@ -1013,7 +1013,7 @@ def extract_type_definitions_from_ast(module_path: Path) -> dict[str, Any]:
                         "docstring": ast.get_docstring(node),
                     }
 
-            # 3. NewTypeの抽出（変数代入を検索）
+            # 3. NewTypeの抽出(変数代入を検索)
             elif isinstance(node, ast.Assign):
                 # NewType('UserId', str) のパターン
                 if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
@@ -1022,7 +1022,7 @@ def extract_type_definitions_from_ast(module_path: Path) -> dict[str, Any]:
                         func = node.value.func
                         is_newtype = False
 
-                        # NewType の検出（ast.Name または ast.Attribute）
+                        # NewType の検出(ast.Name または ast.Attribute)
                         if isinstance(func, ast.Name) and func.id == "NewType":
                             is_newtype = True
                         # typing.NewType, t.NewType などの属性参照
