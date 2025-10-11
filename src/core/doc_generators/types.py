@@ -50,7 +50,7 @@ class DocumentConfig(BaseModel):
     template_name: TemplateName | None = Field(default=None, description="使用するテンプレート名")
     include_toc: bool = Field(default=True, description="目次を含めるかどうか")
     include_code_blocks: bool = Field(default=True, description="コードブロックを含めるかどうか")
-    max_depth: Annotated[int, Field(gt=0)] = Field(default=3, description="ドキュメントの最大深さ")
+    max_depth: Annotated[int, Field(gt=0, default=3, description="ドキュメントの最大深さ")]
     encoding: str = Field(default="utf-8", description="出力ファイルのエンコーディング")
 
     class Config:
@@ -67,7 +67,7 @@ class TypeInspectionConfig(BaseModel):
     """
 
     skip_types: list[TypeName] = Field(default_factory=list, description="スキップする型のリスト")
-    max_inspection_depth: Annotated[int, Field(gt=0)] = Field(default=5, description="検査の最大深さ")
+    max_inspection_depth: Annotated[int, Field(gt=0, default=5, description="検査の最大深さ")]
     include_private_types: bool = Field(default=False, description="プライベート型を含めるかどうか")
     include_builtin_types: bool = Field(default=False, description="組み込み型を含めるかどうか")
 
@@ -84,10 +84,7 @@ class MarkdownGenerationConfig(BaseModel):
     このクラスは、マークダウン生成処理の設定を管理します。
     """
 
-    section_level: Annotated[int, Field(gt=0)] = Field(
-        default=1,
-        description="セクションの見出しレベル",
-    )
+    section_level: Annotated[int, Field(gt=0, default=1, description="セクションの見出しレベル")]
     include_toc: bool = Field(default=True, description="目次を含めるかどうか")
     include_code_syntax: bool = Field(default=True, description="コード構文ハイライトを含めるかどうか")
     code_language: str = Field(default="python", description="コードブロックの言語指定")

@@ -497,18 +497,18 @@ def process_entry(typ: ASTEntry) -> None:
 
 | パターン | 問題種別 | 推奨度 | 適用コスト | 型安全性 | Python要件 |
 |---------|---------|--------|-----------|---------|-----------|
-| **パターン1: Literal型オーバーライド** |
+| **パターン1: Literal型オーバーライド** | | | | | |
 | 継承を使わない | LSP違反 | ⭐⭐⭐⭐⭐ | 中 | 高 | 3.10+ |
 | Tagged Union | LSP違反 | ⭐⭐⭐⭐ | 高 | 最高 | 3.10+ |
 | Frozen | LSP違反 | ⭐⭐⭐ | 低 | 中 | 3.10+ |
 | 設定変更 | LSP違反 | ⭐ | 最低 | 低 | - |
-| **パターン3: Pydantic動的属性** |
+| **パターン3: Pydantic動的属性** | | | | | |
 | 明示的引数 | call-arg | ⭐⭐ | 低 | 高 | 3.10+ |
 | model_construct | call-arg | ⭐⭐⭐ | 低 | 中 | 3.10+ |
 | 継承を使わない | call-arg | ⭐⭐⭐⭐⭐ | 高 | 高 | 3.10+ |
 | Tagged Union | call-arg | ⭐⭐⭐⭐ | 高 | 最高 | 3.10+ |
 | type:ignore維持 | call-arg | ⭐ | 最低 | 低 | - |
-| **パターン4: 型ナローイング** |
+| **パターン4: 型ナローイング** | | | | | |
 | TypeGuard | assignment | ⭐⭐⭐⭐⭐ | 低 | 高 | 3.10+ |
 | TypeIs | assignment | ⭐⭐⭐⭐⭐ | 低 | 最高 | 3.13+ |
 | Literal kind | assignment | ⭐⭐⭐⭐ | 中 | 最高 | 3.10+ |

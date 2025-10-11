@@ -87,60 +87,71 @@ def check(
     config = _load_config()
 
     # 引数が指定されていない場合はconfig.target_dirsを使用
+    target_paths: list[Path]
     if target:
-        target_path = Path(target)
+        target_paths = [Path(target)]
     else:
-        # config.target_dirsが複数ある場合は、最初のディレクトリを使用
-        # （複数ディレクトリの場合は、各ディレクトリで個別にチェックを実行する必要がある）
+        # config.target_dirsが複数ある場合は、すべてのディレクトリを処理
         if config.target_dirs:
-            target_path = Path(config.target_dirs[0])
+            target_paths = [Path(d) for d in config.target_dirs]
         else:
-            target_path = Path.cwd()
+            target_paths = [Path.cwd()]
 
     # 除外パターンをconfigから取得
     exclude_patterns = config.exclude_patterns if config.exclude_patterns else None
 
-    if focus is None:
-        # 全てのチェックを実行
-        console.print()
-        console.rule("[bold cyan]🔍 プロジェクト品質チェック[/bold cyan]")
-        console.print()
-
-        # 1. 型定義レベル統計
-        console.print("[bold blue]1/3: 型定義レベル統計[/bold blue]")
-        console.print()
-        _run_type_analysis(target_path, verbose, exclude_patterns)
-
-        console.print()
-        console.rule()
+    # 複数のターゲットディレクトリがある場合は通知
+    if len(target_paths) > 1:
+        console.print(f"[cyan]ℹ️  {len(target_paths)}個のターゲットディレクトリを処理します[/cyan]")
         console.print()
 
-        # 2. type-ignore 診断
-        console.print("[bold yellow]2/3: type-ignore 診断[/bold yellow]")
-        console.print()
-        _run_type_ignore_analysis(target_path, verbose)
+    # 各ターゲットディレクトリに対してチェックを実行
+    for idx, target_path in enumerate(target_paths, 1):
+        if len(target_paths) > 1:
+            console.print(f"[bold cyan]📁 ターゲット {idx}/{len(target_paths)}: {target_path}[/bold cyan]")
+            console.print()
 
-        console.print()
-        console.rule()
-        console.print()
+        if focus is None:
+            # 全てのチェックを実行
+            console.print()
+            console.rule("[bold cyan]🔍 プロジェクト品質チェック[/bold cyan]")
+            console.print()
 
-        # 3. 品質チェック
-        console.print("[bold green]3/3: 品質チェック[/bold green]")
-        console.print()
-        _run_quality_check(target_path, config, verbose, exclude_patterns)
+            # 1. 型定義レベル統計
+            console.print("[bold blue]1/3: 型定義レベル統計[/bold blue]")
+            console.print()
+            _run_type_analysis(target_path, verbose, exclude_patterns)
 
-        console.print()
-        console.rule("[bold cyan]✅ チェック完了[/bold cyan]")
-        console.print()
+            console.print()
+            console.rule()
+            console.print()
 
-    elif focus == "types":
-        _run_type_analysis(target_path, verbose, exclude_patterns)
+            # 2. type-ignore 診断
+            console.print("[bold yellow]2/3: type-ignore 診断[/bold yellow]")
+            console.print()
+            _run_type_ignore_analysis(target_path, verbose)
 
-    elif focus == "ignore":
-        _run_type_ignore_analysis(target_path, verbose)
+            console.print()
+            console.rule()
+            console.print()
 
-    elif focus == "quality":
-        _run_quality_check(target_path, config, verbose, exclude_patterns)
+            # 3. 品質チェック
+            console.print("[bold green]3/3: 品質チェック[/bold green]")
+            console.print()
+            _run_quality_check(target_path, config, verbose, exclude_patterns)
+
+            console.print()
+            console.rule("[bold cyan]✅ チェック完了[/bold cyan]")
+            console.print()
+
+        elif focus == "types":
+            _run_type_analysis(target_path, verbose, exclude_patterns)
+
+        elif focus == "ignore":
+            _run_type_ignore_analysis(target_path, verbose)
+
+        elif focus == "quality":
+            _run_quality_check(target_path, config, verbose, exclude_patterns)
 
 
 def _run_type_analysis(target_path: Path, verbose: bool, exclude_patterns: list[str] | None = None) -> None:
