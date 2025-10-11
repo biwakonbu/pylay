@@ -42,9 +42,8 @@ class YamlDocGenerator(DocumentGenerator):
             raise ValueError("spec parameter is required")
 
         # 型チェック: spec は TypeSpec または TypeRoot である必要がある
-        # NOTE: タプル形式を使用(Ruff UP038の推奨は無視)
         # 互換オブジェクト(type/name属性を持つdictなど)は明示的に拒否
-        if not isinstance(spec_obj, (TypeSpec, TypeRoot)):  # noqa: UP038
+        if not isinstance(spec_obj, TypeSpec | TypeRoot):
             # 互換オブジェクトの可能性をチェックして詳細なエラーメッセージを提供
             obj_type = type(spec_obj).__name__
             has_type_attr = hasattr(spec_obj, "type")
@@ -59,21 +58,21 @@ class YamlDocGenerator(DocumentGenerator):
             else:
                 raise TypeError(f"spec must be TypeSpec or TypeRoot, got {obj_type}")
 
-        # この時点で spec_obj は TypeSpec | TypeRoot として扱える
-        spec: TypeSpec | TypeRoot = spec_obj  # type: ignore[assignment]
-
         self.md = MarkdownBuilder()
 
-        # TypeRoot の場合は TypeSpec に変換
-        if isinstance(spec, TypeRoot):
+        # TypeRoot の場合は TypeSpec に変換し、型を確定
+        spec: TypeSpec
+        if isinstance(spec_obj, TypeRoot):
             # TypeRoot の場合は最初の型定義を使用
-            if spec.types:
-                spec = next(iter(spec.types.values()))
+            if spec_obj.types:
+                spec = next(iter(spec_obj.types.values()))
             else:
                 raise TypeError("TypeRoot has no types")
+        else:
+            # この時点で spec_obj は TypeSpec として確定
+            spec = spec_obj
 
-        # この時点で spec は TypeSpec として扱える
-
+        # この時点で spec は TypeSpec として確定している
         self._generate_header(spec)
         self._generate_body(spec)
         self._generate_footer()
