@@ -1,6 +1,10 @@
 # pylay プロジェクトのMakefile
 # Python 3.13+ 対応の型安全なドキュメント生成ツール
 
+# .envファイルが存在する場合は読み込む
+-include .env
+export
+
 .PHONY: help setup format lint type-check test coverage quality-check analyze clean ci
 
 # =============================================================================
@@ -247,7 +251,7 @@ test-install: build ## ビルドしてテストインストール
 publish-test: build ## テストPyPIに公開
 	@echo "🚀 テストPyPIに公開中..."
 	@echo "⚠️  公開前に以下の確認をお願いします:"
-	@echo "   1. UV_TEST_INDEX=1 または uv.tomlにテストPyPI設定があること"
+	@echo "   1. .envファイルにUV_PUBLISH_TOKENが設定されていること"
 	@echo "   2. バージョン番号が適切であること"
 	@echo "   3. ビルドが正常に完了していること"
 	@read -p "上記の確認が完了したらEnterを押してください..." || echo "続行します..."
@@ -264,12 +268,18 @@ publish-test: build ## テストPyPIに公開
 		git push origin "v$$VERSION"; \
 		echo "✅ Gitタグ v$$VERSION を作成・プッシュしました"; \
 	fi
-	uv publish --index testpypi
+	@if [ -f .env ]; then \
+		echo "📝 .envファイルを読み込んで公開中..."; \
+		set -a && . ./.env && set +a && uv publish --index testpypi; \
+	else \
+		echo "⚠️  .envファイルが見つかりません。UV_PUBLISH_TOKENを設定してください"; \
+		uv publish --index testpypi; \
+	fi
 
 publish: build ## 本番PyPIに公開
 	@echo "🚀 本番PyPIに公開中..."
 	@echo "⚠️  公開前に以下の確認をお願いします:"
-	@echo "   1. PyPIアカウントとAPIトークンが設定されていること"
+	@echo "   1. .envファイルにUV_PUBLISH_TOKENが設定されていること"
 	@echo "   2. バージョン番号が適切であること"
 	@echo "   3. テストPyPIで動作確認済みであること"
 	@echo "   4. CHANGELOG.mdが更新されていること"
@@ -288,7 +298,13 @@ publish: build ## 本番PyPIに公開
 		git push origin "v$$VERSION"; \
 		echo "✅ Gitタグ v$$VERSION を作成・プッシュしました"; \
 	fi
-	uv publish
+	@if [ -f .env ]; then \
+		echo "📝 .envファイルを読み込んで公開中..."; \
+		set -a && . ./.env && set +a && uv publish; \
+	else \
+		echo "⚠️  .envファイルが見つかりません。UV_PUBLISH_TOKENを設定してください"; \
+		uv publish; \
+	fi
 
 check-pypi: ## PyPIでの公開状況を確認
 	@echo "🔍 PyPIの状況を確認中..."
