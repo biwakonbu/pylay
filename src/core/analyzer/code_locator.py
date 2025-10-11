@@ -314,7 +314,7 @@ class CodeLocator:
             推奨事項
         """
         if usage_count > 10:
-            return "使用回数が多く、制約を追加してLevel 2へ昇格させることを" "強く推奨します。"
+            return "使用回数が多く、制約を追加してLevel 2へ昇格させることを強く推奨します。"
         elif usage_count > 5:
             return "使用回数が比較的多く、Level 2への昇格を検討してください。"
         else:
@@ -487,11 +487,11 @@ class CodeLocator:
             推奨事項
         """
         if reason == "implementation_in_progress":
-            return "実装途中の可能性があります。" "使用箇所を追加するか、設計意図を明確にしてください。"
+            return "実装途中の可能性があります。使用箇所を追加するか、設計意図を明確にしてください。"
         elif reason == "future_extensibility":
-            return "将来の拡張性を考慮した設計のようです。" "docstringで意図を明確にしてください。"
+            return "将来の拡張性を考慮した設計のようです。docstringで意図を明確にしてください。"
         else:
-            return "認知不足の可能性があります。" "既存のprimitive型使用箇所を置き換えることを検討してください。"
+            return "認知不足の可能性があります。既存のprimitive型使用箇所を置き換えることを検討してください。"
 
     def find_deprecated_typing(self) -> list[DeprecatedTypingDetail]:
         """非推奨typing使用箇所を検出
