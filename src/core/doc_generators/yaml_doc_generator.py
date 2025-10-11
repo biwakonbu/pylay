@@ -10,6 +10,7 @@ from src.core.schemas.yaml_spec import (
     DictTypeSpec,
     ListTypeSpec,
     RefPlaceholder,
+    TypeRoot,
     TypeSpec,
     UnionTypeSpec,
 )
@@ -25,32 +26,32 @@ class YamlDocGenerator(DocumentGenerator):
     TypeSpecオブジェクトを受け取り、Markdownフォーマットのドキュメントを生成します。
     """
 
-    def generate(self, output_path: Path, spec: TypeSpec | object | None = None, **kwargs: object) -> None:
+    def generate(self, output_path: Path, **kwargs: object) -> None:
         """ドキュメントを生成し、ファイルに書き出します。
 
         Args:
             output_path: 出力先ファイルパス
-            spec: 型仕様オブジェクト
             **kwargs: 追加パラメータ
+                spec: 型仕様オブジェクト（TypeSpec | TypeRoot）
 
         Raises:
             ValueError: specが指定されていない、または無効な場合
         """
-        if spec is None:
-            spec = kwargs.get("spec")
-        if spec is None:
+        spec_obj = kwargs.get("spec")
+        if spec_obj is None:
             raise ValueError("spec parameter is required")
-        from src.core.schemas.yaml_spec import TypeRoot
 
         # 型チェック: spec が TypeSpec 互換であることを確認
         # NOTE: isinstance() の第2引数にUnion型（TypeSpec | TypeRoot）を渡すと
         # TypeErrorが発生するため、タプル形式を使用（UP038は誤検知）
-        if not isinstance(spec, (TypeSpec, TypeRoot)):  # noqa: UP038
+        if not isinstance(spec_obj, (TypeSpec, TypeRoot)):  # noqa: UP038
             # DictTypeSpec などのサブクラスも許可
-            if not (hasattr(spec, "type") and hasattr(spec, "name")):
+            if not (hasattr(spec_obj, "type") and hasattr(spec_obj, "name")):
                 raise ValueError("spec must be a TypeSpec compatible instance")
 
-        # この時点で spec は TypeSpec として扱える
+        # この時点で spec_obj は TypeSpec | TypeRoot として扱える
+        spec: TypeSpec | TypeRoot = spec_obj  # type: ignore[assignment]
+
         self.md.clear()  # 既存のコンテンツをクリア
         self.md = MarkdownBuilder()
 
@@ -160,4 +161,4 @@ def generate_yaml_docs(spec: TypeSpec, output_dir: str | None = None) -> None:
         layer = spec.type
 
     output_path = Path(output_dir) / f"{layer}.md"
-    generator.generate(output_path, spec)
+    generator.generate(output_path, spec=spec)
