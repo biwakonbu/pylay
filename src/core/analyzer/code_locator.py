@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import ast
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -32,8 +32,8 @@ class CodeLocation:
     line: int
     column: int
     code: str
-    context_before: list[str]
-    context_after: list[str]
+    context_before: list[str] = field(default_factory=list)
+    context_after: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -67,9 +67,7 @@ class TypeUsageExample:
 
     location: CodeLocation
     context: str
-    kind: Literal[
-        "function_argument", "return_type", "variable_annotation", "class_attribute"
-    ]
+    kind: Literal["function_argument", "return_type", "variable_annotation", "class_attribute"]
 
 
 @dataclass
@@ -114,9 +112,7 @@ class UnusedTypeDetail:
     location: CodeLocation
     level: Literal["Level 1", "Level 2", "Level 3"]
     docstring: str | None
-    reason: Literal[
-        "implementation_in_progress", "lack_of_awareness", "future_extensibility"
-    ]
+    reason: Literal["implementation_in_progress", "lack_of_awareness", "future_extensibility"]
     recommendation: str
 
 
@@ -131,9 +127,7 @@ class DeprecatedTypingDetail:
     """
 
     location: CodeLocation
-    imports: list[
-        dict[str, str]
-    ]  # [{"deprecated": "List", "recommended": "list"}, ...]
+    imports: list[dict[str, str]]  # [{"deprecated": "List", "recommended": "list"}, ...]
     suggestion: str
 
 
@@ -181,9 +175,7 @@ class CodeLocator:
 
         return details
 
-    def find_level1_types(
-        self, type_definitions: list[TypeDefinition]
-    ) -> list[Level1TypeDetail]:
+    def find_level1_types(self, type_definitions: list[TypeDefinition]) -> list[Level1TypeDetail]:
         """Level 1型の詳細情報を取得
 
         Args:
@@ -220,9 +212,7 @@ class CodeLocator:
             recommendation = self._generate_level1_recommendation(type_def, usage_count)
 
             # コード位置情報を取得
-            context_before, code, context_after = self._extract_context(
-                Path(type_def.file_path), type_def.line_number
-            )
+            context_before, code, context_after = self._extract_context(Path(type_def.file_path), type_def.line_number)
             location = CodeLocation(
                 file=Path(type_def.file_path),
                 line=type_def.line_number,
@@ -274,9 +264,7 @@ class CodeLocator:
 
         return count
 
-    def _find_type_usage_examples(
-        self, type_name: str, max_examples: int = 3
-    ) -> list[TypeUsageExample]:
+    def _find_type_usage_examples(self, type_name: str, max_examples: int = 3) -> list[TypeUsageExample]:
         """型の使用例を取得
 
         Args:
@@ -315,9 +303,7 @@ class CodeLocator:
 
         return examples[:max_examples]
 
-    def _generate_level1_recommendation(
-        self, type_def: TypeDefinition, usage_count: int
-    ) -> str:
+    def _generate_level1_recommendation(self, type_def: TypeDefinition, usage_count: int) -> str:
         """Level 1型に対する推奨事項を生成
 
         Args:
@@ -328,20 +314,13 @@ class CodeLocator:
             推奨事項
         """
         if usage_count > 10:
-            return (
-                "使用回数が多く、制約を追加してLevel 2へ昇格させることを"
-                "強く推奨します。"
-            )
+            return "使用回数が多く、制約を追加してLevel 2へ昇格させることを" "強く推奨します。"
         elif usage_count > 5:
             return "使用回数が比較的多く、Level 2への昇格を検討してください。"
         else:
-            return (
-                "使用回数が少ないため、必要に応じてLevel 2への昇格を検討してください。"
-            )
+            return "使用回数が少ないため、必要に応じてLevel 2への昇格を検討してください。"
 
-    def find_unused_types(
-        self, type_definitions: list[TypeDefinition]
-    ) -> list[UnusedTypeDetail]:
+    def find_unused_types(self, type_definitions: list[TypeDefinition]) -> list[UnusedTypeDetail]:
         """被参照0型の詳細情報を取得
 
         Args:
@@ -385,9 +364,7 @@ class CodeLocator:
             recommendation = self._generate_unused_recommendation(type_def, reason)
 
             # コード位置情報を取得
-            context_before, code, context_after = self._extract_context(
-                Path(type_def.file_path), type_def.line_number
-            )
+            context_before, code, context_after = self._extract_context(Path(type_def.file_path), type_def.line_number)
             location = CodeLocation(
                 file=Path(type_def.file_path),
                 line=type_def.line_number,
@@ -463,9 +440,7 @@ class CodeLocator:
 
         return count
 
-    def _determine_type_level(
-        self, type_def: TypeDefinition
-    ) -> Literal["Level 1", "Level 2", "Level 3"]:
+    def _determine_type_level(self, type_def: TypeDefinition) -> Literal["Level 1", "Level 2", "Level 3"]:
         """型レベルを判定
 
         Args:
@@ -484,9 +459,7 @@ class CodeLocator:
 
     def _determine_unused_reason(
         self, type_def: TypeDefinition
-    ) -> Literal[
-        "implementation_in_progress", "lack_of_awareness", "future_extensibility"
-    ]:
+    ) -> Literal["implementation_in_progress", "lack_of_awareness", "future_extensibility"]:
         """未使用の理由を判定
 
         Args:
@@ -498,16 +471,12 @@ class CodeLocator:
         # docstringの内容で判定
         if type_def.docstring and "未使用" in type_def.docstring:
             return "implementation_in_progress"
-        elif type_def.docstring and (
-            "将来" in type_def.docstring or "拡張" in type_def.docstring
-        ):
+        elif type_def.docstring and ("将来" in type_def.docstring or "拡張" in type_def.docstring):
             return "future_extensibility"
         else:
             return "lack_of_awareness"
 
-    def _generate_unused_recommendation(
-        self, type_def: TypeDefinition, reason: str
-    ) -> str:
+    def _generate_unused_recommendation(self, type_def: TypeDefinition, reason: str) -> str:
         """未使用型に対する推奨事項を生成
 
         Args:
@@ -518,20 +487,11 @@ class CodeLocator:
             推奨事項
         """
         if reason == "implementation_in_progress":
-            return (
-                "実装途中の可能性があります。"
-                "使用箇所を追加するか、設計意図を明確にしてください。"
-            )
+            return "実装途中の可能性があります。" "使用箇所を追加するか、設計意図を明確にしてください。"
         elif reason == "future_extensibility":
-            return (
-                "将来の拡張性を考慮した設計のようです。"
-                "docstringで意図を明確にしてください。"
-            )
+            return "将来の拡張性を考慮した設計のようです。" "docstringで意図を明確にしてください。"
         else:
-            return (
-                "認知不足の可能性があります。"
-                "既存のprimitive型使用箇所を置き換えることを検討してください。"
-            )
+            return "認知不足の可能性があります。" "既存のprimitive型使用箇所を置き換えることを検討してください。"
 
     def find_deprecated_typing(self) -> list[DeprecatedTypingDetail]:
         """非推奨typing使用箇所を検出
@@ -594,9 +554,7 @@ class CodeLocator:
         idx = line - 1
         context_before = [lines[i].rstrip() for i in range(max(0, idx - before), idx)]
         code = lines[idx].rstrip()
-        context_after = [
-            lines[i].rstrip() for i in range(idx + 1, min(len(lines), idx + 1 + after))
-        ]
+        context_after = [lines[i].rstrip() for i in range(idx + 1, min(len(lines), idx + 1 + after))]
         return context_before, code, context_after
 
 
@@ -699,20 +657,12 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _check_function_annotations(
-        self, node: ast.FunctionDef | ast.AsyncFunctionDef
-    ) -> None:
+    def _check_function_annotations(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """関数アノテーションをチェック"""
         # 引数のチェック
         for arg in node.args.args:
-            if (
-                arg.annotation
-                and isinstance(arg.annotation, ast.Name)
-                and arg.annotation.id in self.PRIMITIVE_TYPES
-            ):
-                context_before, code, context_after = self._extract_context(
-                    arg.lineno or node.lineno
-                )
+            if arg.annotation and isinstance(arg.annotation, ast.Name) and arg.annotation.id in self.PRIMITIVE_TYPES:
+                context_before, code, context_after = self._extract_context(arg.lineno or node.lineno)
                 location = CodeLocation(
                     file=self.file_path,
                     line=arg.lineno or node.lineno,
@@ -731,11 +681,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
                 self.details.append(detail)
 
         # 戻り値のチェック
-        if (
-            node.returns
-            and isinstance(node.returns, ast.Name)
-            and node.returns.id in self.PRIMITIVE_TYPES
-        ):
+        if node.returns and isinstance(node.returns, ast.Name) and node.returns.id in self.PRIMITIVE_TYPES:
             context_before, code, context_after = self._extract_context(node.lineno)
             location = CodeLocation(
                 file=self.file_path,
@@ -754,9 +700,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
             )
             self.details.append(detail)
 
-    def _check_method_annotations(
-        self, node: ast.FunctionDef | ast.AsyncFunctionDef
-    ) -> None:
+    def _check_method_annotations(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """メソッドアノテーションをチェック"""
         # __init__以外の場合のみチェック（__init__は初期化なので許容）
         if node.name != "__init__":
@@ -793,17 +737,11 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
         # パターン2: Annotated[primitive, ...] 形式
         if isinstance(annotation, ast.Subscript):
             # Annotated[...]の場合
-            if (
-                isinstance(annotation.value, ast.Name)
-                and annotation.value.id == "Annotated"
-            ):
+            if isinstance(annotation.value, ast.Name) and annotation.value.id == "Annotated":
                 # Annotatedの第1引数を取得
                 if isinstance(annotation.slice, ast.Tuple) and annotation.slice.elts:
                     first_arg = annotation.slice.elts[0]
-                    if (
-                        isinstance(first_arg, ast.Name)
-                        and first_arg.id in self.PRIMITIVE_TYPES
-                    ):
+                    if isinstance(first_arg, ast.Name) and first_arg.id in self.PRIMITIVE_TYPES:
                         return first_arg.id
 
             # NewType('X', primitive) または NewType('X', Annotated[...]) 形式
@@ -812,19 +750,14 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
         # パターン3: NewType(...) 形式（ast.Call）
         if isinstance(annotation, ast.Call):
             # NewType('X', base_type)の場合
-            if (
-                isinstance(annotation.func, ast.Name)
-                and annotation.func.id == "NewType"
-            ):
+            if isinstance(annotation.func, ast.Name) and annotation.func.id == "NewType":
                 # NewType定義はprimitive使用としてカウントしない（PEP 484準拠パターン）
                 # 例: UserId = NewType('UserId', str) → primitive使用ではない
                 return None
 
         return None
 
-    def _extract_context(
-        self, line: int, before: int = 2, after: int = 2
-    ) -> tuple[list[str], str, list[str]]:
+    def _extract_context(self, line: int, before: int = 2, after: int = 2) -> tuple[list[str], str, list[str]]:
         """コードの前後コンテキストを取得
 
         Args:
@@ -838,9 +771,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
         idx = line - 1
         context_before = [self.lines[i] for i in range(max(0, idx - before), idx)]
         code = self.lines[idx] if idx < len(self.lines) else ""
-        context_after = [
-            self.lines[i] for i in range(idx + 1, min(len(self.lines), idx + 1 + after))
-        ]
+        context_after = [self.lines[i] for i in range(idx + 1, min(len(self.lines), idx + 1 + after))]
         return context_before, code, context_after
 
 
@@ -925,9 +856,7 @@ class DeprecatedTypingVisitor(ast.NodeVisitor):
                 deprecated_imports = []
                 for dep, rec in self.imports.items():
                     if dep in code:
-                        deprecated_imports.append(
-                            {"deprecated": dep, "recommended": rec}
-                        )
+                        deprecated_imports.append({"deprecated": dep, "recommended": rec})
 
                 if deprecated_imports:
                     suggestion = self._generate_migration_suggestion(deprecated_imports)
@@ -967,9 +896,7 @@ class DeprecatedTypingVisitor(ast.NodeVisitor):
 
         return f"Python 3.13標準構文への移行を推奨します: {'; '.join(examples)}"
 
-    def _extract_context(
-        self, line: int, before: int = 2, after: int = 2
-    ) -> tuple[list[str], str, list[str]]:
+    def _extract_context(self, line: int, before: int = 2, after: int = 2) -> tuple[list[str], str, list[str]]:
         """コードの前後コンテキストを取得
 
         Args:
@@ -983,9 +910,7 @@ class DeprecatedTypingVisitor(ast.NodeVisitor):
         idx = line - 1
         context_before = [self.lines[i] for i in range(max(0, idx - before), idx)]
         code = self.lines[idx] if idx < len(self.lines) else ""
-        context_after = [
-            self.lines[i] for i in range(idx + 1, min(len(self.lines), idx + 1 + after))
-        ]
+        context_after = [self.lines[i] for i in range(idx + 1, min(len(self.lines), idx + 1 + after))]
         return context_before, code, context_after
 
 
@@ -1028,18 +953,14 @@ class TypeUsageVisitor(ast.NodeVisitor):
             # 使用種類を判定（簡易実装）
             usage_kind = self._determine_usage_kind(node)
 
-            usage = TypeUsageExample(
-                location=location, context=code.strip(), kind=usage_kind
-            )
+            usage = TypeUsageExample(location=location, context=code.strip(), kind=usage_kind)
             self.usages.append(usage)
 
         self.generic_visit(node)
 
     def _determine_usage_kind(
         self, node: ast.Name
-    ) -> Literal[
-        "function_argument", "return_type", "variable_annotation", "class_attribute"
-    ]:
+    ) -> Literal["function_argument", "return_type", "variable_annotation", "class_attribute"]:
         """使用種類を判定
 
         Args:
@@ -1060,9 +981,7 @@ class TypeUsageVisitor(ast.NodeVisitor):
 
         return "variable_annotation"
 
-    def _extract_context(
-        self, line: int, before: int = 2, after: int = 2
-    ) -> tuple[list[str], str, list[str]]:
+    def _extract_context(self, line: int, before: int = 2, after: int = 2) -> tuple[list[str], str, list[str]]:
         """コードの前後コンテキストを取得
 
         Args:
@@ -1076,7 +995,5 @@ class TypeUsageVisitor(ast.NodeVisitor):
         idx = line - 1
         context_before = [self.lines[i] for i in range(max(0, idx - before), idx)]
         code = self.lines[idx] if idx < len(self.lines) else ""
-        context_after = [
-            self.lines[i] for i in range(idx + 1, min(len(self.lines), idx + 1 + after))
-        ]
+        context_after = [self.lines[i] for i in range(idx + 1, min(len(self.lines), idx + 1 + after))]
         return context_before, code, context_after
