@@ -20,7 +20,7 @@ from .filesystem import FileSystemInterface, RealFileSystem
 class GeneratorConfig:
     """ドキュメントジェネレーターの基本設定。"""
 
-    output_path: Path = field(default_factory=lambda: Path("docs"))
+    output_path: Path = field(default=Path("docs"))
     include_patterns: list[GlobPattern] = field(default_factory=list)
     exclude_patterns: list[GlobPattern] = field(default_factory=list)
 
@@ -39,9 +39,9 @@ class CatalogConfig(GeneratorConfig):
 class TypeDocConfig(GeneratorConfig):
     """型ドキュメントジェネレーターの設定。"""
 
-    output_directory: Path = field(default_factory=lambda: Path("docs/types"))
-    index_filename: IndexFilename = field(default_factory=lambda: IndexFilename("README.md"))
-    layer_filename_template: LayerFilenameTemplate = field(default_factory=lambda: LayerFilenameTemplate("{layer}.md"))
+    output_directory: Path = field(default=Path("docs/types"))
+    index_filename: IndexFilename = field(default=IndexFilename("README.md"))
+    layer_filename_template: LayerFilenameTemplate = field(default=LayerFilenameTemplate("{layer}.md"))
     skip_types: set[TypeName] = field(default_factory=set)
     type_alias_descriptions: dict[TypeName, Description] = field(
         default_factory=lambda: {
