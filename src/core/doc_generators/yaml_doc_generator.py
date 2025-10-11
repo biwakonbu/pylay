@@ -49,7 +49,6 @@ class YamlDocGenerator(DocumentGenerator):
         # この時点で spec_obj は TypeSpec | TypeRoot として扱える
         spec: TypeSpec | TypeRoot = spec_obj  # type: ignore[assignment]
 
-        self.md.clear()  # 既存のコンテンツをクリア
         self.md = MarkdownBuilder()
 
         # TypeRoot の場合は TypeSpec に変換
