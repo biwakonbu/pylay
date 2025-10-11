@@ -36,9 +36,7 @@ class TypeIgnoreIssue(BaseModel):
 
     file_path: FilePath = Field(description="ファイルパス")
     line_number: LineNumber = Field(description="行番号")
-    ignore_type: str = Field(
-        description="type: ignore の種類（e.g., call-arg, arg-type）"
-    )
+    ignore_type: str = Field(description="type: ignore の種類（e.g., call-arg, arg-type）")
     cause: str = Field(description="原因の要約")
     detail: str = Field(description="詳細な説明")
     code_context: CodeContext = Field(description="コードコンテキスト")
@@ -58,9 +56,7 @@ class TypeIgnoreSummary(BaseModel):
     high_priority_count: int = Field(ge=0, description="HIGH優先度の数")
     medium_priority_count: int = Field(ge=0, description="MEDIUM優先度の数")
     low_priority_count: int = Field(ge=0, description="LOW優先度の数")
-    by_category: dict[str, int] = Field(
-        default_factory=dict, description="カテゴリ別の数"
-    )
+    by_category: dict[str, int] = Field(default_factory=dict, description="カテゴリ別の数")
 
 
 class TypeIgnoreAnalyzer:
@@ -97,31 +93,28 @@ class TypeIgnoreAnalyzer:
             return []
 
         # mypy/pyrightで型エラー情報を取得（事前読み込みデータがあれば優先使用）
-        type_errors = (
-            preloaded_errors
-            if preloaded_errors is not None
-            else self._get_type_errors(file_path)
-        )
+        type_errors = preloaded_errors if preloaded_errors is not None else self._get_type_errors(file_path)
 
         # 各type: ignoreについて原因を特定
         issues = []
         for line_num, ignore_type in type_ignore_lines:
-            issue = self._analyze_type_ignore(
-                file_path, line_num, ignore_type, type_errors
-            )
+            issue = self._analyze_type_ignore(file_path, line_num, ignore_type, type_errors)
             issues.append(issue)
 
         return issues
 
-    def analyze_project(self, project_path: str | Path) -> list[TypeIgnoreIssue]:
+    def analyze_project(
+        self, project_path: str | Path, exclude_patterns: list[str] | None = None
+    ) -> list[TypeIgnoreIssue]:
         """
         プロジェクト全体の type: ignore を分析
 
-        pyproject.toml の [tool.pylay] exclude_patterns 設定を使用して
-        不要なファイル（.venv, tests, __pycache__ 等）を除外します。
+        exclude_patterns が指定されない場合、pyproject.toml の [tool.pylay]
+        exclude_patterns 設定を使用します。
 
         Args:
             project_path: プロジェクトのルートパス
+            exclude_patterns: 除外パターンのリスト（省略時はpyproject.tomlから読み込み）
 
         Returns:
             検出された type: ignore 問題のリスト
@@ -129,27 +122,28 @@ class TypeIgnoreAnalyzer:
         project_path = Path(project_path)
         all_issues = []
 
-        # pyproject.tomlから除外パターンを読み込み
-        try:
-            config = PylayConfig.from_pyproject_toml(project_path)
-            exclude_patterns = config.exclude_patterns
-        except (FileNotFoundError, ValueError):
-            # pyproject.tomlが見つからない場合はデフォルトの除外パターンを使用
-            exclude_patterns = [
-                "**/tests/**",
-                "**/*_test.py",
-                "**/__pycache__/**",
-                "**/.venv/**",
-                "**/venv/**",  # 仮想環境の別名パターン
-                "**/.mypy_cache/**",  # mypyキャッシュディレクトリ
-                "**/node_modules/**",
-                "**/dist/**",
-                "**/build/**",
-                "**/.git/**",  # gitディレクトリ
-                "**/.tox/**",  # tox仮想環境
-                "**/env/**",  # 仮想環境の別名パターン
-                "**/ENV/**",  # 仮想環境の大文字パターン
-            ]
+        # exclude_patterns が指定されていない場合は pyproject.toml から読み込み
+        if exclude_patterns is None:
+            try:
+                config = PylayConfig.from_pyproject_toml(project_path)
+                exclude_patterns = config.exclude_patterns
+            except (FileNotFoundError, ValueError):
+                # pyproject.tomlが見つからない場合はデフォルトの除外パターンを使用
+                exclude_patterns = [
+                    "**/tests/**",
+                    "**/*_test.py",
+                    "**/__pycache__/**",
+                    "**/.venv/**",
+                    "**/venv/**",  # 仮想環境の別名パターン
+                    "**/.mypy_cache/**",  # mypyキャッシュディレクトリ
+                    "**/node_modules/**",
+                    "**/dist/**",
+                    "**/build/**",
+                    "**/.git/**",  # gitディレクトリ
+                    "**/.tox/**",  # tox仮想環境
+                    "**/env/**",  # 仮想環境の別名パターン
+                    "**/ENV/**",  # 仮想環境の大文字パターン
+                ]
 
         # Pythonファイルを再帰的に検索（除外パターンでフィルタリング）
         candidate_files: list[Path] = []
@@ -187,9 +181,7 @@ class TypeIgnoreAnalyzer:
 
         return all_issues
 
-    def _should_exclude(
-        self, file_path: Path, project_root: Path, patterns: list[str]
-    ) -> bool:
+    def _should_exclude(self, file_path: Path, project_root: Path, patterns: list[str]) -> bool:
         """
         ファイルが除外パターンに一致するかチェック
 
@@ -222,18 +214,12 @@ class TypeIgnoreAnalyzer:
                 if suffix.endswith("/**"):
                     # **/tests/** -> tests/ を含むパス
                     dir_name = suffix[:-3]
-                    if f"/{dir_name}/" in rel_path_str or rel_path_str.startswith(
-                        dir_name + "/"
-                    ):
+                    if f"/{dir_name}/" in rel_path_str or rel_path_str.startswith(dir_name + "/"):
                         return True
                 elif "/" not in suffix and "*" not in suffix:
                     # **/__pycache__ -> __pycache__ をパスの一部として含む
                     # (ワイルドカードなし)
-                    if (
-                        f"/{suffix}/" in rel_path_str
-                        or rel_path_str.startswith(suffix + "/")
-                        or rel_path_str == suffix
-                    ):
+                    if f"/{suffix}/" in rel_path_str or rel_path_str.startswith(suffix + "/") or rel_path_str == suffix:
                         return True
                 else:
                     # **/*_test.py -> _test.py で終わるファイル
@@ -502,9 +488,7 @@ class TypeIgnoreAnalyzer:
             line_number=create_line_number(line_num),
         )
 
-    def _extract_error_detail(
-        self, error: dict[str, str], code_context: CodeContext
-    ) -> str:
+    def _extract_error_detail(self, error: dict[str, str], code_context: CodeContext) -> str:
         """
         型エラーから詳細説明を抽出
 
@@ -532,9 +516,7 @@ class TypeIgnoreAnalyzer:
 
         return f"{message} [{error_type}]"
 
-    def _infer_cause_from_code(
-        self, code_context: CodeContext, ignore_type: str
-    ) -> str:
+    def _infer_cause_from_code(self, code_context: CodeContext, ignore_type: str) -> str:
         """
         コードから原因を推測
 

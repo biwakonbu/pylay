@@ -10,6 +10,7 @@ from src.core.schemas.yaml_spec import (
     DictTypeSpec,
     ListTypeSpec,
     RefPlaceholder,
+    TypeRoot,
     TypeSpec,
     UnionTypeSpec,
 )
@@ -25,36 +26,55 @@ class YamlDocGenerator(DocumentGenerator):
     TypeSpecオブジェクトを受け取り、Markdownフォーマットのドキュメントを生成します。
     """
 
-    def generate(
-        self, output_path: Path, spec: TypeSpec | object | None = None, **kwargs: object
-    ) -> None:
+    def generate(self, output_path: Path, **kwargs: object) -> None:
         """ドキュメントを生成し、ファイルに書き出します。
 
         Args:
             output_path: 出力先ファイルパス
-            spec: 型仕様オブジェクト
             **kwargs: 追加パラメータ
+                spec: 型仕様オブジェクト（TypeSpec | TypeRoot）
 
         Raises:
             ValueError: specが指定されていない、または無効な場合
         """
-        if spec is None:
-            spec = kwargs.get("spec")
-        if spec is None:
+        spec_obj = kwargs.get("spec")
+        if spec_obj is None:
             raise ValueError("spec parameter is required")
-        from src.core.schemas.yaml_spec import TypeRoot
 
-        if not isinstance(spec, TypeSpec | TypeRoot):
-            # DictTypeSpec などのサブクラスも許可
-            if hasattr(spec, "type") and hasattr(spec, "name"):
-                pass  # TypeSpec 互換のオブジェクト
+        # 型チェック: spec は TypeSpec または TypeRoot である必要がある
+        # 互換オブジェクト(type/name属性を持つdictなど)は明示的に拒否
+        if not isinstance(spec_obj, (TypeSpec, TypeRoot)):  # noqa: UP038
+            # 互換オブジェクトの可能性をチェックして詳細なエラーメッセージを提供
+            obj_type = type(spec_obj).__name__
+            has_type_attr = hasattr(spec_obj, "type")
+            has_name_attr = hasattr(spec_obj, "name")
+
+            if has_type_attr and has_name_attr:
+                raise TypeError(
+                    f"spec must be TypeSpec or TypeRoot instance, not {obj_type}. "
+                    f"TypeSpec-compatible objects (e.g., dicts with 'type'/'name' attributes) "
+                    f"are not supported. Please use TypeSpec.model_validate() to convert."
+                )
             else:
-                raise ValueError("spec must be a TypeSpec compatible instance")
-        self.md.clear()  # 既存のコンテンツをクリア
+                raise TypeError(f"spec must be TypeSpec or TypeRoot, got {obj_type}")
+
         self.md = MarkdownBuilder()
 
-        self._generate_header(spec)  # type: ignore[arg-type]
-        self._generate_body(spec)  # type: ignore[arg-type]
+        # TypeRoot の場合は TypeSpec に変換し、型を確定
+        spec: TypeSpec
+        if isinstance(spec_obj, TypeRoot):
+            # TypeRoot の場合は最初の型定義を使用
+            if spec_obj.types:
+                spec = next(iter(spec_obj.types.values()))
+            else:
+                raise TypeError("Empty TypeRoot")
+        else:
+            # この時点で spec_obj は TypeSpec として確定
+            spec = spec_obj
+
+        # この時点で spec は TypeSpec として確定している
+        self._generate_header(spec)
+        self._generate_body(spec)
         self._generate_footer()
 
         content = self.md.build()
@@ -70,9 +90,7 @@ class YamlDocGenerator(DocumentGenerator):
         if spec.description:
             self.md.paragraph(spec.description)
 
-    def _generate_body(
-        self, spec: TypeSpec | RefPlaceholder | str, depth: int = 0
-    ) -> None:
+    def _generate_body(self, spec: TypeSpec | RefPlaceholder | str, depth: int = 0) -> None:
         """再帰的に型情報を生成（深さ制限付き）"""
         if depth > 10:  # 深さ制限
             self.md.paragraph("... (深さ制限を超えました)")
@@ -151,4 +169,4 @@ def generate_yaml_docs(spec: TypeSpec, output_dir: str | None = None) -> None:
         layer = spec.type
 
     output_path = Path(output_dir) / f"{layer}.md"
-    generator.generate(output_path, spec)
+    generator.generate(output_path, spec=spec)

@@ -101,9 +101,7 @@ class AnalyzerState(BaseModel):
         processing_stack: 処理中ノード（循環参照防止）
     """
 
-    model_config = ConfigDict(
-        frozen=False, extra="forbid", arbitrary_types_allowed=True
-    )
+    model_config = ConfigDict(frozen=False, extra="forbid", arbitrary_types_allowed=True)
 
     nodes: dict[str, GraphNode] = Field(default_factory=dict)
     edges: dict[str, GraphEdge] = Field(default_factory=dict)
@@ -178,11 +176,9 @@ class InferenceConfig(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     infer_level: Literal["loose", "normal", "strict"] = "normal"
-    max_depth: MaxDepth = Field(default=10)  # type: ignore[assignment]
+    max_depth: MaxDepth = Field(default=MaxDepth(10))
     enable_mypy: EnableMypyFlag = True
-    mypy_flags: list[MypyFlag] = Field(
-        default_factory=lambda: ["--infer", "--dump-type-stats"]
-    )
+    mypy_flags: list[MypyFlag] = Field(default_factory=lambda: ["--infer", "--dump-type-stats"])
     timeout: Timeout = Field(default=60, ge=1, le=600)
 
     def is_strict_mode(self) -> bool:
@@ -267,13 +263,9 @@ class TempFileConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    code: Code = Field(
-        ..., description="一時ファイルに書き込むコード内容", min_length=1
-    )
+    code: Code = Field(..., description="一時ファイルに書き込むコード内容", min_length=1)
     suffix: FileSuffix = Field(default=".py", description="ファイルの拡張子")
-    mode: FileOpenMode = Field(
-        default="w", description="ファイルオープンモード", pattern="^[wab]\\+?$"
-    )
+    mode: FileOpenMode = Field(default="w", description="ファイルオープンモード", pattern="^[wab]\\+?$")
 
 
 class AnalyzerConfig(BaseModel):
@@ -296,9 +288,7 @@ class TypeAnalyzerService(BaseModel):
     このクラスは、型解析処理のビジネスロジックを実装します。
     """
 
-    def analyze_file(
-        self, file_path: str | Path, config: AnalysisConfig | None = None
-    ) -> FileAnalysisResult:
+    def analyze_file(self, file_path: str | Path, config: AnalysisConfig | None = None) -> FileAnalysisResult:
         """
         単一ファイルを解析します。
 
@@ -320,9 +310,7 @@ class TypeAnalyzerService(BaseModel):
             # ファイルサイズチェック
             file_size = file_path_obj.stat().st_size
             if file_size > config.max_file_size:
-                raise ValueError(
-                    f"ファイルサイズが制限を超えています: {file_size} bytes"
-                )
+                raise ValueError(f"ファイルサイズが制限を超えています: {file_size} bytes")
 
             # ファイル内容の読み込みと解析
             with open(file_path_obj, encoding="utf-8") as f:
@@ -331,9 +319,7 @@ class TypeAnalyzerService(BaseModel):
             tree = ast.parse(source_code)
 
             # 型定義の抽出
-            type_definitions = self._extract_type_definitions_from_ast(
-                tree, file_path_obj
-            )
+            type_definitions = self._extract_type_definitions_from_ast(tree, file_path_obj)
 
             # 解析結果の構築
             analysis_time = (time.time() - start_time) * 1000
@@ -359,9 +345,7 @@ class TypeAnalyzerService(BaseModel):
                 error_messages=[str(e)],
             )
 
-    def _extract_type_definitions_from_ast(
-        self, tree: ast.AST, file_path: Path
-    ) -> list[TypeDefinition]:
+    def _extract_type_definitions_from_ast(self, tree: ast.AST, file_path: Path) -> list[TypeDefinition]:
         """ASTから型定義を抽出する内部メソッド"""
         type_definitions = []
 
@@ -375,9 +359,7 @@ class TypeAnalyzerService(BaseModel):
 
         return type_definitions
 
-    def _create_type_definition_from_node(
-        self, node: ast.AST, file_path: Path
-    ) -> TypeDefinition | None:
+    def _create_type_definition_from_node(self, node: ast.AST, file_path: Path) -> TypeDefinition | None:
         """ASTノードから型定義を作成する内部メソッド"""
         try:
             # 型情報の取得
@@ -425,9 +407,7 @@ class TypeAnalyzerService(BaseModel):
 
     def _get_class_definition(self, node: ast.ClassDef) -> str:
         """クラス定義の文字列を取得する内部メソッド"""
-        bases = [
-            base.id if isinstance(base, ast.Name) else str(base) for base in node.bases
-        ]
+        bases = [base.id if isinstance(base, ast.Name) else str(base) for base in node.bases]
         base_str = f"({', '.join(bases)})" if bases else ""
         return f"class {node.name}{base_str}:"
 
@@ -544,9 +524,7 @@ class DocstringAnalyzerService(BaseModel):
 
         return min(base_score, 1.0)
 
-    def generate_documentation_statistics(
-        self, type_definitions: list[TypeDefinition]
-    ) -> DocumentationStatistics:
+    def generate_documentation_statistics(self, type_definitions: list[TypeDefinition]) -> DocumentationStatistics:
         """
         ドキュメント統計情報を生成します。
 
@@ -578,12 +556,8 @@ class DocstringAnalyzerService(BaseModel):
         implementation_rate = documented_types / total_types
 
         # docstringの詳細度分類
-        minimal_docstrings = sum(
-            1 for td in type_definitions if td.docstring_lines <= 2 and td.has_docstring
-        )
-        detailed_docstrings = sum(
-            1 for td in type_definitions if td.docstring_lines > 2 and td.has_docstring
-        )
+        minimal_docstrings = sum(1 for td in type_definitions if td.docstring_lines <= 2 and td.has_docstring)
+        detailed_docstrings = sum(1 for td in type_definitions if td.docstring_lines > 2 and td.has_docstring)
 
         # レベル別統計の計算
         by_level: dict[TypeLevel, dict[str, int]] = {}
@@ -611,19 +585,13 @@ class DocstringAnalyzerService(BaseModel):
         by_level_avg_lines: dict[TypeLevel, float] = {}
         for level in by_level:
             stats = by_level[level]
-            avg_lines = (
-                stats["lines"] / stats["documented"] if stats["documented"] > 0 else 0.0
-            )
+            avg_lines = stats["lines"] / stats["documented"] if stats["documented"] > 0 else 0.0
             by_level_avg_lines[level] = avg_lines
             # by_levelからはavg_linesを削除し、カウント値のみ保持
             del stats["lines"]  # 中間値を削除
 
-        avg_docstring_lines = (
-            total_docstring_lines / documented_types if documented_types > 0 else 0.0
-        )
-        detail_rate = (
-            detailed_docstrings / documented_types if documented_types > 0 else 0.0
-        )
+        avg_docstring_lines = total_docstring_lines / documented_types if documented_types > 0 else 0.0
+        detail_rate = detailed_docstrings / documented_types if documented_types > 0 else 0.0
         quality_score = implementation_rate * detail_rate
 
         return DocumentationStatistics(
@@ -677,9 +645,7 @@ class TypeClassifierService(BaseModel):
         # 実際の実装ではより詳細な判定ロジックが必要
         return type_def.level
 
-    def suggest_type_improvements(
-        self, type_def: TypeDefinition
-    ) -> list[TypeUpgradeSuggestion]:
+    def suggest_type_improvements(self, type_def: TypeDefinition) -> list[TypeUpgradeSuggestion]:
         """
         型の改善提案を生成します。
 
@@ -727,9 +693,7 @@ class StatisticsCalculatorService(BaseModel):
     このクラスは、統計計算処理のビジネスロジックを実装します。
     """
 
-    def calculate_level_statistics(
-        self, type_definitions: list[TypeDefinition]
-    ) -> dict[TypeLevel, TypeLevelInfo]:
+    def calculate_level_statistics(self, type_definitions: list[TypeDefinition]) -> dict[TypeLevel, TypeLevelInfo]:
         """
         レベル別の統計情報を計算します。
 
@@ -757,8 +721,7 @@ class StatisticsCalculatorService(BaseModel):
                 level_stats[level]["documented_count"] += 1
                 # 平均行数の計算（簡易版）
                 level_stats[level]["avg_docstring_lines"] = (
-                    level_stats[level]["avg_docstring_lines"]
-                    * (level_stats[level]["documented_count"] - 1)
+                    level_stats[level]["avg_docstring_lines"] * (level_stats[level]["documented_count"] - 1)
                     + td.docstring_lines
                 ) / level_stats[level]["documented_count"]
 
@@ -789,9 +752,7 @@ class StatisticsCalculatorService(BaseModel):
 
         return result
 
-    def calculate_quality_metrics(
-        self, analysis_result: ProjectAnalysisResult
-    ) -> QualityMetrics:
+    def calculate_quality_metrics(self, analysis_result: ProjectAnalysisResult) -> QualityMetrics:
         """
         品質指標を計算します。
 
@@ -875,9 +836,7 @@ class StatisticsCalculatorService(BaseModel):
 
         for level, level_info in analysis_result.level_stats.items():
             doc_rate = level_info.documented_count / level_info.count
-            lines.append(
-                f"- {level}: {level_info.count}個（ドキュメント率: {doc_rate:.1%}）"
-            )
+            lines.append(f"- {level}: {level_info.count}個（ドキュメント率: {doc_rate:.1%}）")
 
         return "\n".join(lines)
 
@@ -945,20 +904,12 @@ class ProjectAnalyzerService(BaseModel):
     """
 
     type_analyzer: TypeAnalyzerService = Field(default_factory=TypeAnalyzerService)
-    docstring_analyzer: DocstringAnalyzerService = Field(
-        default_factory=DocstringAnalyzerService
-    )
-    type_classifier: TypeClassifierService = Field(
-        default_factory=TypeClassifierService
-    )
-    statistics_calculator: StatisticsCalculatorService = Field(
-        default_factory=StatisticsCalculatorService
-    )
+    docstring_analyzer: DocstringAnalyzerService = Field(default_factory=DocstringAnalyzerService)
+    type_classifier: TypeClassifierService = Field(default_factory=TypeClassifierService)
+    statistics_calculator: StatisticsCalculatorService = Field(default_factory=StatisticsCalculatorService)
     reporter: TypeReporterService = Field(default_factory=TypeReporterService)
 
-    def analyze_project(
-        self, project_path: str | Path, config: AnalysisConfig | None = None
-    ) -> ProjectAnalysisResult:
+    def analyze_project(self, project_path: str | Path, config: AnalysisConfig | None = None) -> ProjectAnalysisResult:
         """
         プロジェクト全体を解析します。
 
@@ -996,12 +947,8 @@ class ProjectAnalyzerService(BaseModel):
                 failed_files += 1
 
         # 統計情報の計算
-        documentation_stats = self.docstring_analyzer.generate_documentation_statistics(
-            all_type_definitions
-        )
-        level_stats = self.statistics_calculator.calculate_level_statistics(
-            all_type_definitions
-        )
+        documentation_stats = self.docstring_analyzer.generate_documentation_statistics(all_type_definitions)
+        level_stats = self.statistics_calculator.calculate_level_statistics(all_type_definitions)
 
         total_time = (time.time() - start_time) * 1000
 
@@ -1017,18 +964,14 @@ class ProjectAnalyzerService(BaseModel):
             analysis_timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
 
-    def _collect_python_files(
-        self, project_path: Path, config: AnalysisConfig
-    ) -> list[Path]:
+    def _collect_python_files(self, project_path: Path, config: AnalysisConfig) -> list[Path]:
         """プロジェクト内のPythonファイルを収集する内部メソッド"""
         python_files = []
 
         for pattern in config.include_patterns:
             for file_path in project_path.rglob(pattern):
                 # 除外パターンチェック
-                if any(
-                    exclude in str(file_path) for exclude in config.exclude_patterns
-                ):
+                if any(exclude in str(file_path) for exclude in config.exclude_patterns):
                     continue
 
                 # ファイルサイズチェック

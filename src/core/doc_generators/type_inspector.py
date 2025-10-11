@@ -87,11 +87,7 @@ class TypeInspector:
         Returns:
             Pydantic BaseModelの場合はTrue、それ以外の場合はFalse
         """
-        return (
-            hasattr(type_cls, "model_json_schema")
-            and isinstance(type_cls, type)
-            and issubclass(type_cls, BaseModel)
-        )
+        return hasattr(type_cls, "model_json_schema") and isinstance(type_cls, type) and issubclass(type_cls, BaseModel)
 
     def get_pydantic_schema(self, type_cls: type[Any]) -> dict[str, Any] | None:
         """Pydantic JSONスキーマを取得する。
@@ -106,7 +102,7 @@ class TypeInspector:
             return None
 
         try:
-            return type_cls.model_json_schema()  # type: ignore[no-any-return]
+            return type_cls.model_json_schema()
         except Exception:
             # Handle any schema generation errors
             return None
@@ -135,9 +131,7 @@ class TypeInspector:
         if self.is_pydantic_model(type_cls):
             schema = self.get_pydantic_schema(type_cls)
             if schema:
-                return (
-                    f"```json\n{json.dumps(schema, indent=2, ensure_ascii=False)}\n```"
-                )
+                return f"```json\n{json.dumps(schema, indent=2, ensure_ascii=False)}\n```"
 
         origin, _args = self.get_type_origin(type_cls)
         if origin is not None:
