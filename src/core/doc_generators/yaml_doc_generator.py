@@ -67,7 +67,7 @@ class YamlDocGenerator(DocumentGenerator):
             if spec_obj.types:
                 spec = next(iter(spec_obj.types.values()))
             else:
-                raise TypeError("TypeRoot has no types")
+                raise TypeError("Empty TypeRoot")
         else:
             # この時点で spec_obj は TypeSpec として確定
             spec = spec_obj
