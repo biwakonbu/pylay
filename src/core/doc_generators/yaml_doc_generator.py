@@ -42,8 +42,8 @@ class YamlDocGenerator(DocumentGenerator):
             raise ValueError("spec parameter is required")
 
         # 型チェック: spec は TypeSpec または TypeRoot である必要がある
-        # NOTE: タプル形式を使用（Ruff UP038の推奨は無視）
-        # 互換オブジェクト（type/name属性を持つdictなど）は明示的に拒否
+        # NOTE: タプル形式を使用(Ruff UP038の推奨は無視)
+        # 互換オブジェクト(type/name属性を持つdictなど)は明示的に拒否
         if not isinstance(spec_obj, (TypeSpec, TypeRoot)):  # noqa: UP038
             # 互換オブジェクトの可能性をチェックして詳細なエラーメッセージを提供
             obj_type = type(spec_obj).__name__
