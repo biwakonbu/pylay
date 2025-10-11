@@ -66,7 +66,7 @@ class QualityChecker:
         issues.extend(self._check_documentation_issues(report.statistics))
 
         # primitive型使用の問題をチェック
-        issues.extend(self._check_primitive_usage_issues(report))
+        issues.extend(self._check_primitive_usage_issues())
 
         # 非推奨typing使用の問題をチェック
         issues.extend(self._check_deprecated_typing_issues(report))
@@ -190,7 +190,7 @@ class QualityChecker:
 
         return issues
 
-    def _check_primitive_usage_issues(self, report: TypeAnalysisReport) -> list[QualityIssue]:
+    def _check_primitive_usage_issues(self) -> list[QualityIssue]:
         """primitive型使用の問題をチェック（位置情報付き）"""
         from src.core.analyzer.improvement_templates import _is_excluded_variable_name
 
