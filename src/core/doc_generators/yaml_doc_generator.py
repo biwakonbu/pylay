@@ -52,8 +52,13 @@ class YamlDocGenerator(DocumentGenerator):
         self.md.clear()  # 既存のコンテンツをクリア
         self.md = MarkdownBuilder()
 
-        # isinstance チェック後なので TypeSpec として安全に渡せる
-        assert isinstance(spec, TypeSpec), "spec must be TypeSpec after validation"
+        # TypeRoot の場合は TypeSpec に変換、それ以外は互換オブジェクトとして扱う
+        if isinstance(spec, TypeRoot):
+            # TypeRoot の場合は最初の型定義を使用
+            if spec.types:
+                spec = next(iter(spec.types.values()))
+            else:
+                raise ValueError("TypeRoot has no types to generate documentation from")
         self._generate_header(spec)
         self._generate_body(spec)
         self._generate_footer()
