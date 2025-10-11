@@ -84,8 +84,21 @@ def check(
         # 詳細情報を表示
         uv run pylay check -v
     """
-    target_path = Path(target) if target else Path.cwd()
     config = _load_config()
+
+    # 引数が指定されていない場合はconfig.target_dirsを使用
+    if target:
+        target_path = Path(target)
+    else:
+        # config.target_dirsが複数ある場合は、最初のディレクトリを使用
+        # （複数ディレクトリの場合は、各ディレクトリで個別にチェックを実行する必要がある）
+        if config.target_dirs:
+            target_path = Path(config.target_dirs[0])
+        else:
+            target_path = Path.cwd()
+
+    # 除外パターンをconfigから取得
+    exclude_patterns = config.exclude_patterns if config.exclude_patterns else None
 
     if focus is None:
         # 全てのチェックを実行
@@ -96,7 +109,7 @@ def check(
         # 1. 型定義レベル統計
         console.print("[bold blue]1/3: 型定義レベル統計[/bold blue]")
         console.print()
-        _run_type_analysis(target_path, verbose)
+        _run_type_analysis(target_path, verbose, exclude_patterns)
 
         console.print()
         console.rule()
@@ -114,28 +127,29 @@ def check(
         # 3. 品質チェック
         console.print("[bold green]3/3: 品質チェック[/bold green]")
         console.print()
-        _run_quality_check(target_path, config, verbose)
+        _run_quality_check(target_path, config, verbose, exclude_patterns)
 
         console.print()
         console.rule("[bold cyan]✅ チェック完了[/bold cyan]")
         console.print()
 
     elif focus == "types":
-        _run_type_analysis(target_path, verbose)
+        _run_type_analysis(target_path, verbose, exclude_patterns)
 
     elif focus == "ignore":
         _run_type_ignore_analysis(target_path, verbose)
 
     elif focus == "quality":
-        _run_quality_check(target_path, config, verbose)
+        _run_quality_check(target_path, config, verbose, exclude_patterns)
 
 
-def _run_type_analysis(target_path: Path, verbose: bool) -> None:
+def _run_type_analysis(target_path: Path, verbose: bool, exclude_patterns: list[str] | None = None) -> None:
     """型定義レベル統計を実行
 
     Args:
         target_path: 解析対象のパス
         verbose: 詳細情報を表示するかどうか
+        exclude_patterns: 除外するパターン（glob形式）
 
     Returns:
         None
@@ -149,7 +163,9 @@ def _run_type_analysis(target_path: Path, verbose: bool) -> None:
     if target_path.is_file():
         report = analyzer.analyze_file(target_path)
     else:
-        report = analyzer.analyze_directory(target_path, include_upgrade_recommendations=verbose)
+        report = analyzer.analyze_directory(
+            target_path, include_upgrade_recommendations=verbose, exclude_patterns=exclude_patterns
+        )
 
     # 対象ディレクトリを決定（詳細表示用）
     target_dirs: list[str]
@@ -199,13 +215,16 @@ def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
     reporter.generate_console_report(issues, summary, show_solutions=verbose)
 
 
-def _run_quality_check(target_path: Path, config: PylayConfig, verbose: bool) -> None:
+def _run_quality_check(
+    target_path: Path, config: PylayConfig, verbose: bool, exclude_patterns: list[str] | None = None
+) -> None:
     """品質チェックを実行
 
     Args:
         target_path: 解析対象のパス
         config: プロジェクト設定
         verbose: 詳細情報を表示するかどうか
+        exclude_patterns: 除外するパターン（glob形式）
 
     Returns:
         None
@@ -223,7 +242,7 @@ def _run_quality_check(target_path: Path, config: PylayConfig, verbose: bool) ->
         report = analyzer.analyze_file(target_path)
         target_dirs = [str(target_path.parent)]
     else:
-        report = analyzer.analyze_directory(target_path)
+        report = analyzer.analyze_directory(target_path, exclude_patterns=exclude_patterns)
         target_dirs = [str(target_path)]
 
     # 品質チェッカーを初期化

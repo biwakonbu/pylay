@@ -46,19 +46,46 @@ class TypeLevelAnalyzer:
         }
 
     def analyze_directory(
-        self, directory: Path, include_upgrade_recommendations: bool = True
+        self,
+        directory: Path,
+        include_upgrade_recommendations: bool = True,
+        exclude_patterns: list[str] | None = None,
     ) -> TypeAnalysisReport:
         """ディレクトリ内の型定義を分析
 
         Args:
             directory: 解析対象のディレクトリ
             include_upgrade_recommendations: 型レベルアップ推奨を含めるか
+            exclude_patterns: 除外するパターン（glob形式）
 
         Returns:
             TypeAnalysisReport
         """
+        import fnmatch
+
         # すべての.pyファイルを収集
-        py_files = list(directory.rglob("*.py"))
+        all_py_files = list(directory.rglob("*.py"))
+
+        # 除外パターンを適用
+        py_files = []
+        for py_file in all_py_files:
+            # ファイルパスを文字列に変換（ディレクトリからの相対パス）
+            try:
+                relative_path = str(py_file.relative_to(directory))
+            except ValueError:
+                # directoryの外のファイルの場合は絶対パスを使用
+                relative_path = str(py_file)
+
+            # 除外パターンにマッチするかチェック
+            should_exclude = False
+            if exclude_patterns:
+                for pattern in exclude_patterns:
+                    if fnmatch.fnmatch(relative_path, pattern) or fnmatch.fnmatch(str(py_file), pattern):
+                        should_exclude = True
+                        break
+
+            if not should_exclude:
+                py_files.append(py_file)
 
         # 型定義を収集
         all_type_definitions: list[TypeDefinition] = []
@@ -67,9 +94,7 @@ class TypeLevelAnalyzer:
             all_type_definitions.extend(type_defs)
 
         # 重複を除去（同じファイル・型名・行番号の組み合わせで重複判定）
-        unique_type_definitions = self._deduplicate_type_definitions(
-            all_type_definitions
-        )
+        unique_type_definitions = self._deduplicate_type_definitions(all_type_definitions)
 
         # 統計情報を計算
         statistics = self.statistics_calculator.calculate(unique_type_definitions)
@@ -77,22 +102,16 @@ class TypeLevelAnalyzer:
         # ドキュメント推奨を生成
         # 注: unique_type_definitionsを使用して、同一型の重複推奨を防ぐ
         # ユーザーに表示する推奨事項は重複除去後のデータを使用する
-        docstring_recommendations = self._generate_docstring_recommendations(
-            unique_type_definitions
-        )
+        docstring_recommendations = self._generate_docstring_recommendations(unique_type_definitions)
 
         # 型レベルアップ推奨を生成
         # 注: all_type_definitionsを使用して、型の使用回数を正確にカウント
         # 使用回数のカウントには全ての定義が必要（重複を含む）
         upgrade_recommendations: list[UpgradeRecommendation] = []
         if include_upgrade_recommendations:
-            upgrade_recommendations = self._generate_upgrade_recommendations(
-                all_type_definitions
-            )
+            upgrade_recommendations = self._generate_upgrade_recommendations(all_type_definitions)
             # 重複除去
-            upgrade_recommendations = self._deduplicate_upgrade_recommendations(
-                upgrade_recommendations
-            )
+            upgrade_recommendations = self._deduplicate_upgrade_recommendations(upgrade_recommendations)
 
         # 一般的な推奨事項を生成
         recommendations = self._generate_general_recommendations(statistics)
@@ -126,14 +145,10 @@ class TypeLevelAnalyzer:
         statistics = self.statistics_calculator.calculate(type_definitions)
 
         # ドキュメント推奨を生成
-        docstring_recommendations = self._generate_docstring_recommendations(
-            type_definitions
-        )
+        docstring_recommendations = self._generate_docstring_recommendations(type_definitions)
 
         # 型レベルアップ推奨を生成
-        upgrade_recommendations = self._generate_upgrade_recommendations(
-            type_definitions
-        )
+        upgrade_recommendations = self._generate_upgrade_recommendations(type_definitions)
 
         # 一般的な推奨事項を生成
         recommendations = self._generate_general_recommendations(statistics)
@@ -169,9 +184,7 @@ class TypeLevelAnalyzer:
             detail = self.docstring_analyzer.analyze_docstring(type_def.docstring)
 
             # 推奨事項を生成
-            rec = self.docstring_analyzer.recommend_docstring_improvements(
-                type_def, detail
-            )
+            rec = self.docstring_analyzer.recommend_docstring_improvements(type_def, detail)
 
             # "none"以外の推奨事項を追加
             if rec.recommended_action != "none":
@@ -183,9 +196,7 @@ class TypeLevelAnalyzer:
 
         return recommendations
 
-    def _generate_upgrade_recommendations(
-        self, type_definitions: list[TypeDefinition]
-    ) -> list[UpgradeRecommendation]:
+    def _generate_upgrade_recommendations(self, type_definitions: list[TypeDefinition]) -> list[UpgradeRecommendation]:
         """型レベルアップ推奨を生成
 
         Args:
@@ -209,15 +220,11 @@ class TypeLevelAnalyzer:
 
         # 優先度と確信度順にソート
         priority_order = {"high": 0, "medium": 1, "low": 2}
-        recommendations.sort(
-            key=lambda r: (priority_order.get(r.priority, 3), -r.confidence)
-        )
+        recommendations.sort(key=lambda r: (priority_order.get(r.priority, 3), -r.confidence))
 
         return recommendations
 
-    def _generate_general_recommendations(
-        self, statistics: "TypeStatistics"
-    ) -> list[str]:
+    def _generate_general_recommendations(self, statistics: "TypeStatistics") -> list[str]:
         """一般的な推奨事項を生成
 
         Args:
@@ -286,17 +293,12 @@ class TypeLevelAnalyzer:
             乖離の辞書（正の値 = 閾値を超えている、負の値 = 閾値を下回っている）
         """
         return {
-            "level1_max": statistics.level1_ratio
-            - self.threshold_ratios["level1_max"],  # 正 = 上限超過（警告）
-            "level2_min": statistics.level2_ratio
-            - self.threshold_ratios["level2_min"],  # 負 = 下限未満（警告）
-            "level3_min": statistics.level3_ratio
-            - self.threshold_ratios["level3_min"],  # 負 = 下限未満（警告）
+            "level1_max": statistics.level1_ratio - self.threshold_ratios["level1_max"],  # 正 = 上限超過（警告）
+            "level2_min": statistics.level2_ratio - self.threshold_ratios["level2_min"],  # 負 = 下限未満（警告）
+            "level3_min": statistics.level3_ratio - self.threshold_ratios["level3_min"],  # 負 = 下限未満（警告）
         }
 
-    def _count_type_usage(
-        self, type_definitions: list[TypeDefinition]
-    ) -> dict[str, int]:
+    def _count_type_usage(self, type_definitions: list[TypeDefinition]) -> dict[str, int]:
         """型の使用回数をカウント
 
         AST解析を使用して、実際の型参照箇所をカウントします。
@@ -350,9 +352,7 @@ class TypeLevelAnalyzer:
 
         return usage_counts
 
-    def _deduplicate_type_definitions(
-        self, type_definitions: list[TypeDefinition]
-    ) -> list[TypeDefinition]:
+    def _deduplicate_type_definitions(self, type_definitions: list[TypeDefinition]) -> list[TypeDefinition]:
         """型定義の重複を除去
 
         ファイルパス、型名、行番号の組み合わせで重複判定を行います。
