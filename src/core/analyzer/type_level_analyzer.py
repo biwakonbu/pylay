@@ -69,18 +69,20 @@ class TypeLevelAnalyzer:
         # 除外パターンを適用
         py_files = []
         for py_file in all_py_files:
-            # ファイルパスを文字列に変換（ディレクトリからの相対パス）
+            # ファイルパスをPOSIX形式に変換（Windows環境対応）
             try:
-                relative_path = str(py_file.relative_to(directory))
+                relative_path = py_file.relative_to(directory).as_posix()
             except ValueError:
                 # directoryの外のファイルの場合は絶対パスを使用
-                relative_path = str(py_file)
+                relative_path = py_file.as_posix()
+
+            absolute_path = py_file.as_posix()
 
             # 除外パターンにマッチするかチェック
             should_exclude = False
             if exclude_patterns:
                 for pattern in exclude_patterns:
-                    if fnmatch.fnmatch(relative_path, pattern) or fnmatch.fnmatch(str(py_file), pattern):
+                    if fnmatch.fnmatch(relative_path, pattern) or fnmatch.fnmatch(absolute_path, pattern):
                         should_exclude = True
                         break
 
