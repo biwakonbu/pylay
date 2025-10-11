@@ -59,8 +59,6 @@ class YamlDocGenerator(DocumentGenerator):
                 spec = next(iter(spec.types.values()))
             else:
                 raise TypeError("TypeRoot has no types")
-        elif not isinstance(spec, TypeSpec):
-            raise TypeError("spec must be TypeSpec")
 
         # この時点で spec は TypeSpec として扱える
 
