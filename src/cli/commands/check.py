@@ -97,8 +97,8 @@ def check(
         else:
             target_paths = [Path.cwd()]
 
-    # 除外パターンをconfigから取得
-    exclude_patterns = config.exclude_patterns if config.exclude_patterns else None
+    # 除外パターンをconfigから取得（空リストの場合は None に変換）
+    exclude_patterns = config.exclude_patterns or None
 
     # 複数のターゲットディレクトリがある場合は通知
     if len(target_paths) > 1:
@@ -129,7 +129,7 @@ def check(
             # 2. type-ignore 診断
             console.print("[bold yellow]2/3: type-ignore 診断[/bold yellow]")
             console.print()
-            _run_type_ignore_analysis(target_path, verbose)
+            _run_type_ignore_analysis(target_path, verbose, exclude_patterns)
 
             console.print()
             console.rule()
@@ -148,7 +148,7 @@ def check(
             _run_type_analysis(target_path, verbose, exclude_patterns)
 
         elif focus == "ignore":
-            _run_type_ignore_analysis(target_path, verbose)
+            _run_type_ignore_analysis(target_path, verbose, exclude_patterns)
 
         elif focus == "quality":
             _run_quality_check(target_path, config, verbose, exclude_patterns)
@@ -198,12 +198,13 @@ def _run_type_analysis(target_path: Path, verbose: bool, exclude_patterns: list[
         console.print(reporter.generate_docstring_recommendations_report(report.docstring_recommendations))
 
 
-def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
+def _run_type_ignore_analysis(target_path: Path, verbose: bool, exclude_patterns: list[str] | None = None) -> None:
     """type-ignore 診断を実行
 
     Args:
         target_path: 解析対象のパス
         verbose: 詳細情報（解決策）を表示するかどうか
+        exclude_patterns: 除外パターンのリスト（省略時はpyproject.tomlから読み込み）
 
     Returns:
         None
@@ -217,7 +218,7 @@ def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
     if target_path.is_file():
         issues = analyzer.analyze_file(str(target_path))
     else:
-        issues = analyzer.analyze_project(target_path)
+        issues = analyzer.analyze_project(target_path, exclude_patterns)
 
     # サマリー情報を生成
     summary = analyzer.generate_summary(issues)
