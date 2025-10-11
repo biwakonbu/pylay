@@ -35,14 +35,29 @@ class TocEntry(TypedDict):
 
 
 # Level 1: 単純な型エイリアス(制約なし)
+# NOTE: OutputPathは ValidatedOutputPath でバリデーション済み版を提供
 type OutputPath = str | Path | None
-type TemplateName = str
-type TypeName = str
+
+# @keep-as-is: true
+# 理由: コンテンツ文字列は空文字列や任意の長さを許容する必要があるため、制約なしが適切
 type ContentString = str
+
+# @keep-as-is: true
+# 理由: コードブロックは空文字列や任意の長さを許容する必要があるため、制約なしが適切
 type CodeBlock = str
+
+# @keep-as-is: true
+# 理由: Markdownセクションは空文字列や任意の長さを許容する必要があるため、制約なしが適切
 type MarkdownSection = str
 
-# Level 2: NewType + Annotated(制約付き、型レベル区別)
+# Level 2: Annotated + Field(制約付き)
+# テンプレート名(空文字列禁止)
+type TemplateName = Annotated[str, Field(min_length=1, description="テンプレート名(空文字列不可)")]
+
+# 型名(空文字列禁止)
+type TypeName = Annotated[str, Field(min_length=1, description="型名(空文字列不可)")]
+
+# OutputPath のバリデーション済み版
 # NOTE: OutputPath は str | Path | None なので、NewTypeでは扱えない(Union型のため)
 type ValidatedOutputPath = Annotated[OutputPath, AfterValidator(_validate_output_path)]
 
