@@ -41,13 +41,10 @@ class YamlDocGenerator(DocumentGenerator):
         if spec_obj is None:
             raise ValueError("spec parameter is required")
 
-        # 型チェック: spec が TypeSpec 互換であることを確認
-        # NOTE: isinstance() の第2引数にUnion型（TypeSpec | TypeRoot）を渡すと
-        # TypeErrorが発生するため、タプル形式を使用（UP038は誤検知）
+        # 型チェック: spec は TypeSpec または TypeRoot である必要がある
+        # NOTE: タプル形式を使用（Ruff UP038の推奨は無視）
         if not isinstance(spec_obj, (TypeSpec, TypeRoot)):  # noqa: UP038
-            # DictTypeSpec などのサブクラスも許可
-            if not (hasattr(spec_obj, "type") and hasattr(spec_obj, "name")):
-                raise ValueError("spec must be a TypeSpec compatible instance")
+            raise TypeError("spec must be TypeSpec or TypeRoot")
 
         # この時点で spec_obj は TypeSpec | TypeRoot として扱える
         spec: TypeSpec | TypeRoot = spec_obj  # type: ignore[assignment]
@@ -61,9 +58,11 @@ class YamlDocGenerator(DocumentGenerator):
             if spec.types:
                 spec = next(iter(spec.types.values()))
             else:
-                raise ValueError("TypeRoot has no types to generate documentation from")
+                raise TypeError("TypeRoot has no types")
         elif not isinstance(spec, TypeSpec):
-            raise ValueError("spec must be a TypeSpec compatible instance")
+            raise TypeError("spec must be TypeSpec")
+
+        # この時点で spec は TypeSpec として扱える
 
         self._generate_header(spec)
         self._generate_body(spec)
