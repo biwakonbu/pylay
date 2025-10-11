@@ -96,7 +96,7 @@ class GraphEdge(BaseModel):
     source: NodeId
     target: NodeId
     relation_type: RelationType
-    weight: Weight = Field(default=1.0)  # type: ignore[assignment]  # 0.0から1.0の範囲
+    weight: Weight = Field(default=Weight(1.0))  # 0.0から1.0の範囲
     attributes: NodeAttributes | None = None
     metadata: GraphMetadata | None = None
 
@@ -215,9 +215,7 @@ class TypeDependencyGraph(BaseModel):
 
     def add_edge(self, edge: GraphEdge) -> None:
         """エッジを追加"""
-        if not any(
-            e.source == edge.source and e.target == edge.target for e in self.edges
-        ):
+        if not any(e.source == edge.source and e.target == edge.target for e in self.edges):
             self.edges.append(edge)
 
     def get_node(self, node_id: NodeId) -> GraphNode | None:

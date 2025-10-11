@@ -47,10 +47,8 @@ class TypeConversionConfig(BaseModel):
     このクラスは、型変換処理の全体的な設定を管理します。
     """
 
-    max_depth: MaxDepth = Field(default=10, description="再帰処理の最大深さ制限")  # type: ignore[assignment]
-    preserve_quotes: bool = Field(
-        default=True, description="YAML出力で引用符を保持するか"
-    )
+    max_depth: MaxDepth = Field(default=MaxDepth(10), description="再帰処理の最大深さ制限")
+    preserve_quotes: bool = Field(default=True, description="YAML出力で引用符を保持するか")
     as_root: bool = Field(default=True, description="ルートレベルで出力するか")
 
     class Config:
@@ -66,24 +64,19 @@ class YamlOutputConfig(BaseModel):
     このクラスは、YAML出力のフォーマット設定を管理します。
     """
 
-    indent_mapping: int = Field(
-        gt=0,  # type: ignore[assignment]
+    indent_mapping: Annotated[int, Field(gt=0)] = Field(
         default=2,
         description="マッピングのインデント幅",
     )
-    indent_sequence: int = Field(
-        gt=0,  # type: ignore[assignment]
+    indent_sequence: Annotated[int, Field(gt=0)] = Field(
         default=4,
         description="シーケンスのインデント幅",
     )
-    indent_offset: int = Field(
-        gt=0,  # type: ignore[assignment]
+    indent_offset: Annotated[int, Field(gt=0)] = Field(
         default=2,
         description="ベースインデントのオフセット",
     )
-    width: PositiveInt | None = Field(
-        default=None, description="出力幅の制限（Noneで無制限）"
-    )
+    width: PositiveInt | None = Field(default=None, description="出力幅の制限（Noneで無制限）")
 
     class Config:
         """Pydantic設定"""
@@ -98,17 +91,10 @@ class ModuleExtractionConfig(BaseModel):
     このクラスは、Pythonモジュールから型定義を抽出する際の設定を管理します。
     """
 
-    extract_functions: bool = Field(
-        default=False, description="関数定義も抽出対象に含めるか"
-    )
-    extract_variables: bool = Field(
-        default=True, description="変数定義も抽出対象に含めるか"
-    )
-    extract_classes: bool = Field(
-        default=True, description="クラス定義も抽出対象に含めるか"
-    )
-    max_file_size: int = Field(
-        gt=0,  # type: ignore[assignment]
+    extract_functions: bool = Field(default=False, description="関数定義も抽出対象に含めるか")
+    extract_variables: bool = Field(default=True, description="変数定義も抽出対象に含めるか")
+    extract_classes: bool = Field(default=True, description="クラス定義も抽出対象に含めるか")
+    max_file_size: Annotated[int, Field(gt=0)] = Field(
         default=10 * 1024 * 1024,
         description="処理可能な最大ファイルサイズ（バイト）",
     )
@@ -126,15 +112,9 @@ class DependencyGraphConfig(BaseModel):
     このクラスは、依存関係グラフの構築・処理に関する設定を管理します。
     """
 
-    include_builtin_types: bool = Field(
-        default=False, description="組み込み型も含めて処理するか"
-    )
-    max_nodes: PositiveInt | None = Field(
-        default=None, description="最大ノード数制限（Noneで無制限）"
-    )
-    max_edges: PositiveInt | None = Field(
-        default=None, description="最大エッジ数制限（Noneで無制限）"
-    )
+    include_builtin_types: bool = Field(default=False, description="組み込み型も含めて処理するか")
+    max_nodes: PositiveInt | None = Field(default=None, description="最大ノード数制限（Noneで無制限）")
+    max_edges: PositiveInt | None = Field(default=None, description="最大エッジ数制限（Noneで無制限）")
     detect_cycles: bool = Field(default=True, description="循環参照を検出・報告するか")
 
     class Config:
@@ -150,11 +130,9 @@ class VisualizationConfig(BaseModel):
     このクラスは、依存関係グラフの視覚化に関する設定を管理します。
     """
 
-    output_path: OutputPath = Field(
-        default="deps.png", description="出力画像ファイルのパス"
-    )
-    width: int = Field(gt=0, default=8, description="画像の幅（インチ）")  # type: ignore[assignment]
-    height: int = Field(gt=0, default=6, description="画像の高さ（インチ）")  # type: ignore[assignment]
+    output_path: OutputPath = Field(default="deps.png", description="出力画像ファイルのパス")
+    width: Annotated[int, Field(gt=0)] = Field(default=8, description="画像の幅（インチ）")
+    height: Annotated[int, Field(gt=0)] = Field(default=6, description="画像の高さ（インチ）")
     node_colors: dict[str, str] | None = Field(
         default_factory=lambda: {
             "function": "lightblue",
@@ -191,16 +169,10 @@ class ConversionResult(BaseModel):
     success: bool = Field(description="処理が成功したかどうか")
     input_type: TypeName | None = Field(default=None, description="入力された型名")
     output_path: OutputPath = Field(default=None, description="出力ファイルのパス")
-    yaml_content: YamlString | None = Field(
-        default=None, description="生成されたYAML内容"
-    )
+    yaml_content: YamlString | None = Field(default=None, description="生成されたYAML内容")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
-    processing_time_ms: float | None = Field(
-        default=None, description="処理時間（ミリ秒）"
-    )
-    dependencies_count: PositiveInt | None = Field(
-        default=None, description="検出された依存関係の数"
-    )
+    processing_time_ms: float | None = Field(default=None, description="処理時間（ミリ秒）")
+    dependencies_count: PositiveInt | None = Field(default=None, description="検出された依存関係の数")
 
 
 class ExtractionResult(BaseModel):
@@ -212,13 +184,9 @@ class ExtractionResult(BaseModel):
 
     success: bool = Field(description="処理が成功したかどうか")
     module_path: ValidatedModulePath = Field(description="処理対象のモジュールパス")
-    extracted_types: dict[TypeName, dict[str, Any]] = Field(
-        default_factory=dict, description="抽出された型定義"
-    )
+    extracted_types: dict[TypeName, dict[str, Any]] = Field(default_factory=dict, description="抽出された型定義")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
-    processing_time_ms: float | None = Field(
-        default=None, description="処理時間（ミリ秒）"
-    )
+    processing_time_ms: float | None = Field(default=None, description="処理時間（ミリ秒）")
 
 
 class DependencyResult(BaseModel):
@@ -234,6 +202,4 @@ class DependencyResult(BaseModel):
     graph_edges: int = Field(gt=0, description="グラフのエッジ数")
     has_cycles: bool = Field(description="循環参照が存在するか")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
-    processing_time_ms: float | None = Field(
-        default=None, description="処理時間（ミリ秒）"
-    )
+    processing_time_ms: float | None = Field(default=None, description="処理時間（ミリ秒）")
