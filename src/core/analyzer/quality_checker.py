@@ -209,9 +209,9 @@ class QualityChecker:
                 file=detail.location.file,
                 line=detail.location.line,
                 column=getattr(detail.location, "column", 0),
-                context_before=detail.location.context_before if hasattr(detail.location, "context_before") else [],
+                context_before=detail.location.context_before,
                 code=detail.location.code,
-                context_after=detail.location.context_after if hasattr(detail.location, "context_after") else [],
+                context_after=detail.location.context_after,
             )
 
             # 除外パターンの場合はアドバイスとして扱う
