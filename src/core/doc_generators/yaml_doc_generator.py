@@ -43,7 +43,9 @@ class YamlDocGenerator(DocumentGenerator):
         from src.core.schemas.yaml_spec import TypeRoot
 
         # 型チェック: spec が TypeSpec 互換であることを確認
-        if not isinstance(spec, TypeSpec | TypeRoot):
+        # NOTE: isinstance() の第2引数にUnion型（TypeSpec | TypeRoot）を渡すと
+        # TypeErrorが発生するため、タプル形式を使用（UP038は誤検知）
+        if not isinstance(spec, (TypeSpec, TypeRoot)):  # noqa: UP038
             # DictTypeSpec などのサブクラスも許可
             if not (hasattr(spec, "type") and hasattr(spec, "name")):
                 raise ValueError("spec must be a TypeSpec compatible instance")
