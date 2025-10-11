@@ -29,8 +29,8 @@ class GeneratorConfig:
 class CatalogConfig(GeneratorConfig):
     """テストカタログジェネレーターの設定。"""
 
-    test_directory: Path = field(default_factory=lambda: Path("tests"))
-    output_path: Path = field(default_factory=lambda: Path("docs/types/test_catalog.md"))
+    test_directory: Path = field(default=Path("tests"))
+    output_path: Path = field(default=Path("docs/types/test_catalog.md"))
     include_patterns: list[GlobPattern] = field(default_factory=lambda: ["test_*.py"])
     exclude_patterns: list[GlobPattern] = field(default_factory=lambda: ["__pycache__", "*.pyc"])
 
