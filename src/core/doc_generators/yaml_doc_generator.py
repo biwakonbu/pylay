@@ -43,8 +43,21 @@ class YamlDocGenerator(DocumentGenerator):
 
         # 型チェック: spec は TypeSpec または TypeRoot である必要がある
         # NOTE: タプル形式を使用（Ruff UP038の推奨は無視）
+        # 互換オブジェクト（type/name属性を持つdictなど）は明示的に拒否
         if not isinstance(spec_obj, (TypeSpec, TypeRoot)):  # noqa: UP038
-            raise TypeError("spec must be TypeSpec or TypeRoot")
+            # 互換オブジェクトの可能性をチェックして詳細なエラーメッセージを提供
+            obj_type = type(spec_obj).__name__
+            has_type_attr = hasattr(spec_obj, "type")
+            has_name_attr = hasattr(spec_obj, "name")
+
+            if has_type_attr and has_name_attr:
+                raise TypeError(
+                    f"spec must be TypeSpec or TypeRoot instance, not {obj_type}. "
+                    f"TypeSpec-compatible objects (e.g., dicts with 'type'/'name' attributes) "
+                    f"are not supported. Please use TypeSpec.model_validate() to convert."
+                )
+            else:
+                raise TypeError(f"spec must be TypeSpec or TypeRoot, got {obj_type}")
 
         # この時点で spec_obj は TypeSpec | TypeRoot として扱える
         spec: TypeSpec | TypeRoot = spec_obj  # type: ignore[assignment]
