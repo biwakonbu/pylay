@@ -19,14 +19,14 @@ from src.core.schemas.types import PositiveInt
 
 
 def _validate_output_path(v: str | Path | None) -> str | Path | None:
-    """出力先パスを検証するバリデーター（存在しないパスも許可）"""
+    """出力先パスを検証するバリデーター(存在しないパスも許可)"""
     if v is None:
         return v
-    # Pathオブジェクトに変換して返すだけ（存在チェックは行わない）
+    # Pathオブジェクトに変換して返すだけ(存在チェックは行わない)
     return Path(v) if isinstance(v, str) else v
 
 
-# Level 1: 単純な型エイリアス（制約なし）
+# Level 1: 単純な型エイリアス(制約なし)
 type OutputPath = str | Path | None
 type TemplateName = str
 type TypeName = str
@@ -34,8 +34,8 @@ type ContentString = str
 type CodeBlock = str
 type MarkdownSection = str
 
-# Level 2: NewType + Annotated（制約付き、型レベル区別）
-# NOTE: OutputPath は str | Path | None なので、NewTypeでは扱えない（Union型のため）
+# Level 2: NewType + Annotated(制約付き、型レベル区別)
+# NOTE: OutputPath は str | Path | None なので、NewTypeでは扱えない(Union型のため)
 type ValidatedOutputPath = Annotated[OutputPath, AfterValidator(_validate_output_path)]
 
 
@@ -88,7 +88,7 @@ class MarkdownGenerationConfig(BaseModel):
     include_toc: bool = Field(default=True, description="目次を含めるかどうか")
     include_code_syntax: bool = Field(default=True, description="コード構文ハイライトを含めるかどうか")
     code_language: str = Field(default="python", description="コードブロックの言語指定")
-    max_code_lines: PositiveInt | None = Field(default=None, description="コードブロックの最大行数（Noneで無制限）")
+    max_code_lines: PositiveInt | None = Field(default=None, description="コードブロックの最大行数(Noneで無制限)")
     include_type_hints: bool = Field(default=True, description="型ヒントを含めるかどうか")
 
     class Config:
@@ -107,7 +107,7 @@ class FileSystemConfig(BaseModel):
     create_directories: bool = Field(default=True, description="必要なディレクトリを作成するかどうか")
     overwrite_existing: bool = Field(default=False, description="既存ファイルを上書きするかどうか")
     backup_existing: bool = Field(default=True, description="既存ファイルをバックアップするかどうか")
-    file_permissions: str | None = Field(default=None, description="ファイルのパーミッション（Noneでデフォルト）")
+    file_permissions: str | None = Field(default=None, description="ファイルのパーミッション(Noneでデフォルト)")
 
     class Config:
         """Pydantic設定"""
@@ -125,7 +125,7 @@ class GenerationResult(BaseModel):
     success: bool = Field(description="生成が成功したかどうか")
     output_path: ValidatedOutputPath = Field(description="出力ファイルのパス")
     generated_files: list[OutputPath] = Field(default_factory=list, description="生成されたファイルのリスト")
-    generation_time_ms: float = Field(ge=0.0, description="生成時間（ミリ秒）")
+    generation_time_ms: float = Field(ge=0.0, description="生成時間(ミリ秒)")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
     files_count: int = Field(ge=0, description="生成されたファイル数")
 
@@ -148,7 +148,7 @@ class TypeInspectionResult(BaseModel):
     docstring_content: str | None = Field(default=None, description="docstringの内容")
     code_blocks: list[CodeBlock] = Field(default_factory=list, description="抽出されたコードブロック")
     schema_info: dict[str, Any] | None = Field(default=None, description="Pydanticスキーマ情報")
-    inspection_time_ms: float = Field(ge=0.0, description="検査時間（ミリ秒）")
+    inspection_time_ms: float = Field(ge=0.0, description="検査時間(ミリ秒)")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
 
     class Config:
@@ -187,7 +187,7 @@ class DocumentStructure(BaseModel):
     sections: list[MarkdownSectionInfo] = Field(default_factory=list, description="メインセクションのリスト")
     toc: list[dict[str, Any]] = Field(default_factory=list, description="目次情報")
     metadata: dict[str, Any] = Field(default_factory=dict, description="メタデータ")
-    generation_timestamp: str = Field(description="生成時刻（ISO形式）")
+    generation_timestamp: str = Field(description="生成時刻(ISO形式)")
 
     class Config:
         """Pydantic設定"""
@@ -222,7 +222,7 @@ class DocumentationMetrics(BaseModel):
 
     total_types: int = Field(ge=0, description="対象の型総数")
     documented_types: int = Field(ge=0, description="ドキュメント付きの型数")
-    documentation_coverage: float = Field(description="ドキュメントカバー率（0.0-1.0）", ge=0.0, le=1.0)
+    documentation_coverage: float = Field(description="ドキュメントカバー率(0.0-1.0)", ge=0.0, le=1.0)
     avg_docstring_lines: float = Field(ge=0.0, description="平均docstring行数")
     code_blocks_count: int = Field(ge=0, description="コードブロック総数")
     sections_count: int = Field(ge=0, description="セクション総数")
@@ -243,7 +243,7 @@ class BatchGenerationConfig(BaseModel):
     input_paths: list[ValidatedOutputPath] = Field(description="入力ファイルパスのリスト")
     output_directory: ValidatedOutputPath = Field(description="出力ディレクトリ")
     parallel_processing: bool = Field(default=False, description="並列処理を使用するか")
-    max_workers: PositiveInt | None = Field(default=None, description="最大ワーカー数（Noneで自動設定）")
+    max_workers: PositiveInt | None = Field(default=None, description="最大ワーカー数(Noneで自動設定)")
     continue_on_error: bool = Field(default=True, description="エラー発生時に処理を継続するか")
 
     class Config:
@@ -263,7 +263,7 @@ class BatchGenerationResult(BaseModel):
     total_files: int = Field(ge=0, description="処理対象のファイル総数")
     successful_files: int = Field(ge=0, description="成功したファイル数")
     failed_files: int = Field(ge=0, description="失敗したファイル数")
-    total_generation_time_ms: float = Field(ge=0.0, description="総生成時間（ミリ秒）")
+    total_generation_time_ms: float = Field(ge=0.0, description="総生成時間(ミリ秒)")
     results: list[GenerationResult] = Field(default_factory=list, description="個別結果のリスト")
     error_summary: dict[str, int] = Field(default_factory=dict, description="エラータイプ別の集計")
 
