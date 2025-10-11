@@ -255,7 +255,7 @@ class QualityChecker:
                     issue_type="deprecated_typing_usage",
                     message=depr_msg,
                     suggestion="Python 3.13標準構文（例: list[str]）を使用してください",
-                    improvement_plan=("typing.Union → X | Y, typing.List → list[X] " "に置き換えてください"),
+                    improvement_plan="typing.Union → X | Y, typing.List → list[X] に置き換えてください",
                 )
             )
 
