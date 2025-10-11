@@ -45,7 +45,7 @@ class QualityChecker:
         self.improvement_guidance = config.get_improvement_guidance()
 
         # CodeLocatorを初期化（コード位置情報取得用）
-        target_dirs = config.target_dirs if config.target_dirs else ["src"]  # type: ignore[list-item]
+        target_dirs = config.target_dirs or ["src"]
         self.code_locator = CodeLocator([Path(d) for d in target_dirs])
 
     def check_quality(self, report: TypeAnalysisReport) -> QualityCheckResult:
@@ -109,9 +109,7 @@ class QualityChecker:
             severity_levels=self.severity_levels,
         )
 
-    def _check_type_level_issues(
-        self, statistics: TypeStatistics
-    ) -> list[QualityIssue]:
+    def _check_type_level_issues(self, statistics: TypeStatistics) -> list[QualityIssue]:
         """型レベル関連の問題をチェック"""
         issues: list[QualityIssue] = []
 
@@ -162,9 +160,7 @@ class QualityChecker:
 
         return issues
 
-    def _check_documentation_issues(
-        self, statistics: TypeStatistics
-    ) -> list[QualityIssue]:
+    def _check_documentation_issues(self, statistics: TypeStatistics) -> list[QualityIssue]:
         """ドキュメント関連の問題をチェック"""
         issues: list[QualityIssue] = []
 
@@ -194,9 +190,7 @@ class QualityChecker:
 
         return issues
 
-    def _check_primitive_usage_issues(
-        self, report: TypeAnalysisReport
-    ) -> list[QualityIssue]:
+    def _check_primitive_usage_issues(self, report: TypeAnalysisReport) -> list[QualityIssue]:
         """primitive型使用の問題をチェック（位置情報付き）"""
         from src.core.analyzer.improvement_templates import _is_excluded_variable_name
 
@@ -215,22 +209,15 @@ class QualityChecker:
                 file=detail.location.file,
                 line=detail.location.line,
                 column=getattr(detail.location, "column", 0),
-                context_before=detail.location.context_before
-                if hasattr(detail.location, "context_before")
-                else [],
+                context_before=detail.location.context_before if hasattr(detail.location, "context_before") else [],
                 code=detail.location.code,
-                context_after=detail.location.context_after
-                if hasattr(detail.location, "context_after")
-                else [],
+                context_after=detail.location.context_after if hasattr(detail.location, "context_after") else [],
             )
 
             # 除外パターンの場合はアドバイスとして扱う
             if is_excluded:
                 issue_type = "primitive_usage_excluded"
-                prim_msg = (
-                    f"primitive型 {detail.primitive_type} "
-                    "が使用されています（汎用変数名）"
-                )
+                prim_msg = f"primitive型 {detail.primitive_type} " "が使用されています（汎用変数名）"
                 suggestion = "現状維持を推奨（汎用的な変数名のため型定義不要）"
                 recommended_type = None
             else:
@@ -255,9 +242,7 @@ class QualityChecker:
 
         return issues
 
-    def _check_deprecated_typing_issues(
-        self, report: TypeAnalysisReport
-    ) -> list[QualityIssue]:
+    def _check_deprecated_typing_issues(self, report: TypeAnalysisReport) -> list[QualityIssue]:
         """非推奨typing使用の問題をチェック"""
         issues: list[QualityIssue] = []
 
@@ -270,10 +255,7 @@ class QualityChecker:
                     issue_type="deprecated_typing_usage",
                     message=depr_msg,
                     suggestion="Python 3.13標準構文（例: list[str]）を使用してください",
-                    improvement_plan=(
-                        "typing.Union → X | Y, typing.List → list[X] "
-                        "に置き換えてください"
-                    ),
+                    improvement_plan=("typing.Union → X | Y, typing.List → list[X] " "に置き換えてください"),
                 )
             )
 
@@ -360,9 +342,7 @@ class QualityChecker:
         base_score = self._calculate_base_score(issue.issue_type, statistics)
 
         # 降順（しきい値が高い順: advice → warning → error）で走査
-        for level in sorted(
-            self.severity_levels, key=lambda x: x.threshold, reverse=True
-        ):
+        for level in sorted(self.severity_levels, key=lambda x: x.threshold, reverse=True):
             name = level.name
             if name in ("advice", "warning", "error"):
                 if base_score >= level.threshold:
@@ -371,9 +351,7 @@ class QualityChecker:
         # デフォルトはアドバイス（すべてのしきい値を満たさない場合）
         return "advice"
 
-    def _calculate_base_score(
-        self, issue_type: str, statistics: TypeStatistics
-    ) -> float:
+    def _calculate_base_score(self, issue_type: str, statistics: TypeStatistics) -> float:
         """問題のベーススコアを計算（0.0〜1.0）
 
         スコアの意味:
@@ -401,9 +379,7 @@ class QualityChecker:
             if "high" in issue_type:
                 # 高い比率ほど高いスコア（悪い状態）
                 if "level1" in issue_type:
-                    ratio_diff = max(
-                        0, statistics.level1_ratio - self.thresholds.level1_max
-                    )
+                    ratio_diff = max(0, statistics.level1_ratio - self.thresholds.level1_max)
                     base_score += ratio_diff * 2.0
                 elif "primitive" in issue_type:
                     ratio_diff = max(0, statistics.primitive_usage_ratio - 0.10)
@@ -411,14 +387,10 @@ class QualityChecker:
             elif "low" in issue_type:
                 # 低い比率ほど高いスコア（悪い状態）
                 if "level2" in issue_type:
-                    ratio_diff = max(
-                        0, self.thresholds.level2_min - statistics.level2_ratio
-                    )
+                    ratio_diff = max(0, self.thresholds.level2_min - statistics.level2_ratio)
                     base_score += ratio_diff * 2.0
                 elif "level3" in issue_type:
-                    ratio_diff = max(
-                        0, self.thresholds.level3_min - statistics.level3_ratio
-                    )
+                    ratio_diff = max(0, self.thresholds.level3_min - statistics.level3_ratio)
                     base_score += ratio_diff * 2.0
 
         return min(1.0, base_score)
@@ -432,9 +404,7 @@ class QualityChecker:
         # デフォルトの改善プラン
         return "適切な型定義パターンを使用して改善してください"
 
-    def _generate_primitive_replacement_plan(
-        self, detail: "PrimitiveUsageDetail"
-    ) -> str:
+    def _generate_primitive_replacement_plan(self, detail: "PrimitiveUsageDetail") -> str:
         """primitive型置き換えの詳細プランを生成
 
         Args:
@@ -540,9 +510,7 @@ Step 2: 使用箇所を修正
 
         return severity_score + type_penalty
 
-    def _calculate_impact_score(
-        self, issue: QualityIssue, report: TypeAnalysisReport
-    ) -> int:
+    def _calculate_impact_score(self, issue: QualityIssue, report: TypeAnalysisReport) -> int:
         """問題の影響度を計算（高いほど影響大）
 
         Args:

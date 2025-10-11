@@ -25,9 +25,7 @@ class YamlDocGenerator(DocumentGenerator):
     TypeSpecオブジェクトを受け取り、Markdownフォーマットのドキュメントを生成します。
     """
 
-    def generate(
-        self, output_path: Path, spec: TypeSpec | object | None = None, **kwargs: object
-    ) -> None:
+    def generate(self, output_path: Path, spec: TypeSpec | object | None = None, **kwargs: object) -> None:
         """ドキュメントを生成し、ファイルに書き出します。
 
         Args:
@@ -44,17 +42,20 @@ class YamlDocGenerator(DocumentGenerator):
             raise ValueError("spec parameter is required")
         from src.core.schemas.yaml_spec import TypeRoot
 
+        # 型チェック: spec が TypeSpec 互換であることを確認
         if not isinstance(spec, TypeSpec | TypeRoot):
             # DictTypeSpec などのサブクラスも許可
-            if hasattr(spec, "type") and hasattr(spec, "name"):
-                pass  # TypeSpec 互換のオブジェクト
-            else:
+            if not (hasattr(spec, "type") and hasattr(spec, "name")):
                 raise ValueError("spec must be a TypeSpec compatible instance")
+
+        # この時点で spec は TypeSpec として扱える
         self.md.clear()  # 既存のコンテンツをクリア
         self.md = MarkdownBuilder()
 
-        self._generate_header(spec)  # type: ignore[arg-type]
-        self._generate_body(spec)  # type: ignore[arg-type]
+        # isinstance チェック後なので TypeSpec として安全に渡せる
+        assert isinstance(spec, TypeSpec), "spec must be TypeSpec after validation"
+        self._generate_header(spec)
+        self._generate_body(spec)
         self._generate_footer()
 
         content = self.md.build()
@@ -70,9 +71,7 @@ class YamlDocGenerator(DocumentGenerator):
         if spec.description:
             self.md.paragraph(spec.description)
 
-    def _generate_body(
-        self, spec: TypeSpec | RefPlaceholder | str, depth: int = 0
-    ) -> None:
+    def _generate_body(self, spec: TypeSpec | RefPlaceholder | str, depth: int = 0) -> None:
         """再帰的に型情報を生成（深さ制限付き）"""
         if depth > 10:  # 深さ制限
             self.md.paragraph("... (深さ制限を超えました)")
