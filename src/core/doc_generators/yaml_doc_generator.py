@@ -43,7 +43,7 @@ class YamlDocGenerator(DocumentGenerator):
 
         # 型チェック: spec は TypeSpec または TypeRoot である必要がある
         # 互換オブジェクト(type/name属性を持つdictなど)は明示的に拒否
-        if not isinstance(spec_obj, TypeSpec | TypeRoot):
+        if not isinstance(spec_obj, (TypeSpec, TypeRoot)):  # noqa: UP038
             # 互換オブジェクトの可能性をチェックして詳細なエラーメッセージを提供
             obj_type = type(spec_obj).__name__
             has_type_attr = hasattr(spec_obj, "type")
