@@ -116,7 +116,24 @@ class YamlDocGenerator(DocumentGenerator):
                     f"適切な構造である必要があります。エラー: {e}"
                 ) from e
 
-        # この時点で spec は TypeSpec として確定している
+        # TypeSpec互換オブジェクトの場合、この時点でspec_objが変換されているはず
+        # spec変数として使用するため、適切な型に確定させる
+        if not isinstance(spec_obj, TypeSpec):
+            # TypeSpecに変換できなかった場合、互換オブジェクトとして扱う
+            # この場合、TypeRootとして展開するか、TypeSpecとして扱う
+            if hasattr(spec_obj, "types") and isinstance(spec_obj.types, dict):
+                # TypeRoot互換の場合、最初の型を使用
+                if spec_obj.types:
+                    spec = next(iter(spec_obj.types.values()))
+                else:
+                    raise ValueError("TypeRoot互換オブジェクトが空です。少なくとも1つの型定義が必要です。")
+            else:
+                # TypeSpec互換の場合、そのままTypeSpecとして扱う
+                spec = spec_obj  # type: ignore[assignment]
+        else:
+            spec = spec_obj
+
+        # この時点で spec は TypeSpec または TypeSpec互換オブジェクトとして確定している
         self._generate_header(spec)
         self._generate_body(spec)
         self._generate_footer()
