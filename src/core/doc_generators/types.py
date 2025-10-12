@@ -34,6 +34,49 @@ class TocEntry(TypedDict):
     level: int
 
 
+class PydanticSchemaInfo(TypedDict, total=False):
+    """
+    Pydanticのmodel_json_schema()から返されるJSON Schemaの形状をモデル化
+
+    JSON Schemaの標準フィールドを定義し、追加フィールドはdict[str, Any]でフォールバック
+    """
+
+    type: str
+    properties: dict[str, Any]
+    required: list[str]
+    additionalProperties: bool
+    title: str
+    description: str
+    default: Any
+    examples: list[Any]
+    format_: str
+    minimum: float | int
+    maximum: float | int
+    exclusiveMinimum: float | int
+    exclusiveMaximum: float | int
+    multipleOf: float | int
+
+
+class DocumentMetadata(TypedDict, total=False):
+    """
+    ドキュメントのメタデータをモデル化
+
+    一般的なメタデータキーを定義し、追加フィールドはdict[str, Any]でフォールバック
+    """
+
+    title: str
+    description: str
+    version: str
+    author: str
+    created_at: str
+    updated_at: str
+    tags: list[str]
+    category: str
+    language: str
+    encoding: str
+    template: str
+
+
 # Level 1: 単純な型エイリアス(制約なし)
 # NOTE: OutputPathは ValidatedOutputPath でバリデーション済み版を提供
 type OutputPath = str | Path | None
@@ -170,8 +213,8 @@ class TypeInspectionResult(BaseModel):
     has_docstring: bool = Field(description="docstringが存在するか")
     docstring_content: str | None = Field(default=None, description="docstringの内容")
     code_blocks: list[CodeBlock] = Field(default_factory=list, description="抽出されたコードブロック")
-    schema_info: dict[str, Any] | None = Field(
-        default=None, description="Pydanticスキーマ情報(model_json_schema()の動的な結果)"
+    schema_info: PydanticSchemaInfo | None = Field(
+        default=None, description="Pydanticスキーマ情報(JSON Schema形式の型付きデータ)"
     )
     inspection_time_ms: float = Field(ge=0.0, description="検査時間(ミリ秒)")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
@@ -211,7 +254,9 @@ class DocumentStructure(BaseModel):
     title: str = Field(description="ドキュメントタイトル")
     sections: list[MarkdownSectionInfo] = Field(default_factory=list, description="メインセクションのリスト")
     toc: list[TocEntry] = Field(default_factory=list, description="目次情報")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="メタデータ(任意のkey-value形式)")
+    metadata: DocumentMetadata = Field(
+        default_factory=lambda: DocumentMetadata(), description="ドキュメントメタデータ(型付きの構造化データ)"
+    )
     generation_timestamp: str = Field(description="生成時刻(ISO形式)")
 
     class Config:
@@ -229,7 +274,10 @@ class TemplateConfig(BaseModel):
 
     template_name: TemplateName = Field(description="テンプレート名")
     template_path: ValidatedOutputPath | None = Field(default=None, description="テンプレートファイルのパス")
-    variables: dict[str, Any] = Field(default_factory=dict, description="テンプレート変数の辞書(動的なkey-value)")
+    variables: dict[str, Any] = Field(
+        default_factory=dict,
+        description="テンプレート変数の辞書(動的なkey-value) # TODO: 将来のTypedDict/Union変換を検討",
+    )
     custom_sections: list[MarkdownSectionInfo] = Field(default_factory=list, description="カスタムセクションのリスト")
 
     class Config:

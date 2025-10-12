@@ -25,6 +25,7 @@ from .types import (
     GenerationResult,
     MarkdownGenerationConfig,
     MarkdownSectionInfo,
+    PydanticSchemaInfo,
     TemplateConfig,
     TypeInspectionConfig,
     TypeInspectionResult,
@@ -42,9 +43,7 @@ class DocumentGeneratorService(BaseModel):
     このクラスは、ドキュメント生成処理のビジネスロジックを実装します。
     """
 
-    def generate_document(
-        self, config: DocumentConfig, **kwargs: Any
-    ) -> GenerationResult:
+    def generate_document(self, config: DocumentConfig, **kwargs: Any) -> GenerationResult:
         """
         ドキュメントを生成します。
 
@@ -59,11 +58,7 @@ class DocumentGeneratorService(BaseModel):
 
         try:
             # 簡易的な実装（実際はより複雑な処理が必要）
-            output_path = (
-                Path(config.output_path)
-                if config.output_path
-                else Path(DEFAULT_OUTPUT_PATH)
-            )
+            output_path = Path(config.output_path) if config.output_path else Path(DEFAULT_OUTPUT_PATH)
 
             # 出力ディレクトリの作成
             output_path.mkdir(parents=True, exist_ok=True)
@@ -72,13 +67,12 @@ class DocumentGeneratorService(BaseModel):
             structure = DocumentStructure(
                 title="Generated Documentation",
                 sections=[],
+                metadata={},
                 generation_timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             )
 
             # マークダウン生成（簡易版）
-            markdown_content = (
-                f"# {structure.title}\n\nGenerated at: {structure.generation_timestamp}"
-            )
+            markdown_content = f"# {structure.title}\n\nGenerated at: {structure.generation_timestamp}"
 
             # ファイル出力（簡易版）
             output_file = output_path / "index.md"
@@ -98,11 +92,7 @@ class DocumentGeneratorService(BaseModel):
             processing_time = (time.time() - start_time) * 1000
             return GenerationResult(
                 success=False,
-                output_path=(
-                    str(config.output_path)
-                    if config.output_path
-                    else DEFAULT_OUTPUT_PATH
-                ),
+                output_path=(str(config.output_path) if config.output_path else DEFAULT_OUTPUT_PATH),
                 generation_time_ms=processing_time,
                 error_message=str(e),
                 files_count=0,
@@ -116,9 +106,7 @@ class TypeInspectorService(BaseModel):
     このクラスは、型検査処理のビジネスロジックを実装します。
     """
 
-    def inspect_type(
-        self, type_cls: type[Any], config: TypeInspectionConfig | None = None
-    ) -> TypeInspectionResult:
+    def inspect_type(self, type_cls: type[Any], config: TypeInspectionConfig | None = None) -> TypeInspectionResult:
         """
         指定された型を検査します。
 
@@ -211,11 +199,11 @@ class TypeInspectorService(BaseModel):
         except Exception:
             return False
 
-    def _get_pydantic_schema(self, type_cls: type[Any]) -> dict[str, Any] | None:
+    def _get_pydantic_schema(self, type_cls: type[Any]) -> PydanticSchemaInfo | None:
         """Pydanticモデルのスキーマ情報を取得する内部メソッド"""
         try:
             if self._is_pydantic_model(type_cls):
-                return type_cls.model_json_schema()
+                return type_cls.model_json_schema()  # type: ignore[return-value]
         except Exception:
             pass
         return None
@@ -304,9 +292,7 @@ class MarkdownBuilderService(BaseModel):
 
         # サブセクション
         for subsection in section.subsections:
-            subsection_content = self._build_section_recursive(
-                subsection, config, current_level + 1
-            )
+            subsection_content = self._build_section_recursive(subsection, config, current_level + 1)
             lines.append(subsection_content)
 
         return "\n".join(lines)
@@ -321,9 +307,7 @@ class FileSystemService(BaseModel):
 
     config: FileSystemConfig = Field(default_factory=FileSystemConfig)
 
-    def mkdir(
-        self, path: str | Path, parents: bool = True, exist_ok: bool = True
-    ) -> None:
+    def mkdir(self, path: str | Path, parents: bool = True, exist_ok: bool = True) -> None:
         """
         ディレクトリを作成します。
 
@@ -334,9 +318,7 @@ class FileSystemService(BaseModel):
         """
         Path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
-    def write_text(
-        self, path: str | Path, content: str, encoding: str = "utf-8"
-    ) -> None:
+    def write_text(self, path: str | Path, content: str, encoding: str = "utf-8") -> None:
         """
         テキストファイルに書き込みます。
 
@@ -482,14 +464,10 @@ class TemplateProcessorService(BaseModel):
             if config
             else None
         )
-        processed_content = self.process_template(
-            template_content, variables, template_config
-        )
+        processed_content = self.process_template(template_content, variables, template_config)
 
         # ファイル出力
-        Path(output_path).write_text(
-            processed_content, encoding=config.encoding if config else "utf-8"
-        )
+        Path(output_path).write_text(processed_content, encoding=config.encoding if config else "utf-8")
 
 
 class BatchProcessorService(BaseModel):
@@ -517,9 +495,7 @@ class BatchProcessorService(BaseModel):
 
         try:
             # 出力ディレクトリの作成
-            output_dir_path = (
-                str(config.output_directory) if config.output_directory else "."
-            )
+            output_dir_path = str(config.output_directory) if config.output_directory else "."
             output_dir = Path(output_dir_path)
             output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -641,20 +617,12 @@ class DocumentationOrchestrator(BaseModel):
     このクラスは、複数のサービスを統合してドキュメント生成を統制します。
     """
 
-    document_generator: DocumentGeneratorService = Field(
-        default_factory=DocumentGeneratorService
-    )
+    document_generator: DocumentGeneratorService = Field(default_factory=DocumentGeneratorService)
     type_inspector: TypeInspectorService = Field(default_factory=TypeInspectorService)
-    markdown_builder: MarkdownBuilderService = Field(
-        default_factory=MarkdownBuilderService
-    )
+    markdown_builder: MarkdownBuilderService = Field(default_factory=MarkdownBuilderService)
     file_system: FileSystemService = Field(default_factory=FileSystemService)
-    template_processor: TemplateProcessorService = Field(
-        default_factory=TemplateProcessorService
-    )
-    batch_processor: BatchProcessorService = Field(
-        default_factory=BatchProcessorService
-    )
+    template_processor: TemplateProcessorService = Field(default_factory=TemplateProcessorService)
+    batch_processor: BatchProcessorService = Field(default_factory=BatchProcessorService)
 
     def generate_comprehensive_documentation(
         self,
@@ -697,6 +665,7 @@ class DocumentationOrchestrator(BaseModel):
             structure = DocumentStructure(
                 title="Type Documentation",
                 sections=sections,
+                metadata={},
                 generation_timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             )
 
