@@ -50,7 +50,7 @@ class DocumentGeneratorService(BaseModel):
 
         Args:
             config: ドキュメント生成設定
-            **kwargs: 追加の設定パラメータ
+            **kwargs: 追加の設定パラメータ（DocumentGeneratorProtocolとの互換性のため保持）
 
         Returns:
             生成結果
