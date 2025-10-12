@@ -1,7 +1,7 @@
 repos:
   # Ruff (高速なPythonリンター)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.0
+    rev: v0.13.2
     hooks:
       # Ruff のリンター実行
       - id: ruff

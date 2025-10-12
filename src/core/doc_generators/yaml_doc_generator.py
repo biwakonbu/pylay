@@ -43,7 +43,7 @@ class YamlDocGenerator(DocumentGenerator):
 
         # 型チェック: spec は TypeSpec または TypeRoot である必要がある
         # 互換オブジェクト(type/name属性を持つdictなど)も受け入れる
-        if isinstance(spec_obj, (TypeSpec, TypeRoot)):  # noqa: UP038
+        if isinstance(spec_obj, (TypeSpec, TypeRoot)):
             # 既に適切な型なのでそのまま使用
             pass
         else:
