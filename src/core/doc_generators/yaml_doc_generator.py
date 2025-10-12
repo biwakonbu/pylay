@@ -97,9 +97,24 @@ class YamlDocGenerator(DocumentGenerator):
             spec = spec_obj
         else:
             # TypeSpecでもTypeRootでもない場合、互換オブジェクトとして処理された可能性がある
-            # この場合、適切なエラーメッセージを出す
+            # この場合、TypeRootとして展開するか、明示的にエラーを発生させる
             obj_type_name = type(spec_obj).__name__
-            raise TypeError(f"specはTypeSpecまたはTypeRootである必要がありますが、{obj_type_name}が指定されました")
+
+            # TypeRootとして展開を試行
+            try:
+                if hasattr(spec_obj, "types") and hasattr(spec_obj, "type"):
+                    # TypeRoot互換オブジェクトとして扱う
+                    spec_obj = TypeRoot.model_validate(spec_obj)
+                else:
+                    # TypeSpecとして直接扱うことを試行
+                    spec_obj = TypeSpec.model_validate(spec_obj)
+            except Exception as e:
+                # TypeRoot/TypeSpecとしての変換ができない場合、ValueErrorで明示的にエラー
+                raise ValueError(
+                    f"specはTypeSpecまたはTypeRootである必要がありますが、"
+                    f"{obj_type_name}が指定されました。互換オブジェクトの場合でも"
+                    f"適切な構造である必要があります。エラー: {e}"
+                ) from e
 
         # この時点で spec は TypeSpec として確定している
         self._generate_header(spec)
