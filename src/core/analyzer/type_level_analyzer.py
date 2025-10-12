@@ -76,11 +76,14 @@ class TypeLevelAnalyzer:
                 # directoryの外のファイルの場合は絶対パスを使用
                 relative_path = py_file.as_posix()
 
-            # 除外パターンにマッチするかチェック（相対パスのみ）
+            # 両方の形式でチェック（絶対パスと相対パスの両方を考慮）
+            absolute_path = py_file.as_posix()
+
+            # 除外パターンにマッチするかチェック（相対パスと絶対パスの両方）
             should_exclude = False
             if exclude_patterns:
                 for pattern in exclude_patterns:
-                    if fnmatch.fnmatch(relative_path, pattern):
+                    if fnmatch.fnmatch(relative_path, pattern) or fnmatch.fnmatch(absolute_path, pattern):
                         should_exclude = True
                         break
 

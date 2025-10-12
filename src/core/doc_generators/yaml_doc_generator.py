@@ -42,21 +42,34 @@ class YamlDocGenerator(DocumentGenerator):
             raise ValueError("spec parameter is required")
 
         # 型チェック: spec は TypeSpec または TypeRoot である必要がある
-        # 互換オブジェクト(type/name属性を持つdictなど)は明示的に拒否
-        if not isinstance(spec_obj, (TypeSpec, TypeRoot)):  # noqa: UP038
-            # 互換オブジェクトの可能性をチェックして詳細なエラーメッセージを提供
+        # 互換オブジェクト(type/name属性を持つdictなど)も受け入れる
+        if isinstance(spec_obj, (TypeSpec, TypeRoot)):  # noqa: UP038
+            # 既に適切な型なのでそのまま使用
+            pass
+        else:
+            # 互換オブジェクトの可能性をチェック
             obj_type = type(spec_obj).__name__
             has_type_attr = hasattr(spec_obj, "type")
             has_name_attr = hasattr(spec_obj, "name")
 
             if has_type_attr and has_name_attr:
-                raise TypeError(
-                    f"spec must be TypeSpec or TypeRoot instance, not {obj_type}. "
-                    f"TypeSpec-compatible objects (e.g., dicts with 'type'/'name' attributes) "
-                    f"are not supported. Please use TypeSpec.model_validate() to convert."
-                )
+                # TypeSpec/TypeRoot互換オブジェクトの場合、適切なモデルで変換を試行
+                try:
+                    # typeフィールドの値でTypeSpecかTypeRootかを判定
+                    obj_type_field = getattr(spec_obj, "type", None)
+                    if obj_type_field == "root" or obj_type_field == "typeroot":
+                        # TypeRoot互換オブジェクトの場合
+                        spec_obj = TypeRoot.model_validate(spec_obj)
+                    else:
+                        # TypeSpec互換オブジェクトの場合
+                        spec_obj = TypeSpec.model_validate(spec_obj)
+                except Exception as e:
+                    raise TypeError(
+                        f"Failed to convert compatible object {obj_type} to TypeSpec or TypeRoot: {e}. "
+                        f"Please ensure the object has valid structure."
+                    ) from e
             else:
-                raise TypeError(f"spec must be TypeSpec or TypeRoot, got {obj_type}")
+                raise TypeError(f"spec must be TypeSpec, TypeRoot, or TypeSpec-compatible object, got {obj_type}")
 
         self.md = MarkdownBuilder()
 

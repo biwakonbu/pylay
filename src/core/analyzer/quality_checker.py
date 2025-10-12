@@ -217,7 +217,7 @@ class QualityChecker:
             # 除外パターンの場合はアドバイスとして扱う
             if is_excluded:
                 issue_type = "primitive_usage_excluded"
-                prim_msg = f"primitive型 {detail.primitive_type} が使用されています（汎用変数名）"
+                prim_msg = f"primitive型 {detail.primitive_type} が使用されています(汎用変数名)"
                 suggestion = "現状維持を推奨（汎用的な変数名のため型定義不要）"
                 recommended_type = None
             else:
