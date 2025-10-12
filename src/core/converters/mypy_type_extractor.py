@@ -46,9 +46,7 @@ class MypyTypeExtractor:
         temp_file_name: str | None = None
         try:
             # 一時ファイルにコピー（mypyが読み取り専用ファイルに対応）
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".py", delete=False
-            ) as temp_file:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as temp_file:
                 temp_file_name = temp_file.name
                 with open(file_path, encoding="utf-8") as src_file:
                     temp_file.write(src_file.read())
@@ -76,9 +74,7 @@ class MypyTypeExtractor:
                     inferred_types: dict[str, dict[str, str]] = {}
                 else:
                     try:
-                        inferred_types = (
-                            json.loads(result.stdout) if result.stdout else {}
-                        )
+                        inferred_types = json.loads(result.stdout) if result.stdout else {}
                     except json.JSONDecodeError:
                         inferred_types = {}
                     # 型をより具体的にアノテーション
@@ -99,9 +95,7 @@ class MypyTypeExtractor:
             if temp_file_name is not None:
                 Path(temp_file_name).unlink(missing_ok=True)
 
-    def merge_mypy_results(
-        self, ast_graph: TypeDependencyGraph, mypy_results: dict[str, Any]
-    ) -> TypeDependencyGraph:
+    def merge_mypy_results(self, ast_graph: TypeDependencyGraph, mypy_results: dict[str, Any]) -> TypeDependencyGraph:
         """
         AST抽出結果にmypy型推論結果をマージ。
 
@@ -116,9 +110,7 @@ class MypyTypeExtractor:
             return ast_graph
 
         # mypy結果から追加の型情報を抽出
-        additional_nodes, additional_edges = self._extract_mypy_nodes_and_edges(
-            mypy_results
-        )
+        additional_nodes, additional_edges = self._extract_mypy_nodes_and_edges(mypy_results)
 
         # ASTグラフにマージ
         merged_nodes = list(ast_graph.nodes)
@@ -162,13 +154,9 @@ class MypyTypeExtractor:
                 },
             )
 
-        return TypeDependencyGraph(
-            nodes=merged_nodes, edges=merged_edges, metadata=merged_metadata
-        )
+        return TypeDependencyGraph(nodes=merged_nodes, edges=merged_edges, metadata=merged_metadata)
 
-    def _extract_mypy_nodes_and_edges(
-        self, mypy_results: dict[str, Any]
-    ) -> tuple[list[GraphNode], list[GraphEdge]]:
+    def _extract_mypy_nodes_and_edges(self, mypy_results: dict[str, Any]) -> tuple[list[GraphNode], list[GraphEdge]]:
         """mypy結果からノードとエッジを抽出"""
         nodes: list[GraphNode] = []
         edges: list[GraphEdge] = []
@@ -202,17 +190,13 @@ class MypyTypeExtractor:
                             target=type_name,
                             relation_type=RelationType.REFERENCES,
                             weight=create_weight(0.7),  # mypy推論は中程度の信頼性
-                            metadata=GraphMetadata(
-                                custom_fields={"inferred_by_mypy": True}
-                            ),
+                            metadata=GraphMetadata(custom_fields={"inferred_by_mypy": True}),
                         )
                     )
 
         return nodes, edges
 
-    def extract_complete_dependencies(
-        self, file_path: str, include_mypy: bool = True
-    ) -> TypeDependencyGraph:
+    def extract_complete_dependencies(self, file_path: str, include_mypy: bool = True) -> TypeDependencyGraph:
         """
         AST抽出とmypy推論を組み合わせた完全な依存抽出。
 

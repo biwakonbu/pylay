@@ -39,9 +39,7 @@ class DocumentGeneratorProtocol(Protocol):
     """
 
     @abstractmethod
-    def generate_document(
-        self, config: DocumentConfig, **kwargs: Any
-    ) -> GenerationResult:
+    def generate_document(self, config: DocumentConfig, **kwargs: Any) -> GenerationResult:
         """
         ドキュメントを生成します。
 
@@ -97,9 +95,7 @@ class TypeInspectorProtocol(Protocol):
     """
 
     @abstractmethod
-    def inspect_type(
-        self, type_cls: type[Any], config: TypeInspectionConfig | None = None
-    ) -> TypeInspectionResult:
+    def inspect_type(self, type_cls: type[Any], config: TypeInspectionConfig | None = None) -> TypeInspectionResult:
         """
         指定された型を検査します。
 
@@ -214,9 +210,7 @@ class FileSystemInterfaceProtocol(Protocol):
     """
 
     @abstractmethod
-    def mkdir(
-        self, path: str | Path, parents: bool = True, exist_ok: bool = True
-    ) -> None:
+    def mkdir(self, path: str | Path, parents: bool = True, exist_ok: bool = True) -> None:
         """
         ディレクトリを作成します。
 
@@ -228,9 +222,7 @@ class FileSystemInterfaceProtocol(Protocol):
         ...
 
     @abstractmethod
-    def write_text(
-        self, path: str | Path, content: str, encoding: str = "utf-8"
-    ) -> None:
+    def write_text(self, path: str | Path, content: str, encoding: str = "utf-8") -> None:
         """
         テキストファイルに書き込みます。
 

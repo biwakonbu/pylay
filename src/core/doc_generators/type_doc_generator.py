@@ -33,15 +33,9 @@ class LayerDocGenerator(DocumentGenerator):
         markdown_builder = kwargs.pop("markdown_builder", None)
 
         # Type assertions for dependency injection
-        fs_typed = (
-            filesystem
-            if isinstance(filesystem, FileSystemInterface) or filesystem is None
-            else None
-        )
+        fs_typed = filesystem if isinstance(filesystem, FileSystemInterface) or filesystem is None else None
         md_typed = (
-            markdown_builder
-            if isinstance(markdown_builder, MarkdownBuilder) or markdown_builder is None
-            else None
+            markdown_builder if isinstance(markdown_builder, MarkdownBuilder) or markdown_builder is None else None
         )
 
         super().__init__(filesystem=fs_typed, markdown_builder=md_typed)
@@ -112,10 +106,7 @@ class LayerDocGenerator(DocumentGenerator):
             )
 
         if not isinstance(layer, str) or not isinstance(types, dict | list):
-            raise ValueError(
-                "layer must be str and types must be "
-                "dict[str, type[Any]] or list[type[Any]]"
-            )
+            raise ValueError("layer must be str and types must be dict[str, type[Any]] or list[type[Any]]")
 
         # Clear markdown builder
         self.md.clear()
@@ -183,9 +174,7 @@ class LayerDocGenerator(DocumentGenerator):
             )
             self.md.code_block("python", code_example).line_break()
 
-    def _generate_type_sections(
-        self, layer: str, types: dict[str, type[Any]] | list[type[Any]]
-    ) -> None:
+    def _generate_type_sections(self, layer: str, types: dict[str, type[Any]] | list[type[Any]]) -> None:
         """Generate documentation sections for all types.
 
         Args:
@@ -205,9 +194,7 @@ class LayerDocGenerator(DocumentGenerator):
                     continue
                 self._generate_single_type_section(type_cls.__name__, type_cls, layer)
 
-    def _generate_single_type_section(
-        self, name: str, type_cls: type[Any], layer: str
-    ) -> None:
+    def _generate_single_type_section(self, name: str, type_cls: type[Any], layer: str) -> None:
         """Generate documentation section for a single type.
 
         Args:
@@ -256,9 +243,7 @@ class LayerDocGenerator(DocumentGenerator):
             self.md.heading(3, "説明").paragraph(description).line_break()
 
         for i, code in enumerate(code_blocks):
-            self.md.heading(3, f"コード例 {i + 1}").code_block(
-                "python", code
-            ).line_break()
+            self.md.heading(3, f"コード例 {i + 1}").code_block("python", code).line_break()
 
     def _generate_usage_examples(self, name: str, layer: str) -> None:
         """Generate usage examples section.
@@ -333,9 +318,7 @@ class LayerDocGenerator(DocumentGenerator):
         self.md.bullet_point(f"ノード数: {len(graph.nodes)}")
         self.md.bullet_point(f"エッジ数: {len(graph.edges)}")
         if graph.metadata:
-            self.md.bullet_point(
-                f"抽出方法: {graph.metadata.get('extraction_method', 'unknown')}"
-            )
+            self.md.bullet_point(f"抽出方法: {graph.metadata.get('extraction_method', 'unknown')}")
         self.md.line_break()
 
         # 循環検出
@@ -385,15 +368,9 @@ class IndexDocGenerator(DocumentGenerator):
         markdown_builder = kwargs.pop("markdown_builder", None)
 
         # Type assertions for dependency injection
-        fs_typed = (
-            filesystem
-            if isinstance(filesystem, FileSystemInterface) or filesystem is None
-            else None
-        )
+        fs_typed = filesystem if isinstance(filesystem, FileSystemInterface) or filesystem is None else None
         md_typed = (
-            markdown_builder
-            if isinstance(markdown_builder, MarkdownBuilder) or markdown_builder is None
-            else None
+            markdown_builder if isinstance(markdown_builder, MarkdownBuilder) or markdown_builder is None else None
         )
 
         super().__init__(filesystem=fs_typed, markdown_builder=md_typed)
@@ -427,9 +404,7 @@ class IndexDocGenerator(DocumentGenerator):
             # テストが期待するAPI: generate(type_registry) - output_pathはデフォルト
             type_registry_arg: dict[str, dict[str, type[Any]]] = args[0]
             type_registry = type_registry_arg
-            actual_output_path = (
-                self.config.output_directory / self.config.index_filename
-            )
+            actual_output_path = self.config.output_directory / self.config.index_filename
         else:
             raise ValueError(
                 "Invalid arguments. Use generate(type_registry, output_path) "
@@ -464,10 +439,7 @@ class IndexDocGenerator(DocumentGenerator):
         """統一的な使用方法セクションを生成"""
         self.md.heading(2, "🚀 統一的な型取得方法").line_break()
 
-        explanation = (
-            "すべての型に対して統一的な方法で取得可能です。"
-            "型を追加するだけで自動的に利用可能になります。"
-        )
+        explanation = "すべての型に対して統一的な方法で取得可能です。型を追加するだけで自動的に利用可能になります。"
         self.md.paragraph(explanation).line_break()
 
         usage_example = (
@@ -483,9 +455,7 @@ class IndexDocGenerator(DocumentGenerator):
         )
         self.md.code_block("python", usage_example).line_break()
 
-    def _generate_layer_sections(
-        self, type_registry: dict[str, dict[str, type[Any]]]
-    ) -> None:
+    def _generate_layer_sections(self, type_registry: dict[str, dict[str, type[Any]]]) -> None:
         """Generate layer detail sections.
 
         Args:
@@ -496,9 +466,7 @@ class IndexDocGenerator(DocumentGenerator):
         for layer, layer_types in type_registry.items():
             self._generate_single_layer_section(layer, layer_types)
 
-    def _generate_single_layer_section(
-        self, layer: str, layer_types: dict[str, type[Any]]
-    ) -> None:
+    def _generate_single_layer_section(self, layer: str, layer_types: dict[str, type[Any]]) -> None:
         """Generate section for a single layer.
 
         Args:
@@ -526,9 +494,7 @@ class IndexDocGenerator(DocumentGenerator):
 
         self.md.line_break()
 
-    def _generate_statistics(
-        self, type_registry: dict[str, dict[str, type[Any]]]
-    ) -> None:
+    def _generate_statistics(self, type_registry: dict[str, dict[str, type[Any]]]) -> None:
         """Generate statistics section.
 
         Args:

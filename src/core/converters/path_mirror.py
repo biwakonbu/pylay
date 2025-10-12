@@ -7,9 +7,7 @@ docs/pylay/ 配下に出力パスを生成する機能を提供します。
 from pathlib import Path
 
 
-def mirror_package_path(
-    input_path: Path, project_root: Path, output_base: Path, suffix: str = ".lay.yaml"
-) -> Path:
+def mirror_package_path(input_path: Path, project_root: Path, output_base: Path, suffix: str = ".lay.yaml") -> Path:
     """入力パスを docs/pylay/ 配下にミラーリングした出力パスを生成
 
     Args:

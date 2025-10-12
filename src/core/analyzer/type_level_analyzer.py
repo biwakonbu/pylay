@@ -226,7 +226,7 @@ class TypeLevelAnalyzer:
 
         return recommendations
 
-    def _generate_general_recommendations(self, statistics: "TypeStatistics") -> list[str]:
+    def _generate_general_recommendations(self, statistics: TypeStatistics) -> list[str]:
         """一般的な推奨事項を生成
 
         Args:
@@ -285,7 +285,7 @@ class TypeLevelAnalyzer:
 
         return recommendations
 
-    def _calculate_deviation(self, statistics: "TypeStatistics") -> dict[str, float]:
+    def _calculate_deviation(self, statistics: TypeStatistics) -> dict[str, float]:
         """警告閾値との乖離を計算
 
         Args:

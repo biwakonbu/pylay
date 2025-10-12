@@ -393,7 +393,7 @@ def _process_directory(
     """
     # 処理開始時のPanel表示
     start_panel = Panel(
-        f"[bold cyan]ディレクトリ:[/bold cyan] {directory}\n" f"[bold cyan]出力先:[/bold cyan] {output_path}",
+        f"[bold cyan]ディレクトリ:[/bold cyan] {directory}\n[bold cyan]出力先:[/bold cyan] {output_path}",
         title="[bold green]🚀 ディレクトリ型収集開始[/bold green]",
         border_style="green",
     )
@@ -403,7 +403,7 @@ def _process_directory(
     py_files = _find_python_files_in_directory_only(directory, config.exclude_patterns)
 
     if not py_files:
-        console.print(f"[yellow]警告: {directory} " "内に型定義を含むファイルが見つかりませんでした[/yellow]")
+        console.print(f"[yellow]警告: {directory} 内に型定義を含むファイルが見つかりませんでした[/yellow]")
         return
 
     # 全ファイルから型を収集
@@ -713,7 +713,7 @@ def run_yaml(
         if input_file is None:
             console.print(
                 Panel(
-                    "[bold cyan]引数が指定されていません。\n" "pyproject.tomlのtarget_dirsを使用します。[/bold cyan]",
+                    "[bold cyan]引数が指定されていません。\npyproject.tomlのtarget_dirsを使用します。[/bold cyan]",
                     title="[bold green]📋 設定ファイル使用モード[/bold green]",
                     border_style="green",
                 )
@@ -728,7 +728,7 @@ def run_yaml(
             for target_dir_str in config.target_dirs:
                 target_dir = Path(target_dir_str).resolve()
                 if not target_dir.exists():
-                    console.print(f"[yellow]警告: ディレクトリが存在しません: " f"{target_dir}[/yellow]")
+                    console.print(f"[yellow]警告: ディレクトリが存在しません: {target_dir}[/yellow]")
                     continue
 
                 # 全サブディレクトリを取得（階層ごとに処理）

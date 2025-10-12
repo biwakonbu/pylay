@@ -205,7 +205,7 @@ class PylayConfig(BaseModel):
     # 型推論レベル
     infer_level: InferLevel = Field(
         default="normal",
-        description=("型推論の厳密さ（strict, normal, loose, none）" "- デフォルトは'normal'でバランス型"),
+        description=("型推論の厳密さ（strict, normal, loose, none）- デフォルトは'normal'でバランス型"),
     )
 
     # 出力ディレクトリクリーンアップフラグ

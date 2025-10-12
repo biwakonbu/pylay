@@ -111,9 +111,7 @@ class YamlProcessingService(BaseModel):
     このクラスは、YAML関連の処理のビジネスロジックを実装します。
     """
 
-    def convert_yaml_to_spec(
-        self, yaml_str: YamlString, root_key: TypeName | None = None
-    ) -> TypeSpec | Any:
+    def convert_yaml_to_spec(self, yaml_str: YamlString, root_key: TypeName | None = None) -> TypeSpec | Any:
         """
         YAML文字列からTypeSpecを生成します。
 
@@ -266,9 +264,7 @@ class DependencyProcessingService(BaseModel):
     このクラスは、依存関係の抽出・処理・可視化のビジネスロジックを実装します。
     """
 
-    def extract_dependencies_from_file(
-        self, file_path: ModulePath
-    ) -> TypeDependencyGraph:
+    def extract_dependencies_from_file(self, file_path: ModulePath) -> TypeDependencyGraph:
         """
         ファイルから依存関係を抽出します。
 
@@ -301,9 +297,7 @@ class DependencyProcessingService(BaseModel):
 
         return convert_graph_to_yaml_spec(graph)
 
-    def visualize_dependencies(
-        self, graph: TypeDependencyGraph, output_path: OutputPath = "deps.png"
-    ) -> None:
+    def visualize_dependencies(self, graph: TypeDependencyGraph, output_path: OutputPath = "deps.png") -> None:
         """
         依存関係を視覚化します。
 
@@ -326,15 +320,9 @@ class ProcessingResult(BaseModel):
     このクラスは、複数の処理結果をまとめて管理します。
     """
 
-    conversion_results: list[ConversionResult] = Field(
-        default_factory=list, description="型変換結果のリスト"
-    )
-    extraction_results: list[ExtractionResult] = Field(
-        default_factory=list, description="抽出結果のリスト"
-    )
-    dependency_results: list[DependencyResult] = Field(
-        default_factory=list, description="依存関係結果のリスト"
-    )
+    conversion_results: list[ConversionResult] = Field(default_factory=list, description="型変換結果のリスト")
+    extraction_results: list[ExtractionResult] = Field(default_factory=list, description="抽出結果のリスト")
+    dependency_results: list[DependencyResult] = Field(default_factory=list, description="依存関係結果のリスト")
     total_processing_time_ms: float = Field(description="総処理時間（ミリ秒）")
     start_time: float = Field(description="処理開始時間")
 
@@ -360,19 +348,13 @@ class ProcessingResult(BaseModel):
 
     def get_success_rate(self) -> float:
         """成功率を計算します。"""
-        total = (
-            len(self.conversion_results)
-            + len(self.extraction_results)
-            + len(self.dependency_results)
-        )
+        total = len(self.conversion_results) + len(self.extraction_results) + len(self.dependency_results)
         if total == 0:
             return 0.0
 
         successful = sum(
             1
-            for result in self.conversion_results
-            + self.extraction_results
-            + self.dependency_results
+            for result in self.conversion_results + self.extraction_results + self.dependency_results
             if result.success
         )
         return successful / total

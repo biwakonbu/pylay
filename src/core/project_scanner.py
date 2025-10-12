@@ -41,9 +41,7 @@ class ProjectScanner:
         for target_dir in target_dirs:
             yield from self._scan_directory(target_dir, current_depth=0)
 
-    def _scan_directory(
-        self, directory: Path, current_depth: int = 0
-    ) -> Generator[Path, None, None]:
+    def _scan_directory(self, directory: Path, current_depth: int = 0) -> Generator[Path, None, None]:
         """
         ディレクトリを再帰的に走査します。
 
@@ -134,14 +132,10 @@ class ProjectScanner:
         # 対象ディレクトリの検証
         for target_dir in target_dirs:
             if not target_dir.exists():
-                validation_result["errors"].append(
-                    f"対象ディレクトリが存在しません: {target_dir}"
-                )
+                validation_result["errors"].append(f"対象ディレクトリが存在しません: {target_dir}")
                 validation_result["valid"] = False
             elif not target_dir.is_dir():
-                validation_result["errors"].append(
-                    f"対象パスがディレクトリではありません: {target_dir}"
-                )
+                validation_result["errors"].append(f"対象パスがディレクトリではありません: {target_dir}")
                 validation_result["valid"] = False
 
         # 出力ディレクトリの検証
@@ -149,18 +143,12 @@ class ProjectScanner:
         if not output_dir.exists():
             try:
                 output_dir.mkdir(parents=True, exist_ok=True)
-                validation_result["warnings"].append(
-                    f"出力ディレクトリを作成しました: {output_dir}"
-                )
+                validation_result["warnings"].append(f"出力ディレクトリを作成しました: {output_dir}")
             except OSError as e:
-                validation_result["errors"].append(
-                    f"出力ディレクトリを作成できません: {output_dir} - {e}"
-                )
+                validation_result["errors"].append(f"出力ディレクトリを作成できません: {output_dir} - {e}")
                 validation_result["valid"] = False
         elif not output_dir.is_dir():
-            validation_result["errors"].append(
-                f"出力パスがディレクトリではありません: {output_dir}"
-            )
+            validation_result["errors"].append(f"出力パスがディレクトリではありません: {output_dir}")
             validation_result["valid"] = False
 
         return validation_result

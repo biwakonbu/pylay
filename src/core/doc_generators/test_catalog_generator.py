@@ -31,15 +31,9 @@ class CatalogGenerator(DocumentGenerator):
         markdown_builder = kwargs.pop("markdown_builder", None)
 
         # Type assertions for dependency injection
-        fs_typed = (
-            filesystem
-            if isinstance(filesystem, FileSystemInterface) or filesystem is None
-            else None
-        )
+        fs_typed = filesystem if isinstance(filesystem, FileSystemInterface) or filesystem is None else None
         md_typed = (
-            markdown_builder
-            if isinstance(markdown_builder, MarkdownBuilder) or markdown_builder is None
-            else None
+            markdown_builder if isinstance(markdown_builder, MarkdownBuilder) or markdown_builder is None else None
         )
 
         super().__init__(filesystem=fs_typed, markdown_builder=md_typed)
@@ -98,9 +92,7 @@ class CatalogGenerator(DocumentGenerator):
 
         except (ImportError, RecursionError, Exception) as e:
             error_type = type(e).__name__
-            self.md.paragraph(
-                f"⚠️ モジュールの処理に失敗 ({error_type}): {str(e)[:100]}..."
-            ).line_break()
+            self.md.paragraph(f"⚠️ モジュールの処理に失敗 ({error_type}): {str(e)[:100]}...").line_break()
 
     def _generate_test_function_entry(
         self,
@@ -153,16 +145,12 @@ class CatalogGenerator(DocumentGenerator):
         # Filter out excluded patterns
         filtered_files = []
         for test_file in test_files:
-            if not any(
-                pattern in str(test_file) for pattern in self.config.exclude_patterns
-            ):
+            if not any(pattern in str(test_file) for pattern in self.config.exclude_patterns):
                 filtered_files.append(test_file)
 
         return sorted(filtered_files)
 
-    def _extract_test_functions(
-        self, module: object
-    ) -> list[tuple[str, Callable[..., Any]]]:
+    def _extract_test_functions(self, module: object) -> list[tuple[str, Callable[..., Any]]]:
         """モジュールからテスト関数とメソッドを抽出する。
 
         Args:

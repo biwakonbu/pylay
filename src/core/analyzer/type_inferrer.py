@@ -142,9 +142,7 @@ class TypeInferenceAnalyzer(Analyzer):
 
         return graph
 
-    def infer_types_from_code(
-        self, code: str, module_name: str = "temp_module"
-    ) -> dict[str, InferResult]:
+    def infer_types_from_code(self, code: str, module_name: str = "temp_module") -> dict[str, InferResult]:
         """
         与えられたPythonコードから型を推論します。
 
@@ -266,16 +264,12 @@ class TypeInferenceAnalyzer(Analyzer):
                 # 関数引数の型
                 for arg in node.args.args:
                     if arg.arg not in annotations:  # 重複を避ける
-                        annotations[arg.arg] = (
-                            ast.unparse(arg.annotation) if arg.annotation else "Any"
-                        )
+                        annotations[arg.arg] = ast.unparse(arg.annotation) if arg.annotation else "Any"
 
         return annotations
 
 
-def run_mypy_inference(
-    file_path: Path, mypy_flags: list[str], timeout: int = 60
-) -> MypyResult:
+def run_mypy_inference(file_path: Path, mypy_flags: list[str], timeout: int = 60) -> MypyResult:
     """
     mypyを実行して型推論を行うユーティリティ関数
 
@@ -314,9 +308,7 @@ def run_mypy_inference(
         )
 
     # 結果を解析
-    mypy_result = MypyResult(
-        stdout=result.stdout, stderr=result.stderr, return_code=result.returncode
-    )
+    mypy_result = MypyResult(stdout=result.stdout, stderr=result.stderr, return_code=result.returncode)
 
     # 推論結果をパース
     inferred_types = _parse_mypy_output(result.stdout)
@@ -381,9 +373,7 @@ def _compute_confidence(
 
     # 重み付き平均で最終スコアを計算
     confidence = (
-        W_CERTAINTY * base_certainty
-        + W_COMPLEXITY * (1.0 - complexity_penalty)
-        + W_ANNOTATION * annotation_bonus
+        W_CERTAINTY * base_certainty + W_COMPLEXITY * (1.0 - complexity_penalty) + W_ANNOTATION * annotation_bonus
     )
 
     # 0.0-1.0の範囲にクリップ
@@ -403,9 +393,7 @@ def _compute_base_certainty(mypy_output: str, var_name: str) -> float:
     """
     # 変数名を含むエラー/警告メッセージを検索
     error_pattern = re.compile(rf"\berror\b.*\b{re.escape(var_name)}\b", re.IGNORECASE)
-    warning_pattern = re.compile(
-        rf"\bwarning\b.*\b{re.escape(var_name)}\b", re.IGNORECASE
-    )
+    warning_pattern = re.compile(rf"\bwarning\b.*\b{re.escape(var_name)}\b", re.IGNORECASE)
 
     has_error = bool(error_pattern.search(mypy_output))
     has_warning = bool(warning_pattern.search(mypy_output))

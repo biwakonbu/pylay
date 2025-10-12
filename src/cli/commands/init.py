@@ -125,30 +125,22 @@ def _generate_config_text(config: PylayConfig) -> str:
         "[tool.pylay.generation]",
         f'lay_suffix = "{config.generation.lay_suffix}"',
         f'lay_yaml_suffix = "{config.generation.lay_yaml_suffix}"',
-        (
-            f"add_generation_header = "
-            f"{str(config.generation.add_generation_header).lower()}"
-        ),
+        (f"add_generation_header = {str(config.generation.add_generation_header).lower()}"),
         (f"include_source_path = {str(config.generation.include_source_path).lower()}"),
         "",
         "# 出力設定",
         "[tool.pylay.output]",
         (
-            '# yaml_output_dir = "docs/yaml"  '
-            "# YAMLファイルの出力先（未指定時はPythonソースと同じディレクトリ）"
+            '# yaml_output_dir = "docs/yaml"  # YAMLファイルの出力先（未指定時はPythonソースと同じディレクトリ）'
             if config.output.yaml_output_dir is None
             else f'yaml_output_dir = "{config.output.yaml_output_dir}"'
         ),
         (
-            '# markdown_output_dir = "docs/md"  '
-            "# Markdownファイルの出力先（未指定時はYAMLと同じディレクトリ）"
+            '# markdown_output_dir = "docs/md"  # Markdownファイルの出力先（未指定時はYAMLと同じディレクトリ）'
             if config.output.markdown_output_dir is None
             else f'markdown_output_dir = "{config.output.markdown_output_dir}"'
         ),
-        (
-            f"mirror_package_structure = "
-            f"{str(config.output.mirror_package_structure).lower()}"
-        ),
+        (f"mirror_package_structure = {str(config.output.mirror_package_structure).lower()}"),
         f"include_metadata = {str(config.output.include_metadata).lower()}",
         (f"preserve_docstrings = {str(config.output.preserve_docstrings).lower()}"),
         "",

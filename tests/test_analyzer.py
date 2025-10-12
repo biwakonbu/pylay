@@ -88,9 +88,7 @@ def func(a: int) -> str:
         assert isinstance(graph, TypeDependencyGraph)
         assert len(graph.nodes) > 0
         # 推論された型を確認
-        inferred_nodes = [
-            n for n in graph.nodes if n.attributes and "inferred_type" in n.attributes
-        ]
+        inferred_nodes = [n for n in graph.nodes if n.attributes and "inferred_type" in n.attributes]
         assert len(inferred_nodes) > 0
 
     def test_analyze_code_string(self):
@@ -125,9 +123,7 @@ y: str
         from src.core.analyzer.models import InferResult
 
         existing = {"x": "int"}
-        inferred = {
-            "y": InferResult(variable_name="y", inferred_type="str", confidence=0.8)
-        }
+        inferred = {"y": InferResult(variable_name="y", inferred_type="str", confidence=0.8)}
         config = PylayConfig()
         from src.core.analyzer.type_inferrer import TypeInferenceAnalyzer
 
@@ -479,9 +475,7 @@ def invalid_syntax(
         # 無効なグラフ（循環など）
         graph = TypeDependencyGraph(nodes=[], edges=[])
         # 意図的に無効なデータを追加
-        invalid_node = GraphNode(
-            name="invalid", node_type="class", attributes={"invalid": "none"}
-        )
+        invalid_node = GraphNode(name="invalid", node_type="class", attributes={"invalid": "none"})
         graph.add_node(invalid_node)
 
         from src.core.analyzer.graph_processor import GraphProcessor
@@ -627,14 +621,10 @@ class TestExtractTypeRefs:
 
     def test_complex_nested_types(self, strategy):
         """複雑にネストされた型の抽出"""
-        refs = strategy._extract_type_refs(
-            "Optional[Dict[str, List[Union[MyClass, YourClass]]]]"
-        )
+        refs = strategy._extract_type_refs("Optional[Dict[str, List[Union[MyClass, YourClass]]]]")
         assert sorted(refs) == ["MyClass", "YourClass"]
 
-        refs = strategy._extract_type_refs(
-            "Callable[[Dict[str, MyInput]], Optional[MyOutput]]"
-        )
+        refs = strategy._extract_type_refs("Callable[[Dict[str, MyInput]], Optional[MyOutput]]")
         assert sorted(refs) == ["MyInput", "MyOutput"]
 
     def test_typing_primitives_filtered(self, strategy):
@@ -693,9 +683,7 @@ class TestExtractTypeRefs:
         assert refs == ["Response"]
 
         # 複雑なネスト
-        refs = strategy._extract_type_refs(
-            "Dict[str, Union[str, int, List[CustomType]]]"
-        )
+        refs = strategy._extract_type_refs("Dict[str, Union[str, int, List[CustomType]]]")
         assert refs == ["CustomType"]
 
 
@@ -893,9 +881,7 @@ y: str = "test"
 
         # 戦略のanalyzeメソッドでエラーを発生させる
         with patch("tempfile.NamedTemporaryFile", side_effect=custom_named_temp_file):
-            with patch.object(
-                analyzer.strategy, "analyze", side_effect=RuntimeError("テストエラー")
-            ):
+            with patch.object(analyzer.strategy, "analyze", side_effect=RuntimeError("テストエラー")):
                 with pytest.raises(RuntimeError, match="テストエラー"):
                     analyzer.analyze(code)
 

@@ -225,15 +225,11 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
         if var_lower in ("url", "link", "href") or var_lower.endswith("_url"):
             return PYDANTIC_TYPES["url"]
         # output系のファイル（新規作成を想定）
-        if var_lower.startswith("output_") and (
-            "file" in var_lower or "path" in var_lower
-        ):
+        if var_lower.startswith("output_") and ("file" in var_lower or "path" in var_lower):
             # output系は新規作成ファイルなのでNewPath、なければFilePath
             return PYDANTIC_TYPES.get("newpath", PYDANTIC_TYPES["filepath"])
         # input系のファイル（既存ファイルを想定）
-        if var_lower.startswith("input_") and (
-            "file" in var_lower or "path" in var_lower
-        ):
+        if var_lower.startswith("input_") and ("file" in var_lower or "path" in var_lower):
             # input系は既存ファイルなのでFilePath
             return PYDANTIC_TYPES["filepath"]
         # ファイルパス（より厳密に）
@@ -242,17 +238,10 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
         if var_lower.endswith(("_file", "_filename", "_filepath")):
             return PYDANTIC_TYPES["filepath"]
         # ディレクトリパス
-        if var_lower in ("dir", "directory", "dirpath") or var_lower.endswith(
-            ("_dir", "_directory", "_dirpath")
-        ):
+        if var_lower in ("dir", "directory", "dirpath") or var_lower.endswith(("_dir", "_directory", "_dirpath")):
             return PYDANTIC_TYPES["dirpath"]
         # 機密情報
-        if (
-            "password" in var_lower
-            or "secret" in var_lower
-            or "token" in var_lower
-            or "api_key" in var_lower
-        ):
+        if "password" in var_lower or "secret" in var_lower or "token" in var_lower or "api_key" in var_lower:
             return PYDANTIC_TYPES["secret"]
         # UUID（明確なパターンのみ）
         if var_lower in ("uuid", "guid") or var_lower.endswith(("_uuid", "_guid")):
@@ -261,12 +250,7 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
     # int型の場合
     elif primitive_type == "int":
         # 正の整数
-        if (
-            "count" in var_lower
-            or "num" in var_lower
-            or "size" in var_lower
-            or "length" in var_lower
-        ):
+        if "count" in var_lower or "num" in var_lower or "size" in var_lower or "length" in var_lower:
             return PYDANTIC_TYPES["positive_int"]
         # 非負整数（インデックス、深度等）
         if "index" in var_lower or "depth" in var_lower or "level" in var_lower:
@@ -275,12 +259,7 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
     # float型の場合
     elif primitive_type == "float":
         # 正の浮動小数点数
-        if (
-            "score" in var_lower
-            or "rate" in var_lower
-            or "ratio" in var_lower
-            or "percentage" in var_lower
-        ):
+        if "score" in var_lower or "rate" in var_lower or "ratio" in var_lower or "percentage" in var_lower:
             return PYDANTIC_TYPES["positive_float"]
         # 非負浮動小数点数
         if "weight" in var_lower or "distance" in var_lower:

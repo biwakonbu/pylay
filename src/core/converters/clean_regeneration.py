@@ -24,10 +24,7 @@ def is_lay_generated_file(file_path: Path) -> bool:
         content = file_path.read_text(encoding="utf-8")
 
         # 警告ヘッダーのキーワードで判定
-        return (
-            "pylay自動生成ファイル" in content
-            and "このファイルを直接編集しないでください" in content
-        )
+        return "pylay自動生成ファイル" in content and "このファイルを直接編集しないでください" in content
 
     except (OSError, UnicodeDecodeError):
         # ファイル読み込みに失敗した場合は手動ファイルとして扱う（安全策）
@@ -62,9 +59,7 @@ def clean_lay_files(target_dir: Path, lay_suffix: str = ".lay.py") -> list[Path]
     return deleted_files
 
 
-def clean_lay_files_recursive(
-    target_dir: Path, lay_suffix: str = ".lay.py"
-) -> list[Path]:
+def clean_lay_files_recursive(target_dir: Path, lay_suffix: str = ".lay.py") -> list[Path]:
     """指定ディレクトリ配下の古い .lay.* ファイルを再帰的に削除
 
     Args:

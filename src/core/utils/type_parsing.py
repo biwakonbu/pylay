@@ -236,9 +236,7 @@ def extract_type_references(
         import typing
 
         # セキュリティ: allowlist方式で必要最小限の属性のみ許可
-        typing_ns = {
-            k: v for k, v in typing.__dict__.items() if k in ALLOWED_TYPING_ATTRS
-        }
+        typing_ns = {k: v for k, v in typing.__dict__.items() if k in ALLOWED_TYPING_ATTRS}
         typing_ns["__builtins__"] = {}
 
         # TODO: 将来的にはASTパースのみで処理を完結させる移行を検討
@@ -260,13 +258,7 @@ def extract_type_references(
     except SyntaxError:
         # パース失敗時は単純な文字列分割にフォールバック
         logger.debug(f"型文字列のパースに失敗しました: {type_str}")
-        parts = (
-            type_str.replace("[", " ")
-            .replace("]", " ")
-            .replace(",", " ")
-            .replace("|", " ")
-            .split()
-        )
+        parts = type_str.replace("[", " ").replace("]", " ").replace(",", " ").replace("|", " ").split()
         for part in parts:
             part = part.strip()
             if part and part[0].isupper() and part not in excluded_types:
@@ -291,9 +283,7 @@ def validate_type_string(type_str: str) -> tuple[bool, str | None]:
     try:
         import typing
 
-        typing_ns = {
-            k: v for k, v in typing.__dict__.items() if k in ALLOWED_TYPING_ATTRS
-        }
+        typing_ns = {k: v for k, v in typing.__dict__.items() if k in ALLOWED_TYPING_ATTRS}
         typing_ns["__builtins__"] = {}
         eval(type_str, typing_ns)  # noqa: S307
         return True, None

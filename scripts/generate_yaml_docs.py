@@ -19,9 +19,7 @@ def generate_yaml_docs_from_file(yaml_file: str, output_dir: str | None = None) 
         generate_yaml_docs(spec, output_dir)
 
 
-def generate_yaml_docs_from_file_with_config(
-    yaml_file: str, config_path: str | None = None
-) -> None:
+def generate_yaml_docs_from_file_with_config(yaml_file: str, config_path: str | None = None) -> None:
     """YAMLファイルから型仕様を読み込み、設定ファイルに基づいてドキュメント生成"""
     if config_path is None:
         # デフォルト設定ファイルを使用
@@ -69,9 +67,7 @@ properties:
 """
 
     # 一時ファイルにYAMLを書き込み
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False, encoding="utf-8"
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False, encoding="utf-8") as f:
         f.write(sample_yaml)
         yaml_file = f.name
 

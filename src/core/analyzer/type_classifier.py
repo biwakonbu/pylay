@@ -17,32 +17,20 @@ class TypeClassifier:
 
     # 検出パターン
     LEVEL1_PATTERN = re.compile(r"^\s*type\s+(\w+)\s*=\s*(.+)$", re.MULTILINE)
-    LEVEL2_PATTERN = re.compile(
-        r"^\s*type\s+(\w+)\s*=\s*Annotated\[.*AfterValidator.*\]", re.MULTILINE
-    )
+    LEVEL2_PATTERN = re.compile(r"^\s*type\s+(\w+)\s*=\s*Annotated\[.*AfterValidator.*\]", re.MULTILINE)
     # 新パターン: NewType定義
-    NEWTYPE_PATTERN = re.compile(
-        r"^\s*(\w+)\s*=\s*NewType\(['\"](\w+)['\"]\s*,\s*(\w+)\)", re.MULTILINE
-    )
+    NEWTYPE_PATTERN = re.compile(r"^\s*(\w+)\s*=\s*NewType\(['\"](\w+)['\"]\s*,\s*(\w+)\)", re.MULTILINE)
     # ファクトリ関数パターン
-    FACTORY_PATTERN = re.compile(
-        r"^\s*def\s+(create_(\w+)|(\w+))\s*\([^)]*\)\s*->\s*(\w+):", re.MULTILINE
-    )
+    FACTORY_PATTERN = re.compile(r"^\s*def\s+(create_(\w+)|(\w+))\s*\([^)]*\)\s*->\s*(\w+):", re.MULTILINE)
     # @validate_call デコレータ + 関数定義（改行を許容、パラメータは.*?で非貪欲マッチ）
     VALIDATE_CALL_PATTERN = re.compile(
         r"@validate_call\s*\n\s*def\s+(\w+)\s*\(.*?\)\s*->\s*(\w+):",
         re.MULTILINE | re.DOTALL,
     )
     LEVEL3_PATTERN = re.compile(r"^\s*class\s+(\w+)\(.*BaseModel.*\):", re.MULTILINE)
-    OTHER_CLASS_PATTERN = re.compile(
-        r"^\s*class\s+(\w+)(?:\((?!.*BaseModel).*\))?:", re.MULTILINE
-    )
-    OTHER_DATACLASS_PATTERN = re.compile(
-        r"@dataclass.*\n\s*class\s+(\w+)", re.MULTILINE
-    )
-    OTHER_TYPEDDICT_PATTERN = re.compile(
-        r"^\s*class\s+(\w+)\(TypedDict\):", re.MULTILINE
-    )
+    OTHER_CLASS_PATTERN = re.compile(r"^\s*class\s+(\w+)(?:\((?!.*BaseModel).*\))?:", re.MULTILINE)
+    OTHER_DATACLASS_PATTERN = re.compile(r"@dataclass.*\n\s*class\s+(\w+)", re.MULTILINE)
+    OTHER_TYPEDDICT_PATTERN = re.compile(r"^\s*class\s+(\w+)\(TypedDict\):", re.MULTILINE)
 
     # docstring抽出パターン
     DOCSTRING_TRIPLE_PATTERN = re.compile(r'"""(.*?)"""', re.DOTALL)
@@ -71,9 +59,7 @@ class TypeClassifier:
         # AST解析とパターンマッチングを併用
         try:
             tree = ast.parse(source_code)
-            type_definitions.extend(
-                self._classify_with_ast(tree, file_path, source_code)
-            )
+            type_definitions.extend(self._classify_with_ast(tree, file_path, source_code))
         except SyntaxError:
             pass
 
@@ -91,9 +77,7 @@ class TypeClassifier:
 
         return unique_types
 
-    def _classify_with_ast(
-        self, tree: ast.AST, file_path: Path, source_code: str
-    ) -> list[TypeDefinition]:
+    def _classify_with_ast(self, tree: ast.AST, file_path: Path, source_code: str) -> list[TypeDefinition]:
         """ASTを使用した型定義の分類
 
         Args:
@@ -127,9 +111,7 @@ class TypeClassifier:
 
         return type_definitions
 
-    def _classify_class_def(
-        self, node: ast.ClassDef, file_path: Path, source_code: str
-    ) -> TypeDefinition | None:
+    def _classify_class_def(self, node: ast.ClassDef, file_path: Path, source_code: str) -> TypeDefinition | None:
         """ClassDefノードを分類
 
         Args:
@@ -144,9 +126,7 @@ class TypeClassifier:
         is_basemodel = any(self._is_basemodel_base(base) for base in node.bases)
 
         # dataclassデコレータがあるか確認
-        is_dataclass = any(
-            self._is_dataclass_decorator(dec) for dec in node.decorator_list
-        )
+        is_dataclass = any(self._is_dataclass_decorator(dec) for dec in node.decorator_list)
 
         # TypedDictを継承しているか確認
         is_typeddict = any(self._is_typeddict_base(base) for base in node.bases)
@@ -188,9 +168,7 @@ class TypeClassifier:
             keep_as_is=keep_as_is,
         )
 
-    def _classify_type_alias(
-        self, node: ast.TypeAlias, file_path: Path, source_code: str
-    ) -> TypeDefinition | None:
+    def _classify_type_alias(self, node: ast.TypeAlias, file_path: Path, source_code: str) -> TypeDefinition | None:
         """TypeAliasノードを分類
 
         Args:
@@ -241,9 +219,7 @@ class TypeClassifier:
             keep_as_is=keep_as_is,
         )
 
-    def _classify_assign_alias(
-        self, node: ast.Assign, file_path: Path, source_code: str
-    ) -> TypeDefinition | None:
+    def _classify_assign_alias(self, node: ast.Assign, file_path: Path, source_code: str) -> TypeDefinition | None:
         """代入形式の型エイリアスを分類
 
         Args:
@@ -265,10 +241,7 @@ class TypeClassifier:
 
         # NewType定義はスキップ（_detect_newtype_with_factoryで処理）
         if isinstance(node.value, ast.Call):
-            if (
-                isinstance(node.value.func, ast.Name)
-                and node.value.func.id == "NewType"
-            ):
+            if isinstance(node.value.func, ast.Name) and node.value.func.id == "NewType":
                 return None
 
         # Annotated型かつAfterValidatorを含むか確認
@@ -302,9 +275,7 @@ class TypeClassifier:
             keep_as_is=keep_as_is,
         )
 
-    def _classify_with_regex(
-        self, source_code: str, file_path: Path
-    ) -> list[TypeDefinition]:
+    def _classify_with_regex(self, source_code: str, file_path: Path) -> list[TypeDefinition]:
         """正規表現を使用した型定義の分類
 
         Args:
@@ -350,10 +321,7 @@ class TypeClassifier:
             definition = match.group(0).strip()
 
             # Level 2として既に検出されていないか確認
-            if not any(
-                td.name == type_name and td.line_number == line_number
-                for td in type_definitions
-            ):
+            if not any(td.name == type_name and td.line_number == line_number for td in type_definitions):
                 # docstringを抽出
                 docstring = self._extract_docstring_near_line(source_code, line_number)
 
@@ -438,18 +406,14 @@ class TypeClassifier:
             pass
         return ""
 
-    def _extract_type_alias_docstring(
-        self, node: ast.TypeAlias, source_code: str
-    ) -> str | None:
+    def _extract_type_alias_docstring(self, node: ast.TypeAlias, source_code: str) -> str | None:
         """type文のdocstringを抽出"""
         # type文の直後の行からdocstringを探す
         if hasattr(node, "end_lineno") and node.end_lineno is not None:
             return self._extract_docstring_near_line(source_code, node.end_lineno + 1)
         return None
 
-    def _extract_docstring_near_line(
-        self, source_code: str, line_number: int
-    ) -> str | None:
+    def _extract_docstring_near_line(self, source_code: str, line_number: int) -> str | None:
         """指定行の近くのdocstringを抽出
 
         Args:
@@ -487,9 +451,7 @@ class TypeClassifier:
 
         return None
 
-    def _extract_target_level(
-        self, docstring: str | None
-    ) -> Literal["level1", "level2", "level3"] | None:
+    def _extract_target_level(self, docstring: str | None) -> Literal["level1", "level2", "level3"] | None:
         """docstringから@target-levelを抽出
 
         Args:
@@ -531,9 +493,7 @@ class TypeClassifier:
         match = re.search(r"@keep-as-is:\s*(true|True|yes|Yes)", docstring)
         return match is not None
 
-    def _detect_newtype_with_factory(
-        self, source_code: str, file_path: Path
-    ) -> list[TypeDefinition]:
+    def _detect_newtype_with_factory(self, source_code: str, file_path: Path) -> list[TypeDefinition]:
         """NewType + ファクトリ関数パターンを検出（PEP 484準拠パターン）
 
         Args:
@@ -546,9 +506,7 @@ class TypeClassifier:
         type_definitions: list[TypeDefinition] = []
 
         # NewType定義を収集
-        newtype_defs: dict[
-            str, tuple[int, str, str]
-        ] = {}  # {type_name: (line, definition, base_type)}
+        newtype_defs: dict[str, tuple[int, str, str]] = {}  # {type_name: (line, definition, base_type)}
         for match in self.NEWTYPE_PATTERN.finditer(source_code):
             var_name = match.group(1)
             type_name = match.group(2)
@@ -570,9 +528,7 @@ class TypeClassifier:
             if full_func_name.startswith("create_"):
                 type_name_snake = full_func_name.replace("create_", "")
                 # snake_case -> PascalCase
-                type_name = "".join(
-                    word.capitalize() for word in type_name_snake.split("_")
-                )
+                type_name = "".join(word.capitalize() for word in type_name_snake.split("_"))
             else:
                 type_name = full_func_name
 

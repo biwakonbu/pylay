@@ -44,12 +44,8 @@ z = True
         analyzer = TypeInferenceAnalyzer(config)
         existing = {"a": "int"}
         inferred = {
-            "b": InferResult(
-                variable_name="b", inferred_type="str", confidence=0.9, line_number=1
-            ),
-            "c": InferResult(
-                variable_name="c", inferred_type="bool", confidence=0.85, line_number=2
-            ),
+            "b": InferResult(variable_name="b", inferred_type="str", confidence=0.9, line_number=1),
+            "c": InferResult(variable_name="c", inferred_type="bool", confidence=0.85, line_number=2),
         }
         merged = analyzer.merge_inferred_types(existing, inferred)
 

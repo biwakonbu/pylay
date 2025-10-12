@@ -11,8 +11,9 @@
 """
 
 import time
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -20,7 +21,6 @@ from .types import (
     BatchGenerationConfig,
     BatchGenerationResult,
     DocumentConfig,
-    DocumentMetadata,
     DocumentStructure,
     FileSystemConfig,
     GenerationResult,
@@ -31,6 +31,7 @@ from .types import (
     TypeInspectionConfig,
     TypeInspectionResult,
     TypeName,
+    create_empty_metadata,
 )
 
 # デフォルトの出力パス（成功時と例外時で一貫して使用）
@@ -44,7 +45,10 @@ class DocumentGeneratorService(BaseModel):
     このクラスは、ドキュメント生成処理のビジネスロジックを実装します。
     """
 
-    def generate_document(self, config: DocumentConfig, **kwargs: Any) -> GenerationResult:
+    def generate_document(  # type: ignore[override]
+        self, config: DocumentConfig, **kwargs: Mapping[str, object]
+    ) -> GenerationResult:
+        # TODO: Create TypedDict for specific kwargs when concrete implementations are added
         """
         ドキュメントを生成します。
 
@@ -68,7 +72,7 @@ class DocumentGeneratorService(BaseModel):
             structure = DocumentStructure(
                 title="Generated Documentation",
                 sections=[],
-                metadata=cast(DocumentMetadata, {}),
+                metadata=create_empty_metadata(),
                 generation_timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             )
 
@@ -107,7 +111,7 @@ class TypeInspectorService(BaseModel):
     このクラスは、型検査処理のビジネスロジックを実装します。
     """
 
-    def inspect_type(self, type_cls: type[Any], config: TypeInspectionConfig | None = None) -> TypeInspectionResult:
+    def inspect_type(self, type_cls: object, config: TypeInspectionConfig | None = None) -> TypeInspectionResult:
         """
         指定された型を検査します。
 
@@ -161,7 +165,7 @@ class TypeInspectorService(BaseModel):
                 inspection_time_ms=processing_time,
             )
 
-    def _get_docstring(self, type_cls: type[Any]) -> str | None:
+    def _get_docstring(self, type_cls: object) -> str | None:
         """型クラスのdocstringを取得する内部メソッド"""
         return getattr(type_cls, "__doc__", None)
 
@@ -189,7 +193,7 @@ class TypeInspectorService(BaseModel):
 
         return code_blocks
 
-    def _is_pydantic_model(self, type_cls: type[Any]) -> bool:
+    def _is_pydantic_model(self, type_cls: object) -> bool:
         """Pydanticモデルかどうかをチェックする内部メソッド"""
         try:
             from pydantic import BaseModel
@@ -200,7 +204,7 @@ class TypeInspectorService(BaseModel):
         except Exception:
             return False
 
-    def _get_pydantic_schema(self, type_cls: type[Any]) -> PydanticSchemaInfo | None:
+    def _get_pydantic_schema(self, type_cls: object) -> PydanticSchemaInfo | None:
         """Pydanticモデルのスキーマ情報を取得する内部メソッド"""
         try:
             if self._is_pydantic_model(type_cls):
@@ -416,7 +420,7 @@ class TemplateProcessorService(BaseModel):
     def process_template(
         self,
         template_content: str,
-        variables: dict[str, Any],
+        variables: dict[str, Any],  # TODO: Any required for TemplateProcessorProtocol
         config: TemplateConfig | None = None,
     ) -> str:
         """
@@ -442,7 +446,7 @@ class TemplateProcessorService(BaseModel):
     def render_document(
         self,
         template_name: str,
-        variables: dict[str, Any],
+        variables: dict[str, Any],  # TODO: Any required for TemplateProcessorProtocol
         output_path: str | Path,
         config: DocumentConfig | None = None,
     ) -> None:
@@ -629,7 +633,7 @@ class DocumentationOrchestrator(BaseModel):
 
     def generate_comprehensive_documentation(
         self,
-        types: dict[TypeName, type[Any]],
+        types: dict[TypeName, object],
         output_path: str | Path,
         config: DocumentConfig | None = None,
     ) -> GenerationResult:
@@ -668,7 +672,7 @@ class DocumentationOrchestrator(BaseModel):
             structure = DocumentStructure(
                 title="Type Documentation",
                 sections=sections,
-                metadata=cast(DocumentMetadata, {}),
+                metadata=create_empty_metadata(),
                 generation_timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             )
 

@@ -138,9 +138,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             return graph
 
         except Exception as e:
-            raise DependencyExtractionError(
-                f"依存関係抽出に失敗しました: {e}", file_path=str(file_path)
-            )
+            raise DependencyExtractionError(f"依存関係抽出に失敗しました: {e}", file_path=str(file_path))
         finally:
             # 一時ファイルのクリーンアップ
             if temp_path is not None:
@@ -159,9 +157,7 @@ class DependencyExtractionAnalyzer(Analyzer):
                 project_root = project_root.parent
 
             # 相対パスからモジュール名を生成
-            relative_path = (
-                file_path.resolve().with_suffix("").relative_to(project_root)
-            )
+            relative_path = file_path.resolve().with_suffix("").relative_to(project_root)
             return relative_path.as_posix().replace("/", ".")
         except (ValueError, Exception) as e:
             # エラーログを出力
@@ -169,9 +165,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             import logging
 
             logger = logging.getLogger(__name__)
-            logger.warning(
-                f"モジュール名の計算に失敗しました: file_path={file_path}, error={e}"
-            )
+            logger.warning(f"モジュール名の計算に失敗しました: file_path={file_path}, error={e}")
 
             # より一意性の高いフォールバック名を生成
             try:
@@ -186,11 +180,7 @@ class DependencyExtractionAnalyzer(Analyzer):
                 # 最終フォールバック: パスの最後の2要素 + ハッシュ
                 resolved_str = str(file_path.resolve())
                 path_hash = hashlib.sha256(resolved_str.encode()).hexdigest()[:8]
-                parts = (
-                    file_path.parts[-2:]
-                    if len(file_path.parts) > 1
-                    else (file_path.stem,)
-                )
+                parts = file_path.parts[-2:] if len(file_path.parts) > 1 else (file_path.stem,)
                 return f"{'.'.join(parts)}.{path_hash}"
 
     def _integrate_mypy(self, file_path: Path | str) -> None:
@@ -208,9 +198,7 @@ class DependencyExtractionAnalyzer(Analyzer):
                     if node.attributes and "inferred_type" in node.attributes:
                         type_str = node.attributes["inferred_type"]
                         if type_str != "Any":
-                            type_refs = self._extract_type_refs_from_string(
-                                str(type_str)
-                            )
+                            type_refs = self._extract_type_refs_from_string(str(type_str))
                             for ref in type_refs:
                                 if ref != node.name:
                                     from src.core.schemas.graph import (
@@ -246,9 +234,7 @@ class DependencyExtractionAnalyzer(Analyzer):
         """
         from src.core.utils.type_parsing import extract_type_references
 
-        return extract_type_references(
-            type_str, exclude_builtins=True, deduplicate=True
-        )
+        return extract_type_references(type_str, exclude_builtins=True, deduplicate=True)
 
     def _detect_cycles(self, graph: TypeDependencyGraph) -> CyclePathList:
         """グラフから循環を検出"""

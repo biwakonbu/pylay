@@ -19,9 +19,7 @@ from pathlib import Path
 def run_command(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
     """コマンド実行ヘルパー"""
     try:
-        result = subprocess.run(
-            cmd, cwd=cwd, capture_output=True, text=True, timeout=30
-        )
+        result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=30)
         return result.returncode, result.stdout, result.stderr
     except subprocess.TimeoutExpired:
         return 1, "", "Command timed out"
@@ -33,9 +31,7 @@ def get_current_revision() -> str | None:
     """現在のマイグレーションリビジョンを取得"""
     backend_dir = Path(__file__).parent.parent
 
-    returncode, stdout, stderr = run_command(
-        ["uv", "run", "alembic", "current"], cwd=backend_dir
-    )
+    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "current"], cwd=backend_dir)
 
     if returncode == 0:
         # "INFO  [alembic.runtime.migration] Context impl ..." の行を除外
@@ -50,9 +46,7 @@ def get_revision_history() -> list[str]:
     """マイグレーション履歴を取得"""
     backend_dir = Path(__file__).parent.parent
 
-    returncode, stdout, stderr = run_command(
-        ["uv", "run", "alembic", "history"], cwd=backend_dir
-    )
+    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "history"], cwd=backend_dir)
 
     revisions = []
     if returncode == 0:
@@ -71,9 +65,7 @@ async def migration_up_test() -> bool:
     print("📈 マイグレーション UP テスト開始...")
     backend_dir = Path(__file__).parent.parent
 
-    returncode, stdout, stderr = run_command(
-        ["uv", "run", "alembic", "upgrade", "head"], cwd=backend_dir
-    )
+    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "upgrade", "head"], cwd=backend_dir)
 
     if returncode == 0:
         print("✅ マイグレーション UP 成功")
@@ -100,9 +92,7 @@ async def migration_down_test() -> bool:
     # 1つ前のリビジョンにダウングレード
     previous_revision = revisions[-2]  # 最新から2番目
 
-    returncode, stdout, stderr = run_command(
-        ["uv", "run", "alembic", "downgrade", previous_revision], cwd=backend_dir
-    )
+    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "downgrade", previous_revision], cwd=backend_dir)
 
     if returncode == 0:
         print(f"✅ マイグレーション DOWN 成功 (-> {previous_revision})")
@@ -120,9 +110,7 @@ async def migration_up_again_test() -> bool:
     print("\n🔄 マイグレーション 再UP テスト開始...")
     backend_dir = Path(__file__).parent.parent
 
-    returncode, stdout, stderr = run_command(
-        ["uv", "run", "alembic", "upgrade", "head"], cwd=backend_dir
-    )
+    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "upgrade", "head"], cwd=backend_dir)
 
     if returncode == 0:
         print("✅ マイグレーション 再UP 成功")
@@ -141,9 +129,7 @@ async def verify_schema_integrity() -> bool:
     backend_dir = Path(__file__).parent.parent
 
     # alembic check コマンドでスキーマ整合性をチェック
-    returncode, stdout, stderr = run_command(
-        ["uv", "run", "alembic", "check"], cwd=backend_dir
-    )
+    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "check"], cwd=backend_dir)
 
     if returncode == 0:
         print("✅ スキーマ整合性検証成功")

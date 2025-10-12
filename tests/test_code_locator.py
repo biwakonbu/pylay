@@ -52,9 +52,7 @@ class UserService:
 '''
 
         with patch("builtins.open", create=True) as mock_open:
-            mock_open.return_value.__enter__.return_value.read.return_value = (
-                mock_source
-            )
+            mock_open.return_value.__enter__.return_value.read.return_value = mock_source
 
             locator = CodeLocator([Path("src")])
             results = locator.find_primitive_usages()
@@ -99,9 +97,7 @@ class UserService:
         )
 
         locator = CodeLocator([Path("src")])
-        count = locator._count_type_usage(
-            "UserId", {"UserId": type_def, "Email": type_def}
-        )
+        count = locator._count_type_usage("UserId", {"UserId": type_def, "Email": type_def})
 
         # 簡易実装では他の定義内での使用をカウント
         assert isinstance(count, int)

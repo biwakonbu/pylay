@@ -35,9 +35,7 @@ class TestGraphEdge:
 
     def test_valid_edge_creation(self):
         """有効なエッジの作成をテスト"""
-        edge = GraphEdge(
-            source="A", target="B", relation_type="inherits_from", weight=0.9
-        )
+        edge = GraphEdge(source="A", target="B", relation_type="inherits_from", weight=0.9)
         assert edge.source == "A"
         assert edge.target == "B"
         assert edge.relation_type == "inherits_from"

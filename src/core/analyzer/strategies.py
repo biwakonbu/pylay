@@ -14,10 +14,7 @@ from pathlib import Path
 try:
     import networkx as nx
 except ImportError as e:
-    raise ImportError(
-        "NetworkX is required for cycle detection. "
-        "Install it with: pip install networkx"
-    ) from e
+    raise ImportError("NetworkX is required for cycle detection. Install it with: pip install networkx") from e
 
 from datetime import UTC
 
@@ -83,9 +80,7 @@ class AnalysisStrategy(ABC):
                 project_root = project_root.parent
 
             # 相対パスからモジュール名を生成
-            relative_path = (
-                file_path.resolve().with_suffix("").relative_to(project_root)
-            )
+            relative_path = file_path.resolve().with_suffix("").relative_to(project_root)
             return relative_path.as_posix().replace("/", ".")
         except (ValueError, OSError):
             # フォールバック: ファイル名のみ
@@ -186,9 +181,7 @@ class NormalAnalysisStrategy(AnalysisStrategy):
             from src.core.schemas.graph import GraphNode, RelationType
 
             # mypy推論を実行
-            mypy_result = run_mypy_inference(
-                file_path, self.infer_config.mypy_flags, self.infer_config.timeout
-            )
+            mypy_result = run_mypy_inference(file_path, self.infer_config.mypy_flags, self.infer_config.timeout)
 
             # 推論結果をグラフに追加
             for var_name, infer_result in mypy_result.inferred_types.items():
@@ -241,9 +234,7 @@ class NormalAnalysisStrategy(AnalysisStrategy):
         """
         from src.core.utils.type_parsing import extract_type_references
 
-        return extract_type_references(
-            type_str, exclude_builtins=True, deduplicate=True
-        )
+        return extract_type_references(type_str, exclude_builtins=True, deduplicate=True)
 
     def _get_extraction_method(self) -> str:
         return "AST_analysis_with_mypy"
@@ -284,8 +275,7 @@ class StrictAnalysisStrategy(NormalAnalysisStrategy):
         # 大規模グラフでのサイクル検出をスキップ
         if num_nodes > MAX_NODES_FOR_CYCLE_DETECTION:
             logger.warning(
-                "グラフが大規模すぎるためサイクル検出をスキップします: "
-                "%d ノード（上限: %d）",
+                "グラフが大規模すぎるためサイクル検出をスキップします: %d ノード（上限: %d）",
                 num_nodes,
                 MAX_NODES_FOR_CYCLE_DETECTION,
             )
@@ -330,6 +320,5 @@ def create_analysis_strategy(config: PylayConfig) -> AnalysisStrategy:
         return StrictAnalysisStrategy(config)
     else:
         raise ValueError(
-            f"無効なinfer_level: {config.infer_level}。"
-            "'loose', 'normal', 'strict' のいずれかを指定してください。"
+            f"無効なinfer_level: {config.infer_level}。'loose', 'normal', 'strict' のいずれかを指定してください。"
         )

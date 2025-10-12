@@ -93,9 +93,7 @@ class YamlConverterProtocol(Protocol):
     """
 
     @abstractmethod
-    def convert_yaml_to_spec(
-        self, yaml_str: YamlString, root_key: TypeName | None = None
-    ) -> TypeSpec | Any:
+    def convert_yaml_to_spec(self, yaml_str: YamlString, root_key: TypeName | None = None) -> TypeSpec | Any:
         """
         YAML文字列からTypeSpecを生成します。
 
@@ -131,9 +129,7 @@ class YamlConverterProtocol(Protocol):
         ...
 
     @abstractmethod
-    def generate_pydantic_model(
-        self, spec: TypeSpec, model_name: str = "DynamicModel"
-    ) -> CodeString:
+    def generate_pydantic_model(self, spec: TypeSpec, model_name: str = "DynamicModel") -> CodeString:
         """
         TypeSpecからPydanticモデルコードを生成します。
 
@@ -181,9 +177,7 @@ class ModuleExtractorProtocol(Protocol):
         ...
 
     @abstractmethod
-    def extract_dependencies_from_file(
-        self, file_path: ModulePath
-    ) -> TypeDependencyGraph:
+    def extract_dependencies_from_file(self, file_path: ModulePath) -> TypeDependencyGraph:
         """
         ファイルから依存関係を抽出します。
 
@@ -220,9 +214,7 @@ class GraphConverterProtocol(Protocol):
         ...
 
     @abstractmethod
-    def visualize_dependencies(
-        self, graph: TypeDependencyGraph, output_path: OutputPath | None = "deps.png"
-    ) -> None:
+    def visualize_dependencies(self, graph: TypeDependencyGraph, output_path: OutputPath | None = "deps.png") -> None:
         """
         依存関係を視覚化します。
 

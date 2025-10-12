@@ -137,9 +137,7 @@ class TestTypeInspector:
 
     def test_format_type_definition_with_pydantic(self):
         """Test formatting Pydantic type definition."""
-        definition = self.inspector.format_type_definition(
-            "MockModel", MockPydanticModel
-        )
+        definition = self.inspector.format_type_definition("MockModel", MockPydanticModel)
 
         assert "```json" in definition
         assert "properties" in definition

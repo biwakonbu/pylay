@@ -17,9 +17,7 @@ from src.core.doc_generators.type_doc_generator import (
 from src.core.schemas.type_index import TYPE_REGISTRY, build_registry
 
 
-def generate_layer_docs(
-    layer: str, types: dict[str, type[Any]], output_dir: str | None = None
-) -> None:
+def generate_layer_docs(layer: str, types: dict[str, type[Any]], output_dir: str | None = None) -> None:
     """レイヤー別型ドキュメント生成（完全自動成長対応）
 
     Args:
@@ -59,9 +57,7 @@ def generate_index_docs(output_path: str | None = None) -> None:
 
             config_pylay = PylayConfig.from_pyproject_toml()
             output_manager = OutputPathManager(config_pylay)
-            output_path = str(
-                output_manager.get_markdown_path(filename="type_index.md")
-            )
+            output_path = str(output_manager.get_markdown_path(filename="type_index.md"))
         except Exception:
             output_path = "docs/pylay-types/documents/type_index.md"
 

@@ -25,9 +25,7 @@ def create_temp_file(config: TempFileConfig) -> Path:
         OSError: ファイル作成に失敗した場合
     """
     try:
-        with tempfile.NamedTemporaryFile(
-            mode=config.mode, suffix=config.suffix, delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode=config.mode, suffix=config.suffix, delete=False) as f:
             f.write(config.code)
             temp_path = Path(f.name)
         return temp_path
@@ -70,6 +68,4 @@ def read_file_content(file_path: Path) -> str:
     except FileNotFoundError:
         raise FileNotFoundError(f"ファイルが見つかりません: {file_path}")
     except UnicodeDecodeError as e:
-        raise UnicodeDecodeError(
-            e.encoding, e.object, e.start, e.end, f"エンコーディングエラー: {file_path}"
-        )
+        raise UnicodeDecodeError(e.encoding, e.object, e.start, e.end, f"エンコーディングエラー: {file_path}")

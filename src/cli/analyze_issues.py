@@ -147,9 +147,7 @@ class ProjectAnalyzer:
             "schemas/yaml_spec.py",
             "schemas/type_index.py",
         ]
-        return self.run_command(
-            ["uv", "run", "mypy"] + mypy_files, "型チェック問題（mypy）"
-        )
+        return self.run_command(["uv", "run", "mypy"] + mypy_files, "型チェック問題（mypy）")
 
     def check_tests(self) -> CheckResult:
         """テスト失敗をチェック"""
@@ -238,12 +236,8 @@ class ProjectAnalyzer:
                     "success": result.success,
                     "has_issues": result.has_issues,
                     "return_code": result.return_code,
-                    "output_lines": len(result.output.split("\n"))
-                    if result.output
-                    else 0,
-                    "error_lines": len(result.error_output.split("\n"))
-                    if result.error_output
-                    else 0,
+                    "output_lines": len(result.output.split("\n")) if result.output else 0,
+                    "error_lines": len(result.error_output.split("\n")) if result.error_output else 0,
                 }
                 for result in self.results
             ],
@@ -266,13 +260,7 @@ class ProjectAnalyzer:
 
         print("\n📋 詳細結果:")
         for result in summary["results"]:  # type: ignore
-            status = (
-                "✅"
-                if result["success"] and not result["has_issues"]
-                else "⚠️"
-                if result["has_issues"]
-                else "❌"
-            )
+            status = "✅" if result["success"] and not result["has_issues"] else "⚠️" if result["has_issues"] else "❌"
             print(f"  {status} {result['name']}")
             if result["has_issues"]:
                 out_lines = result["output_lines"]
@@ -289,14 +277,10 @@ class ProjectAnalyzer:
         else:
             print("  - 問題を修正した後、再度実行することを推奨します")
 
-    def save_report(
-        self, summary: dict[str, object], filepath: str = "analysis_report.json"
-    ) -> None:
+    def save_report(self, summary: dict[str, object], filepath: str = "analysis_report.json") -> None:
         """分析レポートをJSONファイルに保存"""
         report = {
-            "timestamp": subprocess.run(
-                ["date", "+%Y-%m-%d %H:%M:%S"], capture_output=True, text=True
-            ).stdout.strip(),
+            "timestamp": subprocess.run(["date", "+%Y-%m-%d %H:%M:%S"], capture_output=True, text=True).stdout.strip(),
             "summary": summary,
             "detailed_results": [
                 {

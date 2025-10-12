@@ -11,9 +11,7 @@ from src.cli.commands.init import run_init
 class TestInitCommand:
     """pylay init コマンドのテスト"""
 
-    def test_init_creates_config_in_pyproject(
-        self, tmp_path: Path, monkeypatch
-    ) -> None:
+    def test_init_creates_config_in_pyproject(self, tmp_path: Path, monkeypatch) -> None:
         """pyproject.toml に設定が追加されることを確認"""
         # テスト用のディレクトリに移動
         monkeypatch.chdir(tmp_path)
@@ -38,14 +36,7 @@ class TestInitCommand:
 
         # 既存の内容を持つ pyproject.toml を作成
         pyproject = tmp_path / "pyproject.toml"
-        original_content = (
-            "[project]\n"
-            'name = "test-project"\n'
-            'version = "0.1.0"\n'
-            "\n"
-            "[tool.mypy]\n"
-            "strict = true\n"
-        )
+        original_content = '[project]\nname = "test-project"\nversion = "0.1.0"\n\n[tool.mypy]\nstrict = true\n'
         pyproject.write_text(original_content)
 
         # init コマンド実行
@@ -72,17 +63,13 @@ class TestInitCommand:
         # pyproject.toml が作成されていないことを確認
         assert not (empty_dir / "pyproject.toml").exists()
 
-    def test_init_with_force_overwrites_config(
-        self, tmp_path: Path, monkeypatch
-    ) -> None:
+    def test_init_with_force_overwrites_config(self, tmp_path: Path, monkeypatch) -> None:
         """--force オプションで既存の設定を上書きできることを確認"""
         monkeypatch.chdir(tmp_path)
 
         # 既存の設定を持つ pyproject.toml を作成
         pyproject = tmp_path / "pyproject.toml"
-        pyproject.write_text(
-            '[project]\nname = "test-project"\n\n[tool.pylay]\ntarget_dirs = ["old"]\n'
-        )
+        pyproject.write_text('[project]\nname = "test-project"\n\n[tool.pylay]\ntarget_dirs = ["old"]\n')
 
         # force オプションで init コマンド実行
         run_init(force=True)
@@ -93,17 +80,13 @@ class TestInitCommand:
         # デフォルト設定が含まれていることを確認（シングルクォートまたはダブルクォート）
         assert "target_dirs = ['src']" in content or 'target_dirs = ["src"]' in content
 
-    def test_init_without_force_preserves_existing_config(
-        self, tmp_path: Path, monkeypatch
-    ) -> None:
+    def test_init_without_force_preserves_existing_config(self, tmp_path: Path, monkeypatch) -> None:
         """--force なしでは既存の設定を保持することを確認"""
         monkeypatch.chdir(tmp_path)
 
         # 既存の設定を持つ pyproject.toml を作成
         pyproject = tmp_path / "pyproject.toml"
-        original_pylay_config = (
-            '[project]\nname = "test-project"\n\n[tool.pylay]\ntarget_dirs = ["old"]\n'
-        )
+        original_pylay_config = '[project]\nname = "test-project"\n\n[tool.pylay]\ntarget_dirs = ["old"]\n'
         pyproject.write_text(original_pylay_config)
 
         # force なしで init コマンド実行

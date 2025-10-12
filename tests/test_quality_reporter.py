@@ -188,9 +188,7 @@ class TestQualityReporter:
         reporter.console = Console(file=string_io, force_terminal=True)
 
         # 詳細情報付きでレポートを生成
-        reporter.generate_console_report(
-            sample_check_result, sample_report, show_details=True
-        )
+        reporter.generate_console_report(sample_check_result, sample_report, show_details=True)
 
         output = string_io.getvalue()
         assert "Type Definition Quality Report" in output

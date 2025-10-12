@@ -132,9 +132,7 @@ class DependencyVisitor(ast.NodeVisitor):
             self._add_node(import_node)
 
             # 現在のモジュールが依存
-            self._add_edge(
-                self.context.module_name, module_name, RelationType.USES, weight=0.9
-            )
+            self._add_edge(self.context.module_name, module_name, RelationType.USES, weight=0.9)
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
@@ -165,9 +163,7 @@ class DependencyVisitor(ast.NodeVisitor):
                 self._add_node(symbol_node)
 
                 # 依存関係
-                self._add_edge(
-                    self.context.module_name, module_name, RelationType.USES, weight=0.9
-                )
+                self._add_edge(self.context.module_name, module_name, RelationType.USES, weight=0.9)
                 self._add_edge(
                     symbol_node.name,
                     module_name,
@@ -210,9 +206,7 @@ class DependencyVisitor(ast.NodeVisitor):
                 },
             )
             self._add_node(attr_node)
-            self._add_edge(
-                attr_node.name, obj_name, RelationType.REFERENCES, weight=0.7
-            )
+            self._add_edge(attr_node.name, obj_name, RelationType.REFERENCES, weight=0.7)
         self.generic_visit(node)
 
     def _visit_function_def(self, node: FunctionDefLike) -> None:
@@ -236,18 +230,14 @@ class DependencyVisitor(ast.NodeVisitor):
                 arg_types = self._get_type_names_from_ast(arg.annotation)
                 for arg_type in arg_types:
                     if arg_type:
-                        self._add_edge(
-                            func_name, arg_type, RelationType.REFERENCES, weight=0.6
-                        )
+                        self._add_edge(func_name, arg_type, RelationType.REFERENCES, weight=0.6)
 
         # 戻り値の型アノテーション
         if node.returns:
             return_types = self._get_type_names_from_ast(node.returns)
             for return_type in return_types:
                 if return_type:
-                    self._add_edge(
-                        func_name, return_type, RelationType.RETURNS, weight=0.8
-                    )
+                    self._add_edge(func_name, return_type, RelationType.RETURNS, weight=0.8)
 
     def _visit_method_def(self, node: FunctionDefLike) -> None:
         """メソッド定義の処理"""
@@ -275,17 +265,13 @@ class DependencyVisitor(ast.NodeVisitor):
                 arg_types = self._get_type_names_from_ast(arg.annotation)
                 for arg_type in arg_types:
                     if arg_type:
-                        self._add_edge(
-                            method_name, arg_type, RelationType.REFERENCES, weight=0.6
-                        )
+                        self._add_edge(method_name, arg_type, RelationType.REFERENCES, weight=0.6)
 
         if node.returns:
             return_types = self._get_type_names_from_ast(node.returns)
             for return_type in return_types:
                 if return_type:
-                    self._add_edge(
-                        method_name, return_type, RelationType.RETURNS, weight=0.8
-                    )
+                    self._add_edge(method_name, return_type, RelationType.RETURNS, weight=0.8)
 
     def _visit_attribute_call(self, node: ast.Attribute) -> None:
         """属性を通じた関数呼び出しの処理"""
@@ -303,12 +289,8 @@ class DependencyVisitor(ast.NodeVisitor):
                 },
             )
             self._add_node(method_call_node)
-            self._add_edge(
-                method_call_node.name, obj_name, RelationType.REFERENCES, weight=0.7
-            )
-            self._add_edge(
-                method_call_node.name, method_name, RelationType.CALLS, weight=0.8
-            )
+            self._add_edge(method_call_node.name, obj_name, RelationType.REFERENCES, weight=0.7)
+            self._add_edge(method_call_node.name, method_name, RelationType.CALLS, weight=0.8)
 
     def _get_type_names_from_ast(self, node: ast.AST) -> TypeNameList:
         """
@@ -362,9 +344,7 @@ class DependencyVisitor(ast.NodeVisitor):
         if node.name not in self.state.nodes:
             self.state.nodes[node.name] = node
 
-    def _add_edge(
-        self, source: str, target: str, relation: RelationType, weight: float = 1.0
-    ) -> None:
+    def _add_edge(self, source: str, target: str, relation: RelationType, weight: float = 1.0) -> None:
         """エッジを追加（重複を避ける）"""
         if source != target:
             edge_key = f"{source}->{target}:{relation}"
@@ -374,9 +354,7 @@ class DependencyVisitor(ast.NodeVisitor):
                     target=target,
                     relation_type=relation,
                     weight=create_weight(weight),
-                    metadata=GraphMetadata(
-                        custom_fields={"extraction_method": "AST_analysis"}
-                    ),
+                    metadata=GraphMetadata(custom_fields={"extraction_method": "AST_analysis"}),
                 )
                 self.state.edges[edge_key] = edge
 
@@ -440,9 +418,7 @@ def parse_ast(file_path: Path | str) -> ast.AST:
     except FileNotFoundError:
         raise ASTParseError("ファイルが見つかりません", file_path=str(file_path))
     except UnicodeDecodeError as e:
-        raise ASTParseError(
-            f"ファイルのエンコーディングエラー: {e}", file_path=str(file_path)
-        )
+        raise ASTParseError(f"ファイルのエンコーディングエラー: {e}", file_path=str(file_path))
 
     try:
         tree = ast.parse(source_code, filename=str(file_path))

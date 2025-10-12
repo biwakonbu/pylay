@@ -83,9 +83,7 @@ class ASTParseError(AnalysisError):
     Pythonコードの構文解析に失敗した場合に発生します。
     """
 
-    def __init__(
-        self, message: str, line_number: int | None = None, file_path: str | None = None
-    ) -> None:
+    def __init__(self, message: str, line_number: int | None = None, file_path: str | None = None) -> None:
         """
         AST解析エラーを初期化します。
 
@@ -154,9 +152,7 @@ class CircularDependencyError(AnalysisError):
     循環依存が検出された場合に発生します（厳密モードのみ）。
     """
 
-    def __init__(
-        self, message: Message, cycle: CyclePath, file_path: FilePath | None = None
-    ) -> None:
+    def __init__(self, message: Message, cycle: CyclePath, file_path: FilePath | None = None) -> None:
         """
         循環依存エラーを初期化します。
 

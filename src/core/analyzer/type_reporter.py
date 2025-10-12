@@ -77,9 +77,7 @@ class TypeReporter:
         self.target_dirs = [Path(d) for d in (target_dirs or ["."])]
         self.code_locator = CodeLocator(self.target_dirs)
 
-    def generate_console_report(
-        self, report: TypeAnalysisReport, show_stats: bool = True
-    ) -> None:
+    def generate_console_report(self, report: TypeAnalysisReport, show_stats: bool = True) -> None:
         """コンソール用レポートを生成して直接表示
 
         Args:
@@ -108,11 +106,7 @@ class TypeReporter:
             if report.statistics.documentation:
                 self.console.rule("[bold green]ドキュメント品質スコア[/bold green]")
                 self.console.print()
-                self.console.print(
-                    self._create_documentation_quality_table(
-                        report.statistics.documentation
-                    )
-                )
+                self.console.print(self._create_documentation_quality_table(report.statistics.documentation))
                 self.console.print()
 
             # コード品質統計
@@ -125,14 +119,10 @@ class TypeReporter:
         if report.recommendations:
             self.console.rule("[bold red]推奨事項[/bold red]")
             self.console.print()
-            self.console.print(
-                self._create_recommendations_table(report.recommendations)
-            )
+            self.console.print(self._create_recommendations_table(report.recommendations))
             self.console.print()
 
-    def generate_upgrade_recommendations_report(
-        self, recommendations: list[UpgradeRecommendation]
-    ) -> str:
+    def generate_upgrade_recommendations_report(self, recommendations: list[UpgradeRecommendation]) -> str:
         """型レベルアップ推奨レポートを生成
 
         Args:
@@ -169,9 +159,7 @@ class TypeReporter:
 
         return "\n".join(lines)
 
-    def generate_docstring_recommendations_report(
-        self, recommendations: list[DocstringRecommendation]
-    ) -> str:
+    def generate_docstring_recommendations_report(self, recommendations: list[DocstringRecommendation]) -> str:
         """docstring改善推奨レポートを生成
 
         Args:
@@ -247,9 +235,7 @@ class TypeReporter:
 
         # ドキュメント品質
         lines.append("\n## 📝 ドキュメント品質\n")
-        lines.append(
-            self._format_documentation_quality_markdown(report.statistics.documentation)
-        )
+        lines.append(self._format_documentation_quality_markdown(report.statistics.documentation))
 
         # コード品質統計
         lines.append("\n## ⚠️  コード品質統計\n")
@@ -264,20 +250,12 @@ class TypeReporter:
         # 型レベルアップ推奨
         if report.upgrade_recommendations:
             lines.append("\n## 🔼 型レベルアップ推奨\n")
-            lines.append(
-                self._format_upgrade_recommendations_markdown(
-                    report.upgrade_recommendations
-                )
-            )
+            lines.append(self._format_upgrade_recommendations_markdown(report.upgrade_recommendations))
 
         # docstring改善推奨
         if report.docstring_recommendations:
             lines.append("\n## 📝 ドキュメント改善推奨\n")
-            lines.append(
-                self._format_docstring_recommendations_markdown(
-                    report.docstring_recommendations
-                )
-            )
+            lines.append(self._format_docstring_recommendations_markdown(report.docstring_recommendations))
 
         return "\n".join(lines)
 
@@ -414,9 +392,7 @@ class TypeReporter:
 
         self.console.print(table)
 
-    def _create_documentation_quality_table(
-        self, doc_stats: DocumentationStatistics
-    ) -> Table:
+    def _create_documentation_quality_table(self, doc_stats: DocumentationStatistics) -> Table:
         """ドキュメント品質をRich Tableで作成"""
         table = Table(show_header=True, width=80, header_style="", box=SIMPLE)
 
@@ -427,9 +403,7 @@ class TypeReporter:
         # 実装率
         impl_threshold = self.doc_thresholds["implementation_rate"]
         impl_status = "✓" if doc_stats.implementation_rate >= impl_threshold else "✗"
-        impl_style = (
-            "green" if doc_stats.implementation_rate >= impl_threshold else "red"
-        )
+        impl_style = "green" if doc_stats.implementation_rate >= impl_threshold else "red"
         table.add_row(
             "実装率",
             f"{doc_stats.implementation_rate * 100:.1f}%",
@@ -449,9 +423,7 @@ class TypeReporter:
         # 総合品質スコア
         quality_threshold = self.doc_thresholds["quality_score"]
         quality_status = "✓" if doc_stats.quality_score >= quality_threshold else "✗"
-        quality_style = (
-            "green" if doc_stats.quality_score >= quality_threshold else "red"
-        )
+        quality_style = "green" if doc_stats.quality_score >= quality_threshold else "red"
         table.add_row(
             "総合品質スコア",
             f"{doc_stats.quality_score * 100:.1f}%",
@@ -585,9 +557,7 @@ class TypeReporter:
             f"│ その他: class/dataclass │ {statistics.other_count:5} │ {statistics.other_ratio * 100:6.1f}% │"  # noqa: E501
         )
         lines.append("├─────────────────────────┼───────┼─────────┤")
-        lines.append(
-            f"│ 合計                    │ {statistics.total_count:5} │ 100.0%  │"
-        )
+        lines.append(f"│ 合計                    │ {statistics.total_count:5} │ 100.0%  │")
         lines.append("└─────────────────────────┴───────┴─────────┘")
         return "\n".join(lines)
 
@@ -729,10 +699,7 @@ class TypeReporter:
         priority_emoji = {"high": "🔴", "medium": "🟡", "low": "🟢"}
         emoji = priority_emoji.get(rec.priority, "⚪")
 
-        lines.append(
-            f"{emoji} [{rec.priority.upper()}] {rec.type_name} "
-            f"({rec.file_path}:{rec.line_number})"
-        )
+        lines.append(f"{emoji} [{rec.priority.upper()}] {rec.type_name} ({rec.file_path}:{rec.line_number})")
         lines.append(f"  現状: {rec.current_status}")
         lines.append(f"  推奨: {rec.recommended_action}")
 
@@ -771,9 +738,7 @@ class TypeReporter:
         lines.append(f"| **合計** | **{statistics.total_count}** | **100.0%** |")
         return "\n".join(lines)
 
-    def _format_documentation_quality_markdown(
-        self, doc_stats: DocumentationStatistics
-    ) -> str:
+    def _format_documentation_quality_markdown(self, doc_stats: DocumentationStatistics) -> str:
         """ドキュメント品質をMarkdown形式でフォーマット"""
         lines = []
         lines.append("| 指標 | 値 |")
@@ -783,9 +748,7 @@ class TypeReporter:
         lines.append(f"| 総合品質スコア | {doc_stats.quality_score * 100:.1f}% |")
         return "\n".join(lines)
 
-    def _format_code_quality_statistics_markdown(
-        self, statistics: TypeStatistics
-    ) -> str:
+    def _format_code_quality_statistics_markdown(self, statistics: TypeStatistics) -> str:
         """コード品質統計をMarkdown形式でフォーマット"""
         lines = []
         lines.append("| レベル | 件数 | 比率 | 状態 |")
@@ -814,18 +777,14 @@ class TypeReporter:
 
         return "\n".join(lines)
 
-    def _format_upgrade_recommendations_markdown(
-        self, recommendations: list[UpgradeRecommendation]
-    ) -> str:
+    def _format_upgrade_recommendations_markdown(self, recommendations: list[UpgradeRecommendation]) -> str:
         """型レベルアップ推奨をMarkdown形式でフォーマット"""
         lines = []
         for rec in recommendations[:10]:  # 最初の10件のみ
             lines.append(
                 f"### {rec.type_name} ({rec.priority.upper()}, 確信度: {rec.confidence:.2f})"  # noqa: E501
             )
-            lines.append(
-                f"- 現在: `{rec.current_level}` → 推奨: `{rec.recommended_level}`"
-            )
+            lines.append(f"- 現在: `{rec.current_level}` → 推奨: `{rec.recommended_level}`")
             if rec.reasons:
                 lines.append("- 理由:")
                 for reason in rec.reasons:
@@ -855,12 +814,8 @@ class TypeReporter:
 
         # 詳細情報の収集
         primitive_details = self.code_locator.find_primitive_usages()
-        level1_details = self.code_locator.find_level1_types(
-            list(report.type_definitions)
-        )
-        unused_details = self.code_locator.find_unused_types(
-            list(report.type_definitions)
-        )
+        level1_details = self.code_locator.find_level1_types(list(report.type_definitions))
+        unused_details = self.code_locator.find_unused_types(list(report.type_definitions))
         deprecated_details = self.code_locator.find_deprecated_typing()
 
         # 詳細レポートの出力
@@ -878,9 +833,7 @@ class TypeReporter:
 
         if unused_details:
             self.console.print()
-            self.console.rule(
-                "[bold magenta]🔍 問題詳細: 被参照0の型定義[/bold magenta]"
-            )
+            self.console.rule("[bold magenta]🔍 問題詳細: 被参照0の型定義[/bold magenta]")
             self.console.print()
             self.console.print(self._create_unused_types_table(unused_details))
 
@@ -890,9 +843,7 @@ class TypeReporter:
             self.console.print()
             self.console.print(self._create_deprecated_typing_table(deprecated_details))
 
-    def _create_primitive_usage_table(
-        self, details: list[PrimitiveUsageDetail]
-    ) -> Table:
+    def _create_primitive_usage_table(self, details: list[PrimitiveUsageDetail]) -> Table:
         """Primitive型使用の詳細テーブルを生成"""
         table = Table(
             title="Direct Primitive Type Usage",
@@ -922,9 +873,7 @@ class TypeReporter:
             table.add_row(
                 file_name,
                 str(detail.location.line),
-                detail.kind.replace("function_", "")
-                .replace("return_", "戻り値")
-                .replace("class_", ""),
+                detail.kind.replace("function_", "").replace("return_", "戻り値").replace("class_", ""),
                 detail.primitive_type,
                 code,
                 style="red" if detail.kind == "function_argument" else "yellow",
@@ -1018,9 +967,7 @@ class TypeReporter:
 
         return table
 
-    def _create_deprecated_typing_table(
-        self, details: list[DeprecatedTypingDetail]
-    ) -> Table:
+    def _create_deprecated_typing_table(self, details: list[DeprecatedTypingDetail]) -> Table:
         """非推奨typing使用の詳細テーブルを生成"""
         table = Table(
             title="Deprecated typing Usage",
@@ -1065,9 +1012,7 @@ class TypeReporter:
 
         return table
 
-    def _format_docstring_recommendations_markdown(
-        self, recommendations: list[DocstringRecommendation]
-    ) -> str:
+    def _format_docstring_recommendations_markdown(self, recommendations: list[DocstringRecommendation]) -> str:
         """docstring改善推奨をMarkdown形式でフォーマット"""
         lines = []
         for rec in recommendations[:10]:  # 最初の10件のみ

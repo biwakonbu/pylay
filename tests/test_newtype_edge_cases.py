@@ -27,9 +27,7 @@ class TestNewTypeEdgeCases:
         results = classifier.classify_file(test_file)
         assert len(results) == 0
 
-    def test_syntax_error_file(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_syntax_error_file(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """構文エラーのあるファイルでクラッシュしない"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -46,9 +44,7 @@ class TestNewTypeEdgeCases:
         # 構文エラーがあってもregexパターンで検出される可能性がある
         assert isinstance(results, list)
 
-    def test_newtype_without_import(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_without_import(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """NewTypeのインポートなしでも検出される"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -67,9 +63,7 @@ class TestNewTypeEdgeCases:
         types = [td for td in results if td.name == "UserId"]
         assert len(types) == 1
 
-    def test_newtype_with_multiple_factories(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_multiple_factories(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """同じ型に対して複数のファクトリ関数がある場合"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -93,9 +87,7 @@ class TestNewTypeEdgeCases:
         assert len(types) == 1
         assert types[0].level == "level2"
 
-    def test_factory_without_newtype(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_factory_without_newtype(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """NewTypeなしでファクトリ関数だけがある場合"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -136,9 +128,7 @@ class TestNewTypeEdgeCases:
         # このテストは現状の動作を確認するもの
         assert len(types) <= 1
 
-    def test_newtype_with_unicode_name(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_unicode_name(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """Unicode文字を含む型名（非推奨だが構文的には有効）"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -159,9 +149,7 @@ class TestNewTypeEdgeCases:
         # このテストは現状の動作を確認
         assert isinstance(results, list)
 
-    def test_newtype_with_generic_base(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_generic_base(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """ジェネリック型をベースとするNewType"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -183,9 +171,7 @@ class TestNewTypeEdgeCases:
         types = [td for td in results if td.name == "UserId"]
         assert len(types) == 1
 
-    def test_newtype_with_comment_on_same_line(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_comment_on_same_line(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """同じ行にコメントがある場合"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -205,9 +191,7 @@ class TestNewTypeEdgeCases:
         assert len(types) == 1
         assert types[0].level == "level2"
 
-    def test_validate_call_without_newline(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_validate_call_without_newline(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """@validate_callとdefが同じ行にある場合（非推奨だが有効）"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -230,9 +214,7 @@ class TestNewTypeEdgeCases:
         # Level 1 として検出される（ファクトリとして認識されない）
         assert types[0].level == "level1"
 
-    def test_multiple_files_isolation(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_multiple_files_isolation(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """複数ファイルを処理しても状態が混ざらない"""
         file1 = tmp_path / "test1.py"
         file1.write_text(
@@ -268,9 +250,7 @@ class TestNewTypeEdgeCases:
         assert len(email_types) == 1
         assert email_types[0].level == "level1"
 
-    def test_newtype_with_type_comment(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_type_comment(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """type: ignore等のコメントがある場合"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -294,9 +274,7 @@ class TestNewTypeEdgeCases:
         assert len(types) == 1
         assert types[0].level == "level2"
 
-    def test_newtype_with_wrong_capitalization_factory(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_wrong_capitalization_factory(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """ファクトリ関数名の大文字小文字が完全一致しない場合"""
         test_file = tmp_path / "test.py"
         test_file.write_text(

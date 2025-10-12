@@ -14,9 +14,7 @@ from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.yaml_spec import TypeRoot
 
 
-def run_docs(
-    input_file: str, output_dir: str | None = None, format_type: str = "single"
-) -> None:
+def run_docs(input_file: str, output_dir: str | None = None, format_type: str = "single") -> None:
     """Generate documentation from YAML specification
 
     Args:
@@ -89,9 +87,7 @@ def run_docs(
         else:
             # Multiple files output (not implemented yet)
             console.rule("[bold yellow]警告[/bold yellow]")
-            console.print(
-                "[yellow]複数ファイル形式は未実装のため、単一ファイル形式を使用します[/yellow]"
-            )
+            console.print("[yellow]複数ファイル形式は未実装のため、単一ファイル形式を使用します[/yellow]")
             output_file = output_path / "types.md"
             generator.generate(output_file, spec=spec)
 

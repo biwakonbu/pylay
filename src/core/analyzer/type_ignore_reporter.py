@@ -39,9 +39,7 @@ class TypeIgnoreReporter:
             show_solutions: 解決策を表示するか
         """
         # ヘッダー
-        self.console.rule(
-            "[bold cyan]Type Ignore Diagnostics[/bold cyan]", style="cyan"
-        )
+        self.console.rule("[bold cyan]Type Ignore Diagnostics[/bold cyan]", style="cyan")
         self.console.print()
 
         # ファイルごとにグループ化
@@ -61,9 +59,7 @@ class TypeIgnoreReporter:
 
         self.console.rule(style="cyan")
 
-    def _print_file_section(
-        self, file_path: str, issues: list[TypeIgnoreIssue], show_solutions: bool
-    ) -> None:
+    def _print_file_section(self, file_path: str, issues: list[TypeIgnoreIssue], show_solutions: bool) -> None:
         """
         ファイルセクションを表示
 
@@ -101,9 +97,7 @@ class TypeIgnoreReporter:
         priority_color = self._get_priority_color(issue.priority)
         priority_text = Text(f"  {issue.priority}", style=f"bold {priority_color}")
         line_info = Text(f"    Line {issue.line_number}", style="dim")
-        ignore_type_info = Text(
-            f"    type: ignore[{issue.ignore_type}]", style="yellow"
-        )
+        ignore_type_info = Text(f"    type: ignore[{issue.ignore_type}]", style="yellow")
 
         self.console.print(priority_text, line_info, ignore_type_info)
         self.console.print()
@@ -169,9 +163,7 @@ class TypeIgnoreReporter:
         # Pydantic関連の提案
         if "BaseModel" in target_line and issue.ignore_type == "call-arg":
             suggested = (
-                target_line.replace("TypeSpec(", "TypeSpec.model_construct(")
-                .replace("# type: ignore", "")
-                .strip()
+                target_line.replace("TypeSpec(", "TypeSpec.model_construct(").replace("# type: ignore", "").strip()
             )
 
         if suggested != target_line.replace("# type: ignore", "").strip():
@@ -253,13 +245,9 @@ class TypeIgnoreReporter:
         Returns:
             色の文字列
         """
-        return {"HIGH": "red", "MEDIUM": "yellow", "LOW": "green"}.get(
-            priority, "white"
-        )
+        return {"HIGH": "red", "MEDIUM": "yellow", "LOW": "green"}.get(priority, "white")
 
-    def export_json_report(
-        self, issues: list[TypeIgnoreIssue], output_path: str
-    ) -> None:
+    def export_json_report(self, issues: list[TypeIgnoreIssue], output_path: str) -> None:
         """
         JSON形式でレポートをエクスポート
 
