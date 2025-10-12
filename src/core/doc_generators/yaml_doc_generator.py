@@ -91,7 +91,16 @@ class YamlDocGenerator(DocumentGenerator):
 
             # TypeRootとして展開を試行
             try:
-                if hasattr(spec_obj, "types") and hasattr(spec_obj, "type"):
+                if isinstance(spec_obj, Mapping):
+                    # Mapping入力の場合、key checksで判定
+                    obj_type_field = spec_obj.get("type")
+                    if obj_type_field in ("root", "typeroot") or "types" in spec_obj:
+                        # TypeRootとして扱う
+                        spec_obj = TypeRoot.model_validate(spec_obj)
+                    else:
+                        # TypeSpecとして扱う
+                        spec_obj = TypeSpec.model_validate(spec_obj)
+                elif hasattr(spec_obj, "types") and hasattr(spec_obj, "type"):
                     # TypeRoot互換オブジェクトとして扱う
                     spec_obj = TypeRoot.model_validate(spec_obj)
                 else:

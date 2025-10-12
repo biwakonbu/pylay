@@ -3,17 +3,20 @@
 ## [Unreleased]
 
 ### バグ修正
+
 - **YamlDocGeneratorのspec変数未割り当て問題を修正**: `YamlDocGenerator.__init__`メソッドで`spec_obj`の変換処理後に`spec`変数が正しく割り当てられない可能性があった問題を修正
   - 変換処理後に`spec_obj`を正規化し、`TypeRoot`/`TypeSpec`に応じて適切に`spec`を割り当て
   - これにより`_generate_header`/`_generate_body`呼び出し前に`spec`が常に束縛されることを保証
 
 ### 改善
+
 - **ruff v0.14.0へのアップグレード**: 開発環境とCI環境のバージョン整合性を確保
   - `pyproject.toml`の依存関係を`ruff>=0.14.0`に更新
   - `.pre-commit-config.yaml`の`ruff-pre-commit`を`v0.14.0`に更新
   - 不要な`# noqa: UP038`ディレクティブを削除（UP038ルールが削除されたため）
 
 ### 開発環境
+
 - **pre-commit設定の更新**: ruff-pre-commitを最新バージョンに統一
 - **PR review workflowの実行**: レビュータスクの体系的処理を実施
 

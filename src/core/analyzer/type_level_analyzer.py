@@ -5,6 +5,7 @@
 """
 
 import ast
+import fnmatch
 from pathlib import Path
 
 from src.core.analyzer.docstring_analyzer import DocstringAnalyzer
@@ -61,8 +62,6 @@ class TypeLevelAnalyzer:
         Returns:
             TypeAnalysisReport
         """
-        import fnmatch
-
         # すべての.pyファイルを収集
         all_py_files = list(directory.rglob("*.py"))
 

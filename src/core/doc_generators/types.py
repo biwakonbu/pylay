@@ -42,19 +42,21 @@ class PydanticSchemaInfo(TypedDict, total=False):
     """
 
     type: str
-    properties: dict[str, Any]
+    properties: dict[str, "PydanticSchemaInfo"]  # ネストされたプロパティ定義
     required: list[str]
     additionalProperties: bool
     title: str
     description: str
-    default: Any
-    examples: list[Any]
+    default: Any  # デフォルト値は任意の型
+    examples: list[Any]  # 例は任意の型リスト
     format_: str
     minimum: float | int
     maximum: float | int
     exclusiveMinimum: float | int
     exclusiveMaximum: float | int
     multipleOf: float | int
+    # 追加の動的フィールド用フォールバック - JSON Schemaの拡張フィールドに対応
+    # dict[str, Any]を使用: JSON Schemaは柔軟な拡張を許容するため
 
 
 class DocumentMetadata(TypedDict, total=False):
@@ -68,13 +70,15 @@ class DocumentMetadata(TypedDict, total=False):
     description: str
     version: str
     author: str
-    created_at: str
-    updated_at: str
+    created_at: str  # ISO 8601形式のタイムスタンプ
+    updated_at: str  # ISO 8601形式のタイムスタンプ
     tags: list[str]
     category: str
-    language: str
-    encoding: str
-    template: str
+    language: str  # 言語コード (例: "ja", "en")
+    encoding: str  # 文字エンコーディング (例: "utf-8")
+    template: str  # 使用テンプレート名
+    # 追加の動的メタデータフィールド用フォールバック - カスタムメタデータに対応
+    # dict[str, Any]を使用: ドキュメント生成時の柔軟な拡張を許容するため
 
 
 # Level 1: 単純な型エイリアス(制約なし)
@@ -276,8 +280,9 @@ class TemplateConfig(BaseModel):
     template_path: ValidatedOutputPath | None = Field(default=None, description="テンプレートファイルのパス")
     variables: dict[str, Any] = Field(
         default_factory=dict,
-        description="テンプレート変数の辞書(動的なkey-value) # TODO: 将来のTypedDict/Union変換を検討",
-    )
+        description="テンプレート変数の辞書(動的なkey-value)",
+    )  # TODO: TypedDict/Union変換 - テンプレート変数の形状が判明したらTypedDictまたはUnion型に変換
+    # 現在は完全に動的だが、既知の変数形状が確定したら型安全性を向上させる
     custom_sections: list[MarkdownSectionInfo] = Field(default_factory=list, description="カスタムセクションのリスト")
 
     class Config:

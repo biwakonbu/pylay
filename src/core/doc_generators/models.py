@@ -12,7 +12,7 @@
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
@@ -20,6 +20,7 @@ from .types import (
     BatchGenerationConfig,
     BatchGenerationResult,
     DocumentConfig,
+    DocumentMetadata,
     DocumentStructure,
     FileSystemConfig,
     GenerationResult,
@@ -67,7 +68,7 @@ class DocumentGeneratorService(BaseModel):
             structure = DocumentStructure(
                 title="Generated Documentation",
                 sections=[],
-                metadata={},
+                metadata=cast(DocumentMetadata, {}),
                 generation_timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             )
 
@@ -203,6 +204,8 @@ class TypeInspectorService(BaseModel):
         """Pydanticモデルのスキーマ情報を取得する内部メソッド"""
         try:
             if self._is_pydantic_model(type_cls):
+                # Pydantic v2ではmodel_json_schema()がdict[str, Any]を返すと宣言されているため、
+                # 静的型システムではPydanticSchemaInfoとの一致を保証できない
                 return type_cls.model_json_schema()  # type: ignore[return-value]
         except Exception:
             pass
@@ -665,7 +668,7 @@ class DocumentationOrchestrator(BaseModel):
             structure = DocumentStructure(
                 title="Type Documentation",
                 sections=sections,
-                metadata={},
+                metadata=cast(DocumentMetadata, {}),
                 generation_timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             )
 
