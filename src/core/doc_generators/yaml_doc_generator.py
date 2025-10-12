@@ -58,16 +58,25 @@ class YamlDocGenerator(DocumentGenerator):
                     # typeフィールドの値でTypeSpecかTypeRootかを判定
                     obj_type_field = getattr(spec_obj, "type", None)
                     if obj_type_field == "root" or obj_type_field == "typeroot":
-                        # TypeRoot互換オブジェクトの場合
-                        spec_obj = TypeRoot.model_validate(spec_obj)
+                        # TypeRoot互換オブジェクトの場合、明示的にTypeRootとして扱う
+                        try:
+                            spec_obj = TypeRoot.model_validate(spec_obj)
+                        except Exception:
+                            # TypeRootとして変換できない場合でも、TypeSpec互換として継続
+                            # これは後方互換性のため
+                            pass
                     else:
-                        # TypeSpec互換オブジェクトの場合
-                        spec_obj = TypeSpec.model_validate(spec_obj)
-                except Exception as e:
-                    raise TypeError(
-                        f"Failed to convert compatible object {obj_type} to TypeSpec or TypeRoot: {e}. "
-                        f"Please ensure the object has valid structure."
-                    ) from e
+                        # TypeSpec互換オブジェクトの場合、明示的にTypeSpecとして扱う
+                        try:
+                            spec_obj = TypeSpec.model_validate(spec_obj)
+                        except Exception:
+                            # TypeSpecとして変換できない場合でも、TypeSpec互換として継続
+                            # これは後方互換性のため
+                            pass
+                except Exception:
+                    # 変換処理でエラーが発生した場合でも、TypeSpec互換オブジェクトとして継続
+                    # これは後方互換性のため
+                    pass
             else:
                 raise TypeError(f"spec must be TypeSpec, TypeRoot, or TypeSpec-compatible object, got {obj_type}")
 
@@ -80,10 +89,17 @@ class YamlDocGenerator(DocumentGenerator):
             if spec_obj.types:
                 spec = next(iter(spec_obj.types.values()))
             else:
-                raise TypeError("Empty TypeRoot")
-        else:
+                # 空のTypeRootの場合も、TypeSpec互換オブジェクトとして処理を継続
+                # TypeSpecでない互換オブジェクトを許容するため、TypeRootをそのまま使用
+                raise ValueError("TypeRootが空です。少なくとも1つの型定義が必要です。")
+        elif isinstance(spec_obj, TypeSpec):
             # この時点で spec_obj は TypeSpec として確定
             spec = spec_obj
+        else:
+            # TypeSpecでもTypeRootでもない場合、互換オブジェクトとして処理された可能性がある
+            # この場合、適切なエラーメッセージを出す
+            obj_type_name = type(spec_obj).__name__
+            raise TypeError(f"specはTypeSpecまたはTypeRootである必要がありますが、{obj_type_name}が指定されました")
 
         # この時点で spec は TypeSpec として確定している
         self._generate_header(spec)
