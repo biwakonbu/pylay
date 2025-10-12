@@ -3,6 +3,7 @@
 このモジュールは、TypeSpecオブジェクトからMarkdownドキュメントを生成します。
 """
 
+from collections.abc import Mapping
 from pathlib import Path
 
 from src.core.schemas.pylay_config import PylayConfig
@@ -20,6 +21,18 @@ from .config import TypeDocConfig
 from .markdown_builder import MarkdownBuilder
 
 
+class MissingSpecError(ValueError):
+    """specパラメータが指定されていない場合のエラー。"""
+
+    pass
+
+
+class InvalidSpecError(TypeError):
+    """無効なspecタイプが指定された場合のエラー。"""
+
+    pass
+
+
 class YamlDocGenerator(DocumentGenerator):
     """YAML型仕様からドキュメントを生成します。
 
@@ -35,50 +48,26 @@ class YamlDocGenerator(DocumentGenerator):
                 spec: 型仕様オブジェクト（TypeSpec | TypeRoot）
 
         Raises:
-            ValueError: specが指定されていない、または無効な場合
+            MissingSpecError: specが指定されていない場合
+            InvalidSpecError: specが無効な場合
         """
         spec_obj = kwargs.get("spec")
         if spec_obj is None:
-            raise ValueError("spec parameter is required")
+            raise MissingSpecError()
 
         # 型チェック: spec は TypeSpec または TypeRoot である必要がある
-        # 互換オブジェクト(type/name属性を持つdictなど)も受け入れる
         if isinstance(spec_obj, (TypeSpec, TypeRoot)):
             # 既に適切な型なのでそのまま使用
             pass
-        else:
-            # 互換オブジェクトの可能性をチェック
-            obj_type = type(spec_obj).__name__
-            has_type_attr = hasattr(spec_obj, "type")
-            has_name_attr = hasattr(spec_obj, "name")
-
-            if has_type_attr and has_name_attr:
-                # TypeSpec/TypeRoot互換オブジェクトの場合、適切なモデルで変換を試行
-                try:
-                    # typeフィールドの値でTypeSpecかTypeRootかを判定
-                    obj_type_field = getattr(spec_obj, "type", None)
-                    if obj_type_field == "root" or obj_type_field == "typeroot":
-                        # TypeRoot互換オブジェクトの場合、明示的にTypeRootとして扱う
-                        try:
-                            spec_obj = TypeRoot.model_validate(spec_obj)
-                        except Exception:
-                            # TypeRootとして変換できない場合でも、TypeSpec互換として継続
-                            # これは後方互換性のため
-                            pass
-                    else:
-                        # TypeSpec互換オブジェクトの場合、明示的にTypeSpecとして扱う
-                        try:
-                            spec_obj = TypeSpec.model_validate(spec_obj)
-                        except Exception:
-                            # TypeSpecとして変換できない場合でも、TypeSpec互換として継続
-                            # これは後方互換性のため
-                            pass
-                except Exception:
-                    # 変換処理でエラーが発生した場合でも、TypeSpec互換オブジェクトとして継続
-                    # これは後方互換性のため
-                    pass
+        elif isinstance(spec_obj, Mapping):
+            # Mapping入力の場合、"types"キーの有無で判定
+            if "types" in spec_obj:
+                spec_obj = TypeRoot.model_validate(spec_obj)
             else:
-                raise TypeError(f"spec must be TypeSpec, TypeRoot, or TypeSpec-compatible object, got {obj_type}")
+                spec_obj = TypeSpec.model_validate(spec_obj)
+        else:
+            obj_type = type(spec_obj).__name__
+            raise InvalidSpecError(obj_type)
 
         self.md = MarkdownBuilder()
 
@@ -91,7 +80,7 @@ class YamlDocGenerator(DocumentGenerator):
             else:
                 # 空のTypeRootの場合も、TypeSpec互換オブジェクトとして処理を継続
                 # TypeSpecでない互換オブジェクトを許容するため、TypeRootをそのまま使用
-                raise ValueError("TypeRootが空です。少なくとも1つの型定義が必要です。")
+                raise InvalidSpecError("empty TypeRoot")
         elif isinstance(spec_obj, TypeSpec):
             # この時点で spec_obj は TypeSpec として確定
             spec = spec_obj
@@ -109,23 +98,19 @@ class YamlDocGenerator(DocumentGenerator):
                     # TypeSpecとして直接扱うことを試行
                     spec_obj = TypeSpec.model_validate(spec_obj)
             except Exception as e:
-                # TypeRoot/TypeSpecとしての変換ができない場合、ValueErrorで明示的にエラー
-                raise ValueError(
-                    f"specはTypeSpecまたはTypeRootである必要がありますが、"
-                    f"{obj_type_name}が指定されました。互換オブジェクトの場合でも"
-                    f"適切な構造である必要があります。エラー: {e}"
-                ) from e
+                # TypeRoot/TypeSpecとしての変換ができない場合、InvalidSpecErrorで明示的にエラー
+                raise InvalidSpecError(obj_type_name) from e
 
             # spec_objが正規化されたので、specに明示的に割り当て
             if isinstance(spec_obj, TypeRoot):
                 if spec_obj.types:
                     spec = next(iter(spec_obj.types.values()))
                 else:
-                    raise ValueError("TypeRootが空です。少なくとも1つの型定義が必要です。")
+                    raise InvalidSpecError("empty TypeRoot")
             elif isinstance(spec_obj, TypeSpec):
                 spec = spec_obj
             else:
-                raise ValueError("spec_objの正規化に失敗しました。TypeSpecまたはTypeRootが必要です。")
+                raise InvalidSpecError("normalization failed")
 
         # この時点で spec は TypeSpec として確定している
         self._generate_header(spec)

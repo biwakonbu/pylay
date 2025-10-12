@@ -11,7 +11,7 @@
 """
 
 from pathlib import Path
-from typing import Annotated, Any, TypedDict
+from typing import Annotated, Any, TypedDict, cast
 
 from pydantic import AfterValidator, BaseModel, Field
 
@@ -255,7 +255,7 @@ class DocumentStructure(BaseModel):
     sections: list[MarkdownSectionInfo] = Field(default_factory=list, description="メインセクションのリスト")
     toc: list[TocEntry] = Field(default_factory=list, description="目次情報")
     metadata: DocumentMetadata = Field(
-        default_factory=lambda: DocumentMetadata(), description="ドキュメントメタデータ(型付きの構造化データ)"
+        default_factory=lambda: cast(DocumentMetadata, {}), description="ドキュメントメタデータ(型付きの構造化データ)"
     )
     generation_timestamp: str = Field(description="生成時刻(ISO形式)")
 
