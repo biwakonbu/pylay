@@ -24,13 +24,9 @@ from .markdown_builder import MarkdownBuilder
 class MissingSpecError(ValueError):
     """specパラメータが指定されていない場合のエラー。"""
 
-    pass
-
 
 class InvalidSpecError(TypeError):
     """無効なspecタイプが指定された場合のエラー。"""
-
-    pass
 
 
 class YamlDocGenerator(DocumentGenerator):
