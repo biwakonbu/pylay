@@ -116,6 +116,17 @@ class YamlDocGenerator(DocumentGenerator):
                     f"適切な構造である必要があります。エラー: {e}"
                 ) from e
 
+            # spec_objが正規化されたので、specに明示的に割り当て
+            if isinstance(spec_obj, TypeRoot):
+                if spec_obj.types:
+                    spec = next(iter(spec_obj.types.values()))
+                else:
+                    raise ValueError("TypeRootが空です。少なくとも1つの型定義が必要です。")
+            elif isinstance(spec_obj, TypeSpec):
+                spec = spec_obj
+            else:
+                raise ValueError("spec_objの正規化に失敗しました。TypeSpecまたはTypeRootが必要です。")
+
         # この時点で spec は TypeSpec として確定している
         self._generate_header(spec)
         self._generate_body(spec)
