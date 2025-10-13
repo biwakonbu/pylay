@@ -198,14 +198,14 @@ class CodeLocator:
             if type_def.target_level == "level1" or type_def.keep_as_is:
                 continue
 
-            # 使用回数をカウント（簡易実装）
+            # 使用回数をカウント(簡易実装)
             usage_count = self._count_type_usage(type_name, type_definitions)
 
             # 使用回数が1回以上ある場合のみ対象
             if usage_count < 1:
                 continue
 
-            # 使用例を取得（最大3件）
+            # 使用例を取得(最大3件)
             usage_examples = self._find_type_usage_examples(type_name, max_examples=3)
 
             # 推奨事項を生成
@@ -255,7 +255,7 @@ class CodeLocator:
         else:
             type_dict = type_definitions
 
-        # 簡易実装：他の型定義内での使用をカウント
+        # 簡易実装:他の型定義内での使用をカウント
         count = 0
         for other_type_def in type_dict.values():
             if other_type_def.name != type_name:
@@ -343,7 +343,7 @@ class CodeLocator:
             if type_def.keep_as_is:
                 continue
 
-            # 定義から1週間以内の型は除外（実装途中の可能性）
+            # 定義から1週間以内の型は除外(実装途中の可能性)
             if self._is_recently_defined(type_def):
                 continue
 
@@ -387,7 +387,7 @@ class CodeLocator:
 
         return details
 
-    def _is_exported_type(self, type_name: str) -> bool:
+    def _is_exported_type(self, _type_name: str) -> bool:
         """__all__ でエクスポートされている型かどうかを判定
 
         Args:
@@ -396,10 +396,10 @@ class CodeLocator:
         Returns:
             エクスポートされている場合True
         """
-        # 簡易実装：__all__ のチェックは省略
+        # 簡易実装:__all__ のチェックは省略
         return False
 
-    def _is_recently_defined(self, type_def: TypeDefinition) -> bool:
+    def _is_recently_defined(self, _type_def: TypeDefinition) -> bool:
         """定義から1週間以内かどうかを判定
 
         Args:
@@ -408,7 +408,7 @@ class CodeLocator:
         Returns:
             1週間以内の場合True
         """
-        # 簡易実装：常にFalse（ファイルの変更日時チェックは複雑なので省略）
+        # 簡易実装:常にFalse(ファイルの変更日時チェックは複雑なので省略)
         return False
 
     def _count_type_usage_across_project(self, type_name: str) -> int:
@@ -432,7 +432,7 @@ class CodeLocator:
                     with open(py_file, encoding="utf-8") as f:
                         content = f.read()
 
-                    # 型名が登場する回数をカウント（簡易実装）
+                    # 型名が登場する回数をカウント(簡易実装)
                     count += content.count(type_name)
 
                 except (UnicodeDecodeError, OSError):
@@ -577,7 +577,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
         self.lines = source_code.splitlines()
         self.class_stack: list[str] = []  # クラス定義のスタック
 
-        # 除外対象の関数名（特殊メソッド等）
+        # 除外対象の関数名(特殊メソッド等)
         self.excluded_functions = {
             "__init__",
             "__str__",
@@ -634,7 +634,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
         if not self._is_in_class():
             return
 
-        # primitive型を抽出（Annotated内も含む）
+        # primitive型を抽出(Annotated内も含む)
         primitive_type = self._extract_primitive_type(node.annotation)
         if primitive_type:
             context_before, code, context_after = self._extract_context(node.lineno)
@@ -702,7 +702,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
 
     def _check_method_annotations(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         """メソッドアノテーションをチェック"""
-        # __init__以外の場合のみチェック（__init__は初期化なので許容）
+        # __init__以外の場合のみチェック(__init__は初期化なので許容)
         if node.name != "__init__":
             self._check_function_annotations(node)
 
@@ -730,7 +730,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
             - NewType内のprimitive型:
               NewType('X', str) または NewType('X', Annotated[str, ...])
         """
-        # パターン1: 直接のprimitive型（ast.Name）
+        # パターン1: 直接のprimitive型(ast.Name)
         if isinstance(annotation, ast.Name) and annotation.id in self.PRIMITIVE_TYPES:
             return annotation.id
 
@@ -745,9 +745,9 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
                         return first_arg.id
 
             # NewType('X', primitive) または NewType('X', Annotated[...]) 形式
-            # NewTypeはCallノードとして解析されるため、ここでは検出しない
+            # NewTypeはCall/ノードとして解析されるため、ここでは検出しない
 
-        # パターン3: NewType(...) 形式（ast.Call）
+        # パターン3: NewType(...) 形式(ast.Call)
         if isinstance(annotation, ast.Call):
             # NewType('X', base_type)の場合
             if isinstance(annotation.func, ast.Name) and annotation.func.id == "NewType":
@@ -950,7 +950,7 @@ class TypeUsageVisitor(ast.NodeVisitor):
                 context_after=context_after,
             )
 
-            # 使用種類を判定（簡易実装）
+            # 使用種類を判定(簡易実装)
             usage_kind = self._determine_usage_kind(node)
 
             usage = TypeUsageExample(location=location, context=code.strip(), kind=usage_kind)
@@ -964,12 +964,12 @@ class TypeUsageVisitor(ast.NodeVisitor):
         """使用種類を判定
 
         Args:
-            node: Nameノード
+            node: Name/ノード
 
         Returns:
             使用種類
         """
-        # 簡易実装：親ノードの種類で判定
+        # 簡易実装:親ノードの種類で判定
         parent = getattr(node, "_parent", None)
         if parent:
             if isinstance(parent, ast.arg):
