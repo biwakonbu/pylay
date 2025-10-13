@@ -13,7 +13,7 @@
 from pathlib import Path
 from typing import Annotated, Any
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from src.core.schemas.types import MaxDepth, PositiveInt
 
@@ -51,10 +51,7 @@ class TypeConversionConfig(BaseModel):
     preserve_quotes: bool = Field(default=True, description="YAML出力で引用符を保持するか")
     as_root: bool = Field(default=True, description="ルートレベルで出力するか")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True  # イミュータブルに設定
+    model_config = ConfigDict(frozen=True)
 
 
 class YamlOutputConfig(BaseModel):
@@ -78,10 +75,7 @@ class YamlOutputConfig(BaseModel):
     )
     width: PositiveInt | None = Field(default=None, description="出力幅の制限（Noneで無制限）")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class ModuleExtractionConfig(BaseModel):
@@ -99,10 +93,7 @@ class ModuleExtractionConfig(BaseModel):
         description="処理可能な最大ファイルサイズ（バイト）",
     )
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class DependencyGraphConfig(BaseModel):
@@ -117,10 +108,7 @@ class DependencyGraphConfig(BaseModel):
     max_edges: PositiveInt | None = Field(default=None, description="最大エッジ数制限（Noneで無制限）")
     detect_cycles: bool = Field(default=True, description="循環参照を検出・報告するか")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class VisualizationConfig(BaseModel):
@@ -153,10 +141,7 @@ class VisualizationConfig(BaseModel):
         description="エッジタイプ別の色設定",
     )
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class ConversionResult(BaseModel):

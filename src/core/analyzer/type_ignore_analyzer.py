@@ -13,7 +13,7 @@ import subprocess
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.types import FilePath, LineNumber, create_line_number
@@ -43,10 +43,7 @@ class TypeIgnoreIssue(BaseModel):
     priority: Priority = Field(description="優先度（HIGH/MEDIUM/LOW）")
     solutions: list[str] = Field(default_factory=list, description="解決策の提案")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class TypeIgnoreSummary(BaseModel):

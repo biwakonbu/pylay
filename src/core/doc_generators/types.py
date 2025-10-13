@@ -13,7 +13,7 @@
 from pathlib import Path
 from typing import Annotated, Any, TypedDict
 
-from pydantic import AfterValidator, BaseModel, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from src.core.schemas.types import PositiveInt
 
@@ -123,10 +123,7 @@ class DocumentConfig(BaseModel):
     max_depth: int = Field(gt=0, default=3, description="ドキュメントの最大深さ")
     encoding: str = Field(default="utf-8", description="出力ファイルのエンコーディング")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class TypeInspectionConfig(BaseModel):
@@ -141,10 +138,7 @@ class TypeInspectionConfig(BaseModel):
     include_private_types: bool = Field(default=False, description="プライベート型を含めるかどうか")
     include_builtin_types: bool = Field(default=False, description="組み込み型を含めるかどうか")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class MarkdownGenerationConfig(BaseModel):
@@ -161,10 +155,7 @@ class MarkdownGenerationConfig(BaseModel):
     max_code_lines: PositiveInt | None = Field(default=None, description="コードブロックの最大行数(Noneで無制限)")
     include_type_hints: bool = Field(default=True, description="型ヒントを含めるかどうか")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class FileSystemConfig(BaseModel):
@@ -179,10 +170,7 @@ class FileSystemConfig(BaseModel):
     backup_existing: bool = Field(default=True, description="既存ファイルをバックアップするかどうか")
     file_permissions: str | None = Field(default=None, description="ファイルのパーミッション(Noneでデフォルト)")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class GenerationResult(BaseModel):
@@ -199,10 +187,7 @@ class GenerationResult(BaseModel):
     error_message: str | None = Field(default=None, description="エラーメッセージ")
     files_count: int = Field(ge=0, description="生成されたファイル数")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class TypeInspectionResult(BaseModel):
@@ -223,10 +208,7 @@ class TypeInspectionResult(BaseModel):
     inspection_time_ms: float = Field(ge=0.0, description="検査時間(ミリ秒)")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class MarkdownSectionInfo(BaseModel):
@@ -242,10 +224,7 @@ class MarkdownSectionInfo(BaseModel):
     subsections: list["MarkdownSectionInfo"] = Field(default_factory=list, description="サブセクションのリスト")
     code_blocks: list[CodeBlock] = Field(default_factory=list, description="コードブロックのリスト")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 def create_empty_metadata() -> DocumentMetadata:
@@ -276,10 +255,7 @@ class DocumentStructure(BaseModel):
     )
     generation_timestamp: str = Field(description="生成時刻(ISO形式)")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class TemplateConfig(BaseModel):
@@ -318,10 +294,7 @@ class DocumentationMetrics(BaseModel):
     code_blocks_count: int = Field(ge=0, description="コードブロック総数")
     sections_count: int = Field(ge=0, description="セクション総数")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class BatchGenerationConfig(BaseModel):
@@ -358,7 +331,4 @@ class BatchGenerationResult(BaseModel):
     results: list[GenerationResult] = Field(default_factory=list, description="個別結果のリスト")
     error_summary: dict[str, int] = Field(default_factory=dict, description="エラータイプ別の集計")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)

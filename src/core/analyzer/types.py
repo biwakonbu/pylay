@@ -13,7 +13,7 @@
 from pathlib import Path
 from typing import Annotated, Literal, NewType
 
-from pydantic import AfterValidator, BaseModel, Field, TypeAdapter
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, TypeAdapter
 
 
 def _validate_percentage(v: float) -> float:
@@ -85,10 +85,7 @@ class TypeDefinition(BaseModel):
     target_level: TargetLevel = Field(default=None, description="docstringで指定された目標レベル")
     keep_as_is: bool = Field(default=False, description="現状維持フラグ")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class DocstringDetail(BaseModel):
@@ -108,10 +105,7 @@ class DocstringDetail(BaseModel):
     line_count: int = Field(ge=0, description="docstringの行数")
     detail_score: float = Field(ge=0.0, le=1.0, description="詳細度スコア（0.0-1.0）")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class DocumentationStatistics(BaseModel):
@@ -134,10 +128,7 @@ class DocumentationStatistics(BaseModel):
     by_level_avg_lines: dict[TypeLevel, float] = Field(description="レベル別の平均docstring行数")
     by_format: dict[FormatStyle, int] = Field(description="フォーマット別のdocstring数")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class TypeLevelInfo(BaseModel):
@@ -154,10 +145,7 @@ class TypeLevelInfo(BaseModel):
     upgrade_candidates: int = Field(ge=0, description="レベルアップ候補の数")
     keep_as_is_count: int = Field(ge=0, description="現状維持指定の数")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class FileAnalysisResult(BaseModel):
@@ -175,10 +163,7 @@ class FileAnalysisResult(BaseModel):
     has_errors: bool = Field(description="解析エラーがあるかどうか")
     error_messages: list[str] = Field(default_factory=list, description="エラーメッセージのリスト")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class ProjectAnalysisResult(BaseModel):
@@ -198,10 +183,7 @@ class ProjectAnalysisResult(BaseModel):
     total_analysis_time_ms: float = Field(description="総解析時間（ミリ秒）")
     analysis_timestamp: str = Field(description="解析実行時刻（ISO形式）")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class AnalysisConfig(BaseModel):
@@ -225,10 +207,7 @@ class AnalysisConfig(BaseModel):
     analyze_dependencies: bool = Field(default=True, description="依存関係も解析するか")
     detect_type_levels: bool = Field(default=True, description="型レベルを検出するか")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class QualityMetrics(BaseModel):
@@ -245,10 +224,7 @@ class QualityMetrics(BaseModel):
     maintainability_score: float = Field(ge=0.0, le=1.0, description="保守性スコア")
     complexity_score: float = Field(ge=0.0, le=1.0, description="複雑度スコア")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class TypeUpgradeSuggestion(BaseModel):
@@ -265,7 +241,4 @@ class TypeUpgradeSuggestion(BaseModel):
     priority: Literal["high", "medium", "low"] = Field(description="優先度")
     effort_estimate: Literal["small", "medium", "large"] = Field(description="実装工数の見積もり")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
