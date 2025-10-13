@@ -62,7 +62,7 @@ class QualityReporter:
 
         # 問題リスト
         if check_result.issues:
-            self._show_issues_table(check_result, show_details)
+            self._show_issues_table(check_result, show_details=show_details)
         else:
             self.console.print("[green]No quality issues detected[/green]")
 
@@ -156,7 +156,7 @@ class QualityReporter:
         self.console.print(table)
         self.console.print()
 
-    def _show_issues_table(self, check_result: QualityCheckResult, show_details: bool) -> None:
+    def _show_issues_table(self, check_result: QualityCheckResult, *, show_details: bool) -> None:
         """問題リストテーブルを表示"""
         # 深刻度別にテーブルを作成
         for severity in SEVERITIES:
@@ -186,15 +186,15 @@ class QualityReporter:
 
             # primitive型問題をグルーピング表示
             if primitive_issues:
-                self._show_grouped_primitive_issues(primitive_issues, show_details, color)
+                self._show_grouped_primitive_issues(primitive_issues, show_details=show_details, color=color)
 
             # その他の問題は個別表示
             for issue in other_issues:
-                self._show_issue_detail(issue, show_details, color)
+                self._show_issue_detail(issue, show_details=show_details, color=color)
 
             self.console.print()
 
-    def _show_grouped_primitive_issues(self, issues: list[QualityIssue], show_details: bool, color: str) -> None:
+    def _show_grouped_primitive_issues(self, issues: list[QualityIssue], *, show_details: bool, color: str) -> None:
         """primitive型問題をグルーピング表示"""
         from collections import defaultdict
 
@@ -257,7 +257,7 @@ class QualityReporter:
                     self.console.print(f"  {prim_type}: {count}箇所")
             self.console.print()
 
-    def _show_issue_detail(self, issue: QualityIssue, show_details: bool, color: str) -> None:
+    def _show_issue_detail(self, issue: QualityIssue, *, show_details: bool, color: str) -> None:
         """個別の問題を詳細表示"""
         # 問題の種類とメッセージ
         self.console.print(f"[bold {color}]問題種別:[/bold {color}] {issue.issue_type}")

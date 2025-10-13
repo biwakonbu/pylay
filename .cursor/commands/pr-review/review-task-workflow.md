@@ -70,6 +70,12 @@ Run the integrated workflow to sync with GitHub:
 
 After fetching the latest reviews, follow this exact workflow:
 
+> **💡 Operational Notes for GitHub API**:
+> - **Rate Limiting**: GitHub API has rate limits. If you hit the limit, the tool will automatically retry with exponential backoff (initial interval: 1s, max interval: 60s)
+> - **Network Failures**: Transient network errors are handled with up to 3 retries using exponential backoff
+> - **Safe Options**: Use `--dry-run` or `--no-fetch` flags when available for testing without making API calls
+> - **Rate Limit Monitoring**: Check remaining rate limit in response headers; the tool fails gracefully with clear error messages when retries are exhausted
+
 ## Workflow Steps:
 
 1. **Check Status**: Use `reviewtask status` to check current task status and identify any tasks in progress

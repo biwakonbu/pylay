@@ -17,7 +17,21 @@ from pathlib import Path
 
 
 def run_command(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
-    """コマンド実行ヘルパー"""
+    """コマンド実行ヘルパー
+
+    Args:
+        cmd: 実行するコマンドのリスト
+        cwd: 作業ディレクトリ（Noneの場合はカレントディレクトリ）
+
+    Returns:
+        (returncode, stdout, stderr)のタプル
+        - returncode: コマンドの終了コード（0: 成功、1: 失敗）
+        - stdout: 標準出力の内容
+        - stderr: 標準エラー出力の内容
+
+    Note:
+        タイムアウト（30秒）または例外発生時は(1, "", エラーメッセージ)を返す
+    """
     try:
         result = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=30)
         return result.returncode, result.stdout, result.stderr
@@ -28,7 +42,11 @@ def run_command(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]
 
 
 def get_current_revision() -> str | None:
-    """現在のマイグレーションリビジョンを取得"""
+    """現在のマイグレーションリビジョンを取得
+
+    Returns:
+        str | None: 現在のリビジョンID（見つからない場合はNone）
+    """
     backend_dir = Path(__file__).parent.parent
 
     returncode, stdout, _stderr = run_command(["uv", "run", "alembic", "current"], cwd=backend_dir)
@@ -43,7 +61,11 @@ def get_current_revision() -> str | None:
 
 
 def get_revision_history() -> list[str]:
-    """マイグレーション履歴を取得"""
+    """マイグレーション履歴を取得
+
+    Returns:
+        list[str]: リビジョンIDのリスト（時系列順、古い順）
+    """
     backend_dir = Path(__file__).parent.parent
 
     returncode, stdout, _stderr = run_command(["uv", "run", "alembic", "history"], cwd=backend_dir)
@@ -61,7 +83,11 @@ def get_revision_history() -> list[str]:
 
 
 async def migration_up_test() -> bool:
-    """最新マイグレーションまでのUP実行テスト"""
+    """最新マイグレーションまでのUP実行テスト
+
+    Returns:
+        bool: マイグレーションが成功したかどうか
+    """
     print("📈 マイグレーション UP テスト開始...")
     backend_dir = Path(__file__).parent.parent
 
@@ -79,7 +105,11 @@ async def migration_up_test() -> bool:
 
 
 async def migration_down_test() -> bool:
-    """1つ前のバージョンへのDOWN実行テスト"""
+    """1つ前のバージョンへのDOWN実行テスト
+
+    Returns:
+        bool: マイグレーションダウンが成功したかどうか
+    """
     print("\n📉 マイグレーション DOWN テスト開始...")
     backend_dir = Path(__file__).parent.parent
 
@@ -106,7 +136,11 @@ async def migration_down_test() -> bool:
 
 
 async def migration_up_again_test() -> bool:
-    """再度最新へのUP実行テスト"""
+    """再度最新へのUP実行テスト
+
+    Returns:
+        bool: マイグレーション再実行が成功したかどうか
+    """
     print("\n🔄 マイグレーション 再UP テスト開始...")
     backend_dir = Path(__file__).parent.parent
 
@@ -124,7 +158,11 @@ async def migration_up_again_test() -> bool:
 
 
 async def verify_schema_integrity() -> bool:
-    """スキーマ整合性検証"""
+    """スキーマ整合性検証
+
+    Returns:
+        bool: スキーマ整合性チェックが成功したかどうか
+    """
     print("\n🔍 スキーマ整合性検証開始...")
     backend_dir = Path(__file__).parent.parent
 
@@ -141,7 +179,11 @@ async def verify_schema_integrity() -> bool:
 
 
 async def main() -> int:
-    """メイン処理"""
+    """メイン処理
+
+    Returns:
+        int: 終了コード（0: 成功、1: 失敗）
+    """
     print("🚀 マイグレーション統合テスト開始")
 
     try:

@@ -6,6 +6,7 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 """
 
 import ast
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,8 @@ import networkx as nx
 
 from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.types import NodeId, ScopeStack, TypeParamList
+
+logger = logging.getLogger(__name__)
 
 
 class DependencyExtractor(ast.NodeVisitor):
@@ -317,10 +320,6 @@ def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path:
         print(f"依存関係グラフを {output_path} に保存しました。")
 
     except ImportError as e:
-        import logging
-
-        logging.getLogger(__name__).warning("Graphviz/pydot が未インストールのため視覚化をスキップします: %s", e)
-    except Exception as e:
-        import logging
-
-        logging.getLogger(__name__).error("視覚化中にエラーが発生しました: %s", e)
+        logger.warning("Graphviz/pydot が未インストールのため視覚化をスキップします: %s", e)
+    except Exception:
+        logger.exception("視覚化中にエラーが発生しました")

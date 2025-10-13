@@ -130,7 +130,6 @@ After completing the initial setup, follow this exact workflow:
      code quality, etc.]. This approach ensures [long-term benefits or compliance
      with best practices].
 
-     **Task ID:** [task-id]
      **Comment ID:** [source_comment_id]
      Review Comment: https://github.com/[owner]/[repo]/pull/[pr-number]#discussion_r[comment-id]
 

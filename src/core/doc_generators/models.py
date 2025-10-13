@@ -34,7 +34,7 @@ from .types import (
     create_empty_metadata,
 )
 
-# デフォルトの出力パス（成功時と例外時で一貫して使用）
+# デフォルトの出力パス(成功時と例外時で一貫して使用)
 DEFAULT_OUTPUT_PATH = "./docs"
 
 
@@ -64,13 +64,13 @@ class DocumentGeneratorService(BaseModel):
         start_time = time.time()
 
         try:
-            # 簡易的な実装（実際はより複雑な処理が必要）
+            # 簡易的な実装(実際はより複雑な処理が必要)
             output_path = Path(config.output_path) if config.output_path else Path(DEFAULT_OUTPUT_PATH)
 
             # 出力ディレクトリの作成
             output_path.mkdir(parents=True, exist_ok=True)
 
-            # ドキュメント構造の作成（簡易版）
+            # ドキュメント構造の作成(簡易版)
             structure = DocumentStructure(
                 title="Generated Documentation",
                 sections=[],
@@ -81,7 +81,7 @@ class DocumentGeneratorService(BaseModel):
             # マークダウン生成 (簡易版)
             markdown_content = f"# {structure.title}\n\nGenerated at: {structure.generation_timestamp}"
 
-            # ファイル出力（簡易版）
+            # ファイル出力(簡易版)
             output_file = output_path / "index.md"
             output_file.write_text(markdown_content, encoding=config.encoding)
 
@@ -173,7 +173,7 @@ class TypeInspectorService(BaseModel):
 
     def _extract_code_blocks(self, docstring: str) -> list[str]:
         """docstringからコードブロックを抽出する内部メソッド"""
-        # 簡易的な実装（実際はより複雑な処理が必要）
+        # 簡易的な実装(実際はより複雑な処理が必要)
         lines = docstring.split("\n")
         code_blocks: list[str] = []
 
@@ -260,7 +260,7 @@ class MarkdownBuilderService(BaseModel):
             section_content = self._build_section_recursive(section, config)
             lines.append(section_content)
 
-        # 目次（設定されている場合）
+        # 目次(設定されている場合)
         if config.include_toc and structure.toc:
             lines.append("## Table of Contents")
             lines.append("")
@@ -339,14 +339,14 @@ class FileSystemService(BaseModel):
         """
         path_obj = Path(path)
 
-        # バックアップ処理（設定されている場合）
+        # バックアップ処理(設定されている場合)
         if self.config.backup_existing and path_obj.exists():
             backup_path = path_obj.with_suffix(f"{path_obj.suffix}.backup")
             import shutil
 
             shutil.copy2(path_obj, backup_path)
 
-        # 上書き確認（設定されている場合）
+        # 上書き確認(設定されている場合)
         if not self.config.overwrite_existing and path_obj.exists():
             raise FileExistsError(f"ファイルが既に存在します: {path}")
 
@@ -412,7 +412,7 @@ class TemplateProcessorService(BaseModel):
         Returns:
             テンプレートの内容
         """
-        # 簡易的な実装（実際はテンプレートファイルから読み込む）
+        # 簡易的な実装(実際はテンプレートファイルから読み込む)
         templates = {
             "default": "# {{title}}\n\n{{content}}",
             "api": "# API Documentation\n\n## {{type_name}}\n\n{{description}}",
@@ -437,7 +437,7 @@ class TemplateProcessorService(BaseModel):
         Returns:
             処理されたテンプレート文字列
         """
-        # 簡易的なテンプレート処理（実際はより高度なテンプレートエンジンを使用）
+        # 簡易的なテンプレート処理(実際はより高度なテンプレートエンジンを使用)
         result = template_content
 
         for key, value in variables.items():
@@ -465,7 +465,7 @@ class TemplateProcessorService(BaseModel):
         # テンプレートの読み込み
         template_content = self.load_template(template_name)
 
-        # テンプレートの処理（DocumentConfigからTemplateConfigを作成）
+        # テンプレートの処理(DocumentConfigからTemplateConfigを作成)
         template_config = (
             TemplateConfig(
                 template_name=config.template_name or "default",
@@ -515,12 +515,12 @@ class BatchProcessorService(BaseModel):
                     input_file_path = str(input_path) if input_path else ""
                     input_file = Path(input_file_path)
 
-                    # 基本的なファイル処理（簡易版）
+                    # 基本的なファイル処理(簡易版)
                     # 実際の実装では各ファイルの種類に応じた処理が必要
                     content = input_file.read_text(encoding="utf-8")
                     output_file = output_dir / f"{input_file.stem}_processed.md"
 
-                    # 簡易的な処理（実際はより複雑な処理が必要）
+                    # 簡易的な処理(実際はより複雑な処理が必要)
                     processed_content = f"# Processed: {input_file.name}\n\n{content}"
                     output_file.write_text(processed_content, encoding="utf-8")
 

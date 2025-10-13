@@ -87,7 +87,7 @@ class FullAnalyzer(Analyzer):
             try:
                 temp_config = TempFileConfig(code=input_path, suffix=".py", mode="w")
             except ValidationError as e:
-                raise ValueError(f"無効な入力: {e}") from e
+                raise ValueError("無効な入力") from e
             temp_path = create_temp_file(temp_config)
 
             # クリーンアップ関数を返す
@@ -104,7 +104,7 @@ class FullAnalyzer(Analyzer):
 
             return input_path, noop_cleanup
         else:
-            raise ValueError("input_path は Path または str でなければなりません")
+            raise ValueError("型エラー")
 
 
 def create_analyzer(config: PylayConfig, mode: str = "full") -> Analyzer:
@@ -134,7 +134,7 @@ def create_analyzer(config: PylayConfig, mode: str = "full") -> Analyzer:
     elif mode == "full":
         return FullAnalyzer(config)
     else:
-        raise ValueError(f"無効な解析モード: {mode}")
+        raise ValueError(mode)
 
 
 def get_supported_modes() -> AnalyzerModeList:
