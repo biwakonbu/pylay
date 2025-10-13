@@ -91,7 +91,7 @@ async def migration_up_test() -> bool:
     print("📈 マイグレーション UP テスト開始...")
     backend_dir = Path(__file__).parent.parent
 
-    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "upgrade", "head"], cwd=backend_dir)
+    returncode, stdout, _stderr = run_command(["uv", "run", "alembic", "upgrade", "head"], cwd=backend_dir)
 
     if returncode == 0:
         print("✅ マイグレーション UP 成功")
@@ -100,7 +100,7 @@ async def migration_up_test() -> bool:
         return True
     else:
         print("❌ マイグレーション UP 失敗")
-        print(f"   Error: {stderr}")
+        print(f"   Error: {_stderr}")
         return False
 
 
@@ -122,7 +122,7 @@ async def migration_down_test() -> bool:
     # 1つ前のリビジョンにダウングレード
     previous_revision = revisions[-2]  # 最新から2番目
 
-    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "downgrade", previous_revision], cwd=backend_dir)
+    returncode, stdout, _stderr = run_command(["uv", "run", "alembic", "downgrade", previous_revision], cwd=backend_dir)
 
     if returncode == 0:
         print(f"✅ マイグレーション DOWN 成功 (-> {previous_revision})")
@@ -131,7 +131,7 @@ async def migration_down_test() -> bool:
         return True
     else:
         print("❌ マイグレーション DOWN 失敗")
-        print(f"   Error: {stderr}")
+        print(f"   Error: {_stderr}")
         return False
 
 
@@ -144,7 +144,7 @@ async def migration_up_again_test() -> bool:
     print("\n🔄 マイグレーション 再UP テスト開始...")
     backend_dir = Path(__file__).parent.parent
 
-    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "upgrade", "head"], cwd=backend_dir)
+    returncode, stdout, _stderr = run_command(["uv", "run", "alembic", "upgrade", "head"], cwd=backend_dir)
 
     if returncode == 0:
         print("✅ マイグレーション 再UP 成功")
@@ -153,7 +153,7 @@ async def migration_up_again_test() -> bool:
         return True
     else:
         print("❌ マイグレーション 再UP 失敗")
-        print(f"   Error: {stderr}")
+        print(f"   Error: {_stderr}")
         return False
 
 

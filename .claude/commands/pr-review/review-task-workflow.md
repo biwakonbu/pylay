@@ -50,16 +50,16 @@ Tasks are automatically assigned priority levels that determine processing order
 - **`medium`** - Moderate improvements, refactoring suggestions
 - **`low`** - Minor improvements, style suggestions
 
-## Initial Setup (Execute Once Per Command Invocation):
+## Initial Step (Execute Once Per Command Invocation):
 
 **Fetch and Analyze Reviews**: The workflow consists of two steps:
 
 1. **Fetch Reviews**: `reviewtask fetch` - Downloads PR reviews from GitHub and saves them locally
 2. **Generate Tasks**: `reviewtask analyze` - Analyzes reviews using AI and generates actionable tasks
 
-You can also use the combined command `reviewtask` (without arguments) which runs both fetch and analyze in sequence. Run these commands to ensure you're working with the most current review feedback and tasks.
+You can also use the combined command `reviewtask` (without arguments) which runs both fetch and analyze in sequence. When PR_NUMBER is omitted, the tool attempts to detect the PR from the current branch; if not found, it fails with a clear message. Run these commands to ensure you're working with the most current review feedback and tasks.
 
-After completing the initial setup, follow this exact workflow:
+上記の初回ステップ（fetch → analyze）は各コマンド実行ごとに一度だけ行います。以降は次のワークフローに従ってください:
 
 ## Workflow Steps:
 

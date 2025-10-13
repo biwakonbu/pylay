@@ -17,10 +17,7 @@ class TestQualityChecker:
     @pytest.fixture  # type: ignore[misc]
     def config(self) -> PylayConfig:
         """テスト用の設定オブジェクト"""
-        return PylayConfig(
-            target_dirs=["src"],
-            quality_thresholds=None,
-        )
+        return PylayConfig(target_dirs=["src"])
 
     @pytest.fixture  # type: ignore[misc]
     def type_analyzer(self) -> TypeLevelAnalyzer:

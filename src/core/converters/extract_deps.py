@@ -276,7 +276,7 @@ def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path:
         # NetworkXグラフをpydotグラフに変換
         import networkx.drawing.nx_pydot as nx_pydot
 
-        pydot_graph = nx_pydot.to_pydot(nx_graph)
+        pydot_graph = nx_pydot.to_pydot(nx_graph)  # type: ignore[attr-defined]
 
         # ノードの色を設定（型によって異なる色）
         for node in pydot_graph.get_nodes():
