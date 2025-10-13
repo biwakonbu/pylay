@@ -45,7 +45,7 @@ class DocumentGeneratorService(BaseModel):
     このクラスは、ドキュメント生成処理のビジネスロジックを実装します。
     """
 
-    # DocumentGeneratorProtocolとの互換性のため、より具体的な型（Mapping[str, object]）を使用
+    # DocumentGeneratorProtocolとの互換性のため、より具体的な型 (Mapping[str, object]) を使用
     # プロトコルはAnyを要求するが、実装では型安全性を優先
     def generate_document(  # type: ignore[override]
         self, config: DocumentConfig, **kwargs: Mapping[str, object]
@@ -56,7 +56,7 @@ class DocumentGeneratorService(BaseModel):
 
         Args:
             config: ドキュメント生成設定
-            **kwargs: 追加の設定パラメータ(DocumentGeneratorProtocolとの互換性のため保持)
+            **kwargs: 追加の設定パラメータ (DocumentGeneratorProtocolとの互換性のため保持)
 
         Returns:
             生成結果
@@ -78,7 +78,7 @@ class DocumentGeneratorService(BaseModel):
                 generation_timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             )
 
-            # マークダウン生成（簡易版）
+            # マークダウン生成 (簡易版)
             markdown_content = f"# {structure.title}\n\nGenerated at: {structure.generation_timestamp}"
 
             # ファイル出力（簡易版）
@@ -316,7 +316,7 @@ class FileSystemService(BaseModel):
 
     config: FileSystemConfig = Field(default_factory=FileSystemConfig)
 
-    # TODO: プロトコル更新時にbooleanパラメータをキーワード専用引数に変換（parents, exist_ok）
+    # TODO: プロトコル更新時にbooleanパラメータをキーワード専用引数に変換 (parents, exist_ok)
     def mkdir(self, path: str | Path, parents: bool = True, exist_ok: bool = True) -> None:
         """
         ディレクトリを作成します。
@@ -636,9 +636,9 @@ class DocumentationOrchestrator(BaseModel):
 
     def generate_comprehensive_documentation(
         self,
-        types: dict[TypeName, object],
+        types: dict[TypeName, type[Any]],
         output_path: str | Path,
-        config: DocumentConfig | None = None,
+        _config: DocumentConfig | None = None,
     ) -> GenerationResult:
         """
         包括的なドキュメントを生成します。

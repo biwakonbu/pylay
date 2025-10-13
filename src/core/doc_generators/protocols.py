@@ -12,7 +12,7 @@
 
 from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from src.core.schemas.graph import TypeDependencyGraph
 
@@ -138,6 +138,7 @@ class TypeInspectorProtocol(Protocol):
         ...
 
 
+@runtime_checkable
 class MarkdownBuilderProtocol(Protocol):
     """
     マークダウン生成機能のプロトコル
@@ -202,6 +203,7 @@ class MarkdownBuilderProtocol(Protocol):
         ...
 
 
+@runtime_checkable
 class FileSystemInterfaceProtocol(Protocol):
     """
     ファイルシステム操作機能のプロトコル

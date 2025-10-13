@@ -19,7 +19,7 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from src.core.schemas.types import (
@@ -287,7 +287,7 @@ class ProjectAnalyzer:
     def save_report(self, summary: dict[str, object], filepath: str = "analysis_report.json") -> None:
         """分析レポートをJSONファイルに保存"""
         report = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "timestamp": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
             "summary": summary,
             "detailed_results": [
                 {

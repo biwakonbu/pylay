@@ -159,12 +159,10 @@ class DependencyExtractionAnalyzer(Analyzer):
             # 相対パスからモジュール名を生成
             relative_path = file_path.resolve().with_suffix("").relative_to(project_root)
             return relative_path.as_posix().replace("/", ".")
-        except (ValueError, Exception) as e:
+        except (ValueError, OSError) as e:
             # エラーログを出力
             import hashlib
-            import logging
 
-            logger = logging.getLogger(__name__)
             logger.warning("モジュール名の計算に失敗しました: file_path=%s, error=%s", file_path, e)
 
             # より一意性の高いフォールバック名を生成
@@ -180,7 +178,7 @@ class DependencyExtractionAnalyzer(Analyzer):
                 # 最終フォールバック: パスの最後の2要素 + ハッシュ
                 resolved_str = str(file_path.resolve())
                 path_hash = hashlib.sha256(resolved_str.encode()).hexdigest()[:8]
-                parts = file_path.parts[-2:] if len(file_path.parts) > 1 else (file_path.stem,)
+                parts = (file_path.parts[-2], file_path.stem) if len(file_path.parts) > 1 else (file_path.stem,)
                 return f"{'.'.join(parts)}.{path_hash}"
 
     def _integrate_mypy(self, file_path: Path | str) -> None:

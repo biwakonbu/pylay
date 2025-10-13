@@ -11,7 +11,7 @@ The reviewtask tool provides the following commands for managing PR review tasks
 
 ### Core Workflow Commands:
 
-- **`reviewtask [PR_NUMBER]`** - Fetch reviews and analyze with AI (integrated workflow)
+- **`reviewtask [PR_NUMBER]`** - Fetch reviews and analyze with AI (integrated workflow). When PR_NUMBER is omitted, automatically detects the open PR linked to the current branch. If multiple candidate PRs exist, selects the most recently updated one. If no PR is found, displays an error and shows help.
 - **`reviewtask status`** - Check overall task status and get summary
 - **`reviewtask show`** - Get next recommended task based on priority
 - **`reviewtask show <task-id>`** - Show detailed information for a specific task
@@ -59,7 +59,7 @@ Tasks are automatically assigned priority levels that determine processing order
 
 Run the integrated workflow to sync with GitHub:
 
-- `reviewtask` - Fetches PR reviews from GitHub and analyzes them with AI to generate actionable tasks
+- `reviewtask` - Fetches PR reviews from GitHub and analyzes them with AI to generate actionable tasks. When PR_NUMBER is omitted, automatically detects the open PR linked to the current branch. If multiple candidate PRs exist, selects the most recently updated one. If no PR is found, displays an error and shows help.
 - `reviewtask [PR_NUMBER]` - Same workflow for a specific PR number
 
 **This step is MANDATORY even if you think you have the latest data.** New review comments may have been added since your last check, and the tool will automatically:

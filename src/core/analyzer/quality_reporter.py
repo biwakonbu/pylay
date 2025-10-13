@@ -172,9 +172,7 @@ class QualityReporter:
                 "advice": "ADVICE",
             }[severity]
 
-            rule_text = (  # noqa: E501
-                f"[bold {color}]{severity_label} ({len(severity_issues)} issues)[/bold {color}]"
-            )
+            rule_text = f"[bold {color}]{severity_label} ({len(severity_issues)} issues)[/bold {color}]"
             self.console.rule(rule_text, style=color)
             self.console.print()
 
@@ -340,9 +338,7 @@ class QualityReporter:
             self.console.print()
 
         if check_result.warning_count > 0:
-            self.console.print(  # noqa: E501
-                "2. [bold yellow]警告項目も積極的に修正してください[/bold yellow]"
-            )
+            self.console.print("2. [bold yellow]警告項目も積極的に修正してください[/bold yellow]")
             self.console.print("   - 警告は品質低下の兆候です")
             self.console.print("   - 長期的に見て型安全性が損なわれる可能性があります")
             self.console.print()
@@ -356,7 +352,7 @@ class QualityReporter:
 
         # 設定ファイルでの閾値調整の提案
         if check_result.error_count > 0 or check_result.warning_count > 0:
-            self.console.print(  # noqa: E501
+            self.console.print(
                 "4. [dim]プロジェクトの状況に応じてpyproject.tomlの閾値を調整することを検討してください[/dim]"
             )
             self.console.print()

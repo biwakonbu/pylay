@@ -337,15 +337,57 @@ You can now safely complete this task with: reviewtask complete task-001
 
 **`reviewtask complete` output example:**
 ```text
-Running verification checks for task 'task-001'...
-Task 'task-001' completed successfully!
-All verification checks passed
+🔍 Phase 1/5: Verification
+  ✓ Running verification checks...
+  ✓ All checks passed
+
+📝 Phase 2/5: Status Update
+  ✓ Task 'task-001' marked as done
+
+💾 Phase 3/5: Auto-commit
+  ✓ Created commit: fix: Add input validation for user data (abc1234)
+
+🔗 Phase 4/5: Thread Resolution
+  ✓ Resolved review thread (Comment ID: r123456789)
+
+💡 Phase 5/5: Next Task Suggestion
+  ✓ Next recommended task: task-002 (critical priority)
+
+✅ Task completed successfully with full automation
+   All 5 phases completed
+
+📊 Progress Update:
+   Completed: 6/8 tasks (75%)
+   Remaining: 2 tasks (1 critical, 1 high priority)
+
+Next: reviewtask done task-002
 ```
 
 **`reviewtask complete --skip-verification` output example:**
 ```text
-WARNING: verification skipped for task 'task-001' (reason: "<provided-reason>")
-Task 'task-001' completed without verification
+⚠️  Phase 1/5: Verification
+  ⚠️  WARNING: verification skipped for task 'task-001' (reason: "Manual override - verification not required for this task")
+
+📝 Phase 2/5: Status Update
+  ✓ Task 'task-001' marked as done
+
+💾 Phase 3/5: Auto-commit
+  ✓ Created commit: fix: Add input validation for user data (abc1234)
+
+🔗 Phase 4/5: Thread Resolution
+  ✓ Resolved review thread (Comment ID: r123456789)
+
+💡 Phase 5/5: Next Task Suggestion
+  ✓ Next recommended task: task-002 (critical priority)
+
+⚠️  Task completed with manual verification skip
+   ⚠️  Verification was skipped by user request
+
+📊 Progress Update:
+   Completed: 6/8 tasks (75%)
+   Remaining: 2 tasks (1 critical, 1 high priority)
+
+Next: reviewtask done task-002
 ```
 
 **`reviewtask cancel` output example:**

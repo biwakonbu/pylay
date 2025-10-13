@@ -49,7 +49,7 @@ class PydanticSchemaInfo(TypedDict, total=False):
     description: str
     default: Any  # デフォルト値は任意の型
     examples: list[Any]  # 例は任意の型リスト
-    format_: str
+    format: str
     minimum: float | int
     maximum: float | int
     exclusiveMinimum: float | int

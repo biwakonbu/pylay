@@ -123,7 +123,7 @@ class TypeIgnoreAnalyzer:
         if exclude_patterns is None:
             try:
                 config = PylayConfig.from_pyproject_toml(project_path)
-                exclude_patterns = config.exclude_patterns
+                exclude_patterns = list(config.exclude_patterns or [])
             except (FileNotFoundError, ValueError):
                 # pyproject.tomlが見つからない場合はデフォルトの除外パターンを使用
                 exclude_patterns = [
@@ -132,6 +132,7 @@ class TypeIgnoreAnalyzer:
                     "**/__pycache__/**",
                     "**/.venv/**",
                     "**/venv/**",  # 仮想環境の別名パターン
+                    "**/site-packages/**",  # サードパーティ依存を除外
                     "**/.mypy_cache/**",  # mypyキャッシュディレクトリ
                     "**/node_modules/**",
                     "**/dist/**",
