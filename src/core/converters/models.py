@@ -297,7 +297,7 @@ class DependencyProcessingService(BaseModel):
 
         return convert_graph_to_yaml_spec(graph)
 
-    def visualize_dependencies(self, graph: TypeDependencyGraph, output_path: OutputPath = "deps.png") -> None:
+    def visualize_dependencies(self, graph: TypeDependencyGraph, output_path: OutputPath | None = "deps.png") -> None:
         """
         依存関係を視覚化します。
 

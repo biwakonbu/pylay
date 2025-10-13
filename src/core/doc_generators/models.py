@@ -45,6 +45,8 @@ class DocumentGeneratorService(BaseModel):
     このクラスは、ドキュメント生成処理のビジネスロジックを実装します。
     """
 
+    # DocumentGeneratorProtocolとの互換性のため、より具体的な型（Mapping[str, object]）を使用
+    # プロトコルはAnyを要求するが、実装では型安全性を優先
     def generate_document(  # type: ignore[override]
         self, config: DocumentConfig, **kwargs: Mapping[str, object]
     ) -> GenerationResult:
@@ -54,7 +56,7 @@ class DocumentGeneratorService(BaseModel):
 
         Args:
             config: ドキュメント生成設定
-            **kwargs: 追加の設定パラメータ（DocumentGeneratorProtocolとの互換性のため保持）
+            **kwargs: 追加の設定パラメータ(DocumentGeneratorProtocolとの互換性のため保持)
 
         Returns:
             生成結果

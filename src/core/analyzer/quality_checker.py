@@ -208,7 +208,7 @@ class QualityChecker:
             location = CodeLocation(
                 file=detail.location.file,
                 line=detail.location.line,
-                column=getattr(detail.location, "column", 0),
+                column=detail.location.column,
                 context_before=detail.location.context_before,
                 code=detail.location.code,
                 context_after=detail.location.context_after,

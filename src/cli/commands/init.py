@@ -131,12 +131,12 @@ def _generate_config_text(config: PylayConfig) -> str:
         "# 出力設定",
         "[tool.pylay.output]",
         (
-            '# yaml_output_dir = "docs/yaml"  # YAMLファイルの出力先（未指定時はPythonソースと同じディレクトリ）'
+            '# yaml_output_dir = "docs/yaml"  # YAMLファイルの出力先(未指定時はPythonソースと同じディレクトリ)'
             if config.output.yaml_output_dir is None
             else f'yaml_output_dir = "{config.output.yaml_output_dir}"'
         ),
         (
-            '# markdown_output_dir = "docs/md"  # Markdownファイルの出力先（未指定時はYAMLと同じディレクトリ）'
+            '# markdown_output_dir = "docs/md"  # Markdownファイルの出力先(未指定時はYAMLと同じディレクトリ)'
             if config.output.markdown_output_dir is None
             else f'markdown_output_dir = "{config.output.markdown_output_dir}"'
         ),

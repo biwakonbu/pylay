@@ -138,7 +138,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             return graph
 
         except Exception as e:
-            raise DependencyExtractionError(f"依存関係抽出に失敗しました: {e}", file_path=str(file_path))
+            raise DependencyExtractionError(f"依存関係抽出に失敗しました: {e}", file_path=str(file_path)) from e
         finally:
             # 一時ファイルのクリーンアップ
             if temp_path is not None:
