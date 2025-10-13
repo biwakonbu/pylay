@@ -274,10 +274,7 @@ class TemplateConfig(BaseModel):
     # 現在は完全に動的だが、既知の変数形状が確定したら型安全性を向上させる
     custom_sections: list[MarkdownSectionInfo] = Field(default_factory=list, description="カスタムセクションのリスト")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class DocumentationMetrics(BaseModel):
@@ -310,10 +307,7 @@ class BatchGenerationConfig(BaseModel):
     max_workers: PositiveInt | None = Field(default=None, description="最大ワーカー数(Noneで自動設定)")
     continue_on_error: bool = Field(default=True, description="エラー発生時に処理を継続するか")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True)
 
 
 class BatchGenerationResult(BaseModel):
