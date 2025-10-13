@@ -303,11 +303,11 @@ class CodeLocator:
 
         return examples[:max_examples]
 
-    def _generate_level1_recommendation(self, type_def: TypeDefinition, usage_count: int) -> str:
+    def _generate_level1_recommendation(self, _type_def: TypeDefinition, usage_count: int) -> str:
         """Level 1型に対する推奨事項を生成
 
         Args:
-            type_def: 型定義
+            _type_def: 型定義（将来の拡張用、現在は未使用）
             usage_count: 使用回数
 
         Returns:
@@ -476,11 +476,11 @@ class CodeLocator:
         else:
             return "lack_of_awareness"
 
-    def _generate_unused_recommendation(self, type_def: TypeDefinition, reason: str) -> str:
+    def _generate_unused_recommendation(self, _type_def: TypeDefinition, reason: str) -> str:
         """未使用型に対する推奨事項を生成
 
         Args:
-            type_def: 型定義
+            _type_def: 型定義（将来の拡張用、現在は未使用）
             reason: 未使用の理由
 
         Returns:
@@ -751,7 +751,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
         if isinstance(annotation, ast.Call):
             # NewType('X', base_type)の場合
             if isinstance(annotation.func, ast.Name) and annotation.func.id == "NewType":
-                # NewType定義はprimitive使用としてカウントしない（PEP 484準拠パターン）
+                # NewType定義はprimitive使用としてカウントしない(PEP 484準拠パターン)
                 # 例: UserId = NewType('UserId', str) → primitive使用ではない
                 return None
 

@@ -418,7 +418,7 @@ def parse_ast(file_path: Path | str) -> ast.AST:
     except FileNotFoundError:
         raise ASTParseError("ファイルが見つかりません", file_path=str(file_path))
     except UnicodeDecodeError as e:
-        raise ASTParseError(f"ファイルのエンコーディングエラー: {e}", file_path=str(file_path))
+        raise ASTParseError(f"ファイルのエンコーディングエラー: {e}", file_path=str(file_path)) from e
 
     try:
         tree = ast.parse(source_code, filename=str(file_path))

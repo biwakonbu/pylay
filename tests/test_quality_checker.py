@@ -4,8 +4,6 @@
 QualityCheckerクラスの機能をテストします。
 """
 
-from collections.abc import Generator
-
 import pytest
 
 from src.core.analyzer.quality_checker import QualityChecker
@@ -17,22 +15,22 @@ class TestQualityChecker:
     """QualityCheckerクラスのテスト"""
 
     @pytest.fixture  # type: ignore[misc]
-    def config(self) -> Generator[PylayConfig, None, None]:
+    def config(self) -> PylayConfig:
         """テスト用の設定オブジェクト"""
-        yield PylayConfig(
+        return PylayConfig(
             target_dirs=["src"],
             quality_thresholds=None,
         )
 
     @pytest.fixture  # type: ignore[misc]
-    def type_analyzer(self, config: PylayConfig) -> Generator[TypeLevelAnalyzer, None, None]:
+    def type_analyzer(self) -> TypeLevelAnalyzer:
         """テスト用のTypeLevelAnalyzerインスタンス"""
-        yield TypeLevelAnalyzer()
+        return TypeLevelAnalyzer()
 
     @pytest.fixture  # type: ignore[misc]
-    def quality_checker(self, config: PylayConfig) -> Generator[QualityChecker, None, None]:
+    def quality_checker(self, config: PylayConfig) -> QualityChecker:
         """テスト用のQualityCheckerインスタンス"""
-        yield QualityChecker(config)
+        return QualityChecker(config)
 
     def test_init(self, quality_checker: QualityChecker) -> None:
         """初期化テスト"""
@@ -367,7 +365,7 @@ x = foo()
             assert result is not None
             assert isinstance(result.total_issues, int)
 
-    def test_invalid_threshold_config(self, config: PylayConfig) -> None:
+    def test_invalid_threshold_config(self) -> None:
         """不正な閾値設定の処理テスト"""
         from src.core.schemas.pylay_config import LevelThresholds
 

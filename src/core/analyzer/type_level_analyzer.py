@@ -49,6 +49,7 @@ class TypeLevelAnalyzer:
     def analyze_directory(
         self,
         directory: Path,
+        *,
         include_upgrade_recommendations: bool = True,
         exclude_patterns: list[str] | None = None,
     ) -> TypeAnalysisReport:

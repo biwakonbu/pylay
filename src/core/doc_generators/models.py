@@ -113,7 +113,7 @@ class TypeInspectorService(BaseModel):
     このクラスは、型検査処理のビジネスロジックを実装します。
     """
 
-    def inspect_type(self, type_cls: object, config: TypeInspectionConfig | None = None) -> TypeInspectionResult:
+    def inspect_type(self, type_cls: type[Any], config: TypeInspectionConfig | None = None) -> TypeInspectionResult:
         """
         指定された型を検査します。
 
@@ -167,7 +167,7 @@ class TypeInspectorService(BaseModel):
                 inspection_time_ms=processing_time,
             )
 
-    def _get_docstring(self, type_cls: object) -> str | None:
+    def _get_docstring(self, type_cls: type[Any]) -> str | None:
         """型クラスのdocstringを取得する内部メソッド"""
         return getattr(type_cls, "__doc__", None)
 
@@ -195,7 +195,7 @@ class TypeInspectorService(BaseModel):
 
         return code_blocks
 
-    def _is_pydantic_model(self, type_cls: object) -> bool:
+    def _is_pydantic_model(self, type_cls: type[Any]) -> bool:
         """Pydanticモデルかどうかをチェックする内部メソッド"""
         try:
             from pydantic import BaseModel
@@ -206,7 +206,7 @@ class TypeInspectorService(BaseModel):
         except Exception:
             return False
 
-    def _get_pydantic_schema(self, type_cls: object) -> PydanticSchemaInfo | None:
+    def _get_pydantic_schema(self, type_cls: type[Any]) -> PydanticSchemaInfo | None:
         """Pydanticモデルのスキーマ情報を取得する内部メソッド"""
         try:
             if self._is_pydantic_model(type_cls):
@@ -316,6 +316,7 @@ class FileSystemService(BaseModel):
 
     config: FileSystemConfig = Field(default_factory=FileSystemConfig)
 
+    # TODO: プロトコル更新時にbooleanパラメータをキーワード専用引数に変換（parents, exist_ok）
     def mkdir(self, path: str | Path, parents: bool = True, exist_ok: bool = True) -> None:
         """
         ディレクトリを作成します。

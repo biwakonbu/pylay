@@ -148,7 +148,7 @@ class ProjectAnalyzer:
             "schemas/yaml_spec.py",
             "schemas/type_index.py",
         ]
-        return self.run_command(["uv", "run", "mypy"] + mypy_files, "型チェック問題（mypy）")
+        return self.run_command(["uv", "run", "mypy", *mypy_files], "型チェック問題(mypy)")
 
     def check_tests(self) -> CheckResult:
         """テスト失敗をチェック"""
@@ -261,7 +261,13 @@ class ProjectAnalyzer:
 
         print("\n📋 詳細結果:")
         for result in summary["results"]:  # type: ignore
-            status = "✅" if result["success"] and not result["has_issues"] else "⚠️" if result["has_issues"] else "❌"
+            # 成功かつ問題なし → ✅、問題あり → ⚠️、失敗 → ❌
+            if result["success"] and not result["has_issues"]:
+                status = "✅"
+            elif result["has_issues"]:
+                status = "⚠️"
+            else:
+                status = "❌"
             print(f"  {status} {result['name']}")
             if result["has_issues"]:
                 out_lines = result["output_lines"]

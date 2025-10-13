@@ -94,7 +94,7 @@ def main() -> None:
     parser.add_argument("--dot-file", help="DOTファイルの出力パス（--visualize使用時）")
     parser.add_argument("--mypy", action="store_true", help="mypy型推論を含める")
     parser.add_argument("--analyze", action="store_true", help="NetworkX分析を実行")
-    parser.add_argument("--graphml", help="GraphMLファイルの出力パス（--analyze使用時）")
+    parser.add_argument("--graphml", help="GraphMLファイルの出力パス(--analyze使用時)")
 
     args = parser.parse_args()
 

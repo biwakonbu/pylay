@@ -16,7 +16,7 @@ The reviewtask tool provides the following commands for managing PR review tasks
 - **`reviewtask show`** - Get next recommended task based on priority
 - **`reviewtask show <task-id>`** - Show detailed information for a specific task
 - **`reviewtask update <task-id> <status>`** - Update task status
-  - Status options: `todo`, `doing`, `done`, `pending`, `cancel`
+  - Status options: `todo`, `doing`, `done`, `pending`, `cancel` （エイリアス: `hold` → `pending`）
 
 ### Task Lifecycle Management Commands:
 
@@ -26,7 +26,7 @@ The reviewtask tool provides the following commands for managing PR review tasks
 - **`reviewtask done <task-id> --skip-resolve`** - Skip thread resolution
 - **`reviewtask done <task-id> --skip-suggestion`** - Skip next task suggestion
 - **`reviewtask start <task-id>`** - Start working on a task
-- **`reviewtask hold <task-id>`** - Put task on hold
+- **`reviewtask hold <task-id>`** - Put task on hold （`pending` のエイリアス）
 - **`reviewtask cancel <task-id> --reason "..."`** - Cancel a task and post reason to GitHub review thread
 - **`reviewtask cancel --all-pending --reason "..."`** - Cancel all pending tasks with same reason
 - **`reviewtask verify <task-id>`** - Run verification checks before task completion
@@ -104,23 +104,25 @@ After fetching the latest reviews, follow this exact workflow:
 4. **Execute Task**: Implement the required changes in the current branch based on the task description and original review comment
 
 5. **Complete Task**: When implementation is finished, use the done command for full automation:
-   - **Recommended (Full Automation)**: `reviewtask done <task-id>`
-     - Automatically runs verification checks
-     - Creates structured commit with task details
-     - Resolves GitHub review thread (if configured)
-     - Suggests next task to work on
+      - **Recommended (Full Automation)**: `reviewtask done <task-id>`
+        - Automatically runs verification checks
+        - Creates structured commit with task details
+        - Resolves GitHub review thread (if configured)
+        - Suggests next task to work on
 
-   - **Skip Options** (when needed):
-     - `reviewtask done <task-id> --skip-verification` - Skip verification checks
-     - `reviewtask done <task-id> --skip-commit` - Skip automatic commit
-     - `reviewtask done <task-id> --skip-resolve` - Skip thread resolution
-     - `reviewtask done <task-id> --skip-suggestion` - Skip next task suggestion
+      - **Skip Options** (when needed):
+        - `reviewtask done <task-id> --skip-verification` - Skip verification checks
+        - `reviewtask done <task-id> --skip-commit` - Skip automatic commit
+        - `reviewtask done <task-id> --skip-resolve` - Skip thread resolution
+        - `reviewtask done <task-id> --skip-suggestion` - Skip next task suggestion
 
-   - **Alternative Commands**:
-     - `reviewtask verify <task-id>` - Run verification checks only
-     - `reviewtask update <task-id> done` - Direct status update (no automation)
+      - **Alternative Commands**:
+        - `reviewtask verify <task-id>` - Run verification checks only
+        - `reviewtask update <task-id> done` - Direct status update (no automation)
 
    **Note**: The `done` command automatically creates commits with proper formatting when auto-commit is enabled.
+
+   **重要**: CLI フラグは `.pr-review/config.json` の設定より優先されます。検証が失敗した場合、`--skip-verification` を付けない限り `done` は中断します。
 
 6. **Review Automation Results**: After running `reviewtask done`:
    - Check verification results (if verification enabled)
@@ -205,7 +207,7 @@ Tasks are automatically categorized for custom verification:
 ```json
 {
   "done_workflow": {
-    "enable_auto_resolve": "complete",
+    "enable_auto_resolve": true,
     "enable_verification": true,
     "enable_auto_commit": true,
     "enable_next_task_suggestion": true,
@@ -218,6 +220,9 @@ Tasks are automatically categorized for custom verification:
   }
 }
 ```
+
+- `enable_auto_resolve`: true で自動解決、false で手動解決（`reviewtask resolve` を使用）
+- `verifiers` のキーは検出されたタスクタイプにマップされます（例: `build` ← `build-task`）
 
 ## Current Tool Features:
 
@@ -237,6 +242,7 @@ This workflow leverages the full capabilities of the current reviewtask implemen
 ## Important Notes:
 
 ### Workflow Best Practices:
+
 - Work only in the current branch
 - Always verify status changes before proceeding
 - Include proper commit message format with task details and comment references
@@ -244,17 +250,20 @@ This workflow leverages the full capabilities of the current reviewtask implemen
 - The initial review fetch/analyze is executed only once per command invocation
 
 ### Task Priority and Processing:
+
 - **Task Priority**: Always work on `doing` tasks first, then `todo` tasks (by priority level), then handle `pending` tasks
 - **Priority-Based Processing**: Within todo tasks, process critical → high → medium → low priority items
 - **Automatic Task Generation**: The tool intelligently creates tasks from review feedback with appropriate priorities
 
 ### Task Cancellation:
+
 - **Use cancel command**: Use `reviewtask cancel <task-id> --reason "..."` instead of `reviewtask update <task-id> cancel`
 - **Provide clear reasons**: Cancellation reasons are posted to GitHub to notify reviewers why feedback wasn't addressed
 - **Batch cancellation**: Use `--all-pending` flag to cancel multiple tasks with the same reason
 - **Error handling**: Cancel command returns non-zero exit code on failure (safe for CI/CD scripts)
 
 ### Task Completion:
+
 - **Recommended approach**: Use `reviewtask done <task-id>` for full automation
 - **Automation Features**: The done command provides 5-phase automation:
   1. **Verification**: Runs configured verification checks
@@ -266,6 +275,7 @@ This workflow leverages the full capabilities of the current reviewtask implemen
 - **Configuration**: Enable/disable features in `.pr-review/config.json` under `done_workflow` section
 
 ### Thread Management:
+
 - **Manual resolution**: Use `reviewtask resolve <task-id>` when auto-resolve is disabled
 - **Batch resolution**: Use `reviewtask resolve --all` to resolve all done tasks at once
 - **Force resolution**: Use `--force` flag to resolve threads regardless of task status

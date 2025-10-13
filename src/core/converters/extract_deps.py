@@ -319,6 +319,10 @@ def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path:
         print(f"依存関係グラフを {output_path} に保存しました。")
 
     except ImportError as e:
-        print(f"Graphviz または pydot がインストールされていないため、視覚化をスキップします: {e}")
+        import logging
+
+        logging.getLogger(__name__).warning("Graphviz/pydot が未インストールのため視覚化をスキップします: %s", e)
     except Exception as e:
-        print(f"視覚化中にエラーが発生しました: {e}")
+        import logging
+
+        logging.getLogger(__name__).error("視覚化中にエラーが発生しました: %s", e)

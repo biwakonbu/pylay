@@ -52,14 +52,14 @@ class TypeIgnoreReporter:
 
         # 各ファイルのレポート
         for file_path, file_issues in issues_by_file.items():
-            self._print_file_section(file_path, file_issues, show_solutions)
+            self._print_file_section(file_path, file_issues, show_solutions=show_solutions)
 
         # サマリー
         self._print_summary(summary)
 
         self.console.rule(style="cyan")
 
-    def _print_file_section(self, file_path: str, issues: list[TypeIgnoreIssue], show_solutions: bool) -> None:
+    def _print_file_section(self, file_path: str, issues: list[TypeIgnoreIssue], *, show_solutions: bool) -> None:
         """
         ファイルセクションを表示
 
@@ -81,11 +81,11 @@ class TypeIgnoreReporter:
 
         # 各問題を表示
         for issue in sorted(issues, key=lambda i: i.line_number):
-            self._print_issue(issue, show_solutions)
+            self._print_issue(issue, show_solutions=show_solutions)
 
         self.console.rule(style="dim")
 
-    def _print_issue(self, issue: TypeIgnoreIssue, show_solutions: bool) -> None:
+    def _print_issue(self, issue: TypeIgnoreIssue, *, show_solutions: bool) -> None:
         """
         個別の問題を表示
 

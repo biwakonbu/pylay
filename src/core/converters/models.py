@@ -111,6 +111,9 @@ class YamlProcessingService(BaseModel):
     このクラスは、YAML関連の処理のビジネスロジックを実装します。
     """
 
+    # TODO: Any を TypeSpec | dict[str, Any] に置き換える
+    # 理由: 現在の実装では動的型付けが必要な場合があるが、TypeSpecで処理可能なケースを優先し、
+    #       dict[str, Any]で辞書形式のフォールバックを確保する。Issue #XX で詳細な型設計を検討予定。
     def convert_yaml_to_spec(self, yaml_str: YamlString, root_key: TypeName | None = None) -> TypeSpec | Any:
         """
         YAML文字列からTypeSpecを生成します。

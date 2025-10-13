@@ -31,7 +31,7 @@ def get_current_revision() -> str | None:
     """現在のマイグレーションリビジョンを取得"""
     backend_dir = Path(__file__).parent.parent
 
-    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "current"], cwd=backend_dir)
+    returncode, stdout, _stderr = run_command(["uv", "run", "alembic", "current"], cwd=backend_dir)
 
     if returncode == 0:
         # "INFO  [alembic.runtime.migration] Context impl ..." の行を除外
@@ -46,7 +46,7 @@ def get_revision_history() -> list[str]:
     """マイグレーション履歴を取得"""
     backend_dir = Path(__file__).parent.parent
 
-    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "history"], cwd=backend_dir)
+    returncode, stdout, _stderr = run_command(["uv", "run", "alembic", "history"], cwd=backend_dir)
 
     revisions = []
     if returncode == 0:
@@ -129,14 +129,14 @@ async def verify_schema_integrity() -> bool:
     backend_dir = Path(__file__).parent.parent
 
     # alembic check コマンドでスキーマ整合性をチェック
-    returncode, stdout, stderr = run_command(["uv", "run", "alembic", "check"], cwd=backend_dir)
+    returncode, _stdout, _stderr = run_command(["uv", "run", "alembic", "check"], cwd=backend_dir)
 
     if returncode == 0:
         print("✅ スキーマ整合性検証成功")
         return True
     else:
         print("❌ スキーマ整合性検証失敗")
-        print(f"   Error: {stderr}")
+        print(f"   Error: {_stderr}")
         return False
 
 

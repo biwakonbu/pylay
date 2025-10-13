@@ -262,9 +262,9 @@ class QualityReporter:
     def _show_issue_detail(self, issue: QualityIssue, show_details: bool, color: str) -> None:
         """個別の問題を詳細表示"""
         # 問題の種類とメッセージ
-        self.console.print(f"[bold {color}]Issue Type:[/bold {color}] {issue.issue_type}")
-        self.console.print(f"[bold]Message:[/bold] {issue.message}")
-        self.console.print(f"[bold]Suggestion:[/bold] {issue.suggestion}")
+        self.console.print(f"[bold {color}]問題種別:[/bold {color}] {issue.issue_type}")
+        self.console.print(f"[bold]メッセージ:[/bold] {issue.message}")
+        self.console.print(f"[bold]提案:[/bold] {issue.suggestion}")
         self.console.print()
 
         # 詳細表示が有効で、位置情報がある場合
@@ -280,7 +280,7 @@ class QualityReporter:
 
         # 改善プラン
         if issue.improvement_plan and show_details:
-            self.console.print("[bold]Improvement Plan:[/bold]")
+            self.console.print("[bold]改善プラン:[/bold]")
             self.console.print(issue.improvement_plan)
             self.console.print()
 
@@ -294,7 +294,7 @@ class QualityReporter:
             temp_checker = QualityChecker(PylayConfig())
             checklist = temp_checker.generate_fix_checklist(issue)
 
-            self.console.print("[bold]Fix Checklist:[/bold]")
+            self.console.print("[bold]修正チェックリスト:[/bold]")
             self.console.print(checklist)
             self.console.print()
 
@@ -325,30 +325,30 @@ class QualityReporter:
             highlight_lines={location.line},
         )
 
-        self.console.print("  [bold]Code Context:[/bold]")
+        self.console.print("  [bold]コードコンテキスト:[/bold]")
         self.console.print("  ", syntax)
 
     def _show_recommendations(self, check_result: QualityCheckResult) -> None:
         """推奨事項を表示"""
-        self.console.print("[bold cyan]Recommendations[/bold cyan]")
+        self.console.print("[bold cyan]推奨事項[/bold cyan]")
         self.console.print()
 
         if check_result.error_count > 0:
-            self.console.print("1. [bold red]Fix error items with highest priority[/bold red]")
+            self.console.print("1. [bold red]エラー項目を最優先で修正してください[/bold red]")
             self.console.print("   - エラーは型定義の品質に深刻な影響を及ぼします")
             self.console.print("   - CI/CDでエラーが発生した場合、ビルドが失敗する可能性があります")
             self.console.print()
 
         if check_result.warning_count > 0:
             self.console.print(  # noqa: E501
-                "2. [bold yellow]Strongly recommend fixing warning items[/bold yellow]"
+                "2. [bold yellow]警告項目も積極的に修正してください[/bold yellow]"
             )
             self.console.print("   - 警告は品質低下の兆候です")
             self.console.print("   - 長期的に見て型安全性が損なわれる可能性があります")
             self.console.print()
 
         self.console.print(  # noqa: E501
-            "3. [bold blue]Use advice items as references for quality improvement[/bold blue]"
+            "3. [bold blue]アドバイス項目は品質改善の参考として活用してください[/bold blue]"
         )
         self.console.print("   - アドバイスはベストプラクティスに基づく推奨事項です")
         self.console.print("   - 段階的に適用することを検討してください")

@@ -25,7 +25,8 @@ The reviewtask tool provides the following commands for managing PR review tasks
 - **`reviewtask cancel --all-pending --reason "..."`** - Cancel all pending tasks with same reason
 - **`reviewtask verify <task-id>`** - Run verification checks before task completion
 - **`reviewtask complete <task-id>`** - Complete task with automatic verification
-- **`reviewtask complete <task-id> --skip-verification`** - Complete task without verification
+- **`reviewtask complete <task-id> --skip-verification --reason "..."`** - Complete task without verification（理由必須を推奨）
+  注意: 本オプションの利用可否は `.pr-review/config.json` でロール/ブランチごとに制御し、監査ログに残します。
 
 ### Thread Management Commands:
 
@@ -94,18 +95,20 @@ After completing the initial setup, follow this exact workflow:
 4. **Execute Task**: Implement the required changes in the current branch based on the task description and original review comment
 
 5. **Verify and Complete Task**: When implementation is finished:
-   a) **Verify Implementation**: Run verification checks to ensure quality:
-      - `reviewtask verify <task-id>` - Check if implementation meets verification requirements
+   a) **(Optional) Pre-Verification**: Troubleshooting が必要な場合のみ、手動で検証を実行:
+      - `reviewtask verify <task-id>` - トラブルシューティングや事前確認が必要な場合のみ使用
       - If verification fails: Review and fix issues, then retry verification
       - If verification passes: Continue to completion
 
-   b) **Complete Task**: Choose completion method:
+   b) **Complete Task**: `reviewtask complete <task-id>` は完了前に自動で検証を再実行します:
       - **Recommended**: `reviewtask complete <task-id>` - Complete with automatic verification
       - **Alternative**: `reviewtask complete <task-id> --skip-verification` - Skip verification if needed
       - **Manual**: `reviewtask update <task-id> done` - Direct status update (no verification)
    - Commit changes using this message template (adjust language based on `user_language` setting in `.pr-review/config.json`):
      ```
      fix: [Clear, concise description of what was fixed or implemented]
+
+     **Task ID:** [task-id]
 
      **Feedback:** [Brief summary of the issue identified in the review]
      The original review comment pointed out [specific problem/concern]. This issue
@@ -127,8 +130,12 @@ After completing the initial setup, follow this exact workflow:
      code quality, etc.]. This approach ensures [long-term benefits or compliance
      with best practices].
 
-     Comment ID: [source_comment_id]
+     **Task ID:** [task-id]
+     **Comment ID:** [source_comment_id]
      Review Comment: https://github.com/[owner]/[repo]/pull/[pr-number]#discussion_r[comment-id]
+
+     Fixes: #[issue-number]  (該当する場合)
+     Refs: #[follow-up-issue-or-related-PR]  (任意)
      ```
 
 6. **Commit Changes**: After successful task completion, commit with proper message format
@@ -206,13 +213,36 @@ Tasks are automatically categorized for custom verification:
 - `reviewtask config set-verifier <task-type> <command>` - Set custom verification commands
 - Verification settings stored in `.pr-review/config.json`
 
+Tip (Python projects):
+- `test-task`: `pytest -q`
+- `style-task`: `ruff check .`
+- `style-task` (format): `ruff format --check` または `black --check .`
+- `build-task`: `python -m pyproject_build -n`（ビルド検証が必要な場合）
+
+**`.pr-review/config.json` 雛形例:**
+```json
+{
+  "done_workflow": {
+    "enable_auto_resolve": true,
+    "enable_verification": true,
+    "enable_auto_commit": true,
+    "enable_next_task_suggestion": true,
+    "verifiers": {
+      "test-task": "pytest -q",
+      "style-task": "ruff check .",
+      "build-task": "python -m pyproject_build -n"
+    }
+  }
+}
+```
+
 ## Current Tool Features:
 
 This workflow leverages the full capabilities of the current reviewtask implementation:
 - **Multi-source Authentication**: Supports GitHub CLI, environment variables, and configuration files
 - **Task Management**: Complete lifecycle management with status tracking and validation
 - **Task Cancellation**: Cancel tasks with GitHub comment notification to reviewers
-- **Thread Resolution**: Manually resolve review threads for completed tasks
+- **Thread Resolution**: Manually resolve review threads for completed tasks（同一スレッドへの再実行は冪等で副作用なし）
 - **Task Completion Verification**: Automated verification checks before task completion
 - **AI-Enhanced Analysis**: Intelligent task generation and classification with batch processing
 - **Progress Tracking**: Comprehensive status reporting and workflow optimization
@@ -239,9 +269,7 @@ This workflow leverages the full capabilities of the current reviewtask implemen
 - **Error handling**: Cancel command returns non-zero exit code on failure (safe for CI/CD scripts)
 
 ### Task Completion:
-- **Recommended approach**: Use `reviewtask complete <task-id>` for verified completion
-- **Verification Failure Handling**: If verification fails, fix issues and retry before completing
-- **Verification Configuration**: Custom verification commands can be set per task type for project-specific requirements
+- **Recommended**: See 5. Verify and Complete Task（上記節に集約）で詳細を確認してください
 
 ### Thread Management:
 - **Manual resolution**: Use `reviewtask resolve <task-id>` when auto-resolve is disabled
@@ -312,6 +340,12 @@ You can now safely complete this task with: reviewtask complete task-001
 Running verification checks for task 'task-001'...
 Task 'task-001' completed successfully!
 All verification checks passed
+```
+
+**`reviewtask complete --skip-verification` output example:**
+```text
+WARNING: verification skipped for task 'task-001' (reason: "<provided-reason>")
+Task 'task-001' completed without verification
 ```
 
 **`reviewtask cancel` output example:**

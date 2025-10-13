@@ -165,7 +165,7 @@ class DependencyExtractionAnalyzer(Analyzer):
             import logging
 
             logger = logging.getLogger(__name__)
-            logger.warning(f"モジュール名の計算に失敗しました: file_path={file_path}, error={e}")
+            logger.warning("モジュール名の計算に失敗しました: file_path=%s, error=%s", file_path, e)
 
             # より一意性の高いフォールバック名を生成
             try:
