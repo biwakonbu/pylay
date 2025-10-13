@@ -11,7 +11,8 @@ The reviewtask tool provides the following commands for managing PR review tasks
 
 ### Core Workflow Commands:
 
-- **`reviewtask [PR_NUMBER]`** - Fetch reviews and analyze with AI (integrated workflow)
+- **`reviewtask fetch [PR_NUMBER]`** - Fetch PR reviews from GitHub and save locally
+- **`reviewtask analyze [PR_NUMBER]`** - Analyze saved reviews and generate tasks using AI (batch processing)
 - **`reviewtask status`** - Check overall task status and get summary
 - **`reviewtask show`** - Get next recommended task based on priority
 - **`reviewtask show <task-id>`** - Show detailed information for a specific task
@@ -20,16 +21,11 @@ The reviewtask tool provides the following commands for managing PR review tasks
 
 ### Task Lifecycle Management Commands:
 
-- **`reviewtask done <task-id>`** - Complete task with full automation (verification, commit, resolve, next task)
-- **`reviewtask done <task-id> --skip-verification`** - Skip verification phase
-- **`reviewtask done <task-id> --skip-commit`** - Skip automatic commit
-- **`reviewtask done <task-id> --skip-resolve`** - Skip thread resolution
-- **`reviewtask done <task-id> --skip-suggestion`** - Skip next task suggestion
-- **`reviewtask start <task-id>`** - Start working on a task
-- **`reviewtask hold <task-id>`** - Put task on hold
 - **`reviewtask cancel <task-id> --reason "..."`** - Cancel a task and post reason to GitHub review thread
 - **`reviewtask cancel --all-pending --reason "..."`** - Cancel all pending tasks with same reason
 - **`reviewtask verify <task-id>`** - Run verification checks before task completion
+- **`reviewtask complete <task-id>`** - Complete task with automatic verification
+- **`reviewtask complete <task-id> --skip-verification`** - Complete task without verification
 
 ### Thread Management Commands:
 
@@ -53,27 +49,21 @@ Tasks are automatically assigned priority levels that determine processing order
 - **`medium`** - Moderate improvements, refactoring suggestions
 - **`low`** - Minor improvements, style suggestions
 
-## Initial Setup (Execute ALWAYS at Start):
+## Initial Setup (Execute Once Per Command Invocation):
 
-**CRITICAL: Always fetch latest reviews first to detect new comments and ensure local data is up-to-date.**
+**Fetch and Analyze Reviews**: The workflow consists of two steps:
 
-Run the integrated workflow to sync with GitHub:
+1. **Fetch Reviews**: `reviewtask fetch` - Downloads PR reviews from GitHub and saves them locally
+2. **Generate Tasks**: `reviewtask analyze` - Analyzes reviews using AI and generates actionable tasks
 
-- `reviewtask` - Fetches PR reviews from GitHub and analyzes them with AI to generate actionable tasks
-- `reviewtask [PR_NUMBER]` - Same workflow for a specific PR number
+You can also use the combined command `reviewtask` (without arguments) which runs both fetch and analyze in sequence. Run these commands to ensure you're working with the most current review feedback and tasks.
 
-**This step is MANDATORY even if you think you have the latest data.** New review comments may have been added since your last check, and the tool will automatically:
-- Detect new unresolved comment threads
-- Generate new tasks from new review feedback
-- Update task counts and progress tracking
-- Identify any discrepancies between local and remote state
-
-After fetching the latest reviews, follow this exact workflow:
+After completing the initial setup, follow this exact workflow:
 
 ## Workflow Steps:
 
 1. **Check Status**: Use `reviewtask status` to check current task status and identify any tasks in progress
-   - **If all tasks are completed (no todo, doing, or pending tasks remaining)**: Check if new comments exist by running `reviewtask` again
+   - **If all tasks are completed (no todo, doing, or pending tasks remaining)**: Stop here - all work is done!
    - **If only pending tasks remain**: Review each pending task and decide action (see Step 2d)
    - **Continue only if todo, doing, or pending tasks exist**
 
@@ -103,30 +93,45 @@ After fetching the latest reviews, follow this exact workflow:
 
 4. **Execute Task**: Implement the required changes in the current branch based on the task description and original review comment
 
-5. **Complete Task**: When implementation is finished, use the done command for full automation:
-   - **Recommended (Full Automation)**: `reviewtask done <task-id>`
-     - Automatically runs verification checks
-     - Creates structured commit with task details
-     - Resolves GitHub review thread (if configured)
-     - Suggests next task to work on
+5. **Verify and Complete Task**: When implementation is finished:
+   a) **Verify Implementation**: Run verification checks to ensure quality:
+      - `reviewtask verify <task-id>` - Check if implementation meets verification requirements
+      - If verification fails: Review and fix issues, then retry verification
+      - If verification passes: Continue to completion
 
-   - **Skip Options** (when needed):
-     - `reviewtask done <task-id> --skip-verification` - Skip verification checks
-     - `reviewtask done <task-id> --skip-commit` - Skip automatic commit
-     - `reviewtask done <task-id> --skip-resolve` - Skip thread resolution
-     - `reviewtask done <task-id> --skip-suggestion` - Skip next task suggestion
+   b) **Complete Task**: Choose completion method:
+      - **Recommended**: `reviewtask complete <task-id>` - Complete with automatic verification
+      - **Alternative**: `reviewtask complete <task-id> --skip-verification` - Skip verification if needed
+      - **Manual**: `reviewtask update <task-id> done` - Direct status update (no verification)
+   - Commit changes using this message template (adjust language based on `user_language` setting in `.pr-review/config.json`):
+     ```
+     fix: [Clear, concise description of what was fixed or implemented]
 
-   - **Alternative Commands**:
-     - `reviewtask verify <task-id>` - Run verification checks only
-     - `reviewtask update <task-id> done` - Direct status update (no automation)
+     **Feedback:** [Brief summary of the issue identified in the review]
+     The original review comment pointed out [specific problem/concern]. This issue
+     occurred because [root cause explanation]. The reviewer suggested [any specific
+     recommendations if provided].
 
-   **Note**: The `done` command automatically creates commits with proper formatting when auto-commit is enabled.
+     **Solution:** [What was implemented to resolve the issue]
+     Implemented the following changes to address the feedback:
+     - [Specific change 1 with file/location details]
+     - [Specific change 2 with file/location details]
+     - [Additional changes as needed]
 
-6. **Review Automation Results**: After running `reviewtask done`:
-   - Check verification results (if verification enabled)
-   - Review the generated commit (if auto-commit enabled)
-   - Verify thread resolution status (if auto-resolve enabled)
-   - Note the suggested next task (if suggestion enabled)
+     The implementation approach involved [brief technical explanation of how the
+     solution works].
+
+     **Rationale:** [Why this solution approach was chosen]
+     This solution was selected because it [primary benefit/advantage]. Additionally,
+     it [secondary benefits such as improved security, performance, maintainability,
+     code quality, etc.]. This approach ensures [long-term benefits or compliance
+     with best practices].
+
+     Comment ID: [source_comment_id]
+     Review Comment: https://github.com/[owner]/[repo]/pull/[pr-number]#discussion_r[comment-id]
+     ```
+
+6. **Commit Changes**: After successful task completion, commit with proper message format
 
 7. **Continue Workflow**: After committing:
    - Check status again with `reviewtask status`
@@ -199,41 +204,19 @@ Tasks are automatically categorized for custom verification:
 **Configuration:**
 - `reviewtask config show` - View current verification settings
 - `reviewtask config set-verifier <task-type> <command>` - Set custom verification commands
-- Done workflow settings stored in `.pr-review/config.json`
-
-**Done Workflow Configuration Example:**
-
-```json
-{
-  "done_workflow": {
-    "enable_auto_resolve": "complete",
-    "enable_verification": true,
-    "enable_auto_commit": true,
-    "enable_next_task_suggestion": true,
-    "verifiers": {
-      "build": "go build ./...",
-      "test": "go test ./...",
-      "lint": "golangci-lint run",
-      "format": "gofmt -l ."
-    }
-  }
-}
-```
+- Verification settings stored in `.pr-review/config.json`
 
 ## Current Tool Features:
 
 This workflow leverages the full capabilities of the current reviewtask implementation:
 - **Multi-source Authentication**: Supports GitHub CLI, environment variables, and configuration files
 - **Task Management**: Complete lifecycle management with status tracking and validation
-- **Done Command Automation**: Full 5-phase automation for task completion
 - **Task Cancellation**: Cancel tasks with GitHub comment notification to reviewers
-- **Thread Resolution**: Automatic and manual resolution of review threads
+- **Thread Resolution**: Manually resolve review threads for completed tasks
 - **Task Completion Verification**: Automated verification checks before task completion
-- **Auto-commit**: Structured commit creation with task details and references
 - **AI-Enhanced Analysis**: Intelligent task generation and classification with batch processing
 - **Progress Tracking**: Comprehensive status reporting and workflow optimization
 - **Statistics**: Per-comment task breakdown and progress analysis
-- **Next Task Recommendation**: Priority-based suggestion of next task to work on
 
 ## Important Notes:
 
@@ -256,15 +239,9 @@ This workflow leverages the full capabilities of the current reviewtask implemen
 - **Error handling**: Cancel command returns non-zero exit code on failure (safe for CI/CD scripts)
 
 ### Task Completion:
-- **Recommended approach**: Use `reviewtask done <task-id>` for full automation
-- **Automation Features**: The done command provides 5-phase automation:
-  1. **Verification**: Runs configured verification checks
-  2. **Status Update**: Marks task as done
-  3. **Auto-commit**: Creates structured commit with task details
-  4. **Thread Resolution**: Resolves GitHub review thread
-  5. **Next Task**: Suggests next task to work on
-- **Skip Options**: Use `--skip-verification`, `--skip-commit`, `--skip-resolve`, `--skip-suggestion` as needed
-- **Configuration**: Enable/disable features in `.pr-review/config.json` under `done_workflow` section
+- **Recommended approach**: Use `reviewtask complete <task-id>` for verified completion
+- **Verification Failure Handling**: If verification fails, fix issues and retry before completing
+- **Verification Configuration**: Custom verification commands can be set per task type for project-specific requirements
 
 ### Thread Management:
 - **Manual resolution**: Use `reviewtask resolve <task-id>` when auto-resolve is disabled
@@ -327,36 +304,14 @@ BUILD: verification passed (0.45s)
 TEST: verification passed (2.3s)
 
 All verification checks passed for task 'task-001'
-You can now safely complete this task with: reviewtask done task-001
+You can now safely complete this task with: reviewtask complete task-001
 ```
 
-**`reviewtask done` output example:**
-
+**`reviewtask complete` output example:**
 ```text
-🔍 Phase 1/5: Verification
-  ✓ Running verification checks...
-  ✓ All checks passed
-
-📝 Phase 2/5: Status Update
-  ✓ Task 'task-001' marked as done
-
-💾 Phase 3/5: Auto-commit
-  ✓ Created commit: fix: Add input validation for user data (abc1234)
-
-🔗 Phase 4/5: Thread Resolution
-  ✓ Resolved review thread (Comment ID: r123456789)
-
-💡 Phase 5/5: Next Task Suggestion
-  ✓ Next recommended task: task-002 (critical priority)
-
-✅ Task completed successfully with full automation
-   All 5 phases completed
-
-📊 Progress Update:
-   Completed: 6/8 tasks (75%)
-   Remaining: 2 tasks (1 critical, 1 high priority)
-
-Next: reviewtask done task-002
+Running verification checks for task 'task-001'...
+Task 'task-001' completed successfully!
+All verification checks passed
 ```
 
 **`reviewtask cancel` output example:**
