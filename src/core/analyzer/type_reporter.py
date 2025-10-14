@@ -781,9 +781,7 @@ class TypeReporter:
         """型レベルアップ推奨をMarkdown形式でフォーマット"""
         lines = []
         for rec in recommendations[:10]:  # 最初の10件のみ
-            lines.append(
-                f"### {rec.type_name} ({rec.priority.upper()}, 確信度: {rec.confidence:.2f})"  # noqa: E501
-            )
+            lines.append(f"### {rec.type_name} ({rec.priority.upper()}, 確信度: {rec.confidence:.2f})")
             lines.append(f"- 現在: `{rec.current_level}` → 推奨: `{rec.recommended_level}`")
             if rec.reasons:
                 lines.append("- 理由:")

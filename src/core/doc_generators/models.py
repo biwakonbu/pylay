@@ -48,7 +48,7 @@ class DocumentGeneratorService(BaseModel):
     # DocumentGeneratorProtocolとの互換性のため、より具体的な型 (Mapping[str, object]) を使用
     # プロトコルはAnyを要求するが、実装では型安全性を優先
     def generate_document(  # type: ignore[override]
-        self, config: DocumentConfig, **kwargs: Mapping[str, object]
+        self, config: DocumentConfig, **_kwargs: Mapping[str, object]
     ) -> GenerationResult:
         # TODO: Create TypedDict for specific kwargs when concrete implementations are added
         """
@@ -56,7 +56,7 @@ class DocumentGeneratorService(BaseModel):
 
         Args:
             config: ドキュメント生成設定
-            **kwargs: 追加の設定パラメータ (DocumentGeneratorProtocolとの互換性のため保持)
+            **_kwargs: 追加の設定パラメータ (DocumentGeneratorProtocolとの互換性のため保持)
 
         Returns:
             生成結果

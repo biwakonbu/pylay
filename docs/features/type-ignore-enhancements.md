@@ -100,18 +100,19 @@ $ uv run pylay check --focus ignore --auto-fix
 Analyzing type:ignore issues...
 Found 5 auto-fixable issues:
 
-  ✓ src/core/schemas/pylay_config.py:244
-    Fixed: MaxDepth(10) applied
+- src/core/schemas/pylay_config.py:244
+  Fixed: MaxDepth(10) applied
 
-  ✓ src/core/schemas/graph.py:99
-    Fixed: Weight(1.0) applied
+- src/core/schemas/graph.py:99
+  Fixed: Weight(1.0) applied
 
-  ! src/core/schemas/yaml_spec.py:62
-    Skipped: Manual review required (literal_override)
+- src/core/schemas/yaml_spec.py:62
+  Skipped: Manual review required (literal_override)
 
 Applied 2 automatic fixes.
 3 issues require manual review.
-```
+
+```bash
 
 ### 4. ナレッジベース構築
 
@@ -247,6 +248,7 @@ class LiteralOverridePattern(TypeIgnorePattern):
     severity = "medium"
 
     def detect(self, node: ast.AST, context: AnalysisContext) -> bool:
+        """パターンを検出する"""
         if not isinstance(node, ast.ClassDef):
             return False
 
@@ -264,7 +266,7 @@ class LiteralOverridePattern(TypeIgnorePattern):
         return False
 ```
 
-### 提案テンプレート
+## 提案テンプレート
 
 ```python
 @dataclass
@@ -273,6 +275,7 @@ class RefactoringSuggestion:
 
     title: str
     description: str
+
     effort: Literal["trivial", "low", "medium", "high"]
     template_id: str
     auto_fixable: bool

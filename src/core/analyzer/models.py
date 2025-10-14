@@ -407,7 +407,7 @@ class TypeAnalyzerService(BaseModel):
 
     def _get_class_definition(self, node: ast.ClassDef) -> str:
         """クラス定義の文字列を取得する内部メソッド"""
-        bases = [base.id if isinstance(base, ast.Name) else str(base) for base in node.bases]
+        bases = [base.id if isinstance(base, ast.Name) else ast.unparse(base) for base in node.bases]
         base_str = f"({', '.join(bases)})" if bases else ""
         return f"class {node.name}{base_str}:"
 
@@ -835,7 +835,7 @@ class StatisticsCalculatorService(BaseModel):
         ]
 
         for level, level_info in analysis_result.level_stats.items():
-            doc_rate = level_info.documented_count / level_info.count
+            doc_rate = (level_info.documented_count / level_info.count) if level_info.count else 0.0
             lines.append(f"- {level}: {level_info.count}個（ドキュメント率: {doc_rate:.1%}）")
 
         return "\n".join(lines)

@@ -165,15 +165,27 @@ class DependencyExtractionAnalyzer(Analyzer):
 
             logger.warning("モジュール名の計算に失敗しました: file_path=%s, error=%s", file_path, e)
 
-            # より一意性の高いフォールバック名を生成
+            # プロジェクトルート相対パスに基づく安定したフォールバック名を生成
             try:
-                # 解決済みパスからドット区切り名を生成
-                resolved = file_path.resolve().with_suffix("")
-                fallback_name = resolved.as_posix().replace("/", ".")
-                # 先頭のドットを削除（絶対パスの場合）
-                if fallback_name.startswith("."):
-                    fallback_name = fallback_name[1:]
-                return fallback_name
+                # プロジェクトルートを探索
+                project_root = file_path.resolve().parent
+                while project_root != project_root.parent:
+                    if (project_root / "pyproject.toml").exists():
+                        break
+                    project_root = project_root.parent
+
+                # プロジェクトルート相対パスから安定したハッシュを生成
+                try:
+                    relative_path = file_path.resolve().relative_to(project_root)
+                    stable_path = relative_path.with_suffix("").as_posix()
+                    path_hash = hashlib.sha256(stable_path.encode()).hexdigest()[:8]
+                    return f"module_{path_hash}"
+                except (ValueError, OSError):
+                    # プロジェクトルートが見つからない場合の最終フォールバック
+                    resolved_str = str(file_path.resolve().with_suffix(""))
+                    path_hash = hashlib.sha256(resolved_str.encode()).hexdigest()[:8]
+                    parts = (file_path.parts[-2], file_path.stem) if len(file_path.parts) > 1 else (file_path.stem,)
+                    return f"{'.'.join(parts)}.{path_hash}"
             except Exception:
                 # 最終フォールバック: パスの最後の2要素 + ハッシュ
                 resolved_str = str(file_path.resolve())

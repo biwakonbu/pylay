@@ -5,7 +5,6 @@
 """
 
 import ast
-import fnmatch
 from pathlib import Path
 
 from src.core.analyzer.docstring_analyzer import DocstringAnalyzer
@@ -20,6 +19,7 @@ from src.core.analyzer.type_level_models import (
 from src.core.analyzer.type_reporter import TypeReporter
 from src.core.analyzer.type_statistics import TypeStatisticsCalculator
 from src.core.analyzer.type_upgrade_analyzer import TypeUpgradeAnalyzer
+from src.core.utils.io_helpers import collect_python_files
 
 
 class TypeLevelAnalyzer:
@@ -63,32 +63,8 @@ class TypeLevelAnalyzer:
         Returns:
             TypeAnalysisReport
         """
-        # すべての.pyファイルを収集
-        all_py_files = list(directory.rglob("*.py"))
-
-        # 除外パターンを適用
-        py_files = []
-        for py_file in all_py_files:
-            # ファイルパスをPOSIX形式に変換（Windows環境対応）
-            try:
-                relative_path = py_file.relative_to(directory).as_posix()
-            except ValueError:
-                # directoryの外のファイルの場合は絶対パスを使用
-                relative_path = py_file.as_posix()
-
-            # 両方の形式でチェック（絶対パスと相対パスの両方を考慮）
-            absolute_path = py_file.as_posix()
-
-            # 除外パターンにマッチするかチェック（相対パスと絶対パスの両方）
-            should_exclude = False
-            if exclude_patterns:
-                for pattern in exclude_patterns:
-                    if fnmatch.fnmatch(relative_path, pattern) or fnmatch.fnmatch(absolute_path, pattern):
-                        should_exclude = True
-                        break
-
-            if not should_exclude:
-                py_files.append(py_file)
+        # Pythonファイルを収集（共通ヘルパー関数を使用）
+        py_files = collect_python_files(directory, exclude_patterns)
 
         # 型定義を収集
         all_type_definitions: list[TypeDefinition] = []

@@ -140,13 +140,13 @@ class ProjectAnalyzer:
         """型チェック問題を確認"""
         # ネームスペース競合を避けるため、個別ファイルでチェック
         mypy_files = [
-            "converters/type_to_yaml.py",
-            "converters/yaml_to_type.py",
-            "doc_generators/yaml_doc_generator.py",
-            "doc_generators/base.py",
-            "doc_generators/config.py",
-            "schemas/yaml_spec.py",
-            "schemas/type_index.py",
+            "src/core/converters/type_to_yaml.py",
+            "src/core/converters/yaml_to_type.py",
+            "src/core/doc_generators/yaml_doc_generator.py",
+            "src/core/doc_generators/base.py",
+            "src/core/doc_generators/config.py",
+            "src/core/schemas/yaml_spec.py",
+            "src/core/schemas/type_index.py",
         ]
         return self.run_command(["uv", "run", "mypy", *mypy_files], "型チェック問題(mypy)")
 

@@ -98,9 +98,9 @@ class QualityReporter:
     def _show_statistics_table(self, check_result: QualityCheckResult) -> None:
         """統計情報テーブルを表示"""
         table = Table(title="統計", show_header=True, header_style="bold magenta")
-        table.add_column("Item", style="cyan", width=30)
-        table.add_column("Value", style="white", justify="right")
-        table.add_column("Status", style="green")
+        table.add_column("項目", style="cyan", width=30)
+        table.add_column("値", style="white", justify="right")
+        table.add_column("状態", style="green")
 
         # 型レベル統計
         level1_color = "red" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "green"
@@ -172,7 +172,7 @@ class QualityReporter:
                 "advice": "ADVICE",
             }[severity]
 
-            rule_text = f"[bold {color}]{severity_label} ({len(severity_issues)} issues)[/bold {color}]"
+            rule_text = f"[bold {color}]{severity_label}（{len(severity_issues)}件）[/bold {color}]"
             self.console.rule(rule_text, style=color)
             self.console.print()
 

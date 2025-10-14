@@ -110,7 +110,15 @@ class DependencyExtractionError(AnalysisError):
     依存関係の抽出処理に失敗した場合に発生します。
     """
 
-    pass
+    def __init__(self, message: Message, file_path: FilePath | None = None) -> None:
+        """
+        依存関係抽出エラーを初期化します。
+
+        Args:
+            message: エラーメッセージ
+            file_path: エラーが発生したファイルパス（オプション）
+        """
+        super().__init__(message, file_path)
 
 
 class TypeInferenceError(AnalysisError):

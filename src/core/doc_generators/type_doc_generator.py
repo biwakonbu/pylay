@@ -40,7 +40,12 @@ class LayerDocGenerator(DocumentGenerator):
 
         super().__init__(filesystem=fs_typed, markdown_builder=md_typed)
         self.config = config or TypeDocConfig()
-        self.inspector = TypeInspector(skip_types=self.config.skip_types)
+        # skip_types が設定されていない場合はデフォルト値を使用
+        skip_types: set[str] = getattr(self.config, "skip_types", set())
+        # layer_methods が設定されていない場合はデフォルト値を使用
+        layer_methods: dict[str, str] = getattr(self.config, "layer_methods", {})
+        self.inspector = TypeInspector(skip_types=skip_types)
+        self.layer_methods = layer_methods
 
     def generate(
         self,
@@ -163,10 +168,10 @@ class LayerDocGenerator(DocumentGenerator):
         Args:
             layer: Layer name
         """
-        if layer in self.config.layer_methods:
+        if layer in self.layer_methods:
             self.md.heading(2, "💡 このレイヤーでの型取得").line_break()
 
-            method_name = self.config.layer_methods[layer]
+            method_name = self.layer_methods[layer]
             code_example = (
                 "from schemas.core_types import TypeFactory\n\n"
                 "# レイヤー指定での取得（オプション）\n"

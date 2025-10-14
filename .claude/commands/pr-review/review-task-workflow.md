@@ -133,9 +133,10 @@ You can also use the combined command `reviewtask` (without arguments) which run
      **Comment ID:** [source_comment_id]
      Review Comment: https://github.com/[owner]/[repo]/pull/[pr-number]#discussion_r[comment-id]
 
-     Fixes: #[issue-number]  (該当する場合)
-     Refs: #[follow-up-issue-or-related-PR]  (任意)
-     ```
+     Fixes: #[issue-number] (該当する場合)
+     Refs: #[follow-up-issue-or-related-PR] (任意)
+
+     ```text
 
 6. **Commit Changes**: After successful task completion, commit with proper message format
 

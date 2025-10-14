@@ -105,7 +105,7 @@ class DocstringAnalyzer:
             current_status = "partial"
             recommended_action = "expand"
             priority = "low"
-            reasons = [(f"docstringの詳細度が不足しています（スコア: {detail.detail_score:.2f}）")]
+            reasons = [f"docstringの詳細度が不足しています (スコア: {detail.detail_score:.2f})"]
             detail_gaps = []
             if not detail.has_attributes and type_def.level == "level3":
                 detail_gaps.append("Attributes")

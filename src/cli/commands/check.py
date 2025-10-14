@@ -102,7 +102,7 @@ def check(
 
     # 複数のターゲットディレクトリがある場合は通知
     if len(target_paths) > 1:
-        console.print(f"[cyan]ℹ️  {len(target_paths)}個のターゲットディレクトリを処理します[/cyan]")
+        console.print(f"[cyan]INFO: {len(target_paths)}個のターゲットディレクトリを処理します[/cyan]")
         console.print()
 
     # 各ターゲットディレクトリに対してチェックを実行
@@ -218,7 +218,7 @@ def _run_type_ignore_analysis(target_path: Path, verbose: bool, exclude_patterns
     if target_path.is_file():
         issues = analyzer.analyze_file(str(target_path))
     else:
-        issues = analyzer.analyze_project(target_path, exclude_patterns)
+        issues = analyzer.analyze_project(target_path, exclude_patterns=exclude_patterns)
 
     # サマリー情報を生成
     summary = analyzer.generate_summary(issues)

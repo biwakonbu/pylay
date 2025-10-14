@@ -173,9 +173,9 @@ class TestQualityReporter:
 
         # 出力を検証
         output = string_io.getvalue()
-        assert "Type Definition Quality Report" in output
-        assert "Summary" in output
-        assert "Overall Score" in output
+        assert "型定義品質レポート" in output
+        assert "概要" in output
+        assert "全体スコア" in output
 
     def test_generate_console_report_with_details(
         self,
@@ -191,7 +191,7 @@ class TestQualityReporter:
         reporter.generate_console_report(sample_check_result, sample_report, show_details=True)
 
         output = string_io.getvalue()
-        assert "Type Definition Quality Report" in output
+        assert "型定義品質レポート" in output
         # 詳細情報が含まれていること
         assert len(output) > 100
 
@@ -276,5 +276,5 @@ class TestQualityReporter:
         reporter.generate_console_report(error_result, sample_report)
 
         output = string_io.getvalue()
-        assert "Type Definition Quality Report" in output
+        assert "型定義品質レポート" in output
         assert "ERROR" in output or "Error" in output or "Errors" in output

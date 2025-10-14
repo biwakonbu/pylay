@@ -142,13 +142,13 @@ class TypeInferenceAnalyzer(Analyzer):
 
         return graph
 
-    def infer_types_from_code(self, code: str, module_name: str = "temp_module") -> dict[str, InferResult]:
+    def infer_types_from_code(self, code: str, _module_name: str = "temp_module") -> dict[str, InferResult]:
         """
         与えられたPythonコードから型を推論します。
 
         Args:
             code: 推論対象のPythonコード
-            module_name: 一時的なモジュール名
+            _module_name: 一時的なモジュール名（将来の拡張用）
 
         Returns:
             推論された型情報の辞書

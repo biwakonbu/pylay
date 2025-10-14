@@ -85,7 +85,7 @@ class TypeDefinition(BaseModel):
     target_level: TargetLevel = Field(default=None, description="docstringで指定された目標レベル")
     keep_as_is: bool = Field(default=False, description="現状維持フラグ")
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class DocstringDetail(BaseModel):
@@ -105,7 +105,7 @@ class DocstringDetail(BaseModel):
     line_count: int = Field(ge=0, description="docstringの行数")
     detail_score: float = Field(ge=0.0, le=1.0, description="詳細度スコア（0.0-1.0）")
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class DocumentationStatistics(BaseModel):
@@ -128,7 +128,7 @@ class DocumentationStatistics(BaseModel):
     by_level_avg_lines: dict[TypeLevel, float] = Field(description="レベル別の平均docstring行数")
     by_format: dict[FormatStyle, int] = Field(description="フォーマット別のdocstring数")
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class TypeLevelInfo(BaseModel):
@@ -145,7 +145,7 @@ class TypeLevelInfo(BaseModel):
     upgrade_candidates: int = Field(ge=0, description="レベルアップ候補の数")
     keep_as_is_count: int = Field(ge=0, description="現状維持指定の数")
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class FileAnalysisResult(BaseModel):
@@ -163,7 +163,7 @@ class FileAnalysisResult(BaseModel):
     has_errors: bool = Field(description="解析エラーがあるかどうか")
     error_messages: list[str] = Field(default_factory=list, description="エラーメッセージのリスト")
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class ProjectAnalysisResult(BaseModel):
@@ -183,7 +183,7 @@ class ProjectAnalysisResult(BaseModel):
     total_analysis_time_ms: float = Field(description="総解析時間（ミリ秒）")
     analysis_timestamp: str = Field(description="解析実行時刻（ISO形式）")
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class AnalysisConfig(BaseModel):
@@ -207,7 +207,7 @@ class AnalysisConfig(BaseModel):
     analyze_dependencies: bool = Field(default=True, description="依存関係も解析するか")
     detect_type_levels: bool = Field(default=True, description="型レベルを検出するか")
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class QualityMetrics(BaseModel):
@@ -224,7 +224,7 @@ class QualityMetrics(BaseModel):
     maintainability_score: float = Field(ge=0.0, le=1.0, description="保守性スコア")
     complexity_score: float = Field(ge=0.0, le=1.0, description="複雑度スコア")
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class TypeUpgradeSuggestion(BaseModel):
@@ -241,4 +241,4 @@ class TypeUpgradeSuggestion(BaseModel):
     priority: Literal["high", "medium", "low"] = Field(description="優先度")
     effort_estimate: Literal["small", "medium", "large"] = Field(description="実装工数の見積もり")
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")

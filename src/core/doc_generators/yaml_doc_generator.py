@@ -152,7 +152,7 @@ class YamlDocGenerator(DocumentGenerator):
 
 
 # 統合関数
-def generate_yaml_docs(spec: TypeSpec, output_dir: str | None = None) -> None:
+def generate_yaml_docs(spec: TypeSpec | TypeRoot, output_dir: str | None = None) -> None:
     """YAML仕様からドキュメント生成"""
     if output_dir is None:
         # 設定ファイルから出力ディレクトリを取得
@@ -165,15 +165,20 @@ def generate_yaml_docs(spec: TypeSpec, output_dir: str | None = None) -> None:
             output_dir = "docs/pylay-types/documents"
 
     config = TypeDocConfig(output_directory=Path(output_dir))
-    generator = YamlDocGenerator(filesystem=config.filesystem)  # 依存注入
+    # filesystem が設定されていない場合はデフォルト値を使用
+    filesystem = getattr(config, "filesystem", None)
+    generator = YamlDocGenerator(filesystem=filesystem)  # 依存注入
 
     # TypeRoot の場合、最初の型を使用
     from src.core.schemas.yaml_spec import TypeRoot
 
     if isinstance(spec, TypeRoot) and spec.types:
         layer = next(iter(spec.types.keys()))
-    else:
+    elif isinstance(spec, TypeSpec):
         layer = spec.type
+    else:
+        # 適切なデフォルト値またはエラー処理
+        layer = "unknown"
 
     output_path = Path(output_dir) / f"{layer}.md"
     generator.generate(output_path, spec=spec)
