@@ -328,6 +328,7 @@ class FileSystemService(BaseModel):
         """
         Path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
+    # TODO: プロトコル更新時にbooleanパラメータをキーワード専用引数に変換 (encoding)
     def write_text(self, path: str | Path, content: str, encoding: str = "utf-8") -> None:
         """
         テキストファイルに書き込みます。

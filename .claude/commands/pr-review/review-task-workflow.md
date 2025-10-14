@@ -25,7 +25,7 @@ The reviewtask tool provides the following commands for managing PR review tasks
 - **`reviewtask cancel --all-pending --reason "..."`** - Cancel all pending tasks with same reason
 - **`reviewtask verify <task-id>`** - Run verification checks before task completion
 - **`reviewtask complete <task-id>`** - Complete task with automatic verification
-- **`reviewtask complete <task-id> --skip-verification --reason "..."`** - Complete task without verification（理由必須を推奨）
+- **`reviewtask complete <task-id> --skip-verification --reason "..."`** - Complete task without verification（理由入力必須、サーバ側で権限制御と監査ログ記録を強制）
   注意: 本オプションの利用可否は `.pr-review/config.json` でロール/ブランチごとに制御し、監査ログに残します。
 
 ### Thread Management Commands:

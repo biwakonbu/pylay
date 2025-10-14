@@ -8,7 +8,7 @@ import pytest
 
 from src.core.analyzer.quality_checker import QualityChecker
 from src.core.analyzer.type_level_analyzer import TypeLevelAnalyzer
-from src.core.schemas.pylay_config import PylayConfig
+from src.core.schemas.pylay_config import PylayConfig, QualityCheckConfig
 
 
 class TestQualityChecker:
@@ -369,10 +369,12 @@ x = foo()
         # 不正な閾値（合計が1.0を超える）を設定
         invalid_config = PylayConfig(
             target_dirs=["src"],
-            quality_thresholds=LevelThresholds(
-                level1_max=0.5,
-                level2_min=0.6,  # level1_max + level2_min > 1.0
-                level3_min=0.3,
+            quality_check=QualityCheckConfig(
+                level_thresholds=LevelThresholds(
+                    level1_max=0.5,
+                    level2_min=0.6,  # level1_max + level2_min > 1.0
+                    level3_min=0.3,
+                )
             ),
         )
 
