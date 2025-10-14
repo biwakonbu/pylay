@@ -11,23 +11,26 @@ from src.core.analyzer.type_level_analyzer import TypeLevelAnalyzer
 from src.core.schemas.pylay_config import PylayConfig, QualityCheckConfig
 
 
+@pytest.fixture
+def config() -> PylayConfig:
+    """テスト用の設定オブジェクト"""
+    return PylayConfig(target_dirs=["src"])
+
+
+@pytest.fixture
+def type_analyzer() -> TypeLevelAnalyzer:
+    """テスト用のTypeLevelAnalyzerインスタンス"""
+    return TypeLevelAnalyzer()
+
+
+@pytest.fixture
+def quality_checker(config: PylayConfig) -> QualityChecker:
+    """テスト用のQualityCheckerインスタンス"""
+    return QualityChecker(config)
+
+
 class TestQualityChecker:
     """QualityCheckerクラスのテスト"""
-
-    @pytest.fixture  # type: ignore[misc]
-    def config(self) -> PylayConfig:
-        """テスト用の設定オブジェクト"""
-        return PylayConfig(target_dirs=["src"])
-
-    @pytest.fixture  # type: ignore[misc]
-    def type_analyzer(self) -> TypeLevelAnalyzer:
-        """テスト用のTypeLevelAnalyzerインスタンス"""
-        return TypeLevelAnalyzer()
-
-    @pytest.fixture  # type: ignore[misc]
-    def quality_checker(self, config: PylayConfig) -> QualityChecker:
-        """テスト用のQualityCheckerインスタンス"""
-        return QualityChecker(config)
 
     def test_init(self, quality_checker: QualityChecker) -> None:
         """初期化テスト"""

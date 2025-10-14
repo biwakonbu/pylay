@@ -126,6 +126,7 @@ module = [
     "scripts.*",
 ]
 ignore_missing_imports = true
+disallow_untyped_decorators = false
 
 [tool.pylay]
 # pylay プロジェクト全体解析設定
