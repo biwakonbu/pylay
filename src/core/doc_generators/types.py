@@ -302,7 +302,7 @@ class BatchGenerationConfig(BaseModel):
     """
 
     input_paths: list[ValidatedOutputPath] = Field(description="入力ファイルパスのリスト")
-    output_directory: ValidatedOutputPath = Field(description="出力ディレクトリ")
+    output_path: ValidatedOutputPath = Field(description="出力ディレクトリ")
     parallel_processing: bool = Field(default=False, description="並列処理を使用するか")
     max_workers: PositiveInt | None = Field(default=None, description="最大ワーカー数(Noneで自動設定)")
     continue_on_error: bool = Field(default=True, description="エラー発生時に処理を継続するか")

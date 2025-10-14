@@ -41,7 +41,6 @@ class TypeDocConfig:
 
     # 基本設定（GeneratorConfigから継承せず、独自に定義）
     output_path: Path = field(default=Path("docs/types"))
-    output_directory: Path | None = field(default=None)  # 後方互換性のため
     include_patterns: list[GlobPattern] = field(default_factory=list)
     exclude_patterns: list[GlobPattern] = field(default_factory=list)
 
@@ -69,14 +68,27 @@ class TypeDocConfig:
 
     def __post_init__(self) -> None:
         """初期化"""
-        # 後方互換性のためのパラメータ処理
-        if self.output_directory is not None and self.output_directory != self.output_path:
-            import warnings
+        # 後方互換性のためのプロパティ（output_directoryがアクセスされた場合のみ警告を発行）
+        pass
 
-            warnings.warn(
-                "output_directoryは非推奨です。output_pathを使用してください。", DeprecationWarning, stacklevel=2
-            )
-            # output_directoryが指定された場合、output_pathを上書き
-            object.__setattr__(self, "output_path", self.output_directory)
-            # output_directoryも同じ値に設定（後方互換性のため）
-            object.__setattr__(self, "output_directory", self.output_path)
+    @property
+    def output_directory(self) -> Path:
+        """後方互換性のためのoutput_directoryプロパティ。
+
+        警告: このプロパティは非推奨です。output_pathを使用してください。
+        """
+        import warnings
+
+        warnings.warn("output_directoryは非推奨です。output_pathを使用してください。", DeprecationWarning, stacklevel=2)
+        return self.output_path
+
+    @output_directory.setter
+    def output_directory(self, value: Path) -> None:
+        """後方互換性のためのoutput_directoryセッター。
+
+        警告: このプロパティは非推奨です。output_pathを使用してください。
+        """
+        import warnings
+
+        warnings.warn("output_directoryは非推奨です。output_pathを使用してください。", DeprecationWarning, stacklevel=2)
+        object.__setattr__(self, "output_path", value)

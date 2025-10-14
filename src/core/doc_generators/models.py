@@ -506,7 +506,7 @@ class BatchProcessorService(BaseModel):
 
         try:
             # 出力ディレクトリの作成
-            output_dir_path = str(config.output_directory) if config.output_directory else "."
+            output_dir_path = str(config.output_path)
             output_dir = Path(output_dir_path)
             output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -579,7 +579,7 @@ class BatchProcessorService(BaseModel):
     def process_directory(
         self,
         input_directory: str | Path,
-        output_directory: str | Path,
+        output_path: str | Path,
         config: DocumentConfig | None = None,
     ) -> BatchGenerationResult:
         """
@@ -587,14 +587,14 @@ class BatchProcessorService(BaseModel):
 
         Args:
             input_directory: 入力ディレクトリ
-            output_directory: 出力ディレクトリ
+            output_path: 出力ディレクトリ
             config: ドキュメント設定（Noneの場合、デフォルト設定を使用）
 
         Returns:
             バッチ処理結果
         """
         input_dir = Path(input_directory)
-        output_dir = Path(output_directory)
+        output_dir = Path(output_path)
 
         # 入力ディレクトリ内のPythonファイルを取得
         if not input_dir.exists():
@@ -613,7 +613,7 @@ class BatchProcessorService(BaseModel):
         # バッチ処理設定を作成
         batch_config = BatchGenerationConfig(
             input_paths=[str(f) for f in input_files],
-            output_directory=str(output_dir),
+            output_path=str(output_dir),
             parallel_processing=False,  # 簡易版では並列処理なし
             continue_on_error=True,
         )

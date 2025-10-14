@@ -164,7 +164,7 @@ def generate_yaml_docs(spec: TypeSpec | TypeRoot, output_dir: str | None = None)
             # 設定ファイルがない場合はデフォルト値を使用
             output_dir = "docs/pylay-types/documents"
 
-    config = TypeDocConfig(output_directory=Path(output_dir))
+    config = TypeDocConfig(output_path=Path(output_dir))
     # filesystem が設定されていない場合はデフォルト値を使用
     filesystem = getattr(config, "filesystem", None)
     generator = YamlDocGenerator(filesystem=filesystem)  # 依存注入

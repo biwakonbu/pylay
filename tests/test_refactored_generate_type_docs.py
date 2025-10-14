@@ -8,6 +8,7 @@ and IndexDocGenerator components.
 from pathlib import Path
 from typing import Any
 
+import pytest
 from pydantic import BaseModel
 
 from src.core.doc_generators.config import TypeDocConfig
@@ -163,7 +164,7 @@ class TestLayerDocGenerator:
         self.filesystem = InMemoryFileSystem()
         self.output_path = Path("/test/output/layer.md")
         self.config = TypeDocConfig(
-            output_directory=Path("/test/output"),
+            output_path=Path("/test/output"),
         )
 
     def test_generator_initialization(self):
@@ -246,7 +247,7 @@ class TestLayerDocGenerator:
     def test_generate_skips_configured_types(self):
         """Test that generation skips types in skip_types configuration."""
         config = TypeDocConfig(
-            output_directory=Path("/test/output"),
+            output_path=Path("/test/output"),
             skip_types={"SkipMe"},
         )
         generator = LayerDocGenerator(
@@ -304,7 +305,7 @@ class TestIndexDocGenerator:
         self.filesystem = InMemoryFileSystem()
         self.output_path = Path("/test/output/index.md")
         self.config = TypeDocConfig(
-            output_directory=Path("/test/output"),
+            output_path=Path("/test/output"),
         )
 
     def test_generator_initialization(self):
@@ -586,7 +587,7 @@ class TestConfigurationIntegration:
     def test_generators_use_config_output_directory(self):
         """Test generators respect output directory configuration."""
         config = TypeDocConfig(
-            output_directory=Path("/custom/output/dir"),
+            output_path=Path("/custom/output/dir"),
         )
         filesystem = InMemoryFileSystem()
 
@@ -614,3 +615,59 @@ class TestConfigurationIntegration:
 
         expected_index_path = Path("/custom/output/dir/README.md")
         assert filesystem.exists(expected_index_path)
+
+
+class TestTypeDocConfigBackwardCompatibility:
+    """Test backward compatibility alias behavior for TypeDocConfig."""
+
+    def test_output_directory_property_deprecation_warning(self) -> None:
+        """Test that accessing output_directory property issues deprecation warning."""
+        config = TypeDocConfig(output_path=Path("/test/output"))
+
+        # Test getter issues deprecation warning
+        with pytest.warns(DeprecationWarning, match="output_directoryは非推奨です。output_pathを使用してください。"):
+            directory = config.output_directory
+            assert directory == Path("/test/output")
+
+    def test_output_directory_setter_deprecation_warning(self) -> None:
+        """Test that setting output_directory property issues deprecation warning."""
+        config = TypeDocConfig(output_path=Path("/test/output"))
+
+        # Test setter issues deprecation warning
+        with pytest.warns(DeprecationWarning, match="output_directoryは非推奨です。output_pathを使用してください。"):
+            config.output_directory = Path("/new/output")
+            assert config.output_path == Path("/new/output")
+
+    def test_output_directory_alias_functionality(self) -> None:
+        """Test that output_directory alias works correctly as getter/setter."""
+        config = TypeDocConfig(output_path=Path("/initial/output"))
+
+        # Test that getter returns current output_path value
+        with pytest.warns(DeprecationWarning):
+            assert config.output_directory == Path("/initial/output")
+
+        # Test that setter updates output_path value
+        with pytest.warns(DeprecationWarning):
+            config.output_directory = Path("/updated/output")
+
+        # Verify the underlying output_path was updated
+        assert config.output_path == Path("/updated/output")
+
+        # Verify getter returns the updated value
+        with pytest.warns(DeprecationWarning):
+            assert config.output_directory == Path("/updated/output")
+
+    def test_backward_compatibility_with_constructor(self) -> None:
+        """Test that old code using output_directory in constructor still works."""
+        # This should work but issue a deprecation warning when accessing the property
+        config = TypeDocConfig(output_path=Path("/test/output"))
+
+        # Accessing the property should issue warning
+        with pytest.warns(DeprecationWarning):
+            _ = config.output_directory
+
+        # But setting it should also work
+        with pytest.warns(DeprecationWarning):
+            config.output_directory = Path("/new/path")
+
+        assert config.output_path == Path("/new/path")

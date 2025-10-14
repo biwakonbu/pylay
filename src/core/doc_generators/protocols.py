@@ -360,7 +360,7 @@ class BatchProcessorProtocol(Protocol):
     def process_directory(
         self,
         input_directory: str | Path,
-        output_directory: str | Path,
+        output_path: str | Path,
         config: DocumentConfig | None = None,
     ) -> BatchGenerationResult:
         """
@@ -368,7 +368,7 @@ class BatchProcessorProtocol(Protocol):
 
         Args:
             input_directory: 入力ディレクトリ
-            output_directory: 出力ディレクトリ
+            output_path: 出力ディレクトリ
             config: ドキュメント設定（Noneの場合、デフォルト設定を使用）
 
         Returns:

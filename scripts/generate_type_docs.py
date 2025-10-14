@@ -37,7 +37,7 @@ def generate_layer_docs(layer: str, types: dict[str, type[Any]], output_dir: str
             output_dir = "docs/pylay-types/documents"
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    config = TypeDocConfig(output_directory=Path(output_dir))
+    config = TypeDocConfig(output_path=Path(output_dir))
 
     generator = LayerDocGenerator(config=config)
     output_path = Path(output_dir) / f"{layer}.md"
