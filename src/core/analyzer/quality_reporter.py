@@ -51,7 +51,7 @@ class QualityReporter:
             show_details: 詳細情報を表示するか
         """
         # ヘッダー
-        self.console.rule("[bold cyan]Type Definition Quality Report[/bold cyan]")
+        self.console.rule("[bold cyan]型定義品質レポート[/bold cyan]")
         self.console.print()
 
         # 全体サマリー
@@ -64,7 +64,7 @@ class QualityReporter:
         if check_result.issues:
             self._show_issues_table(check_result, show_details=show_details)
         else:
-            self.console.print("[green]No quality issues detected[/green]")
+            self.console.print("[green]品質問題は検出されませんでした[/green]")
 
         # 推奨事項（問題がある場合のみ）
         if check_result.issues:
@@ -89,7 +89,7 @@ class QualityReporter:
 
         summary_panel = Panel(
             summary_content,
-            title="[bold]Summary[/bold]",
+            title="[bold]概要[/bold]",
             border_style=score_color,
         )
         self.console.print(summary_panel)
@@ -97,7 +97,7 @@ class QualityReporter:
 
     def _show_statistics_table(self, check_result: QualityCheckResult) -> None:
         """統計情報テーブルを表示"""
-        table = Table(title="Statistics", show_header=True, header_style="bold magenta")
+        table = Table(title="統計", show_header=True, header_style="bold magenta")
         table.add_column("Item", style="cyan", width=30)
         table.add_column("Value", style="white", justify="right")
         table.add_column("Status", style="green")
@@ -105,7 +105,7 @@ class QualityReporter:
         # 型レベル統計
         level1_color = "red" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "green"
         l1_status = (  # noqa: E501
-            "Exceeded" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "OK"
+            "超過" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "正常"
         )
         table.add_row(
             "Level 1 Ratio",
@@ -115,7 +115,7 @@ class QualityReporter:
 
         level2_color = "red" if check_result.statistics.level2_ratio < check_result.thresholds.level2_min else "green"
         l2_status = (  # noqa: E501
-            "Low" if check_result.statistics.level2_ratio < check_result.thresholds.level2_min else "OK"
+            "低い" if check_result.statistics.level2_ratio < check_result.thresholds.level2_min else "正常"
         )
         table.add_row(
             "Level 2 Ratio",
@@ -125,7 +125,7 @@ class QualityReporter:
 
         level3_color = "red" if check_result.statistics.level3_ratio < check_result.thresholds.level3_min else "green"
         l3_status = (  # noqa: E501
-            "Low" if check_result.statistics.level3_ratio < check_result.thresholds.level3_min else "OK"
+            "低い" if check_result.statistics.level3_ratio < check_result.thresholds.level3_min else "正常"
         )
         table.add_row(
             "Level 3 Ratio",
@@ -136,7 +136,7 @@ class QualityReporter:
         # ドキュメント統計
         doc_rate = check_result.statistics.documentation.implementation_rate
         doc_color = "yellow" if doc_rate < 0.8 else "green"
-        doc_status = "Needs Improvement" if doc_rate < 0.8 else "Good"
+        doc_status = "改善が必要" if doc_rate < 0.8 else "良好"
         table.add_row(
             "Documentation Rate",
             f"{doc_rate * 100:.1f}%",
@@ -146,7 +146,7 @@ class QualityReporter:
         # その他の統計
         prim_ratio = check_result.statistics.primitive_usage_ratio
         primitive_color = "red" if prim_ratio > 0.10 else "green"
-        prim_status = "High" if prim_ratio > 0.10 else "OK"
+        prim_status = "高い" if prim_ratio > 0.10 else "正常"
         table.add_row(
             "Primitive Usage Ratio",
             f"{prim_ratio * 100:.1f}%",

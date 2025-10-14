@@ -639,7 +639,7 @@ class DocumentationOrchestrator(BaseModel):
         self,
         types: dict[TypeName, type[Any]],
         output_path: str | Path,
-        _config: DocumentConfig | None = None,
+        _config: DocumentConfig | None = None,  # 将来の拡張機能用に予約済みパラメータ
     ) -> GenerationResult:
         """
         包括的なドキュメントを生成します。
