@@ -175,7 +175,7 @@ class TestQualityReporter:
         output = string_io.getvalue()
         assert "型定義品質レポート" in output
         assert "概要" in output
-        assert "全体スコア" in output
+        assert "Overall Score" in output
 
     def test_generate_console_report_with_details(
         self,

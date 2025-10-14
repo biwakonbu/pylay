@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 from src.core.schemas.types import (
     Description,
@@ -42,6 +41,7 @@ class TypeDocConfig:
 
     # 基本設定（GeneratorConfigから継承せず、独自に定義）
     output_path: Path = field(default=Path("docs/types"))
+    output_directory: Path | None = field(default=None)  # 後方互換性のため
     include_patterns: list[GlobPattern] = field(default_factory=list)
     exclude_patterns: list[GlobPattern] = field(default_factory=list)
 
@@ -67,40 +67,16 @@ class TypeDocConfig:
     )
     filesystem: FileSystemInterface = field(default_factory=lambda: RealFileSystem())
 
-    def __init__(self, output_path: Path | None = None, output_directory: Path | None = None, **kwargs: Any) -> None:
+    def __post_init__(self) -> None:
         """初期化"""
         # 後方互換性のためのパラメータ処理
-        if output_directory is not None:
+        if self.output_directory is not None and self.output_directory != self.output_path:
             import warnings
 
             warnings.warn(
                 "output_directoryは非推奨です。output_pathを使用してください。", DeprecationWarning, stacklevel=2
             )
-            if output_path is not None:
-                raise ValueError("output_pathとoutput_directoryの両方を指定することはできません")
-            output_path = output_directory
-
-        # output_path が指定された場合はデフォルト値をオーバーライド
-        if output_path is not None:
-            object.__setattr__(self, "output_path", output_path)
-
-        # その他のフィールドを初期化
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                object.__setattr__(self, key, value)
-
-    @property
-    def output_directory(self) -> Path:
-        """後方互換性のためのプロパティ（非推奨）"""
-        import warnings
-
-        warnings.warn("output_directoryは非推奨です。output_pathを使用してください。", DeprecationWarning, stacklevel=2)
-        return self.output_path
-
-    @output_directory.setter
-    def output_directory(self, value: Path) -> None:
-        """後方互換性のためのセッター（非推奨）"""
-        import warnings
-
-        warnings.warn("output_directoryは非推奨です。output_pathを使用してください。", DeprecationWarning, stacklevel=2)
-        self.output_path = value
+            # output_directoryが指定された場合、output_pathを上書き
+            object.__setattr__(self, "output_path", self.output_directory)
+            # output_directoryも同じ値に設定（後方互換性のため）
+            object.__setattr__(self, "output_directory", self.output_path)

@@ -89,7 +89,7 @@ class LayerDocGenerator(DocumentGenerator):
             layer = layer_arg
             types = types_arg
             filename = self.config.layer_filename_template.format(layer=layer)
-            actual_output_path = self.config.output_directory / filename
+            actual_output_path = self.config.output_path / filename
         elif len(args) == 1 and "layer" in kwargs and "types" in kwargs:
             # 新しいAPI: generate(output_path, layer=layer, types=types)
             output_path_arg = args[0]
@@ -409,7 +409,7 @@ class IndexDocGenerator(DocumentGenerator):
             # テストが期待するAPI: generate(type_registry) - output_pathはデフォルト
             type_registry_arg: dict[str, dict[str, type[Any]]] = args[0]
             type_registry = type_registry_arg
-            actual_output_path = self.config.output_directory / self.config.index_filename
+            actual_output_path = self.config.output_path / self.config.index_filename
         else:
             raise ValueError(
                 "Invalid arguments. Use generate(type_registry, output_path) "
