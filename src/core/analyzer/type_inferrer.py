@@ -142,13 +142,12 @@ class TypeInferenceAnalyzer(Analyzer):
 
         return graph
 
-    def infer_types_from_code(self, code: str, _module_name: str = "temp_module") -> dict[str, InferResult]:
+    def infer_types_from_code(self, code: str) -> dict[str, InferResult]:
         """
         与えられたPythonコードから型を推論します。
 
         Args:
             code: 推論対象のPythonコード
-            _module_name: 一時的なモジュール名（将来の拡張用）
 
         Returns:
             推論された型情報の辞書
@@ -237,8 +236,7 @@ class TypeInferenceAnalyzer(Analyzer):
         with open(file_path, encoding="utf-8") as f:
             code = f.read()
 
-        module_name = Path(file_path).stem
-        return self.infer_types_from_code(code, module_name)
+        return self.infer_types_from_code(code)
 
     def extract_existing_annotations(self, file_path: str) -> dict[str, str]:
         """
