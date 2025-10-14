@@ -192,7 +192,7 @@ class PylayConfig(BaseModel):
 
     # 出力ディレクトリ
     output_dir: DirectoryPath = Field(
-        default=DirectoryPath("docs"),
+        default_factory=lambda: DirectoryPath("docs"),
         description="出力ファイルの保存先ディレクトリ（末尾スラッシュは自動削除）",
     )
 
