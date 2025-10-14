@@ -24,19 +24,11 @@ class CatalogGenerator(DocumentGenerator):
             **kwargs: 親コンストラクタに渡される追加引数
         """
         # Extract filesystem and markdown_builder from kwargs with proper typing
-        from .filesystem import FileSystemInterface
-        from .markdown_builder import MarkdownBuilder
-
         filesystem = kwargs.pop("filesystem", None)
         markdown_builder = kwargs.pop("markdown_builder", None)
 
-        # Type assertions for dependency injection
-        fs_typed = filesystem if isinstance(filesystem, FileSystemInterface) or filesystem is None else None
-        md_typed = (
-            markdown_builder if isinstance(markdown_builder, MarkdownBuilder) or markdown_builder is None else None
-        )
-
-        super().__init__(filesystem=fs_typed, markdown_builder=md_typed)
+        # 型ヒントによる型安全性を信頼（静的型チェックで保証）
+        super().__init__(filesystem=filesystem, markdown_builder=markdown_builder)
         self.config = config or CatalogConfig()
 
     def generate(self, output_path: Path | None = None, **kwargs: object) -> None:
