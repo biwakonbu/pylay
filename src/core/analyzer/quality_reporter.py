@@ -75,9 +75,7 @@ class QualityReporter:
         score_color = (
             "red" if check_result.overall_score < 0.6 else "yellow" if check_result.overall_score < 0.8 else "green"
         )
-        score_text = (  # noqa: E501
-            f"[bold {score_color}]{check_result.overall_score:.2f}/1.0[/bold {score_color}]"
-        )
+        score_text = f"[bold {score_color}]{check_result.overall_score:.2f}/1.0[/bold {score_color}]"
 
         summary_content = (
             f"[bold cyan]Overall Score:[/bold cyan] {score_text}\n"
@@ -104,9 +102,7 @@ class QualityReporter:
 
         # 型レベル統計
         level1_color = "red" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "green"
-        l1_status = (  # noqa: E501
-            "超過" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "正常"
-        )
+        l1_status = "超過" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "正常"
         table.add_row(
             "Level 1 Ratio",
             f"{check_result.statistics.level1_ratio * 100:.1f}%",
@@ -114,9 +110,7 @@ class QualityReporter:
         )
 
         level2_color = "red" if check_result.statistics.level2_ratio < check_result.thresholds.level2_min else "green"
-        l2_status = (  # noqa: E501
-            "低い" if check_result.statistics.level2_ratio < check_result.thresholds.level2_min else "正常"
-        )
+        l2_status = "低い" if check_result.statistics.level2_ratio < check_result.thresholds.level2_min else "正常"
         table.add_row(
             "Level 2 Ratio",
             f"{check_result.statistics.level2_ratio * 100:.1f}%",
@@ -124,9 +118,7 @@ class QualityReporter:
         )
 
         level3_color = "red" if check_result.statistics.level3_ratio < check_result.thresholds.level3_min else "green"
-        l3_status = (  # noqa: E501
-            "低い" if check_result.statistics.level3_ratio < check_result.thresholds.level3_min else "正常"
-        )
+        l3_status = "低い" if check_result.statistics.level3_ratio < check_result.thresholds.level3_min else "正常"
         table.add_row(
             "Level 3 Ratio",
             f"{check_result.statistics.level3_ratio * 100:.1f}%",
@@ -343,9 +335,7 @@ class QualityReporter:
             self.console.print("   - 長期的に見て型安全性が損なわれる可能性があります")
             self.console.print()
 
-        self.console.print(  # noqa: E501
-            "3. [bold blue]アドバイス項目は品質改善の参考として活用してください[/bold blue]"
-        )
+        self.console.print("3. [bold blue]アドバイス項目は品質改善の参考として活用してください[/bold blue]")
         self.console.print("   - アドバイスはベストプラクティスに基づく推奨事項です")
         self.console.print("   - 段階的に適用することを検討してください")
         self.console.print()
