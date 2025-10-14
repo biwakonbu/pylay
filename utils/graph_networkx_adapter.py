@@ -182,7 +182,7 @@ class NetworkXGraphAdapter:
                 node_data["fillcolor"] = "white"
 
         # エッジのスタイル設定
-        for source, target, edge_data in vis_graph.edges(data=True):
+        for _source, _target, edge_data in vis_graph.edges(data=True):
             relation_type = edge_data.get("relation_type", "unknown")
             weight = edge_data.get("weight", 1.0)
 
@@ -258,7 +258,7 @@ class NetworkXGraphAdapter:
         assert self.nx_graph is not None
         stats = {}
 
-        for source, target, data in self.nx_graph.edges(data=True):
+        for source, target, _data in self.nx_graph.edges(data=True):
             edge = self.graph.get_edges_by_source(source)[0]  # 簡易的に最初のエッジを取得
             if edge:
                 stats[f"{source}->{target}"] = {
