@@ -120,7 +120,7 @@ def check(
             # 1. 型定義レベル統計
             console.print("[bold blue]1/3: 型定義レベル統計[/bold blue]")
             console.print()
-            _run_type_analysis(target_path, verbose, exclude_patterns)
+            _run_type_analysis(target_path, verbose=verbose, exclude_patterns=exclude_patterns)
 
             console.print()
             console.rule()
@@ -129,7 +129,7 @@ def check(
             # 2. type-ignore 診断
             console.print("[bold yellow]2/3: type-ignore 診断[/bold yellow]")
             console.print()
-            _run_type_ignore_analysis(target_path, verbose, exclude_patterns)
+            _run_type_ignore_analysis(target_path, verbose=verbose, exclude_patterns=exclude_patterns)
 
             console.print()
             console.rule()
@@ -138,20 +138,20 @@ def check(
             # 3. 品質チェック
             console.print("[bold green]3/3: 品質チェック[/bold green]")
             console.print()
-            _run_quality_check(target_path, config, verbose, exclude_patterns)
+            _run_quality_check(target_path, config, verbose=verbose, exclude_patterns=exclude_patterns)
 
             console.print()
             console.rule("[bold cyan]✅ チェック完了[/bold cyan]")
             console.print()
 
         elif focus == "types":
-            _run_type_analysis(target_path, verbose, exclude_patterns)
+            _run_type_analysis(target_path, verbose=verbose, exclude_patterns=exclude_patterns)
 
         elif focus == "ignore":
-            _run_type_ignore_analysis(target_path, verbose, exclude_patterns)
+            _run_type_ignore_analysis(target_path, verbose=verbose, exclude_patterns=exclude_patterns)
 
         elif focus == "quality":
-            _run_quality_check(target_path, config, verbose, exclude_patterns)
+            _run_quality_check(target_path, config, verbose=verbose, exclude_patterns=exclude_patterns)
 
 
 def _run_type_analysis(target_path: Path, verbose: bool, exclude_patterns: list[str] | None = None) -> None:
