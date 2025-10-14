@@ -383,15 +383,10 @@ class TypeClassifier:
         """ノードから型定義のコードを抽出"""
         try:
             lines = source_code.splitlines()
-            if (
-                hasattr(node, "lineno")
-                and hasattr(node, "end_lineno")
-                and hasattr(node, "end_lineno")
-                and node.end_lineno is not None
-            ):
+            if hasattr(node, "lineno") and hasattr(node, "end_lineno") and node.end_lineno is not None:  # type: ignore[attr-defined]
                 # hastattrで確認済みなので安全にアクセス可能
-                start = node.lineno - 1
-                end = node.end_lineno
+                start = node.lineno - 1  # type: ignore[attr-defined]
+                end = node.end_lineno  # type: ignore[attr-defined]
                 return "\n".join(lines[start:end])
         except Exception:
             pass

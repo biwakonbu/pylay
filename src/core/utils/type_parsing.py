@@ -176,7 +176,7 @@ def extract_type_references(
                     extract_from_typing_obj(arg)
             # 通常の型オブジェクト
             elif hasattr(obj, "__name__"):
-                name = obj.__name__
+                name = obj.__name__  # type: ignore[attr-defined]
                 if name not in excluded_types:
                     refs.add(name)
             # ForwardRef（文字列型参照）

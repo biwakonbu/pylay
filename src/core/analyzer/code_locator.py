@@ -930,7 +930,7 @@ class TypeUsageVisitor(ast.NodeVisitor):
     def generic_visit(self, node: ast.AST) -> None:
         """ASTトラバーサル中に各子ノードに親ノードを設定"""
         for child in ast.iter_child_nodes(node):
-            child._parent = node
+            child._parent = node  # type: ignore[attr-defined]
         super().generic_visit(node)
 
     def visit_Name(self, node: ast.Name) -> None:
