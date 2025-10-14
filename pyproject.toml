@@ -61,21 +61,62 @@ line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
-# Python 3.12+ 対応の設定
+# Python 3.12+ 対応の厳格な設定（段階的に適用）
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
     "F",      # pyflakes
     "I",      # isort
     "UP",     # pyupgrade (Python 3.9+ modernization)
+    "B",      # flake8-bugbear (重要なバグ検出)
+    "SIM",    # flake8-simplify (コード簡潔化)
+    "RUF",    # Ruff独自ルール
 ]
 
-# Python 3.13標準表記を強制（警告として検出）
+ignore = [
+    # フォーマッターとの競合
+    "COM812",  # missing-trailing-comma
+    "ISC001",  # single-line-implicit-string-concatenation
+
+    # 日本語プロジェクトでの例外
+    "RUF001",  # ambiguous-unicode-character-string
+    "RUF002",  # ambiguous-unicode-character-docstring
+    "RUF003",  # ambiguous-unicode-character-comment
+
+    # 現実的な例外（段階的に削減予定）
+    "E501",    # line-too-long (formatterに任せる)
+    "B904",    # raise-without-from-inside-except (段階的に修正予定)
+    "RUF012",  # mutable-class-default (段階的に修正予定)
+    "SIM102",  # collapsible-if (可読性優先)
+    "SIM108",  # if-else-block-instead-of-if-exp (可読性優先)
+]
+
+# 将来的に追加予定のルール（段階的に有効化）
+# "COM",    # flake8-commas
+# "PIE",    # flake8-pie
+# "N",      # pep8-naming
+# "D",      # pydocstyle
+# "ANN",    # flake8-annotations
+# "S",      # flake8-bandit
+# "C90",    # mccabe
+# "T20",    # flake8-print
+# "TCH",    # flake8-type-checking
+# "ARG",    # flake8-unused-arguments
+# "PTH",    # flake8-use-pathlib
+# "ERA",    # eradicate
+# "PL",     # Pylint
+# "PERF",   # Perflint
+
+# Python 3.13標準表記を強制
 # UP006: typing.List → list, typing.Dict → dict (PEP 585)
 # UP007: Union[X, Y] → X | Y (PEP 604)
 # UP035: typing.List/Dict 等の非推奨インポートを検出
 # UP037: Remove quoted annotations (Python 3.10+)
 # UP045: Optional[X] → X | None (PEP 604)
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["B", "SIM"]  # テストコードでは一部ルールを緩和
+"scripts/**/*.py" = ["B", "SIM"]  # スクリプトでは一部ルールを緩和
 
 [build-system]
 requires = ["hatchling"]

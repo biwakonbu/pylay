@@ -211,7 +211,7 @@ class User(BaseModel):
             """
 [tool.pylay.output]
 include_metadata = true
-"""
+""",
         )
 
         # テスト用Pythonファイルを作成
@@ -322,7 +322,7 @@ class TestConfigIntegration:
 lay_suffix = ".lay.py"
 add_generation_header = true
 include_source_path = true
-"""
+""",
         )
 
         # テスト用YAMLファイルを作成
@@ -364,7 +364,7 @@ yaml_output_dir = "docs/pylay"
 mirror_package_structure = true
 include_metadata = true
 preserve_docstrings = true
-"""
+""",
         )
 
         # 設定を読み込み
@@ -400,7 +400,7 @@ preserve_docstrings = true
 [project]
 name = "test-project"
 version = "0.1.0"
-"""
+""",
         )
 
         # pylay initコマンドを実行

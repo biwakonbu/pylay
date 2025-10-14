@@ -52,8 +52,6 @@ class TestTypeInspector:
         class TestClass:
             """This is a test docstring."""
 
-            pass
-
         docstring = self.inspector.get_docstring(TestClass)
         assert docstring == "This is a test docstring."
 
@@ -436,7 +434,7 @@ class TestIndexDocGenerator:
                 "Type4": str,
                 "Type5": str,
                 "Type6": str,
-            }
+            },
         }
 
         generator.generate(type_registry, self.output_path)

@@ -62,7 +62,7 @@ def _path_to_module_path(file_path: Path) -> str | None:
 
         # .pyを除去
         if module_parts[-1].endswith(".py"):
-            module_parts_list = list(module_parts[:-1]) + [module_parts[-1][:-3]]
+            module_parts_list = [*list(module_parts[:-1]), module_parts[-1][:-3]]
             module_parts = tuple(module_parts_list)
 
         return ".".join(module_parts)
@@ -431,7 +431,7 @@ def _process_directory(
                 sys.path.insert(0, parent_path)
                 # 同名モジュールの再利用を防ぐため、インポート前にsys.modulesから削除
                 sys.modules.pop(module_name, None)
-                module = importlib.import_module(module_name)  # noqa: F823
+                module = importlib.import_module(module_name)
 
                 # 型を抽出
                 for name, obj in module.__dict__.items():

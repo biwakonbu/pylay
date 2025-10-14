@@ -134,7 +134,7 @@ class TypeIgnoreReporter:
         start_line = ctx.line_number - len(ctx.before_lines)
 
         # コード全体を構築
-        code_lines = ctx.before_lines + [ctx.target_line] + ctx.after_lines
+        code_lines = [*ctx.before_lines, ctx.target_line, *ctx.after_lines]
         code = "\n".join(code_lines)
 
         # Syntax highlight

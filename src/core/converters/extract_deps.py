@@ -228,10 +228,7 @@ def convert_graph_to_yaml_spec(
         YAML型仕様の辞書
     """
     # TypeDependencyGraphをNetworkX DiGraphに変換
-    if isinstance(graph, TypeDependencyGraph):
-        nx_graph = graph.to_networkx()
-    else:
-        nx_graph = graph
+    nx_graph = graph.to_networkx() if isinstance(graph, TypeDependencyGraph) else graph
 
     dependencies = {}
 
@@ -267,10 +264,7 @@ def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path:
         output_path: 出力画像のパス
     """
     # TypeDependencyGraphをNetworkX DiGraphに変換
-    if isinstance(graph, TypeDependencyGraph):
-        nx_graph = graph.to_networkx()
-    else:
-        nx_graph = graph
+    nx_graph = graph.to_networkx() if isinstance(graph, TypeDependencyGraph) else graph
 
     try:
         # NetworkXグラフをpydotグラフに変換

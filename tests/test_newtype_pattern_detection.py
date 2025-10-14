@@ -33,7 +33,7 @@ class TestNewTypePatternDetection:
                 if len(value) < 8:
                     raise ValueError("UserId must be at least 8 characters")
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -58,7 +58,7 @@ class TestNewTypePatternDetection:
             def Email(value: Annotated[str, Field(pattern=r'^[^@]+@[^@]+$')]) -> Email:
                 '''Emailを作成する検証付きファクトリ関数'''
                 return NewType('Email', str)(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -77,7 +77,7 @@ class TestNewTypePatternDetection:
             from typing import NewType
 
             StatusCode = NewType('StatusCode', int)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -115,7 +115,7 @@ class TestNewTypePatternDetection:
 
             # Pattern 4: type alias (Level 1)
             type Timestamp = float
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -144,7 +144,7 @@ class TestNewTypePatternDetection:
             def create_user_profile_id(value: str) -> UserProfileId:
                 '''UserProfileIdを作成'''
                 return UserProfileId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -167,7 +167,7 @@ class TestNewTypePatternDetection:
             # ファクトリ関数の返り値型が異なる
             def create_user_id(value: str) -> str:
                 return value
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -191,7 +191,7 @@ class TestNewTypePatternDetection:
             def create_user_id(value: str) -> UserId:
                 '''UserIdを作成するファクトリ関数'''
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -212,7 +212,7 @@ class TestNewTypePatternDetection:
 
             def create_user_id(value: str) -> UserId:
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -230,7 +230,7 @@ class TestNewTypePatternDetection:
 
             # 変数名と型名が異なる（非推奨パターン）
             user_id_type = NewType('UserId', str)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -262,7 +262,7 @@ class TestNewTypePatternDetection:
             ) -> Email:
                 '''複雑なバリデーション付きEmail作成'''
                 return NewType('Email', str)(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -310,7 +310,7 @@ class TestNewTypePatternDetection:
             @dataclass
             class Config:
                 timeout: int
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)

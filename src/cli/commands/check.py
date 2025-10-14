@@ -92,10 +92,7 @@ def check(
         target_paths = [Path(target)]
     else:
         # config.target_dirsが複数ある場合は、すべてのディレクトリを処理
-        if config.target_dirs:
-            target_paths = [Path(d) for d in config.target_dirs]
-        else:
-            target_paths = [Path.cwd()]
+        target_paths = [Path(d) for d in config.target_dirs] if config.target_dirs else [Path.cwd()]
 
     # 除外パターンをconfigから取得（空リストの場合は None に変換）
     exclude_patterns = config.exclude_patterns or None
@@ -180,10 +177,7 @@ def _run_type_analysis(target_path: Path, verbose: bool, exclude_patterns: list[
 
     # 対象ディレクトリを決定（詳細表示用）
     target_dirs: list[str]
-    if target_path.is_file():
-        target_dirs = [str(target_path.parent)]
-    else:
-        target_dirs = [str(target_path)]
+    target_dirs = [str(target_path.parent)] if target_path.is_file() else [str(target_path)]
 
     reporter: TypeReporter = TypeReporter(target_dirs=target_dirs)
     reporter.generate_detailed_report(report, show_details=verbose, show_stats=True)

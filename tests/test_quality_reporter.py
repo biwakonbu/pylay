@@ -196,7 +196,9 @@ class TestQualityReporter:
         assert len(output) > 100
 
     def test_generate_console_report_no_issues(
-        self, reporter: QualityReporter, sample_report: TypeAnalysisReport
+        self,
+        reporter: QualityReporter,
+        sample_report: TypeAnalysisReport,
     ) -> None:
         """問題がない場合のコンソールレポート生成テスト"""
         from src.core.schemas.pylay_config import LevelThresholds, SeverityLevel
@@ -228,7 +230,9 @@ class TestQualityReporter:
         assert "No quality issues detected" in output or "Overall Score" in output
 
     def test_generate_console_report_error_handling(
-        self, reporter: QualityReporter, sample_report: TypeAnalysisReport
+        self,
+        reporter: QualityReporter,
+        sample_report: TypeAnalysisReport,
     ) -> None:
         """エラーありの場合のコンソールレポート生成テスト"""
         from pathlib import Path

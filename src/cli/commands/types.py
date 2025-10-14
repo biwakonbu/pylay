@@ -61,9 +61,8 @@ def _generate_imports_from_yaml(
         # TypeRoot.imports_フィールドから取得
         if spec.imports_:
             imports_dict = spec.imports_
-    elif hasattr(spec, "imports_"):
-        if spec.imports_:  # type: ignore[attr-defined]
-            imports_dict = spec.imports_  # type: ignore[attr-defined]
+    elif hasattr(spec, "imports_") and spec.imports_:  # type: ignore[attr-defined]
+        imports_dict = spec.imports_  # type: ignore[attr-defined]
 
     # imports_dictが空でもPydanticの必須インポートは生成する
     # （BaseModel, Fieldは常に必要）
@@ -207,9 +206,8 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
         console.print(start_panel)
 
         # YAMLを読み込み
-        with console.status("[bold green]YAMLファイル読み込み中..."):
-            with open(input_file, encoding="utf-8") as f:
-                yaml_str = f.read()
+        with console.status("[bold green]YAMLファイル読み込み中..."), open(input_file, encoding="utf-8") as f:
+            yaml_str = f.read()
 
         # Python型に変換
         with console.status("[bold green]型情報解析中..."):
@@ -299,7 +297,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                 visited.add(name)
                 sorted_types.append(name)
 
-            for name in types_dict.keys():
+            for name in types_dict:
                 visit(name, set())
 
             return sorted_types
@@ -312,7 +310,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             # YAMLデータから定義されている型名を抽出（_importsや_metadataは除外）
             # IMPORTANT: _で始まる型名（_BaseType等）を除外しないよう、特定キーのみ除外
             reserved_keys = {"_metadata", "_imports"}
-            defined_types = {k for k in raw_yaml_data.keys() if k not in reserved_keys}
+            defined_types = {k for k in raw_yaml_data if k not in reserved_keys}
 
         # 除外する型 = YAML内で定義されている型
         exclude_types = defined_types
@@ -361,9 +359,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
             elif spec_type == "unknown":
                 # unknown の場合は元の name を使う（str | None など）
-                if spec_name == "phone":
-                    return "str | None"
-                elif spec_name == "description":
+                if spec_name == "phone" or spec_name == "description":
                     return "str | None"
                 elif spec_name == "shipping_address":
                     return "Address | None"
@@ -396,7 +392,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             base_classes_str = ", ".join(base_classes)
 
             lines.append(f"class {name}({base_classes_str}):")
-            if "description" in spec_data and spec_data["description"]:
+            if spec_data.get("description"):
                 # 複数行docstringの場合、適切にインデントを追加
                 description = spec_data["description"]
                 # descriptionがNoneの場合のTypeErrorを防ぐ
@@ -465,7 +461,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                                 field_params.append(f"{key}={value}")
 
                     # 3. description（最後）
-                    if "description" in field_spec and field_spec["description"]:
+                    if field_spec.get("description"):
                         # エスケープ処理（"を\"に変換）
                         description_escaped = field_spec["description"].replace('"', '\\"')
                         field_params.append(f'description="{description_escaped}"')
@@ -545,9 +541,11 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             if output_path is None:
                 msg = "output_path is None when not using stdout"
                 raise ValueError(msg)
-            with console.status("[bold green]ファイル出力中..."):
-                with open(output_path, "w", encoding="utf-8") as f:
-                    f.write(output_content)
+            with (
+                console.status("[bold green]ファイル出力中..."),
+                open(output_path, "w", encoding="utf-8") as f,
+            ):
+                f.write(output_content)
 
             # 結果表示用のTable
             result_table = Table(

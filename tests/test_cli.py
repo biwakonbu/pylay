@@ -140,7 +140,7 @@ UserId = NewType('UserId', str)
             """
 type UserId = str
 type Point = tuple[float, float]
-"""
+""",
         )
         # YAMLファイルの出力先を指定
         output_file = tmp_path / "test_types.lay.yaml"
@@ -171,7 +171,7 @@ from typing import NewType
 
 UserId = NewType('UserId', str)
 Count = NewType('Count', int)
-"""
+""",
         )
         # YAMLファイルの出力先を指定
         output_file = tmp_path / "test_newtypes.lay.yaml"
@@ -211,7 +211,7 @@ class User:
     """ユーザー情報"""
     name: str
     age: int
-'''
+''',
         )
         # YAMLファイルの出力先を指定
         output_file = tmp_path / "test_dataclasses.lay.yaml"

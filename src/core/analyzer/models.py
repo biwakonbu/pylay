@@ -351,7 +351,7 @@ class TypeAnalyzerService(BaseModel):
 
         for node in ast.walk(tree):
             # isinstance with tuple is safer for compatibility
-            if isinstance(node, (ast.ClassDef, ast.FunctionDef)):  # noqa: UP038
+            if isinstance(node, (ast.ClassDef, ast.FunctionDef)):
                 # クラスまたは関数の定義を処理
                 type_def = self._create_type_definition_from_node(node, file_path)
                 if type_def:

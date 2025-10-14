@@ -302,7 +302,7 @@ class QualityReporter:
         start_line = location.line - context_before_count
 
         # コード全体を構築
-        code_lines = location.context_before + [location.code] + location.context_after
+        code_lines = [*location.context_before, location.code, *location.context_after]
         code = "\n".join(code_lines)
 
         # Syntax highlight

@@ -344,9 +344,8 @@ class QualityChecker:
         # 降順（しきい値が高い順: advice → warning → error）で走査
         for level in sorted(self.severity_levels, key=lambda x: x.threshold, reverse=True):
             name = level.name
-            if name in ("advice", "warning", "error"):
-                if base_score >= level.threshold:
-                    return name  # type: ignore[return-value]
+            if name in ("advice", "warning", "error") and base_score >= level.threshold:
+                return name  # type: ignore[return-value]
 
         # デフォルトはアドバイス（すべてのしきい値を満たさない場合）
         return "advice"

@@ -349,25 +349,19 @@ class TypeClassifier:
         """BaseModelを継承しているか確認"""
         if isinstance(base, ast.Name) and base.id == "BaseModel":
             return True
-        if isinstance(base, ast.Attribute) and base.attr == "BaseModel":
-            return True
-        return False
+        return bool(isinstance(base, ast.Attribute) and base.attr == "BaseModel")
 
     def _is_dataclass_decorator(self, decorator: ast.expr) -> bool:
         """dataclassデコレータか確認"""
         if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
             return True
-        if isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass":
-            return True
-        return False
+        return bool(isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass")
 
     def _is_typeddict_base(self, base: ast.expr) -> bool:
         """TypedDictを継承しているか確認"""
         if isinstance(base, ast.Name) and base.id == "TypedDict":
             return True
-        if isinstance(base, ast.Attribute) and base.attr == "TypedDict":
-            return True
-        return False
+        return bool(isinstance(base, ast.Attribute) and base.attr == "TypedDict")
 
     def _is_annotated_with_validator(self, node: ast.expr) -> bool:
         """Annotated型かつAfterValidatorを含むか確認"""
@@ -383,10 +377,7 @@ class TypeClassifier:
 
     def _contains_after_validator(self, node: ast.expr) -> bool:
         """AfterValidatorを含むか確認"""
-        if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name) and node.func.id == "AfterValidator":
-                return True
-        return False
+        return bool(isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "AfterValidator")
 
     def _extract_definition(self, node: ast.AST, source_code: str) -> str:
         """ノードから型定義のコードを抽出"""
@@ -396,11 +387,11 @@ class TypeClassifier:
                 hasattr(node, "lineno")
                 and hasattr(node, "end_lineno")
                 and hasattr(node, "end_lineno")
-                and getattr(node, "end_lineno") is not None
+                and node.end_lineno is not None
             ):
                 # hastattrで確認済みなので安全にアクセス可能
-                start = getattr(node, "lineno") - 1
-                end = getattr(node, "end_lineno")
+                start = node.lineno - 1
+                end = node.end_lineno
                 return "\n".join(lines[start:end])
         except Exception:
             pass
@@ -467,13 +458,13 @@ class TypeClassifier:
         match = re.search(r"@target-level:\s*(level[123])", docstring)
         if match:
             level = match.group(1)
-            # 型ガードで検証
-            if level == "level1":
-                return "level1"
-            elif level == "level2":
-                return "level2"
-            elif level == "level3":
-                return "level3"
+            # 型ガードで検証（辞書で簡潔に）
+            level_map: dict[str, Literal["level1", "level2", "level3"]] = {
+                "level1": "level1",
+                "level2": "level2",
+                "level3": "level3",
+            }
+            return level_map.get(level)
 
         return None
 
@@ -547,7 +538,7 @@ class TypeClassifier:
                 factory_funcs[func_name] = line_number
 
         # NewTypeとファクトリ関数のペアを検出
-        for type_name, (newtype_line, definition, base_type) in newtype_defs.items():
+        for type_name, (newtype_line, definition, _base_type) in newtype_defs.items():
             docstring = self._extract_docstring_near_line(source_code, newtype_line)
 
             if type_name in factory_funcs:

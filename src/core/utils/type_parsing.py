@@ -167,7 +167,7 @@ def extract_type_references(
             if origin is not None:
                 # originが型の場合、その名前を抽出
                 if hasattr(origin, "__name__"):
-                    name = getattr(origin, "__name__")
+                    name = origin.__name__
                     if name not in excluded_types:
                         refs.add(name)
 
@@ -176,7 +176,7 @@ def extract_type_references(
                     extract_from_typing_obj(arg)
             # 通常の型オブジェクト
             elif hasattr(obj, "__name__"):
-                name = getattr(obj, "__name__")
+                name = obj.__name__
                 if name not in excluded_types:
                     refs.add(name)
             # ForwardRef（文字列型参照）
@@ -243,7 +243,7 @@ def extract_type_references(
         # 現在の多層防御（eval失敗→ASTフォールバック）は有効だが、
         # eval()によるセキュリティリスクを完全に排除するため、
         # ASTパーサーの精度向上とともにeval()の使用を段階的に削減する
-        obj = eval(type_str, typing_ns)  # noqa: S307
+        obj = eval(type_str, typing_ns)
         extract_from_typing_obj(obj)
         if refs:
             return sorted(refs) if deduplicate else list(refs)
@@ -285,7 +285,7 @@ def validate_type_string(type_str: str) -> tuple[bool, str | None]:
 
         typing_ns = {k: v for k, v in typing.__dict__.items() if k in ALLOWED_TYPING_ATTRS}
         typing_ns["__builtins__"] = {}
-        eval(type_str, typing_ns)  # noqa: S307
+        eval(type_str, typing_ns)
         return True, None
     except (NameError, SyntaxError, AttributeError, TypeError):
         # typing評価失敗の場合はASTパースを試みる

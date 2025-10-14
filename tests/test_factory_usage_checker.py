@@ -193,7 +193,7 @@ class TestCheckDirectory:
                 return UserId(value)
 
             user = UserId("test")
-        """)
+        """),
         )
 
         # File 2: 問題なし
@@ -204,7 +204,7 @@ class TestCheckDirectory:
 
             Email = NewType('Email', str)
             email = Email("test@example.com")
-        """)
+        """),
         )
 
         results = check_directory(tmp_path)
@@ -227,7 +227,7 @@ class TestCheckDirectory:
                 return UserId(value)
 
             user = UserId("test")
-        """)
+        """),
         )
 
         # テキストファイル（除外対象）

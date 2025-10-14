@@ -129,7 +129,7 @@ class LayerDocGenerator(DocumentGenerator):
         content = self.md.build()
         self._write_file(Path(actual_output_path), content)
 
-        type_count = len(types) if isinstance(types, list) else len(types)
+        type_count = len(types)
         print(f"✅ Generated {actual_output_path}: {type_count} types")
 
     def _generate_header(self, layer: str) -> None:

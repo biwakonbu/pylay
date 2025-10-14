@@ -58,9 +58,8 @@ def run_docs(input_file: str, output_dir: str | None = None, format_type: str = 
         console.print(start_panel)
 
         # YAMLファイル読み込み
-        with console.status("[bold green]YAMLファイル読み込み中..."):
-            with open(input_file, encoding="utf-8") as f:
-                yaml_str = f.read()
+        with console.status("[bold green]YAMLファイル読み込み中..."), open(input_file, encoding="utf-8") as f:
+            yaml_str = f.read()
 
         # YAMLパース
         with console.status("[bold green]型情報解析中..."):

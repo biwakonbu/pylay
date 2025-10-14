@@ -54,7 +54,7 @@ def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeR
             # 従来v1または指定root_key: nameフィールドで処理
             if len(data) == 1 and "type" not in data:
                 # トップレベルが型名の場合 (例: TestDict: {type: dict, ...})
-                key, value = list(data.items())[0]
+                key, value = next(iter(data.items()))
                 spec = _create_spec_from_data(value, key)
             else:
                 spec = _create_spec_from_data(data, root_key)
@@ -205,9 +205,8 @@ def validate_with_spec(spec: TypeSpecOrRef, data: Any, max_depth: int = 10, curr
             elif spec.type == "any":
                 # any型は常にTrue
                 return True
-            else:
-                # 未サポートの型はFalse
-                return False
+            # 未サポートの型はFalse
+            return False
         # デフォルトでFalseを返す（TypeSpecOrRefの型チェック用）
         return False
     except Exception:

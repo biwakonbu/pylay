@@ -103,8 +103,6 @@ def test_v1_1_multiple_types():
     class Users:
         """ユーザーのリスト"""
 
-        pass
-
     UsersList = list[User]
 
     # 複数型をYAMLに変換

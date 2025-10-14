@@ -94,11 +94,7 @@ class ProjectScanner:
             return True
 
         # パス自体が除外パターンにマッチするかをチェック
-        for pattern in self.config.exclude_patterns:
-            if fnmatch.fnmatch(str(relative_path), pattern):
-                return True
-
-        return False
+        return any(fnmatch.fnmatch(str(relative_path), pattern) for pattern in self.config.exclude_patterns)
 
     def get_python_files(self) -> list[Path]:
         """

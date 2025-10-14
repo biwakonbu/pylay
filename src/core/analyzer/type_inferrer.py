@@ -284,7 +284,7 @@ def run_mypy_inference(file_path: Path, mypy_flags: list[str], timeout: int = 60
     Raises:
         MypyExecutionError: mypy実行に失敗した場合
     """
-    cmd = ["uv", "run", "mypy"] + mypy_flags + [str(file_path)]
+    cmd = ["uv", "run", "mypy", *mypy_flags, str(file_path)]
 
     try:
         result = subprocess.run(

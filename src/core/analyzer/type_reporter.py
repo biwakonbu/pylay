@@ -545,17 +545,15 @@ class TypeReporter:
         lines.append("│ レベル                  │ 件数  │ 比率    │")
         lines.append("├─────────────────────────┼───────┼─────────┤")
         lines.append(
-            f"│ Level 1: type エイリアス │ {statistics.level1_count:5} │ {statistics.level1_ratio * 100:6.1f}% │"  # noqa: E501
+            f"│ Level 1: type エイリアス │ {statistics.level1_count:5} │ {statistics.level1_ratio * 100:6.1f}% │"
         )
         lines.append(
-            f"│ Level 2: Annotated      │ {statistics.level2_count:5} │ {statistics.level2_ratio * 100:6.1f}% │"  # noqa: E501
+            f"│ Level 2: Annotated      │ {statistics.level2_count:5} │ {statistics.level2_ratio * 100:6.1f}% │"
         )
         lines.append(
-            f"│ Level 3: BaseModel      │ {statistics.level3_count:5} │ {statistics.level3_ratio * 100:6.1f}% │"  # noqa: E501
+            f"│ Level 3: BaseModel      │ {statistics.level3_count:5} │ {statistics.level3_ratio * 100:6.1f}% │"
         )
-        lines.append(
-            f"│ その他: class/dataclass │ {statistics.other_count:5} │ {statistics.other_ratio * 100:6.1f}% │"  # noqa: E501
-        )
+        lines.append(f"│ その他: class/dataclass │ {statistics.other_count:5} │ {statistics.other_ratio * 100:6.1f}% │")
         lines.append("├─────────────────────────┼───────┼─────────┤")
         lines.append(f"│ 合計                    │ {statistics.total_count:5} │ 100.0%  │")
         lines.append("└─────────────────────────┴───────┴─────────┘")
@@ -569,21 +567,21 @@ class TypeReporter:
         lines.append("├─────────────────────────────────┼───────┼─────────┼──────┤")
 
         # Level 0: 非推奨typing使用（0%必須）
-        dep_status = "✅" if statistics.deprecated_typing_ratio == 0.0 else "⚠️"  # noqa: E501
+        dep_status = "✅" if statistics.deprecated_typing_ratio == 0.0 else "⚠️"
         lines.append(
-            f"│ Level 0: 非推奨typing           │ {statistics.deprecated_typing_count:5} │ {statistics.deprecated_typing_ratio * 100:6.1f}% │ {dep_status}  │"  # noqa: E501
+            f"│ Level 0: 非推奨typing           │ {statistics.deprecated_typing_count:5} │ {statistics.deprecated_typing_ratio * 100:6.1f}% │ {dep_status}  │"
         )
 
         # Level 1: type エイリアス（20%以下推奨、primitive型含む）
         level1_limit = self.threshold_ratios["level1_max"]
         level1_status = "✅" if statistics.level1_ratio <= level1_limit else "⚠️"
         lines.append(
-            f"│ Level 1: type エイリアス        │ {statistics.level1_count:5} │ {statistics.level1_ratio * 100:6.1f}% │ {level1_status}  │"  # noqa: E501
+            f"│ Level 1: type エイリアス        │ {statistics.level1_count:5} │ {statistics.level1_ratio * 100:6.1f}% │ {level1_status}  │"
         )
 
         # Level 1の内訳: primitive型の直接使用
         lines.append(
-            f"│   └─ primitive型直接使用        │ {statistics.primitive_usage_count:5} │ {statistics.primitive_usage_ratio * 100:6.1f}% │      │"  # noqa: E501
+            f"│   └─ primitive型直接使用        │ {statistics.primitive_usage_count:5} │ {statistics.primitive_usage_ratio * 100:6.1f}% │      │"
         )
 
         lines.append("└─────────────────────────────────┴───────┴─────────┴──────┘")
@@ -633,16 +631,12 @@ class TypeReporter:
         # 実装率
         impl_threshold = self.doc_thresholds["implementation_rate"]
         impl_status = "✅" if doc_stats.implementation_rate >= impl_threshold else "⚠️"
-        lines.append(
-            f"│ 実装率                  │ {doc_stats.implementation_rate * 100:5.1f}% │   {impl_status}    │"  # noqa: E501
-        )
+        lines.append(f"│ 実装率                  │ {doc_stats.implementation_rate * 100:5.1f}% │   {impl_status}    │")
 
         # 詳細度
         detail_threshold = self.doc_thresholds["detail_rate"]
         detail_status = "✅" if doc_stats.detail_rate >= detail_threshold else "⚠️"
-        lines.append(
-            f"│ 詳細度                  │ {doc_stats.detail_rate * 100:5.1f}% │   {detail_status}    │"  # noqa: E501
-        )
+        lines.append(f"│ 詳細度                  │ {doc_stats.detail_rate * 100:5.1f}% │   {detail_status}    │")
 
         # 総合品質スコア
         quality_threshold = self.doc_thresholds["quality_score"]
@@ -653,9 +647,7 @@ class TypeReporter:
             if doc_stats.quality_score >= quality_threshold * 0.5
             else "❌"
         )
-        lines.append(
-            f"│ 総合品質スコア          │ {doc_stats.quality_score * 100:5.1f}% │   {quality_status}    │"  # noqa: E501
-        )
+        lines.append(f"│ 総合品質スコア          │ {doc_stats.quality_score * 100:5.1f}% │   {quality_status}    │")
 
         lines.append("└─────────────────────────┴───────┴─────────┘")
         return "\n".join(lines)
@@ -671,9 +663,7 @@ class TypeReporter:
             lines.append(f"❓ [{rec.priority.upper()}] {rec.type_name} (被参照: 0)")
             lines.append("  推奨アクション: 調査")
         else:
-            lines.append(
-                f"{emoji} [{rec.priority.upper()}] {rec.type_name} (確信度: {rec.confidence:.2f})"  # noqa: E501
-            )
+            lines.append(f"{emoji} [{rec.priority.upper()}] {rec.type_name} (確信度: {rec.confidence:.2f})")
             lines.append(f"  現在: {rec.current_level} → 推奨: {rec.recommended_level}")
 
         if rec.reasons:
@@ -723,18 +713,10 @@ class TypeReporter:
         lines = []
         lines.append("| レベル | 件数 | 比率 |")
         lines.append("|--------|------|------|")
-        lines.append(
-            f"| Level 1: type エイリアス | {statistics.level1_count} | {statistics.level1_ratio * 100:.1f}% |"  # noqa: E501
-        )
-        lines.append(
-            f"| Level 2: Annotated | {statistics.level2_count} | {statistics.level2_ratio * 100:.1f}% |"  # noqa: E501
-        )
-        lines.append(
-            f"| Level 3: BaseModel | {statistics.level3_count} | {statistics.level3_ratio * 100:.1f}% |"  # noqa: E501
-        )
-        lines.append(
-            f"| その他 | {statistics.other_count} | {statistics.other_ratio * 100:.1f}% |"  # noqa: E501
-        )
+        lines.append(f"| Level 1: type エイリアス | {statistics.level1_count} | {statistics.level1_ratio * 100:.1f}% |")
+        lines.append(f"| Level 2: Annotated | {statistics.level2_count} | {statistics.level2_ratio * 100:.1f}% |")
+        lines.append(f"| Level 3: BaseModel | {statistics.level3_count} | {statistics.level3_ratio * 100:.1f}% |")
+        lines.append(f"| その他 | {statistics.other_count} | {statistics.other_ratio * 100:.1f}% |")
         lines.append(f"| **合計** | **{statistics.total_count}** | **100.0%** |")
         return "\n".join(lines)
 

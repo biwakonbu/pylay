@@ -133,7 +133,7 @@ class YamlProcessingService(BaseModel):
 
         if isinstance(data, dict):
             if not root_key and len(data) == 1:
-                root_key = list(data.keys())[0]
+                root_key = next(iter(data.keys()))
                 data = data[root_key]
 
             from src.core.schemas.yaml_spec import TypeSpec as TypeSpecModel

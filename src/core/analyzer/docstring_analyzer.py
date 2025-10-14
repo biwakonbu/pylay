@@ -273,10 +273,7 @@ Examples
             "Returns": ":returns:",
             "Attributes": ":ivar",
         }
-        if section in rst_mapping and rst_mapping[section] in docstring:
-            return True
-
-        return False
+        return bool(section in rst_mapping and rst_mapping[section] in docstring)
 
     def _calculate_detail_score(
         self,

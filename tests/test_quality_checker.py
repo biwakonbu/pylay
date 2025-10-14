@@ -352,7 +352,7 @@ def foo():
     return 42
 
 x = foo()
-"""
+""",
             )
 
             # 解析を実行
@@ -377,7 +377,7 @@ x = foo()
                     level1_max=0.5,
                     level2_min=0.6,  # level1_max + level2_min > 1.0
                     level3_min=0.3,
-                )
+                ),
             ),
         )
 

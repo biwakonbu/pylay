@@ -35,13 +35,13 @@ class TestRefResolver:
             "A": {
                 "type": "dict",
                 "properties": {
-                    "b": "B"  # Bを参照
+                    "b": "B",  # Bを参照
                 },
             },
             "B": {
                 "type": "dict",
                 "properties": {
-                    "a": "A"  # Aを参照 -> 循環
+                    "a": "A",  # Aを参照 -> 循環
                 },
             },
         }

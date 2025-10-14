@@ -465,9 +465,8 @@ class _TypeReferenceCounter(ast.NodeVisitor):
         # Subscript ノード (例: list[UserId], Annotated[str, ...])
         elif isinstance(annotation, ast.Subscript):
             # ベース型をチェック (例: list, Annotated)
-            if isinstance(annotation.value, ast.Name):
-                if annotation.value.id in self.type_names:
-                    self.reference_counts[annotation.value.id] += 1
+            if isinstance(annotation.value, ast.Name) and annotation.value.id in self.type_names:
+                self.reference_counts[annotation.value.id] += 1
 
             # インデックス部分を再帰的にチェック
             self._count_annotation_recursive(annotation.slice)
@@ -487,16 +486,11 @@ class _TypeReferenceCounter(ast.NodeVisitor):
                 self.reference_counts[node.id] += 1
 
         elif isinstance(node, ast.Subscript):
-            if isinstance(node.value, ast.Name):
-                if node.value.id in self.type_names:
-                    self.reference_counts[node.value.id] += 1
+            if isinstance(node.value, ast.Name) and node.value.id in self.type_names:
+                self.reference_counts[node.value.id] += 1
             self._count_annotation_recursive(node.slice)
 
-        elif isinstance(node, ast.Tuple):
-            for elt in node.elts:
-                self._count_annotation_recursive(elt)
-
-        elif isinstance(node, ast.List):
+        elif isinstance(node, (ast.Tuple, ast.List)):
             for elt in node.elts:
                 self._count_annotation_recursive(elt)
 

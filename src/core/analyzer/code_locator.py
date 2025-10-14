@@ -250,10 +250,7 @@ class CodeLocator:
             使用回数
         """
         # 辞書に変換
-        if isinstance(type_definitions, list):
-            type_dict = {td.name: td for td in type_definitions}
-        else:
-            type_dict = type_definitions
+        type_dict = {td.name: td for td in type_definitions} if isinstance(type_definitions, list) else type_definitions
 
         # 簡易実装:他の型定義内での使用をカウント
         count = 0
@@ -600,7 +597,6 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
             "__bool__",
             "__int__",
             "__float__",
-            "__str__",
             "__bytes__",
         }
 
@@ -934,7 +930,7 @@ class TypeUsageVisitor(ast.NodeVisitor):
     def generic_visit(self, node: ast.AST) -> None:
         """ASTトラバーサル中に各子ノードに親ノードを設定"""
         for child in ast.iter_child_nodes(node):
-            setattr(child, "_parent", node)
+            child._parent = node
         super().generic_visit(node)
 
     def visit_Name(self, node: ast.Name) -> None:

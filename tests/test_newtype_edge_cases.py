@@ -36,7 +36,7 @@ class TestNewTypeEdgeCases:
 
             # 構文エラー
             UserId = NewType('UserId' str)  # カンマ忘れ
-            """)
+            """),
         )
 
         # エラーにならないこと（空のリストを返す）
@@ -54,7 +54,7 @@ class TestNewTypeEdgeCases:
 
             def create_user_id(value: str) -> UserId:
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -77,7 +77,7 @@ class TestNewTypeEdgeCases:
 
             def create_user_id_from_int(value: int) -> UserId:
                 return UserId(str(value))
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -95,7 +95,7 @@ class TestNewTypeEdgeCases:
             def create_user_id(value: str) -> str:
                 '''ファクトリ関数だけ（NewTypeなし）'''
                 return value
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -117,7 +117,7 @@ class TestNewTypeEdgeCases:
                 @staticmethod
                 def create_user_id(value: str) -> UserId:
                     return UserModule.UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -140,7 +140,7 @@ class TestNewTypeEdgeCases:
 
             def create_ユーザーid(value: str) -> ユーザーID:
                 return ユーザーID(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -162,7 +162,7 @@ class TestNewTypeEdgeCases:
 
             # 単純な型のみ
             UserId = NewType('UserId', str)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -182,7 +182,7 @@ class TestNewTypeEdgeCases:
 
             def create_user_id(value: str) -> UserId:  # ファクトリ関数
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -203,7 +203,7 @@ class TestNewTypeEdgeCases:
 
             # 改行なし（非推奨パターン）
             @validate_call; def Email(v: str) -> Email: return Email(v)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -225,7 +225,7 @@ class TestNewTypeEdgeCases:
 
             def create_user_id(value: str) -> UserId:
                 return UserId(value)
-            """)
+            """),
         )
 
         file2 = tmp_path / "test2.py"
@@ -234,7 +234,7 @@ class TestNewTypeEdgeCases:
             from typing import NewType
 
             Email = NewType('Email', str)
-            """)
+            """),
         )
 
         results1 = classifier.classify_file(file1)
@@ -265,7 +265,7 @@ class TestNewTypeEdgeCases:
                 value: Annotated[str, Field(pattern=r'^.+@.+$')]
             ) -> Email:  # type: ignore[no-redef]
                 return NewType('Email', str)(value)  # type: ignore[misc]
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -286,7 +286,7 @@ class TestNewTypeEdgeCases:
             # userid != UserId
             def create_userid(value: str) -> UserId:
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)

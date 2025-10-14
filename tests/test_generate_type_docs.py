@@ -98,7 +98,6 @@ class TestGenerateTypeDocs:
             # インデックスファイルが作成されたことを確認
             # （モックされているので実際には作成されない）
             # このテストはモックが正しく呼び出されることを確認するだけ
-            pass
 
 
 class TestGenerateTypeDocsErrorHandling:
