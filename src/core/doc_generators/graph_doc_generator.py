@@ -5,7 +5,6 @@ TypeDependencyGraphからMarkdownドキュメントを生成。
 """
 
 from pathlib import Path
-from typing import Any
 
 from src.core.schemas.graph import GraphEdge, GraphNode, TypeDependencyGraph
 from src.core.schemas.types import GraphMetadata
@@ -20,7 +19,7 @@ class GraphDocGenerator(DocumentGenerator):
     テキストベースのMarkdown出力（テーブルとリスト形式）。
     """
 
-    def generate(self, output_path: Path, **kwargs: Any) -> None:
+    def generate(self, output_path: Path, **kwargs: object) -> None:
         """
         依存グラフからMarkdownドキュメントを生成。
 

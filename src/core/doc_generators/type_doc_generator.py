@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from src.core.schemas.graph import TypeDependencyGraph
 
@@ -49,8 +49,8 @@ class LayerDocGenerator(DocumentGenerator):
 
     def generate(
         self,
-        *args: Any,
-        **kwargs: Any,
+        *args: object,
+        **kwargs: object,
     ) -> None:
         """レイヤードキュメントを生成
 
@@ -62,7 +62,7 @@ class LayerDocGenerator(DocumentGenerator):
         layer: str
         types: dict[str, type[Any]] | list[type[Any]]
         actual_output_path: Path
-        graph: TypeDependencyGraph | None = kwargs.get("graph")
+        graph: TypeDependencyGraph | None = cast(TypeDependencyGraph | None, kwargs.get("graph"))
 
         if len(args) == 3:
             # テストが期待するAPI: generate(layer, types, output_path)
@@ -383,8 +383,8 @@ class IndexDocGenerator(DocumentGenerator):
 
     def generate(
         self,
-        *args: Any,
-        **kwargs: Any,
+        *args: object,
+        **kwargs: object,
     ) -> None:
         """Generate index documentation.
 
@@ -398,16 +398,16 @@ class IndexDocGenerator(DocumentGenerator):
 
         if len(args) == 1 and "type_registry" in kwargs:
             # 新しいAPI: generate(output_path, type_registry=type_registry)
-            output_path_arg: Path = args[0]
-            type_registry = kwargs["type_registry"]
+            output_path_arg: Path = cast(Path, args[0])
+            type_registry = cast(dict[str, dict[str, type[Any]]], kwargs["type_registry"])
             actual_output_path = Path(output_path_arg)
         elif len(args) == 2:
             # テストが期待するAPI: generate(type_registry, output_path)
-            type_registry = args[0]
+            type_registry = cast(dict[str, dict[str, type[Any]]], args[0])
             actual_output_path = Path(args[1])
         elif len(args) == 1:
             # テストが期待するAPI: generate(type_registry) - output_pathはデフォルト
-            type_registry_arg: dict[str, dict[str, type[Any]]] = args[0]
+            type_registry_arg: dict[str, dict[str, type[Any]]] = cast(dict[str, dict[str, type[Any]]], args[0])
             type_registry = type_registry_arg
             actual_output_path = self.config.output_path / self.config.index_filename
         else:
