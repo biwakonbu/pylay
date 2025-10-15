@@ -275,7 +275,7 @@ class StrictAnalysisStrategy(NormalAnalysisStrategy):
         # 大規模グラフでのサイクル検出をスキップ
         if num_nodes > MAX_NODES_FOR_CYCLE_DETECTION:
             logger.warning(
-                "グラフが大規模すぎるためサイクル検出をスキップします: %d ノード（上限: %d）",
+                "グラフが大規模すぎるためサイクル検出をスキップします: %d ノード(上限: %d)",
                 num_nodes,
                 MAX_NODES_FOR_CYCLE_DETECTION,
             )
