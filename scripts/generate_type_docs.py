@@ -80,7 +80,7 @@ def generate_docs(output_dir: str = "docs/types") -> None:
 
     for layer, layer_types in TYPE_REGISTRY.items():
         if layer_types:  # 空でないレイヤーのみ処理
-            generate_layer_docs(layer, list(layer_types.values()), output_dir)
+            generate_layer_docs(layer, layer_types, output_dir)
 
     generate_index_docs(f"{output_dir}/README.md")
 

@@ -112,8 +112,6 @@ Found 5 auto-fixable issues:
 Applied 2 automatic fixes.
 3 issues require manual review.
 
-```bash
-
 ### 4. ナレッジベース構築
 
 #### 4.1 パターンデータベース
