@@ -39,7 +39,7 @@ class TypeIgnoreReporter:
             show_solutions: 解決策を表示するか
         """
         # ヘッダー
-        self.console.rule("[bold cyan]Type Ignore Diagnostics[/bold cyan]", style="cyan")
+        self.console.rule("[bold cyan]type: ignore 診断レポート[/bold cyan]", style="cyan")
         self.console.print()
 
         # ファイルごとにグループ化
