@@ -306,11 +306,13 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
         # YAML内で定義されている型はimportしない（型定義を優先）
         defined_types = set()
 
-        if raw_yaml_data:
+        if isinstance(raw_yaml_data, dict) and raw_yaml_data:
             # YAMLデータから定義されている型名を抽出（_importsや_metadataは除外）
             # IMPORTANT: _で始まる型名（_BaseType等）を除外しないよう、特定キーのみ除外
             reserved_keys = {"_metadata", "_imports"}
             defined_types = {k for k in raw_yaml_data if k not in reserved_keys}
+        else:
+            defined_types = set()
 
         # 除外する型 = YAML内で定義されている型
         exclude_types = defined_types
