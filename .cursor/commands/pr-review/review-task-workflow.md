@@ -45,6 +45,19 @@ The reviewtask tool provides the following commands for managing PR review tasks
 - **`reviewtask config show`** - Display current verification configuration
 - **`reviewtask config set-verifier <task-type> <command>`** - Configure custom verification commands
 
+## Workflow Modes
+
+This tool supports **integrated workflow mode** as the standard approach:
+
+### Integrated Workflow (Standard)
+- **`reviewtask [PR_NUMBER]`** - Fetches PR reviews and analyzes with AI in a single command
+- **Automatic PR Detection**: When PR_NUMBER is omitted, detects the open PR linked to current branch
+- **Smart Selection**: If multiple PRs exist, selects the most recently updated one
+- **Error Handling**: Shows clear error messages and help when no PR is found
+
+### Alternative Modes (Not Standard)
+Some environments may use split commands (`reviewtask fetch` + `reviewtask analyze`), but the integrated workflow is recommended for most use cases as it provides better user experience and automatic PR detection.
+
 ## Task Priority System:
 
 Tasks are automatically assigned priority levels that determine processing order:

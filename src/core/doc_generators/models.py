@@ -261,8 +261,8 @@ class MarkdownBuilderService(BaseModel):
             lines.append("## Table of Contents")
             lines.append("")
             for item in structure.toc:
-                title = item.get("title", "")
-                level = item.get("level", 1)
+                title = item.title
+                level = item.level
                 anchor = title.lower().replace(" ", "-")
                 lines.append(f"{'  ' * (level - 1)}* [{title}](#{anchor})")
             lines.append("")

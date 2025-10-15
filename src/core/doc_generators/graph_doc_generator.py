@@ -28,7 +28,9 @@ class GraphDocGenerator(DocumentGenerator):
             graph: TypeDependencyGraphインスタンス
             **kwargs: 追加オプション（例: include_visualization）
         """
-        graph = kwargs.get("graph")
+        from typing import cast
+
+        graph = cast(TypeDependencyGraph, kwargs.get("graph"))
         if not graph:
             raise ValueError("graph parameter is required")
 

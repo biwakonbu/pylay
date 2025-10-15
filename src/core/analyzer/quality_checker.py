@@ -5,7 +5,7 @@
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, cast
 
 from src.core.analyzer.code_locator import CodeLocator
 
@@ -206,7 +206,7 @@ class QualityChecker:
 
             # 位置情報を含むQualityIssueを作成
             location = CodeLocation(
-                file=detail.location.file,
+                file=detail.location.file,  # type: ignore[assignment]
                 line=detail.location.line,
                 column=detail.location.column,
                 context_before=detail.location.context_before,
@@ -343,9 +343,9 @@ class QualityChecker:
 
         # 降順（しきい値が高い順: advice → warning → error）で走査
         for level in sorted(self.severity_levels, key=lambda x: x.threshold, reverse=True):
-            name = level.name
+            name = cast(Literal["advice", "warning", "error"], level.name)
             if name in ("advice", "warning", "error") and base_score >= level.threshold:
-                return name  # type: ignore[return-value]
+                return name
 
         # デフォルトはアドバイス（すべてのしきい値を満たさない場合）
         return "advice"

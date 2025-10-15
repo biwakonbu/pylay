@@ -1262,7 +1262,7 @@ requires-dist = [
     { name = "rich", specifier = ">=13.7.0" },
     { name = "ruamel-yaml", specifier = ">=0.18.6" },
     { name = "ruff", specifier = ">=0.14.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.14.0" },
     { name = "safety", marker = "extra == 'dev'", specifier = ">=3.2.3" },
 ]
 provides-extras = ["dev", "viz"]
@@ -1278,7 +1278,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=4.0.0" },
     { name = "pytest-xdist", specifier = ">=3.0.0" },
     { name = "radon", specifier = ">=6.0.1" },
-    { name = "ruff", specifier = ">=0.6.0" },
+    { name = "ruff", specifier = ">=0.14.0" },
     { name = "safety", specifier = ">=3.2.3" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250915" },
 ]

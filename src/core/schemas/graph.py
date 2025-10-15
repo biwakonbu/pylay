@@ -273,12 +273,18 @@ class TypeDependencyGraph(BaseModel):
             graph.add_node(node.id, **node_attrs)
         for edge in self.edges:
             attrs = edge.attributes.custom_data if edge.attributes else {}
+            edge_data: dict[str, Any] = {
+                "relation_type": edge.relation_type.value,
+                "weight": edge.weight,
+                **attrs,
+            }
+            # metadataもNetworkXエッジデータに含める
+            if edge.metadata is not None:
+                edge_data["metadata"] = edge.metadata.model_dump()  # GraphMetadata を dict に変換
             graph.add_edge(
                 edge.source,
                 edge.target,
-                relation_type=edge.relation_type.value,
-                weight=edge.weight,
-                **attrs,
+                **edge_data,
             )
         return graph
 

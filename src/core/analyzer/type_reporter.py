@@ -841,7 +841,7 @@ class TypeReporter:
 
         for detail in details[:50]:  # 最大50件まで表示
             # ファイル名を短く表示
-            file_name = detail.location.file.name
+            file_name = Path(detail.location.file).name
             if len(file_name) > 24:
                 file_name = "..." + file_name[-21:]
 
@@ -884,7 +884,7 @@ class TypeReporter:
                 type_name = type_name[:21] + "..."
 
             # ファイル名を短く表示
-            file_name = detail.location.file.name
+            file_name = Path(detail.location.file).name
             if len(file_name) > 19:
                 file_name = "..." + file_name[-16:]
 
@@ -927,7 +927,7 @@ class TypeReporter:
                 type_name = type_name[:21] + "..."
 
             # ファイル名を短く表示
-            file_name = detail.location.file.name
+            file_name = Path(detail.location.file).name
             if len(file_name) > 19:
                 file_name = "..." + file_name[-16:]
 
@@ -965,7 +965,7 @@ class TypeReporter:
 
         for detail in details[:30]:  # 最大30件まで表示
             # ファイル名を短く表示
-            file_name = detail.location.file.name
+            file_name = Path(detail.location.file).name
             if len(file_name) > 24:
                 file_name = "..." + file_name[-21:]
 

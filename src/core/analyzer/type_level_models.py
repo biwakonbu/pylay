@@ -9,7 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .types import TypeDefinition
+from .types import TypeDefinition, ValidatedFilePath
 
 # ========================================
 # 型定義情報
@@ -107,7 +107,7 @@ class DocstringRecommendation(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     type_name: str
-    file_path: str
+    file_path: ValidatedFilePath
     line_number: int
     current_status: Literal["missing", "minimal", "partial", "complete"]
     recommended_action: Literal["add", "expand", "reformat", "none"]
@@ -189,7 +189,7 @@ class UpgradeRecommendation(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     type_name: str
-    file_path: str
+    file_path: ValidatedFilePath
     line_number: int
     current_level: Literal["level1", "level2", "level3", "other"]
     recommended_level: Literal["level1", "level2", "level3", "investigate"]

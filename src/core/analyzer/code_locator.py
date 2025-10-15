@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
-from src.core.analyzer.types import TypeDefinition
+from src.core.analyzer.types import TypeDefinition, ValidatedFilePath
 
 
 @dataclass
@@ -28,7 +28,7 @@ class CodeLocation:
         context_after: 後の2行のコード（リスト）
     """
 
-    file: Path
+    file: ValidatedFilePath
     line: int
     column: int
     code: str
@@ -926,11 +926,12 @@ class TypeUsageVisitor(ast.NodeVisitor):
         self.source_code = source_code
         self.usages: list[TypeUsageExample] = []
         self.lines = source_code.splitlines()
+        self._parent_map: dict[int, ast.AST] = {}
 
     def generic_visit(self, node: ast.AST) -> None:
         """ASTトラバーサル中に各子ノードに親ノードを設定"""
         for child in ast.iter_child_nodes(node):
-            child._parent = node  # type: ignore[attr-defined]
+            self._parent_map[id(child)] = node
         super().generic_visit(node)
 
     def visit_Name(self, node: ast.Name) -> None:
@@ -966,7 +967,7 @@ class TypeUsageVisitor(ast.NodeVisitor):
             使用種類
         """
         # 簡易実装:親ノードの種類で判定
-        parent = getattr(node, "_parent", None)
+        parent = self._parent_map.get(id(node))
         if parent:
             if isinstance(parent, ast.arg):
                 return "function_argument"

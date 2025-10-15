@@ -69,9 +69,9 @@ class LayerDocGenerator(DocumentGenerator):
             output_path_arg = args[2]
             if not isinstance(layer_arg, str):
                 raise TypeError("layer must be a string")
-            if not isinstance(types_arg, dict | list):
+            if not isinstance(types_arg, (dict, list)):
                 raise TypeError("types must be a dict or list")
-            if not isinstance(output_path_arg, str | Path):
+            if not isinstance(output_path_arg, (str, Path)):
                 raise TypeError("output_path must be a string or Path")
             layer = layer_arg
             types = types_arg
@@ -82,7 +82,7 @@ class LayerDocGenerator(DocumentGenerator):
             types_arg = args[1]
             if not isinstance(layer_arg, str):
                 raise TypeError("layer must be a string")
-            if not isinstance(types_arg, dict | list):
+            if not isinstance(types_arg, (dict, list)):
                 raise TypeError("types must be a dict or list")
             layer = layer_arg
             types = types_arg
@@ -93,11 +93,11 @@ class LayerDocGenerator(DocumentGenerator):
             output_path_arg = args[0]
             layer_kw = kwargs["layer"]
             types_kw = kwargs["types"]
-            if not isinstance(output_path_arg, str | Path):
+            if not isinstance(output_path_arg, (str, Path)):
                 raise TypeError("output_path must be a string or Path")
             if not isinstance(layer_kw, str):
                 raise TypeError("layer must be a string")
-            if not isinstance(types_kw, dict | list):
+            if not isinstance(types_kw, (dict, list)):
                 raise TypeError("types must be a dict or list")
             layer = layer_kw
             types = types_kw
@@ -108,7 +108,7 @@ class LayerDocGenerator(DocumentGenerator):
                 "or generate(output_path, layer=layer, types=types)"
             )
 
-        if not isinstance(layer, str) or not isinstance(types, dict | list):
+        if not isinstance(layer, str) or not isinstance(types, (dict, list)):
             raise TypeError("layer must be str and types must be dict[str, type[Any]] or list[type[Any]]")
 
         # Clear markdown builder
@@ -400,7 +400,8 @@ class IndexDocGenerator(DocumentGenerator):
         elif len(args) == 2:
             # テストが期待するAPI: generate(type_registry, output_path)
             type_registry = cast(dict[str, dict[str, type[Any]]], args[0])
-            actual_output_path = Path(args[1])
+            output_path_arg2: str | Path = cast(str | Path, args[1])
+            actual_output_path = Path(output_path_arg2)
         elif len(args) == 1:
             # テストが期待するAPI: generate(type_registry) - output_pathはデフォルト
             type_registry_arg: dict[str, dict[str, type[Any]]] = cast(dict[str, dict[str, type[Any]]], args[0])
@@ -412,7 +413,7 @@ class IndexDocGenerator(DocumentGenerator):
                 "or generate(output_path, type_registry=type_registry)"
             )
 
-        if not isinstance(type_registry, dict | defaultdict):
+        if not isinstance(type_registry, (dict, defaultdict)):
             raise TypeError("type_registry must be dict[str, dict[str, type[Any]]]")
 
         # Clear markdown builder

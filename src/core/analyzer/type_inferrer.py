@@ -59,6 +59,9 @@ from src.core.schemas.types import (
     create_line_number,
 )
 
+# モジュールレベル定数
+DEFAULT_UNTYPED = "Any"  # アノテーションがない場合のデフォルト値
+
 
 class TypeInferenceAnalyzer(Analyzer):
     """
@@ -262,7 +265,7 @@ class TypeInferenceAnalyzer(Analyzer):
                 # 関数引数の型
                 for arg in node.args.args:
                     if arg.arg not in annotations:  # 重複を避ける
-                        annotations[arg.arg] = ast.unparse(arg.annotation) if arg.annotation else "Any"
+                        annotations[arg.arg] = ast.unparse(arg.annotation) if arg.annotation else DEFAULT_UNTYPED
 
         return annotations
 

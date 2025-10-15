@@ -25,7 +25,7 @@ def run_command(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]
 
     Returns:
         (returncode, stdout, stderr)のタプル
-        - returncode: コマンドの終了コード（0: 成功、1: 失敗）
+        - returncode: コマンドの終了コード（0: 成功、0以外: 失敗）
         - stdout: 標準出力の内容
         - stderr: 標準エラー出力の内容
 

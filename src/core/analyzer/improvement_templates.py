@@ -194,7 +194,7 @@ def _is_excluded_variable_name(var_name: str) -> bool:
         "_description",
     ]
     # サフィックスで除外
-    return bool(any(var_lower.endswith(suffix) for suffix in exclude_suffixes))
+    return any(var_lower.endswith(suffix) for suffix in exclude_suffixes)
 
 
 def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] | None:

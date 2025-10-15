@@ -19,6 +19,7 @@ from src.core.analyzer.type_level_models import (
 from src.core.analyzer.type_reporter import TypeReporter
 from src.core.analyzer.type_statistics import TypeStatisticsCalculator
 from src.core.analyzer.type_upgrade_analyzer import TypeUpgradeAnalyzer
+from src.core.analyzer.types import ValidatedFilePath
 from src.core.utils.io_helpers import collect_python_files
 
 
@@ -298,7 +299,7 @@ class TypeLevelAnalyzer:
         type_names = {td.name for td in type_definitions}
 
         # ファイルパスごとにグループ化
-        files_to_analyze: dict[str, list[str]] = {}
+        files_to_analyze: dict[ValidatedFilePath, list[str]] = {}
         for td in type_definitions:
             if td.file_path not in files_to_analyze:
                 files_to_analyze[td.file_path] = []
@@ -344,7 +345,7 @@ class TypeLevelAnalyzer:
         Returns:
             重複除去後の型定義リスト
         """
-        seen_keys: set[tuple[str, str, int]] = set()
+        seen_keys: set[tuple[ValidatedFilePath, str, int]] = set()
         unique_types: list[TypeDefinition] = []
 
         for td in type_definitions:
@@ -369,7 +370,7 @@ class TypeLevelAnalyzer:
         Returns:
             重複除去後の推奨事項リスト
         """
-        seen_keys: set[tuple[str, str, int]] = set()
+        seen_keys: set[tuple[ValidatedFilePath, str, int]] = set()
         unique_recs: list[UpgradeRecommendation] = []
 
         for rec in recommendations:
@@ -467,6 +468,10 @@ class _TypeReferenceCounter(ast.NodeVisitor):
             # ベース型をチェック (例: list, Annotated)
             if isinstance(annotation.value, ast.Name) and annotation.value.id in self.type_names:
                 self.reference_counts[annotation.value.id] += 1
+            # 修飾名 (例: models.User)
+            elif isinstance(annotation.value, ast.Attribute):
+                if annotation.value.attr in self.type_names:
+                    self.reference_counts[annotation.value.attr] += 1
 
             # インデックス部分を再帰的にチェック
             self._count_annotation_recursive(annotation.slice)
@@ -488,6 +493,9 @@ class _TypeReferenceCounter(ast.NodeVisitor):
         elif isinstance(node, ast.Subscript):
             if isinstance(node.value, ast.Name) and node.value.id in self.type_names:
                 self.reference_counts[node.value.id] += 1
+            elif isinstance(node.value, ast.Attribute):
+                if node.value.attr in self.type_names:
+                    self.reference_counts[node.value.attr] += 1
             self._count_annotation_recursive(node.slice)
 
         elif isinstance(node, (ast.Tuple, ast.List)):
