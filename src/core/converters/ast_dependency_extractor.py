@@ -202,7 +202,7 @@ class ASTDependencyExtractor:
             # クラス内の型アノテーションとメソッド
             for item in node.body:
                 if isinstance(item, ast.AnnAssign):
-                    self._handle_annotation(item, class_name, file_path)
+                    self._handle_annotation(item, class_name)
                 elif isinstance(item, ast.FunctionDef):
                     self._handle_method_def(item, class_name, file_path)
         finally:
@@ -384,7 +384,7 @@ class ASTDependencyExtractor:
                     self._add_node(var_node)
                     self._add_edge(var_name, func_name, RelationType.CALLS)
 
-    def _handle_annotation(self, node: ast.AnnAssign, class_name: str, file_path: str) -> None:
+    def _handle_annotation(self, node: ast.AnnAssign, class_name: str) -> None:
         """型アノテーションから依存を抽出"""
         if node.annotation:
             annotated_type = self._get_type_name_from_ast(node.annotation)
