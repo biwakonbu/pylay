@@ -171,8 +171,8 @@ disallow_untyped_decorators = false
 
 [tool.pylay]
 # pylay プロジェクト全体解析設定
-# コアモジュールとCLIのみを対象に限定（外部ライブラリを除外）
-target_dirs = ["src/core", "src/cli"]
+# コアモジュール、CLI、エントリーポイントスクリプトを対象に限定(外部ライブラリを除外)
+target_dirs = ["src/core", "src/cli", "src/infer_deps.py"]
 output_dir = "docs/pylay"
 generate_markdown = true
 extract_deps = true
