@@ -10,7 +10,6 @@
 4. 依存関係抽出関連のプロトコル
 """
 
-from abc import abstractmethod
 from typing import Any, Protocol
 
 from src.core.schemas.graph import TypeDependencyGraph
@@ -35,7 +34,6 @@ class TypeConverterProtocol(Protocol):
     このプロトコルは、型変換機能の基本的なインターフェースを定義します。
     """
 
-    @abstractmethod
     def convert_type_to_spec(self, typ: type[Any]) -> TypeSpec:
         """
         Python型をTypeSpecに変換します。
@@ -48,7 +46,6 @@ class TypeConverterProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def convert_type_to_yaml(
         self,
         typ: type[Any],
@@ -68,7 +65,6 @@ class TypeConverterProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def convert_types_to_yaml(
         self, types: dict[TypeName, type[Any]], output_file: OutputPath | None = None
     ) -> YamlString:
@@ -92,7 +88,6 @@ class YamlConverterProtocol(Protocol):
     このプロトコルは、YAML関連の変換機能のインターフェースを定義します。
     """
 
-    @abstractmethod
     def convert_yaml_to_spec(self, yaml_str: YamlString, root_key: TypeName | None = None) -> TypeSpec | Any:
         """
         YAML文字列からTypeSpecを生成します。
@@ -106,7 +101,6 @@ class YamlConverterProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def validate_with_spec(
         self,
         spec: TypeSpec | str,
@@ -128,7 +122,6 @@ class YamlConverterProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def generate_pydantic_model(self, spec: TypeSpec, model_name: str = "DynamicModel") -> CodeString:
         """
         TypeSpecからPydanticモデルコードを生成します。
@@ -150,7 +143,6 @@ class ModuleExtractorProtocol(Protocol):
     このプロトコルは、Pythonモジュールからの型抽出機能のインターフェースを定義します。
     """
 
-    @abstractmethod
     def extract_types_from_module(self, module_path: ModulePath) -> YamlString | None:
         """
         Pythonモジュールから型を抽出してYAML形式で返します。
@@ -163,7 +155,6 @@ class ModuleExtractorProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def extract_dependencies_from_code(self, code: CodeString) -> TypeDependencyGraph:
         """
         コードから依存関係を抽出します。
@@ -176,7 +167,6 @@ class ModuleExtractorProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def extract_dependencies_from_file(self, file_path: ModulePath) -> TypeDependencyGraph:
         """
         ファイルから依存関係を抽出します。
@@ -197,7 +187,6 @@ class GraphConverterProtocol(Protocol):
     このプロトコルは、依存関係グラフの変換・処理機能のインターフェースを定義します。
     """
 
-    @abstractmethod
     def convert_graph_to_yaml_spec(
         self,
         graph: TypeDependencyGraph,
@@ -213,7 +202,6 @@ class GraphConverterProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def visualize_dependencies(self, graph: TypeDependencyGraph, output_path: OutputPath | None = "deps.png") -> None:
         """
         依存関係を視覚化します。
@@ -232,7 +220,6 @@ class ResultHandlerProtocol(Protocol):
     このプロトコルは、各種処理結果の処理機能のインターフェースを定義します。
     """
 
-    @abstractmethod
     def handle_conversion_result(self, result: ConversionResult) -> None:
         """
         型変換結果を処理します。
@@ -242,7 +229,6 @@ class ResultHandlerProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def handle_extraction_result(self, result: ExtractionResult) -> None:
         """
         抽出結果を処理します。
@@ -252,7 +238,6 @@ class ResultHandlerProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def handle_dependency_result(self, result: DependencyResult) -> None:
         """
         依存関係結果を処理します。
