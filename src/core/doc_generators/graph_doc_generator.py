@@ -6,6 +6,8 @@ TypeDependencyGraphからMarkdownドキュメントを生成。
 
 from pathlib import Path
 
+from pydantic import TypeAdapter
+
 from src.core.schemas.graph import GraphEdge, GraphNode, TypeDependencyGraph
 from src.core.schemas.types import GraphMetadata
 
@@ -25,14 +27,16 @@ class GraphDocGenerator(DocumentGenerator):
 
         Args:
             output_path: 出力ファイルパス
-            graph: TypeDependencyGraphインスタンス
-            **kwargs: 追加オプション（例: include_visualization）
+            **kwargs: 追加オプション
+                - graph (TypeDependencyGraph): 必須。依存グラフインスタンス
         """
-        from typing import cast
-
-        graph = cast(TypeDependencyGraph, kwargs.get("graph"))
-        if not graph:
+        graph_value = kwargs.get("graph")
+        if graph_value is None:
             raise ValueError("graph parameter is required")
+
+        # 実行時型検証
+        graph_adapter = TypeAdapter(TypeDependencyGraph)
+        graph = graph_adapter.validate_python(graph_value)
 
         self.md.clear()
         self.md = MarkdownBuilder()
