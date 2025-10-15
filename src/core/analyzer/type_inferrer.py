@@ -1,7 +1,7 @@
 """
 型推論モジュール
 
-mypy の --infer フラグを活用して、未アノテーションのコードから型を自動推測します。
+mypy の統計フラグを活用して、型推論情報を抽出します。
 推論結果を既存の型アノテーションとマージし、TypeDependencyGraph を構築します。
 
 信頼度計算
@@ -162,10 +162,10 @@ class TypeInferenceAnalyzer(Analyzer):
 
         try:
             # mypy コマンドの構築（config_fileは後で追加可能）
-            cmd = ["uv", "run", "mypy", "--infer", "--dump-type-stats"]
+            cmd = ["uv", "run", "mypy", "--inferstats", "--timing-stats"]
             cmd.append(temp_file_path)
 
-            # mypy --infer を実行
+            # mypy --inferstats --timing-stats を実行
             result = subprocess.run(
                 cmd,
                 capture_output=True,

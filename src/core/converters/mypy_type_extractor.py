@@ -1,6 +1,6 @@
 """
 mypy型推論抽出機能。
-mypy --inferを実行し、未アノテーションコードから型情報を抽出。
+mypyの統計機能を実行し、型推論情報を抽出。
 AST依存抽出と組み合わせて完全な型依存グラフを構築。
 """
 
@@ -21,7 +21,7 @@ from src.core.schemas.types import GraphMetadata, create_weight
 
 class MypyTypeExtractor:
     """
-    mypy --inferで型推論を実行し、型情報を抽出するクラス。
+    mypyの統計機能で型推論を実行し、型情報を抽出するクラス。
     AST抽出結果とマージして完全な依存グラフを構築。
     """
 
@@ -31,7 +31,7 @@ class MypyTypeExtractor:
 
     def extract_types_with_mypy(self, file_path: str) -> dict[str, Any]:
         """
-        mypy --inferを実行し、型推論結果を抽出。
+        mypyの統計機能を実行し、型推論結果を抽出。
 
         Args:
             file_path: 解析対象のPythonファイルパス
@@ -58,7 +58,7 @@ class MypyTypeExtractor:
                         "uv",
                         "run",
                         "mypy",
-                        "--infer",
+                        "--inferstats",
                         "--output",
                         "json",
                         temp_file.name,

@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 from typing import Literal
 
-from src.core.analyzer.type_level_models import TypeDefinition
+from src.core.analyzer.types import TypeDefinition
 
 
 class TypeClassifier:

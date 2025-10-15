@@ -33,10 +33,8 @@ class LayerDocGenerator(DocumentGenerator):
         markdown_builder = kwargs.pop("markdown_builder", None)
 
         # Type assertions for dependency injection
-        fs_typed = filesystem if isinstance(filesystem, FileSystemInterface) or filesystem is None else None
-        md_typed = (
-            markdown_builder if isinstance(markdown_builder, MarkdownBuilder) or markdown_builder is None else None
-        )
+        fs_typed = cast(FileSystemInterface | None, filesystem)
+        md_typed = cast(MarkdownBuilder | None, markdown_builder)
 
         super().__init__(filesystem=fs_typed, markdown_builder=md_typed)
         self.config = config or TypeDocConfig()
@@ -373,10 +371,8 @@ class IndexDocGenerator(DocumentGenerator):
         markdown_builder = kwargs.pop("markdown_builder", None)
 
         # Type assertions for dependency injection
-        fs_typed = filesystem if isinstance(filesystem, FileSystemInterface) or filesystem is None else None
-        md_typed = (
-            markdown_builder if isinstance(markdown_builder, MarkdownBuilder) or markdown_builder is None else None
-        )
+        fs_typed = cast(FileSystemInterface | None, filesystem)
+        md_typed = cast(MarkdownBuilder | None, markdown_builder)
 
         super().__init__(filesystem=fs_typed, markdown_builder=md_typed)
         self.config = config or TypeDocConfig()

@@ -262,7 +262,7 @@ class NetworkXGraphAdapter:
             edges_from_source = self.graph.get_edges_by_source(source)
             if not edges_from_source:
                 continue
-            edge = edges_from_source[0]  # 簡易的に最初のエッジを取得
+            edge = edges_from_source[0]  # 空リストチェック済みのため安全にアクセス
             if edge:
                 stats[f"{source}->{target}"] = {
                     "relation_type": edge.relation_type,

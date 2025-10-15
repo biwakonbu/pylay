@@ -576,7 +576,7 @@ class BatchProcessorService(BaseModel):
         self,
         input_directory: str | Path,
         output_path: str | Path,
-        config: DocumentConfig | None = None,
+        _config: DocumentConfig | None = None,  # 将来の拡張機能用に予約済みパラメータ
     ) -> BatchGenerationResult:
         """
         ディレクトリ内のファイルを一括処理します。
@@ -584,7 +584,7 @@ class BatchProcessorService(BaseModel):
         Args:
             input_directory: 入力ディレクトリ
             output_path: 出力ディレクトリ
-            config: ドキュメント設定（Noneの場合、デフォルト設定を使用）
+            _config: ドキュメント設定（将来の拡張機能用に予約済み、現在未使用）
 
         Returns:
             バッチ処理結果

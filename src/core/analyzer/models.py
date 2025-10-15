@@ -178,7 +178,7 @@ class InferenceConfig(BaseModel):
     infer_level: Literal["loose", "normal", "strict"] = "normal"
     max_depth: MaxDepth = Field(default=MaxDepth(10))
     enable_mypy: EnableMypyFlag = True
-    mypy_flags: list[MypyFlag] = Field(default_factory=lambda: ["--infer", "--dump-type-stats"])
+    mypy_flags: list[MypyFlag] = Field(default_factory=lambda: ["--inferstats", "--timing-stats"])
     timeout: Timeout = Field(default=60, ge=1, le=600)
 
     def is_strict_mode(self) -> bool:

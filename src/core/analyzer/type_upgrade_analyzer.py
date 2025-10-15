@@ -7,7 +7,8 @@
 import re
 from typing import Any
 
-from src.core.analyzer.type_level_models import TypeDefinition, UpgradeRecommendation
+from src.core.analyzer.type_level_models import UpgradeRecommendation
+from src.core.analyzer.types import TypeDefinition
 
 
 class TypeUpgradeAnalyzer:

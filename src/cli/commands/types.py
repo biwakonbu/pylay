@@ -7,6 +7,7 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
 import yaml as pyyaml
 from rich.box import SIMPLE
@@ -26,6 +27,13 @@ from src.core.converters.type_to_yaml import PROJECT_ROOT_PACKAGE
 from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.yaml_spec import RefPlaceholder, TypeRoot, TypeSpec
+
+
+@runtime_checkable
+class _HasImports(Protocol):
+    """imports_属性を持つオブジェクトのProtocol"""
+
+    imports_: dict[str, str] | None
 
 
 def _generate_imports_from_yaml(
@@ -61,8 +69,8 @@ def _generate_imports_from_yaml(
         # TypeRoot.imports_フィールドから取得
         if spec.imports_:
             imports_dict = spec.imports_
-    elif hasattr(spec, "imports_") and spec.imports_:  # type: ignore[attr-defined]
-        imports_dict = spec.imports_  # type: ignore[attr-defined]
+    elif isinstance(spec, _HasImports) and spec.imports_:
+        imports_dict = spec.imports_
 
     # imports_dictが空でもPydanticの必須インポートは生成する
     # （BaseModel, Fieldは常に必要）

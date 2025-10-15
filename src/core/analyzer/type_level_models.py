@@ -9,42 +9,14 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .types import TypeDefinition
+
 # ========================================
 # 型定義情報
 # ========================================
 
 
-class TypeDefinition(BaseModel):
-    """型定義の情報
-
-    Attributes:
-        name: 型の名前
-        level: 型定義レベル（level1/level2/level3/other）
-        file_path: ファイルパス
-        line_number: 行番号
-        definition: 型定義のコード
-        category: 型のカテゴリ（type_alias/annotated/basemodel/class/dataclass等）
-        docstring: docstring（存在する場合）
-        has_docstring: docstringが存在するか
-        docstring_lines: docstringの行数
-        target_level: docstringで指定された目標レベル
-            （@target-level: level1/level2/level3）
-        keep_as_is: 現状維持フラグ（@keep-as-is: trueの場合はレベルアップ推奨しない）
-    """
-
-    model_config = ConfigDict(frozen=False, extra="forbid")
-
-    name: str
-    level: Literal["level1", "level2", "level3", "other"]
-    file_path: str
-    line_number: int
-    definition: str
-    category: str
-    docstring: str | None = None
-    has_docstring: bool = False
-    docstring_lines: int = 0
-    target_level: Literal["level1", "level2", "level3"] | None = None
-    keep_as_is: bool = False
+# TypeDefinitionクラスはtypes.pyで定義されているため、ここでは削除済み
 
 
 # ========================================

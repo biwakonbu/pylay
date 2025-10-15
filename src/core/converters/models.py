@@ -16,7 +16,7 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from src.core.schemas.graph import TypeDependencyGraph
-from src.core.schemas.yaml_spec import TypeSpec
+from src.core.schemas.yaml_spec import TypeRoot, TypeSpec
 
 from .types import (
     ConversionResult,
@@ -111,19 +111,20 @@ class YamlProcessingService(BaseModel):
     このクラスは、YAML関連の処理のビジネスロジックを実装します。
     """
 
-    # TODO: Any を TypeSpec | dict[str, Any] に置き換える
-    # 理由: 現在の実装では動的型付けが必要な場合があるが、TypeSpecで処理可能なケースを優先し、
-    #       dict[str, Any]で辞書形式のフォールバックを確保する。Issue #XX で詳細な型設計を検討予定。
-    def convert_yaml_to_spec(self, yaml_str: YamlString, root_key: TypeName | None = None) -> TypeSpec | Any:
+    # TODO: 詳細設計はIssue #83で継続
+    def convert_yaml_to_spec(self, yaml_str: YamlString, root_key: TypeName | None = None) -> TypeSpec | TypeRoot:
         """
-        YAML文字列からTypeSpecを生成します。
+        YAML文字列からTypeSpecまたはTypeRootを生成します。
 
         Args:
             yaml_str: YAML形式の文字列
             root_key: ルートキーの名前（Noneの場合、自動検出）
 
         Returns:
-            TypeSpecまたはその他のオブジェクト
+            TypeSpecまたはTypeRoot
+
+        Raises:
+            ValueError: YAMLのトップレベルがdictでない場合
         """
         # 簡易的な実装（実際はより複雑な処理が必要）
         import ruamel.yaml
@@ -132,10 +133,15 @@ class YamlProcessingService(BaseModel):
         data = yaml_parser.load(yaml_str)
 
         if isinstance(data, dict):
+            # TypeRoot構造
+            if "types" in data:
+                from src.core.schemas.yaml_spec import TypeRoot as TypeRootModel
+
+                return TypeRootModel.model_validate(data)
+            # 単一ルートのTypeSpec構造
             if not root_key and len(data) == 1:
                 root_key = next(iter(data.keys()))
                 data = data[root_key]
-
             from src.core.schemas.yaml_spec import TypeSpec as TypeSpecModel
 
             return TypeSpecModel(
@@ -144,8 +150,7 @@ class YamlProcessingService(BaseModel):
                 description=data.get("description"),
                 required=data.get("required", True),
             )
-
-        return data
+        raise ValueError("YAMLのトップレベルはdict(TypeSpec/TypeRoot)である必要があります")
 
     def validate_with_spec(
         self,
