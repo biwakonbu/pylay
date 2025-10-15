@@ -259,7 +259,10 @@ class NetworkXGraphAdapter:
         stats = {}
 
         for source, target, _data in self.nx_graph.edges(data=True):
-            edge = self.graph.get_edges_by_source(source)[0]  # 簡易的に最初のエッジを取得
+            edges_from_source = self.graph.get_edges_by_source(source)
+            if not edges_from_source:
+                continue
+            edge = edges_from_source[0]  # 簡易的に最初のエッジを取得
             if edge:
                 stats[f"{source}->{target}"] = {
                     "relation_type": edge.relation_type,
