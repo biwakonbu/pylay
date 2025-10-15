@@ -149,7 +149,7 @@ class CatalogGenerator(DocumentGenerator):
         # Filter out excluded patterns
         filtered_files = []
         for test_file in test_files:
-            if not any(pattern in str(test_file) for pattern in self.config.exclude_patterns):
+            if not any(test_file.match(pattern) for pattern in self.config.exclude_patterns):
                 filtered_files.append(test_file)
 
         return sorted(filtered_files)
