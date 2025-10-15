@@ -51,7 +51,7 @@ class QualityReporter:
             show_details: 詳細情報を表示するか
         """
         # ヘッダー
-        self.console.rule("[bold cyan]型定義品質レポート[/bold cyan]")
+        self.console.rule("[bold cyan]Type Definition Quality Report[/bold cyan]")
         self.console.print()
 
         # 全体サマリー
@@ -87,7 +87,7 @@ class QualityReporter:
 
         summary_panel = Panel(
             summary_content,
-            title="[bold]概要[/bold]",
+            title="[bold]Summary[/bold]",
             border_style=score_color,
         )
         self.console.print(summary_panel)
@@ -95,7 +95,7 @@ class QualityReporter:
 
     def _show_statistics_table(self, check_result: QualityCheckResult) -> None:
         """統計情報テーブルを表示"""
-        table = Table(title="統計", show_header=True, header_style="bold magenta")
+        table = Table(title="Statistics", show_header=True, header_style="bold magenta")
         table.add_column("項目", style="cyan", width=30)
         table.add_column("値", style="white", justify="right")
         table.add_column("状態", style="green")
@@ -320,7 +320,7 @@ class QualityReporter:
 
     def _show_recommendations(self, check_result: QualityCheckResult) -> None:
         """推奨事項を表示"""
-        self.console.print("[bold cyan]推奨事項[/bold cyan]")
+        self.console.print("[bold cyan]Recommendations[/bold cyan]")
         self.console.print()
 
         if check_result.error_count > 0:

@@ -88,7 +88,7 @@ class TypeReporter:
             防御的プログラミングとして空データのチェックを実施
         """
         # ヘッダー
-        self.console.rule("[bold cyan]型定義レベル分析レポート[/bold cyan]")
+        self.console.rule("[bold cyan]Type Definition Level Analysis Report[/bold cyan]")
         self.console.print()
 
         # 統計情報（オプションで表示制御）
@@ -97,27 +97,27 @@ class TypeReporter:
             self.console.print()
 
             # 警告閾値との比較
-            self.console.rule("[bold yellow]警告閾値との比較[/bold yellow]")
+            self.console.rule("[bold yellow]Threshold Comparison[/bold yellow]")
             self.console.print()
             self._print_deviation_comparison(report)
             self.console.print()
 
             # ドキュメント品質スコア
             if report.statistics.documentation:
-                self.console.rule("[bold green]ドキュメント品質スコア[/bold green]")
+                self.console.rule("[bold green]Documentation Quality Score[/bold green]")
                 self.console.print()
                 self.console.print(self._create_documentation_quality_table(report.statistics.documentation))
                 self.console.print()
 
             # コード品質統計
-            self.console.rule("[bold magenta]コード品質統計[/bold magenta]")
+            self.console.rule("[bold magenta]Code Quality Statistics[/bold magenta]")
             self.console.print()
             self.console.print(self._create_code_quality_table(report.statistics))
             self.console.print()
 
         # 推奨事項（空リストの場合はスキップ）
         if report.recommendations:
-            self.console.rule("[bold red]推奨事項[/bold red]")
+            self.console.rule("[bold red]Recommendations[/bold red]")
             self.console.print()
             self.console.print(self._create_recommendations_table(report.recommendations))
             self.console.print()
@@ -801,25 +801,25 @@ class TypeReporter:
         # 詳細レポートの出力
         if primitive_details:
             self.console.print()
-            self.console.rule("[bold red]🔍 問題詳細: Primitive型の直接使用[/bold red]")
+            self.console.rule("[bold red]🔍 Issue Details: Direct Primitive Type Usage[/bold red]")
             self.console.print()
             self.console.print(self._create_primitive_usage_table(primitive_details))
 
         if level1_details:
             self.console.print()
-            self.console.rule("[bold yellow]🔍 問題詳細: Level 1型の放置[/bold yellow]")
+            self.console.rule("[bold yellow]🔍 Issue Details: Abandoned Level 1 Types[/bold yellow]")
             self.console.print()
             self.console.print(self._create_level1_types_table(level1_details))
 
         if unused_details:
             self.console.print()
-            self.console.rule("[bold magenta]🔍 問題詳細: 被参照0の型定義[/bold magenta]")
+            self.console.rule("[bold magenta]🔍 Issue Details: Unused Type Definitions[/bold magenta]")
             self.console.print()
             self.console.print(self._create_unused_types_table(unused_details))
 
         if deprecated_details:
             self.console.print()
-            self.console.rule("[bold cyan]🔍 問題詳細: 非推奨typing使用[/bold cyan]")
+            self.console.rule("[bold cyan]🔍 Issue Details: Deprecated typing Usage[/bold cyan]")
             self.console.print()
             self.console.print(self._create_deprecated_typing_table(deprecated_details))
 
