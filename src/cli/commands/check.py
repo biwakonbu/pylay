@@ -45,7 +45,7 @@ def _load_config() -> PylayConfig:
     "--focus",
     type=click.Choice(["types", "ignore", "quality"], case_sensitive=False),
     default=None,
-    help="特定のチェックのみ実行（未指定の場合は全チェック）",
+    help="特定のチェックのみ実行(未指定の場合は全チェック)",
 )
 @click.option("-v", "--verbose", is_flag=True, help="詳細なログを出力")
 def check(
