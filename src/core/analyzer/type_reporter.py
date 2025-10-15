@@ -566,13 +566,13 @@ class TypeReporter:
         lines.append("│ レベル                          │ 件数  │ 比率    │ 状態 │")
         lines.append("├─────────────────────────────────┼───────┼─────────┼──────┤")
 
-        # Level 0: 非推奨typing使用（0%必須）
+        # Level 0: 非推奨typing使用(0%必須)
         dep_status = "✅" if statistics.deprecated_typing_ratio == 0.0 else "⚠️"
         lines.append(
             f"│ Level 0: 非推奨typing           │ {statistics.deprecated_typing_count:5} │ {statistics.deprecated_typing_ratio * 100:6.1f}% │ {dep_status}  │"
         )
 
-        # Level 1: type エイリアス（20%以下推奨、primitive型含む）
+        # Level 1: type エイリアス (20%以下推奨、primitive型含む)
         level1_limit = self.threshold_ratios["level1_max"]
         level1_status = "✅" if statistics.level1_ratio <= level1_limit else "⚠️"
         lines.append(

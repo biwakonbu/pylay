@@ -6,7 +6,7 @@ CodeLocatorのテスト
 
 import ast
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, mock_open, patch
 
 from src.core.analyzer.code_locator import (
     CodeLocator,
@@ -51,9 +51,7 @@ class UserService:
         pass
 '''
 
-        with patch("builtins.open", create=True) as mock_open:
-            mock_open.return_value.__enter__.return_value.read.return_value = mock_source
-
+        with patch("builtins.open", mock_open(read_data=mock_source)):
             locator = CodeLocator([Path("src")])
             results = locator.find_primitive_usages()
 
@@ -97,7 +95,7 @@ class UserService:
         )
 
         locator = CodeLocator([Path("src")])
-        count = locator._count_type_usage("UserId", {"UserId": type_def, "Email": type_def})
+        count = locator._count_type_usage("UserId", list({"UserId": type_def, "Email": type_def}.values()))
 
         # 簡易実装では他の定義内での使用をカウント
         assert isinstance(count, int)

@@ -5,6 +5,7 @@ Pythonソースコードから型定義を検出し、Level 1/2/3に分類しま
 """
 
 import ast
+import logging
 import re
 from pathlib import Path
 from typing import Literal
@@ -392,8 +393,8 @@ class TypeClassifier:
                 start = lineno - 1
                 end = end_lineno
                 return "\n".join(lines[start:end])
-        except Exception:
-            pass
+        except Exception as e:
+            logging.getLogger(__name__).debug("definition抽出に失敗: %s", e)
         return ""
 
     def _extract_type_alias_docstring(self, node: ast.TypeAlias, source_code: str) -> str | None:

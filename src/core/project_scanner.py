@@ -18,7 +18,7 @@ class ValidationStats(BaseModel):
     """検証統計情報"""
 
     target_dirs_count: int
-    output_dir: str
+    output_dir: Path
 
 
 class ValidationResult(BaseModel):
@@ -138,7 +138,7 @@ class ProjectScanner:
             warnings=[],
             stats=ValidationStats(
                 target_dirs_count=len(target_dirs),
-                output_dir=str(absolute_paths["output_dir"]),
+                output_dir=absolute_paths["output_dir"],
             ),
         )
 

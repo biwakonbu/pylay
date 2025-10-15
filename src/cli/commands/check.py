@@ -94,7 +94,7 @@ def check(
         # config.target_dirsが複数ある場合は、すべてのディレクトリを処理
         target_paths = [Path(d) for d in config.target_dirs] if config.target_dirs else [Path.cwd()]
 
-    # 除外パターンをconfigから取得（空リストの場合は None に変換）
+    # 除外パターンをconfigから取得(空リストの場合は None に変換)
     exclude_patterns = config.exclude_patterns or None
 
     # 複数のターゲットディレクトリがある場合は通知
@@ -157,7 +157,7 @@ def _run_type_analysis(target_path: Path, *, verbose: bool, exclude_patterns: li
     Args:
         target_path: 解析対象のパス
         verbose: 詳細情報を表示するかどうか
-        exclude_patterns: 除外するパターン（glob形式）
+        exclude_patterns: 除外するパターン(glob形式)
 
     Returns:
         None

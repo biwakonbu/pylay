@@ -116,7 +116,7 @@ class DependencyExtractionError(AnalysisError):
 
         Args:
             message: エラーメッセージ
-            file_path: エラーが発生したファイルパス（オプション）
+            file_path: エラーが発生したファイルパス(オプション)
         """
         super().__init__(message, file_path)
 

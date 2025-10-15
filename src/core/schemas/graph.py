@@ -16,7 +16,6 @@ from src.core.schemas.types import (
     NodeId,
     NodeType,
     QualifiedName,
-    Weight,
 )
 
 
@@ -96,7 +95,7 @@ class GraphEdge(BaseModel):
     source: NodeId
     target: NodeId
     relation_type: RelationType
-    weight: Weight = Field(default=Weight(1.0))  # 0.0から1.0の範囲
+    weight: float = Field(default=1.0)  # Weight型として扱われ、TypeAdapterで検証される
     attributes: NodeAttributes | None = None
     metadata: GraphMetadata | None = None
 

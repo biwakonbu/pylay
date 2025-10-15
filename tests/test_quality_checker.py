@@ -369,7 +369,7 @@ x = foo()
         """不正な閾値設定の処理テスト"""
         from src.core.schemas.pylay_config import LevelThresholds
 
-        # 不正な閾値（合計が1.0を超える）を設定
+        # 不正な閾値(合計が1.0を超える)を設定
         invalid_config = PylayConfig(
             target_dirs=["src"],
             quality_check=QualityCheckConfig(

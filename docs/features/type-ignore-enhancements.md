@@ -156,7 +156,7 @@ patterns:
 
 #### 4.2 プロジェクト固有のルール
 
-```yaml
+```toml
 # pyproject.toml
 [tool.pylay.ignore_checker]
 # 許容するパターン

@@ -12,7 +12,7 @@
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -37,6 +37,18 @@ from .types import (
 DEFAULT_OUTPUT_PATH = "./docs"
 
 
+class DocumentGeneratorKwargs(TypedDict, total=False):
+    """
+    DocumentGeneratorService.generate_documentのキーワード引数型定義
+
+    将来の拡張機能で具体的なパラメータが追加される際に使用されます。
+    現在は空のTypedDictとして定義し、型安全性を確保します。
+    """
+
+    # 将来の拡張機能用のフィールドをここに定義
+    pass
+
+
 class DocumentGeneratorService(BaseModel):
     """
     ドキュメント生成のサービスクラス
@@ -44,9 +56,8 @@ class DocumentGeneratorService(BaseModel):
     このクラスは、ドキュメント生成処理のビジネスロジックを実装します。
     """
 
-    # DocumentGeneratorProtocolとの互換性を確保（objectを使用）
-    def generate_document(self, config: DocumentConfig, **_kwargs: object) -> GenerationResult:
-        # TODO: Create TypedDict for specific kwargs when concrete implementations are added
+    # DocumentGeneratorProtocolとの互換性を確保（TypedDictを使用）
+    def generate_document(self, config: DocumentConfig, **_kwargs: DocumentGeneratorKwargs) -> GenerationResult:
         """
         ドキュメントを生成します。
 
@@ -261,10 +272,8 @@ class MarkdownBuilderService(BaseModel):
             lines.append("## Table of Contents")
             lines.append("")
             for item in structure.toc:
-                title = item.title
-                level = item.level
-                anchor = title.lower().replace(" ", "-")
-                lines.append(f"{'  ' * (level - 1)}* [{title}](#{anchor})")
+                anchor = item.title.lower().replace(" ", "-")
+                lines.append(f"{'  ' * (item.level - 1)}* [{item.title}](#{anchor})")
             lines.append("")
 
         return "\n".join(lines)

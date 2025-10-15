@@ -39,7 +39,7 @@ class CatalogConfig(GeneratorConfig):
 class TypeDocConfig:
     """型ドキュメントジェネレーターの設定。"""
 
-    # 基本設定（GeneratorConfigから継承せず、独自に定義）
+    # 基本設定(GeneratorConfigから継承せず、独自に定義)
     output_path: Path = field(default=Path("docs/types"))
     include_patterns: list[GlobPattern] = field(default_factory=list)
     exclude_patterns: list[GlobPattern] = field(default_factory=list)

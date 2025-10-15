@@ -453,6 +453,44 @@ def _compute_annotation_bonus(annotation_coverage: float) -> float:
     return annotation_coverage**0.8
 
 
+def _parse_mypy_statistics(output: str) -> dict[str, dict[str, int]] | None:
+    """
+    mypyの統計情報を解析します。
+
+    Args:
+        output: mypyの標準出力
+
+    Returns:
+        パースされた統計情報の辞書、またはNone（統計情報が見つからない場合）
+    """
+    lines = output.split("\n")
+    stats: dict[str, dict[str, int]] = {}
+    current_section = None
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # セクションヘッダーを検出
+        if line.startswith("** ") and line.endswith(" **"):
+            section_name = line[3:-3]  # "** " と " **" を除去
+            current_section = section_name
+            stats[current_section] = {}
+        elif current_section and len(line.split()) >= 2:
+            # 統計データ行をパース
+            parts = line.split()
+            if len(parts) >= 2:
+                try:
+                    key = parts[0]
+                    value = int(parts[1])
+                    stats[current_section][key] = value
+                except (ValueError, IndexError):
+                    continue
+
+    return stats if stats else None
+
+
 def _parse_mypy_output(output: str) -> dict[str, InferResult]:
     """
     mypyの出力を解析して型情報を抽出します。
@@ -505,5 +543,16 @@ def _parse_mypy_output(output: str) -> dict[str, InferResult]:
                 # パースエラーは無視して次の行に進む
                 # ログ出力が必要な場合はここに追加可能
                 continue
+
+    # 統計情報をパース
+    stats = _parse_mypy_statistics(output)
+    if stats:
+        # 統計情報を特別なキー"__stats__"で保存
+        types["__stats__"] = InferResult(
+            variable_name="__stats__",
+            inferred_type=str(stats),
+            confidence=create_confidence_score(1.0),  # 統計情報は常に信頼度1.0
+            line_number=create_line_number(0),
+        )
 
     return types

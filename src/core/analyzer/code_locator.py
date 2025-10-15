@@ -484,7 +484,7 @@ class CodeLocator:
         """未使用型に対する推奨事項を生成
 
         Args:
-            _type_def: 型定義（将来の拡張用、現在は未使用）
+            _type_def: 型定義(将来の拡張用、現在は未使用)
             reason: 未使用の理由
 
         Returns:

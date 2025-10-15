@@ -209,7 +209,7 @@ class QualityReporter:
                     for issue in type_issues[:3]:  # 最大3件表示
                         loc = issue.location
                         if loc:
-                            self.console.print(f"    [dim]Location:[/dim] {loc.file}:{loc.line}")
+                            self.console.print(f"    [dim]位置:[/dim] {loc.file}:{loc.line}")
                             # コードコンテキストを表示
                             if loc.code:
                                 self._print_code_context(issue)
@@ -226,7 +226,7 @@ class QualityReporter:
                 for issue in custom_issues[:5]:  # 最大5件表示
                     loc = issue.location
                     if loc:
-                        self.console.print(f"  [dim]Location:[/dim] {loc.file}:{loc.line}")
+                        self.console.print(f"  [dim]位置:[/dim] {loc.file}:{loc.line}")
                         # コードコンテキストを表示
                         if loc.code:
                             self._print_code_context(issue)
@@ -260,7 +260,7 @@ class QualityReporter:
         # 詳細表示が有効で、位置情報がある場合
         if show_details and issue.location:
             # 位置情報
-            self.console.print(f"[dim]Location: {issue.location.file}:{issue.location.line}[/dim]")
+            self.console.print(f"[dim]位置: {issue.location.file}:{issue.location.line}[/dim]")
             self.console.print()
 
             # コードコンテキスト表示

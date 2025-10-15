@@ -218,8 +218,8 @@ class TestPyprojectConfig:
     def test_pylay_target_dirs(self, pyproject_config: dict) -> None:
         """解析対象ディレクトリが正しく設定されていることを確認."""
         target_dirs = pyproject_config["tool"]["pylay"]["target_dirs"]
-        # コアモジュール、CLI、エントリーポイントスクリプトを対象に限定（外部ライブラリを除外）
-        assert target_dirs == ["src/core", "src/cli", "src/infer_deps.py"]
+        # コアモジュール、CLIを対象に限定（外部ライブラリを除外）
+        assert target_dirs == ["src/core", "src/cli"]
 
     def test_pylay_output_dir(self, pyproject_config: dict) -> None:
         """出力ディレクトリが正しく設定されていることを確認."""

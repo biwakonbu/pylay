@@ -196,7 +196,7 @@ class MypyTypeExtractor:
 
         return nodes, edges
 
-    def extract_complete_dependencies(self, file_path: str, include_mypy: bool = True) -> TypeDependencyGraph:
+    def extract_complete_dependencies(self, file_path: str, *, include_mypy: bool = True) -> TypeDependencyGraph:
         """
         AST抽出とmypy推論を組み合わせた完全な依存抽出。
 

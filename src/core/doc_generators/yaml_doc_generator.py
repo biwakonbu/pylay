@@ -55,7 +55,7 @@ class YamlDocGenerator(DocumentGenerator):
         Args:
             output_path: 出力先ファイルパス
             **kwargs: 追加パラメータ
-                spec: 型仕様オブジェクト（TypeSpec | TypeRoot）
+                spec: 型仕様オブジェクト (TypeSpec | TypeRoot)
 
         Raises:
             MissingSpecError: specが指定されていない場合

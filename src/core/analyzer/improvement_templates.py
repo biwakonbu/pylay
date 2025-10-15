@@ -238,7 +238,7 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
         if var_lower in ("dir", "directory", "dirpath") or var_lower.endswith(("_dir", "_directory", "_dirpath")):
             return PYDANTIC_TYPES["dirpath"]
         # 機密情報
-        if "password" in var_lower or "secret" in var_lower or "token" in var_lower or "api_key" in var_lower:
+        if any(keyword in var_lower for keyword in ("password", "secret", "token", "api_key")):
             return PYDANTIC_TYPES["secret"]
         # UUID(明確なパターンのみ)
         if var_lower in ("uuid", "guid") or var_lower.endswith(("_uuid", "_guid")):
@@ -247,7 +247,7 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
     # int型の場合
     elif primitive_type == "int":
         # 正の整数
-        if "count" in var_lower or "num" in var_lower or "size" in var_lower or "length" in var_lower:
+        if any(keyword in var_lower for keyword in ("count", "num", "size", "length")):
             return PYDANTIC_TYPES["positive_int"]
         # 非負整数(インデックス、深度等)
         if "index" in var_lower or "depth" in var_lower or "level" in var_lower:
@@ -256,7 +256,7 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
     # float型の場合
     elif primitive_type == "float":
         # 正の浮動小数点数
-        if "score" in var_lower or "rate" in var_lower or "ratio" in var_lower or "percentage" in var_lower:
+        if any(keyword in var_lower for keyword in ("score", "rate", "ratio", "percentage")):
             return PYDANTIC_TYPES["positive_float"]
         # 非負浮動小数点数
         if "weight" in var_lower or "distance" in var_lower:

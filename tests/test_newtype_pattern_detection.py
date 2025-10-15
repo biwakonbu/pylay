@@ -11,13 +11,14 @@ import pytest
 from src.core.analyzer.type_classifier import TypeClassifier
 
 
+@pytest.fixture
+def classifier() -> TypeClassifier:
+    """TypeClassifierインスタンスを作成"""
+    return TypeClassifier()
+
+
 class TestNewTypePatternDetection:
     """NewType + ファクトリ関数パターンの検出テスト"""
-
-    @pytest.fixture  # type: ignore[misc]
-    def classifier(self) -> TypeClassifier:
-        """TypeClassifierインスタンスを作成"""
-        return TypeClassifier()
 
     def test_newtype_with_create_factory(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """NewType + create_*ファクトリ関数のパターンを検出（Level 2）"""
@@ -70,7 +71,7 @@ class TestNewTypePatternDetection:
         assert email_types[0].category == "newtype_with_factory"
 
     def test_newtype_without_factory(self, classifier: TypeClassifier, tmp_path: Path) -> None:
-        """ファクトリ関数なしのNewTypeパターンを検出（Level 1）"""
+        """ファクトリ関数なしのNewTypeパターンを検出 (Level 1)"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
             dedent("""

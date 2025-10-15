@@ -59,7 +59,9 @@ class OutputPathManager:
         else:
             output_dir = base_output_dir
 
-        yaml_file = output_dir / f"{source_file.stem}.types.yaml"  # _types を削除し、.types.yaml に変更
+        yaml_file = (
+            output_dir / f"{source_file.stem}.types.yaml"
+        )  # ソースファイル名に.types.yaml拡張子を付与したYAMLファイルパスを生成
         yaml_file.parent.mkdir(parents=True, exist_ok=True)
         return yaml_file
 

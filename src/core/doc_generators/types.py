@@ -13,9 +13,7 @@
 from pathlib import Path
 from typing import Annotated, Any, TypedDict
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field
-
-from src.core.schemas.types import PositiveInt
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, PositiveInt
 
 
 def _validate_output_path(v: str | Path | None) -> str | Path | None:
@@ -122,7 +120,7 @@ class DocumentConfig(BaseModel):
     template_name: TemplateName | None = Field(default=None, description="使用するテンプレート名")
     include_toc: bool = Field(default=True, description="目次を含めるかどうか")
     include_code_blocks: bool = Field(default=True, description="コードブロックを含めるかどうか")
-    max_depth: int = Field(gt=0, default=3, description="ドキュメントの最大深さ")
+    max_depth: PositiveInt = Field(default=3, description="ドキュメントの最大深さ")
     encoding: str = Field(default="utf-8", description="出力ファイルのエンコーディング")
 
     model_config = ConfigDict(frozen=True)
@@ -136,7 +134,7 @@ class TypeInspectionConfig(BaseModel):
     """
 
     skip_types: list[TypeName] = Field(default_factory=list, description="スキップする型のリスト")
-    max_inspection_depth: PositiveInt = Field(default=PositiveInt(5), description="検査の最大深さ")
+    max_inspection_depth: int = Field(default=5, ge=1, description="検査の最大深さ")
     include_private_types: bool = Field(default=False, description="プライベート型を含めるかどうか")
     include_builtin_types: bool = Field(default=False, description="組み込み型を含めるかどうか")
 
@@ -150,11 +148,11 @@ class MarkdownGenerationConfig(BaseModel):
     このクラスは、マークダウン生成処理の設定を管理します。
     """
 
-    section_level: PositiveInt = Field(default=PositiveInt(1), description="セクションの見出しレベル")
+    section_level: int = Field(default=1, ge=1, description="セクションの見出しレベル")
     include_toc: bool = Field(default=True, description="目次を含めるかどうか")
     include_code_syntax: bool = Field(default=True, description="コード構文ハイライトを含めるかどうか")
     code_language: str = Field(default="python", description="コードブロックの言語指定")
-    max_code_lines: PositiveInt | None = Field(default=None, description="コードブロックの最大行数(Noneで無制限)")
+    max_code_lines: int | None = Field(default=None, ge=1, description="コードブロックの最大行数(Noneで無制限)")
     include_type_hints: bool = Field(default=True, description="型ヒントを含めるかどうか")
 
     model_config = ConfigDict(frozen=True)

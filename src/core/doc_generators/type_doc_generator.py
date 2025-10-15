@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from src.core.schemas.graph import TypeDependencyGraph
+from src.core.schemas.types import LayerName, MethodName, TypeName
 
 from .base import DocumentGenerator
 from .config import TypeDocConfig
@@ -39,12 +40,10 @@ class LayerDocGenerator(DocumentGenerator):
 
         super().__init__(filesystem=fs_typed, markdown_builder=md_typed)
         self.config = config or TypeDocConfig()
-        # skip_types が設定されていない場合はデフォルト値を使用
-        skip_types: set[str] = getattr(self.config, "skip_types", set())
-        # layer_methods が設定されていない場合はデフォルト値を使用
-        layer_methods: dict[str, str] = getattr(self.config, "layer_methods", {})
-        self.inspector = TypeInspector(skip_types=skip_types)
-        self.layer_methods = layer_methods
+        self._skip_types: set[TypeName] = getattr(self.config, "skip_types", set())
+        self._layer_methods: dict[LayerName, MethodName] = getattr(self.config, "layer_methods", {})
+        self.inspector = TypeInspector(skip_types=self._skip_types)
+        self.layer_methods = self._layer_methods
 
     def generate(
         self,
@@ -179,7 +178,7 @@ class LayerDocGenerator(DocumentGenerator):
             )
             self.md.code_block("python", code_example).line_break()
 
-    def _generate_type_sections(self, layer: str, types: dict[str, type[Any]] | list[type[Any]]) -> None:
+    def _generate_type_sections(self, layer: LayerName, types: dict[str, type[Any]] | list[type[Any]]) -> None:
         """Generate documentation sections for all types.
 
         Args:
@@ -199,7 +198,7 @@ class LayerDocGenerator(DocumentGenerator):
                     continue
                 self._generate_single_type_section(type_cls.__name__, type_cls, layer)
 
-    def _generate_single_type_section(self, name: str, type_cls: type[Any], layer: str) -> None:
+    def _generate_single_type_section(self, name: TypeName, type_cls: type[Any], layer: LayerName) -> None:
         """Generate documentation section for a single type.
 
         Args:
@@ -323,7 +322,8 @@ class LayerDocGenerator(DocumentGenerator):
         self.md.bullet_point(f"ノード数: {len(graph.nodes)}")
         self.md.bullet_point(f"エッジ数: {len(graph.edges)}")
         if graph.metadata:
-            self.md.bullet_point(f"抽出方法: {graph.metadata.get('extraction_method', 'unknown')}")
+            extraction_method = graph.metadata.custom_fields.get("extraction_method", "unknown")
+            self.md.bullet_point(f"抽出方法: {extraction_method}")
         self.md.line_break()
 
         # 循環検出

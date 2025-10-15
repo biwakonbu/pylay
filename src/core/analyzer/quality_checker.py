@@ -206,7 +206,7 @@ class QualityChecker:
 
             # 位置情報を含むQualityIssueを作成
             location = CodeLocation(
-                file=detail.location.file,  # type: ignore[assignment]
+                file=Path(detail.location.file),
                 line=detail.location.line,
                 column=detail.location.column,
                 context_before=detail.location.context_before,

@@ -39,7 +39,7 @@ class TestNewTypeEdgeCases:
             """),
         )
 
-        # エラーにならないこと（空のリストを返す）
+        # エラーにならないこと(空のリストを返す)
         results = classifier.classify_file(test_file)
         # 構文エラーがあってもregexパターンで検出される可能性がある
         assert isinstance(results, list)

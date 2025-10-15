@@ -8,10 +8,10 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 import ast
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    import pydot
+    pass  # type: ignore[unused-import]
 
 import networkx as nx
 
@@ -273,10 +273,10 @@ def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path:
         # NetworkXグラフをpydotグラフに変換
         import networkx.drawing.nx_pydot as nx_pydot
 
-        pydot_graph = cast("pydot.Dot", nx_pydot.to_pydot(nx_graph))
+        pydot_graph = nx_pydot.to_pydot(nx_graph)
 
-        # ノードの色を設定（型によって異なる色）
-        for node in pydot_graph.get_node_list():
+        # ノードの色を設定(型によって異なる色)
+        for node in pydot_graph.get_nodes():  # type: ignore[attr-defined]
             node_name = node.get_name().strip('"')
             node_data = nx_graph.nodes.get(node_name, {})
             node_type = node_data.get("type", "unknown")
@@ -291,7 +291,7 @@ def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path:
                 node.set_color("lightgray")
 
         # エッジの色を設定（関係によって異なる色）
-        for edge in pydot_graph.get_edge_list():
+        for edge in pydot_graph.get_edges():  # type: ignore[attr-defined]
             edge_data = nx_graph.edges.get((edge.get_source().strip('"'), edge.get_destination().strip('"')))
             if edge_data:
                 # エッジ属性の正規化: relation_type を優先し、
@@ -309,12 +309,12 @@ def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path:
                     edge.set_color("black")
 
         # レイアウトを設定
-        pydot_graph.set_rankdir("TB")  # 上から下
-        pydot_graph.set_size("8,6")  # サイズ設定
+        pydot_graph.set("rankdir", "TB")  # type: ignore[attr-defined] # 上から下
+        pydot_graph.set("size", "8,6")  # type: ignore[attr-defined] # サイズ設定
 
         # 画像を保存
         pydot_graph.write_png(output_path)
-        print(f"依存関係グラフを {output_path} に保存しました。")
+        logger.info("依存関係グラフを %s に保存しました", output_path)
 
     except ImportError as e:
         logger.warning("Graphviz/pydot が未インストールのため視覚化をスキップします: %s", e)

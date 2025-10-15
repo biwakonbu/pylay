@@ -587,7 +587,7 @@ class DocstringAnalyzerService(BaseModel):
 
         # レベル別平均行数の計算（NonNegativeIntとfloatを分離）
         by_level_avg_lines: dict[TypeLevel, float] = {}
-        for level in by_level:
+        for level in by_level:  # level is TypeLevel
             stats = by_level[level]
             avg_lines = stats["lines"] / stats["documented"] if stats["documented"] > 0 else 0.0
             by_level_avg_lines[level] = avg_lines

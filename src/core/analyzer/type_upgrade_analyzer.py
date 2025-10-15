@@ -229,7 +229,7 @@ class TypeUpgradeAnalyzer:
 
         # 被参照0の型は調査対象（削除ではない）
         if usage_count == 0:
-            reasons.append("定義されているが使用されていません。以下を確認してください：")
+            reasons.append("定義されているが使用されていません。以下を確認してください:")
             reasons.append("  1. 実装途中か？")
             reasons.append("  2. 既存のprimitive型使用箇所を置き換えるべきか？")
             reasons.append("  3. 設計意図（将来の拡張性等）を確認")

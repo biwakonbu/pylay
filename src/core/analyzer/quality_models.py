@@ -44,10 +44,10 @@ class QualityIssue(BaseModel):
     suggestion: str = Field(description="簡単な解決策の提案")
     improvement_plan: str = Field(description="詳細な改善プラン")
     # グルーピング用の追加情報
-    recommended_type: str | None = Field(default=None, description="推奨される型（Pydantic型など）")
+    recommended_type: str | None = Field(default=None, description="推奨される型 (Pydantic型など)")
     primitive_type: str | None = Field(default=None, description="検出されたprimitive型")
-    # 優先度情報（自動計算）
-    priority_score: int = Field(default=0, description="優先度スコア（低いほど優先度高）")
+    # 優先度情報 (自動計算)
+    priority_score: int = Field(default=0, description="優先度スコア (低いほど優先度高)")
     impact_score: int = Field(default=1, description="影響度スコア（高いほど影響大）")
     difficulty_score: int = Field(default=1, description="修正難易度（低いほど簡単）")
 
@@ -61,7 +61,7 @@ class QualityCheckResult(BaseModel):
     warning_count: int = Field(ge=0, description="警告数")
     advice_count: int = Field(ge=0, description="アドバイス数")
     has_errors: bool = Field(description="エラーが存在するか")
-    overall_score: Annotated[float, Field(ge=0.0, le=1.0)] = Field(description="全体スコア（0.0〜1.0）")
+    overall_score: Annotated[float, Field(ge=0.0, le=1.0)] = Field(description="全体スコア (0.0〜1.0)")
 
     # 問題リスト
     issues: list[QualityIssue] = Field(default_factory=list, description="検出された問題リスト")
