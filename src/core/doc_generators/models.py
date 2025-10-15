@@ -11,7 +11,6 @@
 """
 
 import time
-from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -45,11 +44,8 @@ class DocumentGeneratorService(BaseModel):
     このクラスは、ドキュメント生成処理のビジネスロジックを実装します。
     """
 
-    # DocumentGeneratorProtocolとの互換性のため、より具体的な型 (Mapping[str, object]) を使用
-    # プロトコルはAnyを要求するが、実装では型安全性を優先
-    def generate_document(  # type: ignore[override]
-        self, config: DocumentConfig, **_kwargs: Mapping[str, object]
-    ) -> GenerationResult:
+    # DocumentGeneratorProtocolとの互換性を確保（objectを使用）
+    def generate_document(self, config: DocumentConfig, **_kwargs: object) -> GenerationResult:
         # TODO: Create TypedDict for specific kwargs when concrete implementations are added
         """
         ドキュメントを生成します。

@@ -39,7 +39,7 @@ class DocumentGeneratorProtocol(Protocol):
     """
 
     @abstractmethod
-    def generate_document(self, config: DocumentConfig, **kwargs: Any) -> GenerationResult:
+    def generate_document(self, config: DocumentConfig, **kwargs: object) -> GenerationResult:
         """
         ドキュメントを生成します。
 
@@ -54,7 +54,7 @@ class DocumentGeneratorProtocol(Protocol):
 
     @abstractmethod
     def generate_from_types(
-        self, types: dict[TypeName, type[Any]], output_path: str | Path, **kwargs: Any
+        self, types: dict[TypeName, type[Any]], output_path: str | Path, **kwargs: object
     ) -> GenerationResult:
         """
         型定義からドキュメントを生成します。
@@ -71,7 +71,7 @@ class DocumentGeneratorProtocol(Protocol):
 
     @abstractmethod
     def generate_from_graph(
-        self, graph: TypeDependencyGraph, output_path: str | Path, **kwargs: Any
+        self, graph: TypeDependencyGraph, output_path: str | Path, **kwargs: object
     ) -> GenerationResult:
         """
         依存関係グラフからドキュメントを生成します。
