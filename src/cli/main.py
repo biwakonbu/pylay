@@ -312,7 +312,7 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
 
             # 推論された型の情報を表示
             if graph.nodes:
-                table = Table(title="🔍 推論された型情報", show_header=True)
+                table = Table(title="🔍 Inferred Type Information", show_header=True)
                 table.add_column("モジュール", style="cyan", width=30)
                 table.add_column("型", style="white")
 

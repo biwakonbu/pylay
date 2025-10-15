@@ -85,7 +85,7 @@ def run_docs(input_file: str, output_dir: str | None = None, format_type: str = 
 
         else:
             # Multiple files output (not implemented yet)
-            console.rule("[bold yellow]警告[/bold yellow]")
+            console.rule("[bold yellow]Warning[/bold yellow]")
             console.print("[yellow]複数ファイル形式は未実装のため、単一ファイル形式を使用します[/yellow]")
             output_file = output_path / "types.md"
             generator.generate(output_file, spec=spec)

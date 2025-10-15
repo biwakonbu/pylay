@@ -111,7 +111,7 @@ def check(
         if focus is None:
             # 全てのチェックを実行
             console.print()
-            console.rule("[bold cyan]🔍 プロジェクト品質チェック[/bold cyan]")
+            console.rule("[bold cyan]🔍 Project Quality Check[/bold cyan]")
             console.print()
 
             # 1. 型定義レベル統計
@@ -138,7 +138,7 @@ def check(
             _run_quality_check(target_path, config, verbose=verbose, exclude_patterns=exclude_patterns)
 
             console.print()
-            console.rule("[bold cyan]✅ チェック完了[/bold cyan]")
+            console.rule("[bold cyan]✅ Check Complete[/bold cyan]")
             console.print()
 
         elif focus == "types":

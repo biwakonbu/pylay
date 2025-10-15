@@ -605,7 +605,7 @@ def _process_single_file(
                 types_dict[type_name] = type_info
 
     if not types_dict:
-        console.rule("[bold red]エラー[/bold red]")
+        console.rule("[bold red]Error[/bold red]")
         console.print("[red]変換可能な型がモジュール内に見つかりませんでした[/red]")
         console.print(
             "[dim]Pydantic/Enum/dataclass/type alias/NewType のいずれかが定義されていることを確認してください[/dim]"
