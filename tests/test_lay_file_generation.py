@@ -107,10 +107,20 @@ User:
         old_file1 = output_dir / "old1.lay.py"
         old_file2 = output_dir / "old2.lay.py"
         old_file1.write_text(
-            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n次回の pylay types 実行時に削除・再生成されます\n"""'
+            """"""
+            """
+pylay自動生成ファイル
+このファイルを直接編集しないでください
+次回の pylay types 実行時に削除・再生成されます
+"""
         )
         old_file2.write_text(
-            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n次回の pylay types 実行時に削除・再生成されます\n"""'
+            """"""
+            """
+pylay自動生成ファイル
+このファイルを直接編集しないでください
+次回の pylay types 実行時に削除・再生成されます
+"""
         )
 
         # クリーン再生成前に削除

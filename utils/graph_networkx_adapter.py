@@ -263,12 +263,11 @@ class NetworkXGraphAdapter:
             if not edges_from_source:
                 continue
             edge = edges_from_source[0]  # 空リストチェック済みのため安全にアクセス
-            if edge:
-                stats[f"{source}->{target}"] = {
-                    "relation_type": edge.relation_type,
-                    "weight": edge.weight,
-                    "is_strong": edge.is_strong_dependency(),
-                    "strength": edge.get_dependency_strength(),
-                }
+            stats[f"{source}->{target}"] = {
+                "relation_type": edge.relation_type,
+                "weight": edge.weight,
+                "is_strong": edge.is_strong_dependency(),
+                "strength": edge.get_dependency_strength(),
+            }
 
         return stats

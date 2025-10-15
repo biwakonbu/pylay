@@ -59,9 +59,6 @@ from src.core.schemas.types import (
     create_line_number,
 )
 
-# モジュールレベル定数
-DEFAULT_UNTYPED = "Any"  # アノテーションがない場合のデフォルト値（将来設定可能にする可能性あり）
-
 
 class TypeInferenceAnalyzer(Analyzer):
     """

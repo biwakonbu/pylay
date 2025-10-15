@@ -99,7 +99,7 @@ def check(
 
     # 複数のターゲットディレクトリがある場合は通知
     if len(target_paths) > 1:
-        console.print(f"[cyan]INFO: {len(target_paths)}個のターゲットディレクトリを処理します[/cyan]")
+        console.print(f"[cyan]INFO: {len(target_paths)} target directories to process[/cyan]")
         console.print()
 
     # 各ターゲットディレクトリに対してチェックを実行
@@ -115,7 +115,7 @@ def check(
             console.print()
 
             # 1. 型定義レベル統計
-            console.print("[bold blue]1/3: 型定義レベル統計[/bold blue]")
+            console.print("[bold blue]1/3: Type Definition Level Statistics[/bold blue]")
             console.print()
             _run_type_analysis(target_path, verbose=verbose, exclude_patterns=exclude_patterns)
 
@@ -124,7 +124,7 @@ def check(
             console.print()
 
             # 2. type-ignore 診断
-            console.print("[bold yellow]2/3: type-ignore 診断[/bold yellow]")
+            console.print("[bold yellow]2/3: Type Ignore Diagnostics[/bold yellow]")
             console.print()
             _run_type_ignore_analysis(target_path, verbose=verbose, exclude_patterns=exclude_patterns)
 
@@ -133,7 +133,7 @@ def check(
             console.print()
 
             # 3. 品質チェック
-            console.print("[bold green]3/3: 品質チェック[/bold green]")
+            console.print("[bold green]3/3: Quality Check[/bold green]")
             console.print()
             _run_quality_check(target_path, config, verbose=verbose, exclude_patterns=exclude_patterns)
 
@@ -164,7 +164,7 @@ def _run_type_analysis(target_path: Path, *, verbose: bool, exclude_patterns: li
     """
     from ...core.analyzer.type_reporter import TypeReporter
 
-    console.print(f"🔍 解析中: {target_path}")
+    console.print(f"🔍 Analyzing: {target_path}")
 
     analyzer: TypeLevelAnalyzer = TypeLevelAnalyzer()
 
@@ -205,7 +205,7 @@ def _run_type_ignore_analysis(target_path: Path, *, verbose: bool, exclude_patte
     """
     from ...core.analyzer.type_ignore_reporter import TypeIgnoreReporter
 
-    console.print(f"🔍 解析中: {target_path}")
+    console.print(f"🔍 Analyzing: {target_path}")
 
     analyzer: TypeIgnoreAnalyzer = TypeIgnoreAnalyzer()
 
@@ -238,7 +238,7 @@ def _run_quality_check(
     from ...core.analyzer.code_locator import CodeLocator
     from ...core.analyzer.quality_reporter import QualityReporter
 
-    console.print(f"🔍 解析中: {target_path}")
+    console.print(f"🔍 Analyzing: {target_path}")
 
     # 型レベル解析を実行
     analyzer: TypeLevelAnalyzer = TypeLevelAnalyzer()

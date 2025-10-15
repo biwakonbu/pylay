@@ -56,7 +56,7 @@ class DocumentGeneratorService(BaseModel):
     このクラスは、ドキュメント生成処理のビジネスロジックを実装します。
     """
 
-    # DocumentGeneratorProtocolとの互換性を確保（TypedDictを使用）
+    # DocumentGeneratorProtocolとの互換性を確保（objectを使用）
     def generate_document(self, config: DocumentConfig, **_kwargs: DocumentGeneratorKwargs) -> GenerationResult:
         """
         ドキュメントを生成します。

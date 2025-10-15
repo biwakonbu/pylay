@@ -281,7 +281,7 @@ class PylayConfig(BaseModel):
             pyproject_path = None
 
             # ルートディレクトリまで遡る
-            for parent in [current, *list(current.parents)]:
+            for parent in [current, *current.parents]:
                 candidate = parent / "pyproject.toml"
                 if candidate.exists():
                     pyproject_path = candidate

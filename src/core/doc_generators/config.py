@@ -86,4 +86,4 @@ class TypeDocConfig:
         import warnings
 
         warnings.warn("output_directoryは非推奨です。output_pathを使用してください。", DeprecationWarning, stacklevel=2)
-        object.__setattr__(self, "output_path", value)
+        self.output_path = value

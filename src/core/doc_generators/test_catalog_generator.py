@@ -88,7 +88,7 @@ class CatalogGenerator(DocumentGenerator):
             for func_name, func in test_functions:
                 self._generate_test_function_entry(func_name, func, test_file)
 
-        except (ImportError, RecursionError, Exception) as e:
+        except Exception as e:
             error_type = type(e).__name__
             self.md.paragraph(f"⚠️ モジュールの処理に失敗 ({error_type}): {str(e)[:100]}...").line_break()
 

@@ -458,7 +458,7 @@ class TypeClassifier:
         match = re.search(r"@target-level:\s*(level[123])", docstring)
         if match:
             level = match.group(1)
-            # 型ガードで検証（辞書で簡潔に）
+            # 型ガードで検証(辞書で簡潔に)
             level_map: dict[str, Literal["level1", "level2", "level3"]] = {
                 "level1": "level1",
                 "level2": "level2",

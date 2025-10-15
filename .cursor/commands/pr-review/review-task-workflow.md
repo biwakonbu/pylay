@@ -239,7 +239,6 @@ Tasks are automatically categorized for custom verification:
   }
 }
 ```
-
 - `enable_auto_resolve`: true で自動解決、false で手動解決（`reviewtask resolve` を使用）
 - `verifiers` のキーは検出されたタスクタイプにマップされます（例: `build` ← `build-task`）
 

@@ -245,19 +245,19 @@ class CodeLocator:
     def _count_type_usage(
         self,
         type_name: str,
-        type_definitions: list[TypeDefinition],
+        type_definitions: list[TypeDefinition] | dict[str, TypeDefinition],
     ) -> int:
         """型の使用回数をカウント
 
         Args:
             type_name: カウント対象の型名
-            type_definitions: 型定義リスト
+            type_definitions: 型定義リストまたは辞書
 
         Returns:
             使用回数
         """
         # 辞書に変換
-        type_dict = {td.name: td for td in type_definitions}
+        type_dict = {td.name: td for td in type_definitions} if isinstance(type_definitions, list) else type_definitions
 
         # 簡易実装:他の型定義内での使用をカウント
         count = 0
