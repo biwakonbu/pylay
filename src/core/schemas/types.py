@@ -609,9 +609,9 @@ class GraphMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     version: Version = Field(default="1.0", description="グラフのバージョン")
-    created_at: Timestamp | None = Field(default=None, description="作成日時（ISO 8601形式）")
+    created_at: Timestamp | None = Field(default=None, description="作成日時(ISO 8601形式)")
     cycles: list[list[NodeId]] = Field(default_factory=list, description="検出された循環依存のリスト")
-    statistics: StatisticsMap = Field(default_factory=dict, description="統計情報（ノード数、エッジ数など）")
+    statistics: StatisticsMap = Field(default_factory=dict, description="統計情報(ノード数、エッジ数など)")
     # NOTE: 設計上、拡張用のカスタムフィールドを格納するためドメイン型エイリアスを使用
     # プラグインや将来の機能拡張で任意のメタデータを追加できるよう、
     # CustomFields型を使用
