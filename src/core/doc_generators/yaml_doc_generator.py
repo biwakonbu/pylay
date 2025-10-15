@@ -24,9 +24,23 @@ from .markdown_builder import MarkdownBuilder
 class MissingSpecError(ValueError):
     """specパラメータが指定されていない場合のエラー。"""
 
+    def __init__(self, message: str | None = None) -> None:
+        super().__init__(
+            message
+            or "specパラメータが指定されていません。Mapping | TypeRoot | TypeSpec のいずれかを指定してください。"
+        )
+
 
 class InvalidSpecError(TypeError):
     """無効なspecタイプが指定された場合のエラー。"""
+
+    def __init__(self, obj_type: str | None = None) -> None:
+        detail = (
+            f"未対応のspecタイプです: {obj_type}。TypeSpec | TypeRoot のみサポートされています。"
+            if obj_type
+            else "無効なspecが指定されました。"
+        )
+        super().__init__(detail)
 
 
 class YamlDocGenerator(DocumentGenerator):
@@ -49,9 +63,7 @@ class YamlDocGenerator(DocumentGenerator):
         """
         spec_obj = kwargs.get("spec")
         if spec_obj is None:
-            raise MissingSpecError(
-                "specパラメータが指定されていません。Mapping | TypeRoot | TypeSpec のいずれかを指定してください。"
-            )
+            raise MissingSpecError()
 
         # 単一の正規化ステップ: Mappingの場合、"types"またはroot type fieldがある場合TypeRoot、そうでなければTypeSpec
         if isinstance(spec_obj, Mapping):
@@ -61,10 +73,7 @@ class YamlDocGenerator(DocumentGenerator):
             else:
                 spec_obj = TypeSpec.model_validate(spec_obj)
         elif not isinstance(spec_obj, (TypeSpec, TypeRoot)):
-            obj_type = type(spec_obj).__name__
-            raise InvalidSpecError(
-                f"未対応のspecタイプです: {obj_type}。TypeSpec | TypeRoot のみサポートされています。"
-            )
+            raise InvalidSpecError(type(spec_obj).__name__)
 
         self.md = MarkdownBuilder()
 
@@ -172,9 +181,7 @@ def generate_yaml_docs(spec: TypeSpec | TypeRoot, output_dir: str | None = None)
             output_dir = "docs/pylay-types/documents"
 
     config = TypeDocConfig(output_path=Path(output_dir))
-    # filesystem が設定されていない場合はデフォルト値を使用
-    filesystem = getattr(config, "filesystem", None)
-    generator = YamlDocGenerator(filesystem=filesystem)  # 依存注入
+    generator = YamlDocGenerator(filesystem=config.filesystem)  # 依存注入
 
     # TypeRoot の場合、最初の型を使用
     from src.core.schemas.yaml_spec import TypeRoot

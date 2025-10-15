@@ -90,7 +90,7 @@ class UserService:
         type_def = TypeDefinition(
             name="UserId",
             level="level1",
-            file_path="src/types.py",
+            file_path="src/core/analyzer/types.py",
             line_number=10,
             definition="type UserId = str",
             category="type_alias",

@@ -10,9 +10,16 @@ from __future__ import annotations
 import ast
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypedDict
 
 from src.core.analyzer.types import TypeDefinition, ValidatedFilePath
+
+
+class DeprecatedImportInfo(TypedDict):
+    """非推奨import情報"""
+
+    deprecated: str
+    recommended: str
 
 
 @dataclass
@@ -127,7 +134,7 @@ class DeprecatedTypingDetail:
     """
 
     location: CodeLocation
-    imports: list[dict[str, str]]  # [{"deprecated": "List", "recommended": "list"}, ...]
+    imports: list[DeprecatedImportInfo]  # [{"deprecated": "List", "recommended": "list"}, ...]
     suggestion: str
 
 
@@ -238,19 +245,19 @@ class CodeLocator:
     def _count_type_usage(
         self,
         type_name: str,
-        type_definitions: dict[str, TypeDefinition] | list[TypeDefinition],
+        type_definitions: list[TypeDefinition],
     ) -> int:
         """型の使用回数をカウント
 
         Args:
             type_name: カウント対象の型名
-            type_definitions: 型定義辞書またはリスト
+            type_definitions: 型定義リスト
 
         Returns:
             使用回数
         """
         # 辞書に変換
-        type_dict = {td.name: td for td in type_definitions} if isinstance(type_definitions, list) else type_definitions
+        type_dict = {td.name: td for td in type_definitions}
 
         # 簡易実装:他の型定義内での使用をカウント
         count = 0
@@ -741,7 +748,7 @@ class PrimitiveUsageVisitor(ast.NodeVisitor):
                         return first_arg.id
 
             # NewType('X', primitive) または NewType('X', Annotated[...]) 形式
-            # NewTypeはCall/ノードとして解析されるため、ここでは検出しない
+            # NewTypeはCallノードとして解析されるため、ここでは検出しない
 
         # パターン3: NewType(...) 形式(ast.Call)
         if isinstance(annotation, ast.Call):
@@ -955,13 +962,31 @@ class TypeUsageVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
+    def visit_FunctionDef(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        """関数定義を訪問して戻り値アノテーション内の型使用を検出"""
+        # 戻り値アノテーション内のName一致を検出
+        returns = getattr(node, "returns", None)
+        if isinstance(returns, ast.Name) and returns.id == self.target_type:
+            context_before, code, context_after = self._extract_context(node.lineno)
+            location = CodeLocation(
+                file=self.file_path,
+                line=node.lineno,
+                column=getattr(returns, "col_offset", 0),
+                code=code,
+                context_before=context_before,
+                context_after=context_after,
+            )
+            usage = TypeUsageExample(location=location, context=code.strip(), kind="return_type")
+            self.usages.append(usage)
+        self.generic_visit(node)
+
     def _determine_usage_kind(
         self, node: ast.Name
     ) -> Literal["function_argument", "return_type", "variable_annotation", "class_attribute"]:
         """使用種類を判定
 
         Args:
-            node: Name/ノード
+            node: Nameノード
 
         Returns:
             使用種類
@@ -971,8 +996,6 @@ class TypeUsageVisitor(ast.NodeVisitor):
         if parent:
             if isinstance(parent, ast.arg):
                 return "function_argument"
-            elif isinstance(parent, ast.Return):
-                return "return_type"
             elif isinstance(parent, ast.AnnAssign):
                 return "class_attribute"
 

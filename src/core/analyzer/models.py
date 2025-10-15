@@ -101,6 +101,8 @@ class AnalyzerState(BaseModel):
         processing_stack: 処理中ノード（循環参照防止）
     """
 
+    # GraphNode/GraphEdgeがPydanticモデル外のため、arbitrary_types_allowed=Trueが必要
+    # これにより型安全性が低下するが、外部ライブラリ依存のグラフ構造を扱うため許容
     model_config = ConfigDict(frozen=False, extra="forbid", arbitrary_types_allowed=True)
 
     nodes: dict[str, GraphNode] = Field(default_factory=dict)
@@ -310,7 +312,9 @@ class TypeAnalyzerService(BaseModel):
             # ファイルサイズチェック
             file_size = file_path_obj.stat().st_size
             if file_size > config.max_file_size:
-                raise ValueError(f"ファイルサイズが制限を超えています: {file_size} bytes")
+                raise ValueError(
+                    f"ファイルサイズが制限を超えています: size={file_size} bytes > max={config.max_file_size} bytes"
+                )
 
             # ファイル内容の読み込みと解析
             with open(file_path_obj, encoding="utf-8") as f:
@@ -556,8 +560,8 @@ class DocstringAnalyzerService(BaseModel):
         implementation_rate = documented_types / total_types
 
         # docstringの詳細度分類
-        minimal_docstrings = sum(1 for td in type_definitions if td.docstring_lines <= 2 and td.has_docstring)
-        detailed_docstrings = sum(1 for td in type_definitions if td.docstring_lines > 2 and td.has_docstring)
+        minimal_docstrings = sum(1 for td in type_definitions if td.has_docstring and td.docstring_lines <= 2)
+        detailed_docstrings = sum(1 for td in type_definitions if td.has_docstring and td.docstring_lines > 2)
 
         # レベル別統計の計算
         by_level: dict[TypeLevel, dict[str, int]] = {}
@@ -970,8 +974,8 @@ class ProjectAnalyzerService(BaseModel):
 
         for pattern in config.include_patterns:
             for file_path in project_path.rglob(pattern):
-                # 除外パターンチェック
-                if any(exclude in str(file_path) for exclude in config.exclude_patterns):
+                # 除外パターンチェック（globパターン）
+                if any(file_path.match(exclude) for exclude in config.exclude_patterns):
                     continue
 
                 # ファイルサイズチェック

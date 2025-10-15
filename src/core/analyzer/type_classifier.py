@@ -241,7 +241,10 @@ class TypeClassifier:
 
         # NewType定義はスキップ（_detect_newtype_with_factoryで処理）
         if isinstance(node.value, ast.Call):
-            if isinstance(node.value.func, ast.Name) and node.value.func.id == "NewType":
+            func = node.value.func
+            if (isinstance(func, ast.Name) and func.id == "NewType") or (
+                isinstance(func, ast.Attribute) and func.attr == "NewType"
+            ):
                 return None
 
         # Annotated型かつAfterValidatorを含むか確認
@@ -383,10 +386,11 @@ class TypeClassifier:
         """ノードから型定義のコードを抽出"""
         try:
             lines = source_code.splitlines()
-            if hasattr(node, "lineno") and hasattr(node, "end_lineno") and node.end_lineno is not None:  # type: ignore[attr-defined]
-                # hastattrで確認済みなので安全にアクセス可能
-                start = node.lineno - 1  # type: ignore[attr-defined]
-                end = node.end_lineno  # type: ignore[attr-defined]
+            lineno = getattr(node, "lineno", None)
+            end_lineno = getattr(node, "end_lineno", None)
+            if lineno is not None and end_lineno is not None:
+                start = lineno - 1
+                end = end_lineno
                 return "\n".join(lines[start:end])
         except Exception:
             pass

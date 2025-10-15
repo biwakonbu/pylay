@@ -11,50 +11,15 @@ from collections.abc import Callable
 from pathlib import Path
 
 from src.core.analyzer.abc_base import Analyzer
-from src.core.analyzer.exceptions import AnalysisError
+from src.core.analyzer.exceptions import (
+    AnalysisError,
+    InputValidationError,
+    InvalidAnalysisModeError,
+    InvalidInputTypeError,
+)
 from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.types import AnalyzerModeList
-
-
-class InputValidationError(ValueError):
-    """入力検証エラー"""
-
-    def __init__(self, validation_error: Exception) -> None:
-        """
-        InputValidationErrorを初期化します。
-
-        Args:
-            validation_error: 元のバリデーションエラー
-        """
-        super().__init__(f"入力の検証に失敗しました: {validation_error}")
-
-
-class InvalidAnalysisModeError(ValueError):
-    """無効な解析モードエラー"""
-
-    def __init__(self, mode: str, valid_modes: list[str]) -> None:
-        """
-        InvalidAnalysisModeErrorを初期化します。
-
-        Args:
-            mode: 指定された無効なモード
-            valid_modes: 有効なモードのリスト
-        """
-        super().__init__(f"無効な解析モード: {mode}. {', '.join(valid_modes)} のいずれかを指定してください。")
-
-
-class InvalidInputTypeError(TypeError):
-    """無効な入力型エラー"""
-
-    def __init__(self, received_type: type) -> None:
-        """
-        InvalidInputTypeErrorを初期化します。
-
-        Args:
-            received_type: 受け取った型
-        """
-        super().__init__(f"input_pathはPathまたはstrである必要があります。受け取った型: {received_type.__name__}")
 
 
 class FullAnalyzer(Analyzer):

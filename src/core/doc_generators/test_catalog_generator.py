@@ -30,7 +30,7 @@ class CatalogGenerator(DocumentGenerator):
         filesystem_raw = kwargs.pop("filesystem", None)
         markdown_builder_raw = kwargs.pop("markdown_builder", None)
 
-        # 型ヒントに基づくキャスト（実行時チェック不要）
+        # 型ヒントに基づくキャスト(実行時チェック不要)
         filesystem = cast(FileSystemInterface | None, filesystem_raw)
         markdown_builder = cast(MarkdownBuilder | None, markdown_builder_raw)
 
@@ -148,7 +148,7 @@ class CatalogGenerator(DocumentGenerator):
 
         return sorted(filtered_files)
 
-    def _extract_test_functions(self, module: object) -> list[tuple[str, Callable[..., Any]]]:
+    def _extract_test_functions(self, module: object) -> list[tuple[str, Callable[..., None]]]:
         """モジュールからテスト関数とメソッドを抽出する。
 
         Args:

@@ -1253,7 +1253,7 @@ requires-dist = [
     { name = "networkx", marker = "extra == 'viz'", specifier = ">=3.3" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pydantic", specifier = ">=2.8.2" },
-    { name = "pydot", marker = "extra == 'dev'", specifier = ">=3.0.0" },
+    { name = "pydot", marker = "extra == 'dev'", specifier = ">=4.0.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.3" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.0.0" },

@@ -625,7 +625,7 @@ class TestTypeDocConfigBackwardCompatibility:
         # Test getter issues deprecation warning
         with pytest.warns(DeprecationWarning, match="output_directoryは非推奨です。output_pathを使用してください。"):
             directory = config.output_directory
-            assert directory == Path("/test/output")
+        assert directory == Path("/test/output")
 
     def test_output_directory_setter_deprecation_warning(self) -> None:
         """Test that setting output_directory property issues deprecation warning."""
@@ -634,25 +634,25 @@ class TestTypeDocConfigBackwardCompatibility:
         # Test setter issues deprecation warning
         with pytest.warns(DeprecationWarning, match="output_directoryは非推奨です。output_pathを使用してください。"):
             config.output_directory = Path("/new/output")
-            assert config.output_path == Path("/new/output")
+        assert config.output_path == Path("/new/output")
 
     def test_output_directory_alias_functionality(self) -> None:
         """Test that output_directory alias works correctly as getter/setter."""
         config = TypeDocConfig(output_path=Path("/initial/output"))
 
         # Test that getter returns current output_path value
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(DeprecationWarning, match="output_directoryは非推奨です。output_pathを使用してください。"):
             assert config.output_directory == Path("/initial/output")
 
         # Test that setter updates output_path value
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(DeprecationWarning, match="output_directoryは非推奨です。output_pathを使用してください。"):
             config.output_directory = Path("/updated/output")
 
         # Verify the underlying output_path was updated
         assert config.output_path == Path("/updated/output")
 
         # Verify getter returns the updated value
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(DeprecationWarning, match="output_directoryは非推奨です。output_pathを使用してください。"):
             assert config.output_directory == Path("/updated/output")
 
     def test_backward_compatibility_with_constructor(self) -> None:
@@ -661,11 +661,11 @@ class TestTypeDocConfigBackwardCompatibility:
         config = TypeDocConfig(output_path=Path("/test/output"))
 
         # Accessing the property should issue warning
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(DeprecationWarning, match="output_directoryは非推奨です。output_pathを使用してください。"):
             _ = config.output_directory
 
         # But setting it should also work
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(DeprecationWarning, match="output_directoryは非推奨です。output_pathを使用してください。"):
             config.output_directory = Path("/new/path")
 
         assert config.output_path == Path("/new/path")

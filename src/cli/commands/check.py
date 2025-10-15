@@ -151,7 +151,7 @@ def check(
             _run_quality_check(target_path, config, verbose=verbose, exclude_patterns=exclude_patterns)
 
 
-def _run_type_analysis(target_path: Path, verbose: bool, exclude_patterns: list[str] | None = None) -> None:
+def _run_type_analysis(target_path: Path, *, verbose: bool, exclude_patterns: list[str] | None = None) -> None:
     """型定義レベル統計を実行
 
     Args:
@@ -192,7 +192,7 @@ def _run_type_analysis(target_path: Path, verbose: bool, exclude_patterns: list[
         console.print(reporter.generate_docstring_recommendations_report(report.docstring_recommendations))
 
 
-def _run_type_ignore_analysis(target_path: Path, verbose: bool, exclude_patterns: list[str] | None = None) -> None:
+def _run_type_ignore_analysis(target_path: Path, *, verbose: bool, exclude_patterns: list[str] | None = None) -> None:
     """type-ignore 診断を実行
 
     Args:
@@ -222,7 +222,7 @@ def _run_type_ignore_analysis(target_path: Path, verbose: bool, exclude_patterns
 
 
 def _run_quality_check(
-    target_path: Path, config: PylayConfig, verbose: bool, exclude_patterns: list[str] | None = None
+    target_path: Path, config: PylayConfig, *, verbose: bool, exclude_patterns: list[str] | None = None
 ) -> None:
     """品質チェックを実行
 

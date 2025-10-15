@@ -106,8 +106,12 @@ User:
         # 既存の.lay.pyファイルを作成（警告ヘッダー付き）
         old_file1 = output_dir / "old1.lay.py"
         old_file2 = output_dir / "old2.lay.py"
-        old_file1.write_text('"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""')
-        old_file2.write_text('"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""')
+        old_file1.write_text(
+            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n次回の pylay types 実行時に削除・再生成されます\n"""'
+        )
+        old_file2.write_text(
+            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n次回の pylay types 実行時に削除・再生成されます\n"""'
+        )
 
         # クリーン再生成前に削除
         deleted = clean_lay_files(output_dir, ".lay.py")
@@ -147,7 +151,9 @@ NewType:
 
         # .lay.pyファイルも作成
         lay_file = output_dir / "types.lay.py"
-        lay_file.write_text('"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""')
+        lay_file.write_text(
+            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n次回の pylay types 実行時に削除・再生成されます\n"""'
+        )
 
         # クリーン再生成実行
         deleted = clean_lay_files(output_dir, ".lay.py")

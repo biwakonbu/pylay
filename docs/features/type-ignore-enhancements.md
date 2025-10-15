@@ -7,10 +7,18 @@
 ## 現在の機能
 
 ```bash
-$ uv run pylay check --focus ignore
+uv run pylay check --focus ignore
 ```
 
-**出力**:
+**出力例**:
+```
+Found 3 type: ignore issues:
+HIGH: src/example.py:15 - Use of Any type in function parameter
+MEDIUM: src/example.py:23 - Unnecessary type ignore for known type
+LOW: src/example.py:45 - Type ignore for complex generic type
+```
+
+**出力内容**:
 - type:ignoreの箇所を検出
 - 優先度判定（HIGH/MEDIUM/LOW）
 - 簡単な原因説明

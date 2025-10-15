@@ -247,7 +247,7 @@ class TypeIgnoreReporter:
         """
         return {"HIGH": "red", "MEDIUM": "yellow", "LOW": "green"}.get(priority, "white")
 
-    def export_json_report(self, issues: list[TypeIgnoreIssue], output_path: str) -> None:
+    def export_json_report(self, issues: list[TypeIgnoreIssue], output_path: Path | str) -> None:
         """
         JSON形式でレポートをエクスポート
 
@@ -257,9 +257,10 @@ class TypeIgnoreReporter:
         """
         import json
 
+        output_path = Path(output_path)
         data = [issue.model_dump() for issue in issues]
 
-        with open(output_path, "w", encoding="utf-8") as f:
+        with output_path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
         msg = f"[bold green]✅ JSONレポートをエクスポートしました: {output_path}"

@@ -71,6 +71,33 @@ def func(y: str) -> bool:
         finally:
             test_file.unlink()
 
+    def test_extract_existing_annotations_skip_untyped_args(self):
+        """アノテーションがない引数はスキップされることを確認"""
+        test_file = Path(__file__).parent / "test_untyped_args.py"
+        test_file.write_text("""
+def func_with_untyped_args(a, b: int, c):
+    return a + b + c
+
+def func_with_typed_args(x: str, y: int) -> bool:
+    return len(x) > y
+""")
+
+        try:
+            config = self._get_test_config()
+            analyzer = TypeInferenceAnalyzer(config)
+            annotations = analyzer.extract_existing_annotations(str(test_file))
+
+            # アノテーション付きの引数のみが含まれる
+            assert "b" in annotations  # b: int
+            assert "x" in annotations  # x: str
+            assert "y" in annotations  # y: int
+
+            # アノテーションなしの引数は含まれない
+            assert "a" not in annotations
+            assert "c" not in annotations
+        finally:
+            test_file.unlink()
+
     def test_infer_from_file(self):
         """ファイルからの推論テスト"""
         test_file = Path(__file__).parent / "test_infer.py"

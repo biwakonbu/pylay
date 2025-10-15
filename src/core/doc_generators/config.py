@@ -66,11 +66,6 @@ class TypeDocConfig:
     )
     filesystem: FileSystemInterface = field(default_factory=lambda: RealFileSystem())
 
-    def __post_init__(self) -> None:
-        """初期化"""
-        # 後方互換性のためのプロパティ（output_directoryがアクセスされた場合のみ警告を発行）
-        pass
-
     @property
     def output_directory(self) -> Path:
         """後方互換性のためのoutput_directoryプロパティ。

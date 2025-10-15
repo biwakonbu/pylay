@@ -47,7 +47,7 @@ class ASTDependencyExtractor:
         self._node_cache.clear()
         self._processing_stack.clear()
 
-    def extract_dependencies(self, file_path: str, include_mypy: bool = False) -> TypeDependencyGraph:
+    def extract_dependencies(self, file_path: str, *, include_mypy: bool = False) -> TypeDependencyGraph:
         """
         指定されたPythonファイルから依存関係を抽出。
 

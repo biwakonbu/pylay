@@ -8,7 +8,10 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 import ast
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    import pydot
 
 import networkx as nx
 
@@ -270,10 +273,10 @@ def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path:
         # NetworkXグラフをpydotグラフに変換
         import networkx.drawing.nx_pydot as nx_pydot
 
-        pydot_graph = nx_pydot.to_pydot(nx_graph)  # type: ignore[attr-defined]
+        pydot_graph = cast("pydot.Dot", nx_pydot.to_pydot(nx_graph))
 
         # ノードの色を設定（型によって異なる色）
-        for node in pydot_graph.get_node_list():  # type: ignore[attr-defined]
+        for node in pydot_graph.get_node_list():
             node_name = node.get_name().strip('"')
             node_data = nx_graph.nodes.get(node_name, {})
             node_type = node_data.get("type", "unknown")
@@ -288,7 +291,7 @@ def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path:
                 node.set_color("lightgray")
 
         # エッジの色を設定（関係によって異なる色）
-        for edge in pydot_graph.get_edge_list():  # type: ignore[attr-defined]
+        for edge in pydot_graph.get_edge_list():
             edge_data = nx_graph.edges.get((edge.get_source().strip('"'), edge.get_destination().strip('"')))
             if edge_data:
                 # エッジ属性の正規化: relation_type を優先し、
@@ -306,8 +309,8 @@ def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path:
                     edge.set_color("black")
 
         # レイアウトを設定
-        pydot_graph.set_rankdir("TB")  # type: ignore[attr-defined] # 上から下
-        pydot_graph.set_size("8,6")  # type: ignore[attr-defined] # サイズ設定
+        pydot_graph.set_rankdir("TB")  # 上から下
+        pydot_graph.set_size("8,6")  # サイズ設定
 
         # 画像を保存
         pydot_graph.write_png(output_path)

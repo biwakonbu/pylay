@@ -62,8 +62,7 @@ def _path_to_module_path(file_path: Path) -> str | None:
 
         # .pyを除去
         if module_parts[-1].endswith(".py"):
-            module_parts_list = [*list(module_parts[:-1]), module_parts[-1][:-3]]
-            module_parts = tuple(module_parts_list)
+            module_parts = (*module_parts[:-1], module_parts[-1][:-3])
 
         return ".".join(module_parts)
     except (ValueError, IndexError):

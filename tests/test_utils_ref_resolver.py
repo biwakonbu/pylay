@@ -118,7 +118,7 @@ class TestRefResolver:
         user_spec = DictTypeSpec(name="User", type="dict", properties={"id": TypeSpec(name="id", type="int")})
         order_spec = DictTypeSpec(name="Order", type="dict", properties={"user": user_spec})
         refs = RefResolver._collect_refs_from_spec(order_spec)
-        # ネストされたTypeSpecからの参照は収集されない（str参照のみ）
+        # ネストされたTypeSpecからの参照は収集されない(str参照のみ)
         assert len(refs) == 0
 
     def test_resolve_all_basic(self):

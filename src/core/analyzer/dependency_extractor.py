@@ -138,7 +138,8 @@ class DependencyExtractionAnalyzer(Analyzer):
             return graph
 
         except Exception as e:
-            raise DependencyExtractionError(f"依存関係抽出に失敗しました: {e}", file_path=str(file_path)) from e
+            logger.exception("依存関係抽出に失敗しました: file_path=%s, error=%s", file_path, e)
+            raise DependencyExtractionError("依存関係抽出に失敗しました", file_path=str(file_path)) from e
         finally:
             # 一時ファイルのクリーンアップ
             if temp_path is not None:
@@ -174,19 +175,19 @@ class DependencyExtractionAnalyzer(Analyzer):
                         break
                     project_root = project_root.parent
 
-                # プロジェクトルート相対パスから安定したハッシュを生成
                 try:
                     relative_path = file_path.resolve().relative_to(project_root)
                     stable_path = relative_path.with_suffix("").as_posix()
-                    path_hash = hashlib.sha256(stable_path.encode()).hexdigest()[:8]
-                    return f"module_{path_hash}"
                 except (ValueError, OSError):
                     # プロジェクトルートが見つからない場合の最終フォールバック
                     resolved_str = str(file_path.resolve().with_suffix(""))
                     path_hash = hashlib.sha256(resolved_str.encode()).hexdigest()[:8]
                     parts = (file_path.parts[-2], file_path.stem) if len(file_path.parts) > 1 else (file_path.stem,)
                     return f"{'.'.join(parts)}.{path_hash}"
-            except Exception:
+                else:
+                    path_hash = hashlib.sha256(stable_path.encode()).hexdigest()[:8]
+                    return f"module_{path_hash}"
+            except (OSError, RuntimeError):
                 # 最終フォールバック: パスの最後の2要素 + ハッシュ
                 resolved_str = str(file_path.resolve())
                 path_hash = hashlib.sha256(resolved_str.encode()).hexdigest()[:8]

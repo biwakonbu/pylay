@@ -48,7 +48,7 @@ dev = [
     "pytest-cov>=4.0.0",
     "pytest-xdist>=3.0.0",
     "networkx>=3.3",
-    "pydot>=3.0.0",
+    "pydot>=4.0.1",
 ]
 viz = [
     "matplotlib>=3.5.0",
@@ -74,10 +74,6 @@ select = [
 ]
 
 ignore = [
-    # フォーマッターとの競合
-    "COM812",  # missing-trailing-comma
-    "ISC001",  # single-line-implicit-string-concatenation
-
     # 日本語プロジェクトでの例外
     "RUF001",  # ambiguous-unicode-character-string
     "RUF002",  # ambiguous-unicode-character-docstring

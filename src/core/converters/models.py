@@ -356,13 +356,16 @@ class ProcessingResult(BaseModel):
 
     def get_success_rate(self) -> float:
         """成功率を計算します。"""
+        from itertools import chain
+
+        all_results = chain(
+            self.conversion_results,
+            self.extraction_results,
+            self.dependency_results,
+        )
         total = len(self.conversion_results) + len(self.extraction_results) + len(self.dependency_results)
         if total == 0:
             return 0.0
 
-        successful = sum(
-            1
-            for result in self.conversion_results + self.extraction_results + self.dependency_results
-            if result.success
-        )
+        successful = len([result for result in all_results if result.success])
         return successful / total

@@ -136,7 +136,7 @@ class TypeInspectionConfig(BaseModel):
     """
 
     skip_types: list[TypeName] = Field(default_factory=list, description="スキップする型のリスト")
-    max_inspection_depth: int = Field(gt=0, default=5, description="検査の最大深さ")
+    max_inspection_depth: PositiveInt = Field(default=PositiveInt(5), description="検査の最大深さ")
     include_private_types: bool = Field(default=False, description="プライベート型を含めるかどうか")
     include_builtin_types: bool = Field(default=False, description="組み込み型を含めるかどうか")
 
@@ -150,7 +150,7 @@ class MarkdownGenerationConfig(BaseModel):
     このクラスは、マークダウン生成処理の設定を管理します。
     """
 
-    section_level: int = Field(gt=0, default=1, description="セクションの見出しレベル")
+    section_level: PositiveInt = Field(default=PositiveInt(1), description="セクションの見出しレベル")
     include_toc: bool = Field(default=True, description="目次を含めるかどうか")
     include_code_syntax: bool = Field(default=True, description="コード構文ハイライトを含めるかどうか")
     code_language: str = Field(default="python", description="コードブロックの言語指定")
@@ -184,7 +184,7 @@ class GenerationResult(BaseModel):
 
     success: bool = Field(description="生成が成功したかどうか")
     output_path: ValidatedOutputPath = Field(description="出力ファイルのパス")
-    generated_files: list[OutputPath] = Field(default_factory=list, description="生成されたファイルのリスト")
+    generated_files: list[ValidatedOutputPath] = Field(default_factory=list, description="生成されたファイルのリスト")
     generation_time_ms: float = Field(ge=0.0, description="生成時間(ミリ秒)")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
     files_count: int = Field(ge=0, description="生成されたファイル数")
@@ -221,7 +221,7 @@ class MarkdownSectionInfo(BaseModel):
     """
 
     title: str = Field(description="セクションタイトル")
-    level: int = Field(gt=0, description="見出しレベル")
+    level: PositiveInt = Field(description="見出しレベル")
     content: ContentString = Field(description="セクション内容")
     subsections: list["MarkdownSectionInfo"] = Field(default_factory=list, description="サブセクションのリスト")
     code_blocks: list[CodeBlock] = Field(default_factory=list, description="コードブロックのリスト")

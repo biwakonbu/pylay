@@ -58,7 +58,7 @@ class DictTypeSpec(TypeSpecBase):
 ### 解決策B: Tagged Union（判別共用体）
 
 ```python
-from typing import Literal, Union
+from typing import Literal
 from pydantic import BaseModel
 
 class ListSpec(BaseModel):
@@ -70,7 +70,7 @@ class DictSpec(BaseModel):
     properties: dict[str, str] | None = None
 
 # Union型で統一的に扱う
-TypeSpec = Union[ListSpec, DictSpec]
+TypeSpec = ListSpec | DictSpec
 
 def process_spec(spec: TypeSpec) -> str:
     match spec.kind:  # 型安全なパターンマッチング

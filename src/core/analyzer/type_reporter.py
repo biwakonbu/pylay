@@ -77,7 +77,7 @@ class TypeReporter:
         self.target_dirs = [Path(d) for d in (target_dirs or ["."])]
         self.code_locator = CodeLocator(self.target_dirs)
 
-    def generate_console_report(self, report: TypeAnalysisReport, show_stats: bool = True) -> None:
+    def generate_console_report(self, report: TypeAnalysisReport, *, show_stats: bool = True) -> None:
         """コンソール用レポートを生成して直接表示
 
         Args:
@@ -775,6 +775,7 @@ class TypeReporter:
     def generate_detailed_report(
         self,
         report: TypeAnalysisReport,
+        *,
         show_details: bool = False,
         show_stats: bool = True,
     ) -> None:
@@ -786,16 +787,16 @@ class TypeReporter:
         """
         if not show_details:
             # 通常のレポートのみ出力
-            self.generate_console_report(report, show_stats)
+            self.generate_console_report(report, show_stats=show_stats)
             return
 
         # 基本レポート
-        self.generate_console_report(report, show_stats)
+        self.generate_console_report(report, show_stats=show_stats)
 
         # 詳細情報の収集
         primitive_details = self.code_locator.find_primitive_usages()
-        level1_details = self.code_locator.find_level1_types(list(report.type_definitions))
-        unused_details = self.code_locator.find_unused_types(list(report.type_definitions))
+        level1_details = self.code_locator.find_level1_types(report.type_definitions)
+        unused_details = self.code_locator.find_unused_types(report.type_definitions)
         deprecated_details = self.code_locator.find_deprecated_typing()
 
         # 詳細レポートの出力

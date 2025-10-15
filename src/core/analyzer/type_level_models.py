@@ -9,7 +9,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .types import TypeDefinition, ValidatedFilePath
+from .types import DocumentationStatistics, TypeDefinition, ValidatedFilePath
 
 # ========================================
 # 型定義情報
@@ -52,41 +52,7 @@ class DocstringDetail(BaseModel):
     detail_score: float = Field(ge=0.0, le=1.0)
 
 
-class DocumentationStatistics(BaseModel):
-    """ドキュメント統計情報
-
-    Attributes:
-        total_types: 型定義の総数
-        documented_types: docstringが存在する型の数
-        undocumented_types: docstringが存在しない型の数
-        implementation_rate: 実装率（0.0-1.0）
-        minimal_docstrings: 最低限のdocstring（1行のみ）の数
-        detailed_docstrings: 詳細なdocstringの数
-        detail_rate: 詳細度率（0.0-1.0）
-        avg_docstring_lines: 平均docstring行数
-        quality_score: 総合品質スコア（実装率 × 詳細度）
-        by_level: レベル別のdocstring統計（カウント値のみ）
-        by_level_avg_lines: レベル別の平均docstring行数
-        by_format: フォーマット別のdocstring数
-    """
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    total_types: int = Field(ge=0)
-    documented_types: int = Field(ge=0)
-    undocumented_types: int = Field(ge=0)
-    implementation_rate: float = Field(ge=0.0, le=1.0)
-
-    minimal_docstrings: int = Field(ge=0)
-    detailed_docstrings: int = Field(ge=0)
-    detail_rate: float = Field(ge=0.0, le=1.0)
-
-    avg_docstring_lines: float
-    quality_score: float = Field(ge=0.0, le=1.0)
-
-    by_level: dict[str, dict[str, int]]
-    by_level_avg_lines: dict[str, float]
-    by_format: dict[str, int]
+# DocumentationStatistics は .types からインポート済み
 
 
 class DocstringRecommendation(BaseModel):

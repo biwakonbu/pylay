@@ -1,5 +1,6 @@
 """型ドキュメント自動生成機能"""
 
+import logging
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, cast
@@ -128,7 +129,8 @@ class LayerDocGenerator(DocumentGenerator):
         self._write_file(Path(actual_output_path), content)
 
         type_count = len(types)
-        print(f"✅ Generated {actual_output_path}: {type_count} types")
+        logger = logging.getLogger(__name__)
+        logger.info("✅ Generated %s: %d types", actual_output_path, type_count)
 
     def _generate_header(self, layer: str) -> None:
         """Generate document header.

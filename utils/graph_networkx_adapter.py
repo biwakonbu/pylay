@@ -106,14 +106,14 @@ class NetworkXGraphAdapter:
     def get_subgraph_by_type(self, node_type: str) -> nx.DiGraph:
         """指定されたノードタイプのサブグラフを取得"""
         assert self.nx_graph is not None
-        nodes_of_type = [node.name for node in self.graph.nodes if node.node_type == node_type]
-        return self.nx_graph.subgraph(nodes_of_type)
+        nodes_of_type = [n.name for n in self.graph.nodes if n.node_type == node_type]
+        return self.nx_graph.subgraph(nodes_of_type).copy()
 
     def get_strong_dependency_subgraph(self) -> nx.DiGraph:
         """強い依存関係のみのサブグラフを取得"""
         assert self.nx_graph is not None
-        strong_edges = [(edge.source, edge.target) for edge in self.graph.edges if edge.is_strong_dependency()]
-        return self.nx_graph.edge_subgraph(strong_edges)
+        strong_edges = [(e.source, e.target) for e in self.graph.edges if e.is_strong_dependency()]
+        return self.nx_graph.edge_subgraph(strong_edges).copy()
 
     def export_to_graphml(self, output_path: Path) -> None:
         """GraphML形式でエクスポート"""

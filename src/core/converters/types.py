@@ -17,6 +17,13 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from src.core.schemas.types import MaxDepth, PositiveInt
 
+# ========================================
+# 型エイリアス定義
+# ========================================
+
+# 抽出された型データの構造（将来的には厳密なスキーマへ置換）
+ExtractedTypeData = dict[str, Any]
+
 
 def _validate_path_exists(v: str | Path | None) -> str | Path | None:
     """パスが存在することを検証するバリデーター"""
@@ -169,7 +176,7 @@ class ExtractionResult(BaseModel):
 
     success: bool = Field(description="処理が成功したかどうか")
     module_path: ValidatedModulePath = Field(description="処理対象のモジュールパス")
-    extracted_types: dict[TypeName, dict[str, Any]] = Field(default_factory=dict, description="抽出された型定義")
+    extracted_types: dict[TypeName, ExtractedTypeData] = Field(default_factory=dict, description="抽出された型定義")
     error_message: str | None = Field(default=None, description="エラーメッセージ")
     processing_time_ms: float | None = Field(default=None, description="処理時間（ミリ秒）")
 

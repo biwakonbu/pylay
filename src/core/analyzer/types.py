@@ -195,7 +195,7 @@ class AnalysisConfig(BaseModel):
 
     include_patterns: list[str] = Field(default_factory=lambda: ["*.py"], description="解析対象のファイルパターン")
     exclude_patterns: list[str] = Field(
-        default_factory=lambda: ["test_*", "__pycache__", "*.pyc"],
+        default_factory=lambda: ["test_*", "__pycache__", "*.pyc", "**/node_modules/**", "**/.venv/**", "**/dist/**"],
         description="除外対象のパターン",
     )
     max_file_size: Annotated[int, Field(gt=0)] = Field(

@@ -227,7 +227,7 @@ class PylayConfig(BaseModel):
     max_depth: MaxDepth = Field(default=MaxDepth(10), description="再帰解析の最大深度")
 
     # 新機能: 品質チェック設定(オプション)
-    quality_check: "QualityCheckConfig | None" = Field(default=None, description="型品質チェックの設定(オプション)")
+    quality_check: QualityCheckConfig | None = Field(default=None, description="型品質チェックの設定(オプション)")
 
     # Issue #51: .lay.py / .lay.yaml 方式の設定
     generation: GenerationConfig = Field(
