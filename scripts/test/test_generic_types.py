@@ -19,8 +19,8 @@ nested_dict: dict[str, list[dict[str, int | str]]] = {}
 
 
 def complex_function(
-    arg1: dict[str, list[int]],
-    arg2: list[str | None],
+    _arg1: dict[str, list[int]],
+    _arg2: list[str | None],
 ) -> list[str] | dict[str, int]:
     """複雑な関数"""
     return []
