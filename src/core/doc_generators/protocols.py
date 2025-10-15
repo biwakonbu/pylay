@@ -201,7 +201,7 @@ class FileSystemInterfaceProtocol(Protocol):
     このプロトコルは、ファイルシステム操作機能のインターフェースを定義します。
     """
 
-    def mkdir(self, path: str | Path, parents: bool = True, exist_ok: bool = True) -> None:
+    def mkdir(self, path: str | Path, *, parents: bool = True, exist_ok: bool = True) -> None:
         """
         ディレクトリを作成します。
 
