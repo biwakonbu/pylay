@@ -26,12 +26,14 @@ def _validate_output_path(v: str | Path | None) -> str | Path | None:
     return Path(v) if isinstance(v, str) else v
 
 
-# TypedDict定義
-class TocEntry(TypedDict):
+# TypedDict定義は廃止し、Pydantic BaseModelに移行（PositiveIntを使用するため）
+class TocEntry(BaseModel):
     """目次エントリの型定義"""
 
     title: str
-    level: int
+    level: PositiveInt
+
+    model_config = ConfigDict(frozen=True)
 
 
 class PydanticSchemaInfo(TypedDict, total=False):
