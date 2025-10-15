@@ -49,7 +49,7 @@ class OutputPathManager:
         # target_dirs に含まれるディレクトリの場合は、その構造を模倣
         # target_dirs の値からスラッシュを除去して比較
         normalized_target_dirs = [d.rstrip("/") for d in self.config.target_dirs]
-        if len(relative_path.parts) > 0 and relative_path.parts[0] in normalized_target_dirs:
+        if relative_path.parts and relative_path.parts[0] in normalized_target_dirs:
             # relative_path.parts[1:-1] は要素が1つ以下の場合は空リストを返す
             first_part = relative_path.parts[0]
             parts_to_use = list(relative_path.parts[1:-1])
@@ -83,7 +83,7 @@ class OutputPathManager:
             # target_dirs の値からスラッシュを除去して比較
             relative_path = source_file.relative_to(self.project_root)
             normalized_target_dirs = [d.rstrip("/") for d in self.config.target_dirs]
-            if len(relative_path.parts) > 0 and relative_path.parts[0] in normalized_target_dirs:
+            if relative_path.parts and relative_path.parts[0] in normalized_target_dirs:
                 output_dir = documents_dir / relative_path.parts[0] / Path(*relative_path.parts[1:-1])
             else:
                 output_dir = documents_dir
