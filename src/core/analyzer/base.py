@@ -17,6 +17,46 @@ from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.types import AnalyzerModeList
 
 
+class InputValidationError(ValueError):
+    """入力検証エラー"""
+
+    def __init__(self, validation_error: Exception) -> None:
+        """
+        InputValidationErrorを初期化します。
+
+        Args:
+            validation_error: 元のバリデーションエラー
+        """
+        super().__init__(f"入力の検証に失敗しました: {validation_error}")
+
+
+class InvalidAnalysisModeError(ValueError):
+    """無効な解析モードエラー"""
+
+    def __init__(self, mode: str, valid_modes: list[str]) -> None:
+        """
+        InvalidAnalysisModeErrorを初期化します。
+
+        Args:
+            mode: 指定された無効なモード
+            valid_modes: 有効なモードのリスト
+        """
+        super().__init__(f"無効な解析モード: {mode}. {', '.join(valid_modes)} のいずれかを指定してください。")
+
+
+class InvalidInputTypeError(TypeError):
+    """無効な入力型エラー"""
+
+    def __init__(self, received_type: type) -> None:
+        """
+        InvalidInputTypeErrorを初期化します。
+
+        Args:
+            received_type: 受け取った型
+        """
+        super().__init__(f"input_pathはPathまたはstrである必要があります。受け取った型: {received_type.__name__}")
+
+
 class FullAnalyzer(Analyzer):
     """
     完全解析を実行するAnalyzer
@@ -87,7 +127,7 @@ class FullAnalyzer(Analyzer):
             try:
                 temp_config = TempFileConfig(code=input_path, suffix=".py", mode="w")
             except ValidationError as e:
-                raise ValueError(f"入力の検証に失敗しました: {e}") from e
+                raise InputValidationError(e) from e
             temp_path = create_temp_file(temp_config)
 
             # クリーンアップ関数を返す
@@ -104,7 +144,7 @@ class FullAnalyzer(Analyzer):
 
             return input_path, noop_cleanup
         else:
-            raise TypeError(f"input_pathはPathまたはstrである必要があります。受け取った型: {type(input_path).__name__}")
+            raise InvalidInputTypeError(type(input_path))
 
 
 def create_analyzer(config: PylayConfig, mode: str = "full") -> Analyzer:
@@ -134,7 +174,8 @@ def create_analyzer(config: PylayConfig, mode: str = "full") -> Analyzer:
     elif mode == "full":
         return FullAnalyzer(config)
     else:
-        raise ValueError(f"無効な解析モード: {mode}. 'types_only', 'deps_only', 'full' のいずれかを指定してください。")
+        valid_modes = get_supported_modes()
+        raise InvalidAnalysisModeError(mode, valid_modes)
 
 
 def get_supported_modes() -> AnalyzerModeList:
