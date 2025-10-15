@@ -227,7 +227,7 @@ class TestQualityReporter:
         reporter.generate_console_report(no_issue_result, sample_report)
 
         output = string_io.getvalue()
-        assert "No quality issues detected" in output or "Overall Score" in output
+        assert "品質問題は検出されませんでした" in output or "Overall Score" in output
 
     def test_generate_console_report_error_handling(
         self,
