@@ -49,7 +49,9 @@ class YamlDocGenerator(DocumentGenerator):
         """
         spec_obj = kwargs.get("spec")
         if spec_obj is None:
-            raise MissingSpecError()
+            raise MissingSpecError(
+                "specパラメータが指定されていません。Mapping | TypeRoot | TypeSpec のいずれかを指定してください。"
+            )
 
         # 単一の正規化ステップ: Mappingの場合、"types"またはroot type fieldがある場合TypeRoot、そうでなければTypeSpec
         if isinstance(spec_obj, Mapping):
@@ -60,7 +62,9 @@ class YamlDocGenerator(DocumentGenerator):
                 spec_obj = TypeSpec.model_validate(spec_obj)
         elif not isinstance(spec_obj, (TypeSpec, TypeRoot)):
             obj_type = type(spec_obj).__name__
-            raise InvalidSpecError(obj_type)
+            raise InvalidSpecError(
+                f"未対応のspecタイプです: {obj_type}。TypeSpec | TypeRoot のみサポートされています。"
+            )
 
         self.md = MarkdownBuilder()
 
@@ -71,13 +75,16 @@ class YamlDocGenerator(DocumentGenerator):
             if spec_obj.types:
                 spec = next(iter(spec_obj.types.values()))
             else:
-                raise InvalidSpecError("empty TypeRoot")
+                raise InvalidSpecError("TypeRootに型定義が含まれていません。少なくとも1つの型定義が必要です。")
         elif isinstance(spec_obj, TypeSpec):
             # この時点で spec_obj は TypeSpec として確定
             spec = spec_obj
         else:
             # このelse節は到達しないはずだが、型チェッカーのために追加
-            raise InvalidSpecError(f"unexpected type: {type(spec_obj).__name__}")
+            raise InvalidSpecError(
+                f"予期しない型が渡されました: {type(spec_obj).__name__}。"
+                "このエラーは通常発生しません。バグの可能性があります。"
+            )
 
         # この時点で spec は TypeSpec として確定している
         self._generate_header(spec)
