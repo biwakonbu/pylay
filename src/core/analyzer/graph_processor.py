@@ -19,7 +19,9 @@ else:
     try:
         from pydot import Dot, Edge, Node
     except ImportError:
-        Dot, Node, Edge = None, None, None  # type: ignore[assignment, misc]
+        Dot: type | None = None
+        Node: type | None = None
+        Edge: type | None = None
 
 from src.core.schemas.graph import TypeDependencyGraph
 

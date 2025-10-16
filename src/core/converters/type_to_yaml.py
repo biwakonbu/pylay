@@ -499,6 +499,9 @@ def _extract_pydantic_field_info_with_imports(
     Returns:
         フィールド情報の辞書
     """
+    from collections.abc import Callable
+    from typing import cast
+
     from pydantic_core import PydanticUndefined
 
     if file_imports is None:
@@ -541,7 +544,7 @@ def _extract_pydantic_field_info_with_imports(
                         factory_name = getattr(factory, "__name__", str(factory))
                         if factory_name == "<lambda>":
                             try:
-                                result = factory()  # type: ignore[call-arg]
+                                result = cast(Callable[[], Any], factory)()
                                 if isinstance(result, list):
                                     field_info_dict["default_factory"] = "list"
                                 elif isinstance(result, dict):
@@ -599,12 +602,14 @@ def _extract_dataclass_field_info(cls: type[Any]) -> dict[str, dict[str, Any]]:
         フィールド名とフィールド情報の辞書
     """
     from dataclasses import MISSING, fields
+    from typing import cast
 
     fields_info: dict[str, dict[str, Any]] = {}
 
     for field in fields(cls):
+        field_type_obj = cast(type[Any] | None, field.type)
         field_data: dict[str, Any] = {
-            "type": _get_simple_type_name(field.type),  # type: ignore[arg-type]
+            "type": _get_simple_type_name(field_type_obj),
             "required": field.default is MISSING and field.default_factory is MISSING,
         }
 
