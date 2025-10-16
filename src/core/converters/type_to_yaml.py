@@ -58,6 +58,42 @@ class DataclassEntry(TypedDict):
 ASTEntry = TypeAliasEntry | NewTypeEntry | DataclassEntry
 
 
+def is_type_alias_entry(obj: object) -> TypeGuard[TypeAliasEntry]:
+    """型エイリアスエントリかどうかを判定
+
+    Args:
+        obj: 判定対象のオブジェクト
+
+    Returns:
+        objが型エイリアスエントリの場合True
+    """
+    return isinstance(obj, dict) and obj.get("kind") == "type_alias" and "target" in obj
+
+
+def is_newtype_entry(obj: object) -> TypeGuard[NewTypeEntry]:
+    """NewTypeエントリかどうかを判定
+
+    Args:
+        obj: 判定対象のオブジェクト
+
+    Returns:
+        objがNewTypeエントリの場合True
+    """
+    return isinstance(obj, dict) and obj.get("kind") == "newtype" and "base_type" in obj
+
+
+def is_dataclass_entry(obj: object) -> TypeGuard[DataclassEntry]:
+    """dataclassエントリかどうかを判定
+
+    Args:
+        obj: 判定対象のオブジェクト
+
+    Returns:
+        objがdataclassエントリの場合True
+    """
+    return isinstance(obj, dict) and obj.get("kind") == "dataclass" and "frozen" in obj and "fields" in obj
+
+
 def is_dataclass_type(obj: object) -> TypeGuard[type]:
     """dataclass型かどうかを判定（インスタンスは除外）
 
@@ -651,13 +687,11 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
         # 基本型またはカスタムクラス
         if typ in {str, int, float, bool}:
             type_str = _get_basic_type_str(typ)
-            return TypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-                name=type_name, type=type_str, description=description
-            )
+            return TypeSpec.model_construct(name=type_name, type=type_str, description=description)
         else:
             # カスタムクラスはdict型として扱い、フィールドのdocstringを取得
             properties = _get_class_properties_with_docstrings(typ)
-            return DictTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
+            return DictTypeSpec.model_construct(
                 name=type_name,
                 type="dict",
                 description=description,
@@ -668,13 +702,9 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
         # Generic[T]型(カスタムGenericサポート)
         if args:
             generic_args = _recurse_generic_args(args)
-            return GenericTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-                name=type_name, params=generic_args, description=description
-            )
+            return GenericTypeSpec.model_construct(name=type_name, params=generic_args, description=description)
         else:
-            return GenericTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-                name=type_name, params=[], description=description
-            )
+            return GenericTypeSpec.model_construct(name=type_name, params=[], description=description)
 
     elif origin is list:
         # List型は常にtype: "list" として処理
@@ -687,7 +717,7 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
                 bool,
             }:
                 # カスタム型の場合、参照として保持
-                return ListTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
+                return ListTypeSpec.model_construct(
                     name=type_name,
                     items=_get_type_name(item_type),  # 参照文字列として保持
                     description=description,
@@ -695,16 +725,12 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
             else:
                 # 基本型の場合、TypeSpecとして展開
                 items_spec = type_to_spec(item_type)
-                return ListTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-                    name=type_name, items=items_spec, description=description
-                )
+                return ListTypeSpec.model_construct(name=type_name, items=items_spec, description=description)
         else:
             # 型パラメータなし
-            return ListTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
+            return ListTypeSpec.model_construct(
                 name=type_name,
-                items=TypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-                    name="any", type="any"
-                ),
+                items=TypeSpec.model_construct(name="any", type="any"),
                 description=description,
             )
 
@@ -731,18 +757,12 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
                     value_spec = type_to_spec(value_type)
                     dict_properties[_get_type_name(value_type)] = value_spec
 
-                return DictTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-                    name=type_name, properties=dict_properties, description=description
-                )
+                return DictTypeSpec.model_construct(name=type_name, properties=dict_properties, description=description)
             else:
                 # キーがstr以外の場合、簡易的にanyとして扱う
-                return DictTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-                    name=type_name, properties={}, description=description
-                )
+                return DictTypeSpec.model_construct(name=type_name, properties={}, description=description)
         else:
-            return DictTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-                name=type_name, properties={}, description=description
-            )
+            return DictTypeSpec.model_construct(name=type_name, properties={}, description=description)
 
     elif origin is TypingUnion or str(origin) == "<class 'types.UnionType'>":
         # Union型(Union[int, str] など)
@@ -753,11 +773,7 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
                 # Noneやtype(None)は基本型として扱う
                 if arg is type(None) or arg is None:
                     # None型は"null"として表現
-                    variants.append(
-                        TypeSpec(  # type: ignore[call-arg]
-                            name="null", type="null", description="None type"
-                        )
-                    )
+                    variants.append(TypeSpec.model_construct(name="null", type="null", description="None type"))
                 elif get_origin(arg) is None and arg not in {str, int, float, bool}:
                     # カスタム型の場合、参照として保持
                     variants.append(_get_type_name(arg))
@@ -766,20 +782,14 @@ def type_to_spec(typ: type[Any]) -> TypeSpec:
                     variant_spec = type_to_spec(arg)
                     variants.append(variant_spec)
 
-            return UnionTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-                name=type_name, variants=variants, description=description
-            )
+            return UnionTypeSpec.model_construct(name=type_name, variants=variants, description=description)
         else:
             union_variants: list[TypeSpecOrRef] = []
-            return UnionTypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-                name=type_name, variants=union_variants, description=description
-            )
+            return UnionTypeSpec.model_construct(name=type_name, variants=union_variants, description=description)
 
     else:
         # 未サポート型
-        return TypeSpec(  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-            name=type_name, type="unknown", description=description
-        )
+        return TypeSpec.model_construct(name=type_name, type="unknown", description=description)
 
 
 def type_to_yaml(
@@ -881,68 +891,51 @@ def types_to_yaml_simple(
         type_data = CommentedMap()
 
         # AST解析結果(ASTEntry)の場合
-        if isinstance(typ, dict):
-            kind = typ.get("kind")
+        if is_type_alias_entry(typ):
+            type_data["type"] = "type_alias"
+            target = typ["target"]
+            type_data["target"] = target
+            docstring = typ.get("docstring")
+            if docstring:
+                type_data["description"] = docstring
 
-            # type文(型エイリアス)
-            if kind == "type_alias":
-                # 型ガード: TypeAliasEntry
-                assert "target" in typ
-                type_alias_entry: TypeAliasEntry = typ  # type: ignore[assignment]
+            # targetに外部型が含まれる場合、_importsに追加
+            _collect_imports_from_type_string(target, file_imports, imports_map)
 
-                type_data["type"] = "type_alias"
-                target = type_alias_entry["target"]
-                type_data["target"] = target
-                docstring = type_alias_entry.get("docstring")
-                if docstring:
+            yaml_data[type_name] = type_data
+            continue
+
+        if is_newtype_entry(typ):
+            type_data["type"] = "newtype"
+            base_type = typ["base_type"]
+            type_data["base_type"] = base_type
+            docstring = typ.get("docstring")
+            if docstring:
+                type_data["description"] = docstring
+
+            # base_typeに外部型が含まれる場合、_importsに追加
+            _collect_imports_from_type_string(base_type, file_imports, imports_map)
+
+            yaml_data[type_name] = type_data
+            continue
+
+        elif is_dataclass_entry(typ):
+            type_data["type"] = "dataclass"
+            type_data["frozen"] = typ.get("frozen", False)
+            docstring = typ.get("docstring")
+            if docstring:
+                if "\n" in docstring:
+                    type_data["description"] = LiteralScalarString(docstring)
+                else:
                     type_data["description"] = docstring
-
-                # targetに外部型が含まれる場合、_importsに追加
-                _collect_imports_from_type_string(target, file_imports, imports_map)
-
-                yaml_data[type_name] = type_data
-
-            # NewType
-            elif kind == "newtype":
-                # 型ガード: NewTypeEntry
-                assert "base_type" in typ
-                newtype_entry: NewTypeEntry = typ  # type: ignore[assignment]
-
-                type_data["type"] = "newtype"
-                base_type = newtype_entry["base_type"]
-                type_data["base_type"] = base_type
-                docstring = newtype_entry.get("docstring")
-                if docstring:
-                    type_data["description"] = docstring
-
-                # base_typeに外部型が含まれる場合、_importsに追加
-                _collect_imports_from_type_string(base_type, file_imports, imports_map)
-
-                yaml_data[type_name] = type_data
-
-            # dataclass(AST解析結果)
-            elif kind == "dataclass":
-                # 型ガード: DataclassEntry
-                assert "frozen" in typ and "fields" in typ
-                dataclass_entry: DataclassEntry = typ  # type: ignore[assignment]
-
-                type_data["type"] = "dataclass"
-                type_data["frozen"] = dataclass_entry.get("frozen", False)
-                docstring = dataclass_entry.get("docstring")
-                if docstring:
-                    if "\n" in docstring:
-                        type_data["description"] = LiteralScalarString(docstring)
-                    else:
-                        type_data["description"] = docstring
-                if "fields" in dataclass_entry:
-                    fields = dataclass_entry["fields"]
-                    # 各フィールドの型から外部型を収集
-                    for field_info in fields.values():
-                        field_type = field_info["type"]
-                        _collect_imports_from_type_string(field_type, file_imports, imports_map)
-                    type_data["fields"] = CommentedMap(fields)
-                yaml_data[type_name] = type_data
-
+            if "fields" in typ:
+                fields = typ["fields"]
+                # 各フィールドの型から外部型を収集
+                for field_info in fields.values():
+                    field_type = field_info["type"]
+                    _collect_imports_from_type_string(field_type, file_imports, imports_map)
+                type_data["fields"] = CommentedMap(fields)
+            yaml_data[type_name] = type_data
             continue
 
         # 型オブジェクトの場合(従来の処理)
