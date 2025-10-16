@@ -109,7 +109,7 @@ class FullAnalyzer(Analyzer):
 
             return input_path, noop_cleanup
         else:
-            raise InvalidInputTypeError(type(input_path))
+            raise InvalidInputTypeError(type(input_path), parameter_name="input_path")
 
 
 def create_analyzer(config: PylayConfig, mode: str = "full") -> Analyzer:

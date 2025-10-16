@@ -592,7 +592,7 @@ class BatchProcessorService(BaseModel):
         Args:
             input_directory: 入力ディレクトリ
             output_path: 出力ディレクトリ
-            _config: ドキュメント設定（将来の拡張機能用に予約済み、現在未使用）
+            _config: ドキュメント設定 (将来の拡張機能用に予約済み、現在未使用)
 
         Returns:
             バッチ処理結果

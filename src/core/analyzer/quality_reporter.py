@@ -315,7 +315,7 @@ class QualityReporter:
             highlight_lines={location.line},
         )
 
-        self.console.print("  [bold]コードコンテキスト:[/bold]")
+        self.console.print("  [bold]Code Context:[/bold]")
         self.console.print("  ", syntax)
 
     def _show_recommendations(self, check_result: QualityCheckResult) -> None:

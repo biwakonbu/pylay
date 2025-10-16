@@ -11,6 +11,7 @@ uv run pylay check --focus ignore
 ```
 
 **出力例**:
+
 ```text
 Found 3 type: ignore issues:
 HIGH: src/example.py:15 - Use of Any type in function parameter
@@ -19,6 +20,7 @@ LOW: src/example.py:45 - Type ignore for complex generic type
 ```
 
 **出力内容**:
+
 - type:ignoreの箇所を検出
 - 優先度判定（HIGH/MEDIUM/LOW）
 - 簡単な原因説明
@@ -30,6 +32,7 @@ LOW: src/example.py:45 - Type ignore for complex generic type
 #### 1.1 Literal型オーバーライドパターンの検出
 
 **検出条件**:
+
 ```python
 # AST解析で以下を検出
 1. ClassDefノード（BaseModelを継承）
@@ -39,6 +42,7 @@ LOW: src/example.py:45 - Type ignore for complex generic type
 ```
 
 **提案内容**:
+
 ```yaml
 pattern: "literal_override"
 severity: "medium"
@@ -61,6 +65,7 @@ references:
 #### 1.2 NewType + Field パターンの検出
 
 **検出条件**:
+
 ```python
 1. Field(default=...) でプリミティブ値を直接指定
 2. フィールド型が NewType
@@ -68,6 +73,7 @@ references:
 ```
 
 **提案内容**:
+
 ```yaml
 pattern: "newtype_field_default"
 severity: "low"
@@ -302,6 +308,7 @@ class RefactoringSuggestion:
 この拡張により、pylayは単なる検出ツールから、**積極的な設計改善を提案する賢いツール**に進化します。
 
 開発者は：
+
 1. type:ignoreの理由を理解できる
 2. 具体的な修正方法を学べる
 3. 自動修正で時間を節約できる

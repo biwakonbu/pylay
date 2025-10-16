@@ -193,6 +193,18 @@ class InputValidationError(ValueError):
     """
     入力検証エラー
 
+    Pydanticによる入力データの検証に失敗した場合に発生します。
+    型の不一致やバリデーションルール違反時に使用されます。
+
+    発生状況:
+        - analyze_fileまたはanalyze_directoryの入力パラメータが
+          Pydanticスキーマの検証に失敗した場合
+        - ファイルシステム操作で無効な設定が指定された場合
+
+    処理方法:
+        - 入力データの型と形式を確認し、修正してください
+        - validation_error属性から元のエラー詳細を取得できます
+
     ValueError を継承してPythonの標準エラーハイアラキーに統合し、
     入力値の型や形式が不正な場合にキャッチされるようにします。
     """
@@ -204,12 +216,24 @@ class InputValidationError(ValueError):
         Args:
             validation_error: 元のバリデーションエラー
         """
+        self.validation_error = validation_error
         super().__init__(f"入力の検証に失敗しました: {validation_error}")
 
 
 class InvalidAnalysisModeError(ValueError):
     """
     無効な解析モードエラー
+
+    指定された解析モードが無効な場合に発生します。
+    サポートされているモードは "types_only", "deps_only", "full" です。
+
+    発生状況:
+        - create_analyzerまたは同等の関数で無効なmodeが指定された場合
+        - 設定ファイルで無効な解析モードが指定された場合
+
+    処理方法:
+        - サポートされているモードを確認し、正しいモードを指定してください
+        - エラーメッセージに有効なモードのリストが含まれています
 
     ValueError を継承してPythonの標準エラーハイアラキーに統合し、
     指定された解析モードが無効な場合にキャッチされるようにします。
@@ -230,15 +254,27 @@ class InvalidInputTypeError(TypeError):
     """
     無効な入力型エラー
 
+    入力値の型が予期されない場合に発生します。
+    Pathまたはstrでなければならない入力に別の型が渡された場合に使用されます。
+
+    発生状況:
+        - ファイルパス入力が Path または str ではない型の場合
+        - 予期されない型のパラメータが渡された場合
+
+    処理方法:
+        - 入力パラメータの型を確認し、Path または str に変換してください
+        - エラーメッセージから受け取った型を確認できます
+
     TypeError を継承してPythonの標準エラーハイアラキーに統合し、
     入力値の型が予期されない場合にキャッチされるようにします。
     """
 
-    def __init__(self, received_type: type) -> None:
+    def __init__(self, received_type: type, parameter_name: str = "input") -> None:
         """
         InvalidInputTypeErrorを初期化します。
 
         Args:
             received_type: 受け取った型
+            parameter_name: パラメータ名（デフォルト: "input"）
         """
-        super().__init__(f"input_pathはPathまたはstrである必要があります。受け取った型: {received_type.__name__}")
+        super().__init__(f"{parameter_name}はPathまたはstrである必要があります。受け取った型: {received_type.__name__}")
