@@ -11,7 +11,7 @@ uv run pylay check --focus ignore
 ```
 
 **出力例**:
-```
+```text
 Found 3 type: ignore issues:
 HIGH: src/example.py:15 - Use of Any type in function parameter
 MEDIUM: src/example.py:23 - Unnecessary type ignore for known type
@@ -119,6 +119,7 @@ Found 5 auto-fixable issues:
 
 Applied 2 automatic fixes.
 3 issues require manual review.
+```
 
 ### 4. ナレッジベース構築
 

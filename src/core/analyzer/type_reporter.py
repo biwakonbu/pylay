@@ -808,7 +808,7 @@ class TypeReporter:
 
         if level1_details:
             self.console.print()
-            self.console.rule("[bold yellow]🔍 Issue Details: Abandoned Level 1 Types[/bold yellow]")
+            self.console.rule("[bold yellow]🔍 Issue Details: Level 1 Types (Upgrade Candidates)[/bold yellow]")
             self.console.print()
             self.console.print(self._create_level1_types_table(level1_details))
 

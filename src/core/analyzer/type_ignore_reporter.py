@@ -102,13 +102,13 @@ class TypeIgnoreReporter:
         self.console.print(priority_text, line_info, ignore_type_info)
         self.console.print()
 
-        # 原因
-        self.console.print(f"  [bold]原因[/bold]     {issue.cause}")
-        self.console.print(f"  [bold]詳細[/bold]    {issue.detail}")
+        # Cause and Detail
+        self.console.print(f"  [bold]Cause[/bold]      {issue.cause}")
+        self.console.print(f"  [bold]Detail[/bold]     {issue.detail}")
         self.console.print()
 
-        # コードブロック
-        self.console.print("  [bold]コード[/bold]")
+        # Code block
+        self.console.print("  [bold]Code[/bold]")
         self._print_code_context(issue)
         self.console.print()
 

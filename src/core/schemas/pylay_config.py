@@ -37,34 +37,34 @@ class LevelThresholds(BaseModel):
         default=0.20,
         ge=0.0,
         le=1.0,
-        description="Level 1型エイリアスの最大比率(これを超えると警告)",
+        description="Level 1型エイリアスの最大比率（これを超えると警告）",
     )
     level2_min: float = Field(
         default=0.40,
         ge=0.0,
         le=1.0,
-        description="Level 2制約付き型の最小比率(これを下回ると警告)",
+        description="Level 2制約付き型の最小比率（これを下回ると警告）",
     )
     level3_min: float = Field(
         default=0.15,
         ge=0.0,
         le=1.0,
-        description="Level 3 BaseModelの最小比率(これを下回ると警告)",
+        description="Level 3 BaseModelの最小比率（これを下回ると警告）",
     )
 
 
 class ErrorCondition(BaseModel):
     """エラー条件設定"""
 
-    condition: str = Field(description="エラー判定のための条件式(例: 'level1_ratio > 0.20')")
+    condition: str = Field(description="エラー判定のための条件式（例: 'level1_ratio > 0.20'）")
     message: str = Field(description="エラー発生時のメッセージ")
 
 
 class SeverityLevel(BaseModel):
     """深刻度レベル設定"""
 
-    name: str = Field(description="深刻度レベルの名前(アドバイス、警告、エラー)")
-    color: Literal["blue", "yellow", "red"] = Field(description="表示色(blue=アドバイス、yellow=警告、red=エラー)")
+    name: str = Field(description="深刻度レベルの名前（アドバイス、警告、エラー）")
+    color: Literal["blue", "yellow", "red"] = Field(description="表示色（blue=アドバイス、yellow=警告、red=エラー）")
     threshold: float = Field(ge=0.0, le=1.0, description="このレベルに分類される閾値スコア")
 
 
@@ -101,11 +101,11 @@ class OutputConfig(BaseModel):
 
     yaml_output_dir: str | None = Field(
         default=None,
-        description="YAML出力先ディレクトリ(Noneの場合はPythonソースと同じディレクトリ)",
+        description="YAML出力先ディレクトリ（Noneの場合はPythonソースと同じディレクトリ）",
     )
     markdown_output_dir: str | None = Field(
         default=None,
-        description="Markdown出力先ディレクトリ(Noneの場合はPythonソースと同じディレクトリ)",
+        description="Markdown出力先ディレクトリ（Noneの場合はPythonソースと同じディレクトリ）",
     )
     mirror_package_structure: bool = Field(
         default=True,
@@ -187,13 +187,13 @@ class PylayConfig(BaseModel):
     # 解析対象ディレクトリ
     target_dirs: list[str] = Field(
         default_factory=lambda: ["src"],
-        description="解析対象のディレクトリパス(相対パス、末尾スラッシュは自動削除)",
+        description="解析対象のディレクトリパス（相対パス、末尾スラッシュは自動削除）",
     )
 
     # 出力ディレクトリ
     output_dir: DirectoryPath = Field(
         default_factory=lambda: DirectoryPath("docs"),
-        description="出力ファイルの保存先ディレクトリ(末尾スラッシュは自動削除)",
+        description="出力ファイルの保存先ディレクトリ（末尾スラッシュは自動削除）",
     )
 
     # ドキュメント生成フラグ
@@ -205,7 +205,7 @@ class PylayConfig(BaseModel):
     # 型推論レベル
     infer_level: InferLevel = Field(
         default="normal",
-        description=("型推論の厳密さ(strict, normal, loose, none) - デフォルトは'normal'でバランス型"),
+        description=("型推論の厳密さ（strict, normal, loose, none）- デフォルトは'normal'でバランス型"),
     )
 
     # 出力ディレクトリクリーンアップフラグ
@@ -215,7 +215,7 @@ class PylayConfig(BaseModel):
 
     # 除外パターン
     exclude_patterns: list[GlobPattern] = Field(
-        default=[
+        default_factory=lambda: [
             "**/tests/**",
             "**/*_test.py",
             "**/__pycache__/**",
@@ -226,21 +226,21 @@ class PylayConfig(BaseModel):
     # 最大解析深度
     max_depth: MaxDepth = Field(default=MaxDepth(10), description="再帰解析の最大深度")
 
-    # 新機能: 品質チェック設定(オプション)
-    quality_check: QualityCheckConfig | None = Field(default=None, description="型品質チェックの設定(オプション)")
+    # 新機能: 品質チェック設定（オプション）
+    quality_check: QualityCheckConfig | None = Field(default=None, description="型品質チェックの設定（オプション）")
 
     # Issue #51: .lay.py / .lay.yaml 方式の設定
     generation: GenerationConfig = Field(
         default_factory=GenerationConfig,
-        description="ファイル生成設定(.lay.py / .lay.yaml)",
+        description="ファイル生成設定（.lay.py / .lay.yaml）",
     )
     output: OutputConfig = Field(
         default_factory=OutputConfig,
-        description="出力設定(YAML出力先、ミラーリング等)",
+        description="出力設定（YAML出力先、ミラーリング等）",
     )
     imports: ImportsConfig = Field(
         default_factory=ImportsConfig,
-        description="import設定(相対import等)",
+        description="import設定（相対import等）",
     )
 
     @field_validator("target_dirs", mode="before")

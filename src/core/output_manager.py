@@ -86,7 +86,11 @@ class OutputPathManager:
             relative_path = source_file.relative_to(self.project_root)
             normalized_target_dirs = [d.rstrip("/") for d in self.config.target_dirs]
             if relative_path.parts and relative_path.parts[0] in normalized_target_dirs:
-                output_dir = documents_dir / relative_path.parts[0] / Path(*relative_path.parts[1:-1])
+                first_part = relative_path.parts[0]
+                parts_to_use = list(relative_path.parts[1:-1])
+                output_dir = documents_dir / first_part
+                if parts_to_use:
+                    output_dir = output_dir / Path(*parts_to_use)
             else:
                 output_dir = documents_dir
 

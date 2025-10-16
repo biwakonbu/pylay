@@ -102,14 +102,14 @@ def collect_python_files(directory: Path, exclude_patterns: list[str] | None = N
             # directoryの外のファイルの場合は絶対パスを使用
             relative_path = py_file.as_posix()
 
-        # 両方の形式でチェック(絶対パスと相対パスの両方を考慮)
-        absolute_path = py_file.as_posix()
+        # 両方の形式でチェック(POSIX形式パスと相対パスの両方を考慮)
+        posix_path = py_file.as_posix()
 
-        # 除外パターンにマッチするかチェック(相対パスと絶対パスの両方)
+        # 除外パターンにマッチするかチェック(相対パスとPOSIX形式パスの両方)
         should_exclude = False
         if exclude_patterns:
             for pattern in exclude_patterns:
-                if fnmatch.fnmatch(relative_path, pattern) or fnmatch.fnmatch(absolute_path, pattern):
+                if fnmatch.fnmatch(relative_path, pattern) or fnmatch.fnmatch(posix_path, pattern):
                     should_exclude = True
                     break
 

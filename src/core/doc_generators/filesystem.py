@@ -15,7 +15,7 @@ class FileSystemInterface(Protocol):
         ...
 
     @abstractmethod
-    def mkdir(self, path: Path, parents: bool = True, exist_ok: bool = True) -> None:
+    def mkdir(self, path: Path, *, parents: bool = True, exist_ok: bool = True) -> None:
         """ディレクトリを作成する。"""
         ...
 
@@ -32,7 +32,7 @@ class RealFileSystem:
         """テキストコンテンツをファイルに書き込む。"""
         path.write_text(content, encoding=encoding)
 
-    def mkdir(self, path: Path, parents: bool = True, exist_ok: bool = True) -> None:
+    def mkdir(self, path: Path, *, parents: bool = True, exist_ok: bool = True) -> None:
         """ディレクトリを作成する。"""
         path.mkdir(parents=parents, exist_ok=exist_ok)
 
@@ -57,7 +57,7 @@ class InMemoryFileSystem:
             self.mkdir(parent)
         self.files[path] = content
 
-    def mkdir(self, path: Path, parents: bool = True, exist_ok: bool = True) -> None:
+    def mkdir(self, path: Path, *, parents: bool = True, exist_ok: bool = True) -> None:
         """メモリ内にディレクトリを作成する。"""
         if path in self.directories and not exist_ok:
             raise FileExistsError(f"Directory {path} already exists")

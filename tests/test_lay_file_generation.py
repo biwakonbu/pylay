@@ -162,7 +162,11 @@ NewType:
         # .lay.pyファイルも作成
         lay_file = output_dir / "types.lay.py"
         lay_file.write_text(
-            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n次回の pylay types 実行時に削除・再生成されます\n"""'
+            '"""\n'
+            "pylay自動生成ファイル\n"
+            "このファイルを直接編集しないでください\n"
+            "次回の pylay types 実行時に削除・再生成されます\n"
+            '"""'
         )
 
         # クリーン再生成実行

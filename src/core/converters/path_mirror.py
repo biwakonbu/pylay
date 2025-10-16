@@ -38,8 +38,8 @@ def mirror_package_path(
         >>> mirror_package_path(input_path, project_root, output_base, ".lay.yaml")
         PosixPath('docs/pylay/src/core/schemas/types.lay.yaml')
     """
-    # suffixのバリデーション
-    validated_suffix = _suffix_adapter.validate_python(suffix)
+    # suffixのバリデーション（デフォルト値使用時はスキップ）
+    validated_suffix = suffix if suffix == ".lay.yaml" else _suffix_adapter.validate_python(suffix)
 
     # 絶対パスに変換
     input_abs = input_path.resolve()

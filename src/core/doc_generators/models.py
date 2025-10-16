@@ -320,8 +320,7 @@ class FileSystemService(BaseModel):
 
     config: FileSystemConfig = Field(default_factory=FileSystemConfig)
 
-    # TODO: プロトコル更新時にbooleanパラメータをキーワード専用引数に変換 (parents, exist_ok)
-    def mkdir(self, path: str | Path, parents: bool = True, exist_ok: bool = True) -> None:
+    def mkdir(self, path: str | Path, *, parents: bool = True, exist_ok: bool = True) -> None:
         """
         ディレクトリを作成します。
 
@@ -332,8 +331,7 @@ class FileSystemService(BaseModel):
         """
         Path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
-    # TODO: プロトコル更新時にbooleanパラメータをキーワード専用引数に変換 (encoding)
-    def write_text(self, path: str | Path, content: str, encoding: str = "utf-8") -> None:
+    def write_text(self, path: str | Path, content: str, *, encoding: str = "utf-8") -> None:
         """
         テキストファイルに書き込みます。
 
