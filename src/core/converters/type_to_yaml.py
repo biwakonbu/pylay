@@ -926,8 +926,12 @@ def types_to_yaml_simple(
 
         else:
             # 型オブジェクトの場合(従来の処理)
+            # この時点で typ は type[Any] であることが保証される（AST型チェックで除外済み）
+            from typing import cast
+
+            typ_obj = cast(type[Any], typ)
             # クラスのdocstringを取得
-            docstring = _get_docstring(typ)
+            docstring = _get_docstring(typ_obj)
             if docstring:
                 # 複数行のdocstringはヒアドキュメント形式(| 形式)で出力
                 if "\n" in docstring:
@@ -936,9 +940,9 @@ def types_to_yaml_simple(
                     type_data["description"] = docstring
 
             # base_classesを取得
-            if hasattr(typ, "__bases__"):
+            if hasattr(typ_obj, "__bases__"):
                 base_classes = []
-                for base in typ.__bases__:
+                for base in typ_obj.__bases__:
                     if base.__name__ == "object":
                         continue
                     base_name, base_import_path = _resolve_type_import_path(base, source_module_path)
@@ -949,26 +953,26 @@ def types_to_yaml_simple(
                     type_data["base_classes"] = base_classes
 
             # Pydantic BaseModelの場合
-            if isinstance(typ, type) and issubclass(typ, BaseModel):
+            if isinstance(typ_obj, type) and issubclass(typ_obj, BaseModel):
                 fields_info = _extract_pydantic_field_info_with_imports(
-                    typ, source_module_path, imports_map, file_imports
+                    typ_obj, source_module_path, imports_map, file_imports
                 )
                 if fields_info:
                     type_data["fields"] = CommentedMap(fields_info)
                 yaml_data[type_name] = type_data
 
             # dataclassの場合(型オブジェクト)
-            elif is_dataclass_type(typ):
+            elif is_dataclass_type(typ_obj):
                 type_data["type"] = "dataclass"
-                # TypeGuardによりtypはtype型として扱われる
+                # TypeGuardによりtyp_objはtype型として扱われる
                 # __dataclass_params__ への安全なアクセス
-                if hasattr(typ, "__dataclass_params__"):
-                    dataclass_params = typ.__dataclass_params__
+                if hasattr(typ_obj, "__dataclass_params__"):
+                    dataclass_params = typ_obj.__dataclass_params__
                     type_data["frozen"] = dataclass_params.frozen
                 else:
                     type_data["frozen"] = False
 
-                fields_info = _extract_dataclass_field_info(typ)
+                fields_info = _extract_dataclass_field_info(typ_obj)
                 if fields_info:
                     type_data["fields"] = CommentedMap(fields_info)
                 yaml_data[type_name] = type_data
