@@ -1,7 +1,7 @@
 import ast
 import inspect
 from pathlib import Path
-from typing import Any, ForwardRef, Generic, NotRequired, TypedDict, TypeGuard, get_args, get_origin
+from typing import Any, ForwardRef, Generic, NotRequired, TypedDict, TypeGuard, get_args, get_origin, get_type_hints
 from typing import Union as TypingUnion
 
 from pydantic import BaseModel
@@ -499,8 +499,6 @@ def _extract_pydantic_field_info_with_imports(
     Returns:
         フィールド情報の辞書
     """
-    from collections.abc import Callable
-    from typing import cast
 
     from pydantic_core import PydanticUndefined
 
@@ -539,22 +537,12 @@ def _extract_pydantic_field_info_with_imports(
                     if factory in (list, dict, set, tuple, frozenset):
                         field_info_dict["default_factory"] = factory.__name__
                     else:
-                        # lambda や他のcallableの場合は関数名(__name__)を使用
-                        # ただし、<lambda>の場合は実行結果から推測
-                        factory_name = getattr(factory, "__name__", str(factory))
+                        # 実行せずに表記のみ
+                        factory_name = getattr(
+                            factory, "__qualname__", getattr(factory, "__name__", type(factory).__name__)
+                        )
                         if factory_name == "<lambda>":
-                            try:
-                                result = cast(Callable[[], Any], factory)()
-                                if isinstance(result, list):
-                                    field_info_dict["default_factory"] = "list"
-                                elif isinstance(result, dict):
-                                    field_info_dict["default_factory"] = "dict"
-                                elif isinstance(result, set):
-                                    field_info_dict["default_factory"] = "set"
-                                else:
-                                    field_info_dict["default_factory"] = factory_name
-                            except Exception:
-                                field_info_dict["default_factory"] = factory_name
+                            field_info_dict["default_factory"] = "<lambda>"
                         else:
                             field_info_dict["default_factory"] = factory_name
 
@@ -602,12 +590,19 @@ def _extract_dataclass_field_info(cls: type[Any]) -> dict[str, dict[str, Any]]:
         フィールド名とフィールド情報の辞書
     """
     from dataclasses import MISSING, fields
-    from typing import cast
 
     fields_info: dict[str, dict[str, Any]] = {}
 
+    # get_type_hints を使用して、文字列アノテーションと ForwardRef を解決
+    try:
+        resolved_hints = get_type_hints(cls)
+    except Exception:
+        # エラーの場合はフォールバック（アノテーション直接使用）
+        resolved_hints = getattr(cls, "__annotations__", {})
+
     for field in fields(cls):
-        field_type_obj = cast(type[Any] | None, field.type)
+        # resolved_hints から型を取得、なければ None
+        field_type_obj = resolved_hints.get(field.name, None)
         field_data: dict[str, Any] = {
             "type": _get_simple_type_name(field_type_obj),
             "required": field.default is MISSING and field.default_factory is MISSING,
@@ -622,21 +617,10 @@ def _extract_dataclass_field_info(cls: type[Any]) -> dict[str, dict[str, Any]]:
             if factory in (list, dict, set, tuple, frozenset):
                 field_data["default_factory"] = factory.__name__
             else:
-                # lambda等の場合
-                factory_name = getattr(factory, "__name__", str(factory))
+                # 実行せずに表記のみ
+                factory_name = getattr(factory, "__qualname__", getattr(factory, "__name__", type(factory).__name__))
                 if factory_name == "<lambda>":
-                    try:
-                        result = factory()
-                        if isinstance(result, list):
-                            field_data["default_factory"] = "list"
-                        elif isinstance(result, dict):
-                            field_data["default_factory"] = "dict"
-                        elif isinstance(result, set):
-                            field_data["default_factory"] = "set"
-                        else:
-                            field_data["default_factory"] = factory_name
-                    except Exception:
-                        field_data["default_factory"] = factory_name
+                    field_data["default_factory"] = "<lambda>"
                 else:
                     field_data["default_factory"] = factory_name
 
@@ -908,9 +892,8 @@ def types_to_yaml_simple(
             _collect_imports_from_type_string(target, file_imports, imports_map)
 
             yaml_data[type_name] = type_data
-            continue
 
-        if is_newtype_entry(typ):
+        elif is_newtype_entry(typ):
             type_data["type"] = "newtype"
             base_type = typ["base_type"]
             type_data["base_type"] = base_type
@@ -922,7 +905,6 @@ def types_to_yaml_simple(
             _collect_imports_from_type_string(base_type, file_imports, imports_map)
 
             yaml_data[type_name] = type_data
-            continue
 
         elif is_dataclass_entry(typ):
             type_data["type"] = "dataclass"
@@ -941,53 +923,55 @@ def types_to_yaml_simple(
                     _collect_imports_from_type_string(field_type, file_imports, imports_map)
                 type_data["fields"] = CommentedMap(fields)
             yaml_data[type_name] = type_data
-            continue
 
-        # 型オブジェクトの場合(従来の処理)
-        # クラスのdocstringを取得
-        docstring = _get_docstring(typ)
-        if docstring:
-            # 複数行のdocstringはヒアドキュメント形式(| 形式)で出力
-            if "\n" in docstring:
-                type_data["description"] = LiteralScalarString(docstring)
-            else:
-                type_data["description"] = docstring
+        else:
+            # 型オブジェクトの場合(従来の処理)
+            # クラスのdocstringを取得
+            docstring = _get_docstring(typ)
+            if docstring:
+                # 複数行のdocstringはヒアドキュメント形式(| 形式)で出力
+                if "\n" in docstring:
+                    type_data["description"] = LiteralScalarString(docstring)
+                else:
+                    type_data["description"] = docstring
 
-        # base_classesを取得
-        if hasattr(typ, "__bases__"):
-            base_classes = []
-            for base in typ.__bases__:
-                if base.__name__ == "object":
-                    continue
-                base_name, base_import_path = _resolve_type_import_path(base, source_module_path)
-                base_classes.append(base_name)
-                if base_import_path:
-                    imports_map[base_name] = base_import_path
-            if base_classes:
-                type_data["base_classes"] = base_classes
+            # base_classesを取得
+            if hasattr(typ, "__bases__"):
+                base_classes = []
+                for base in typ.__bases__:
+                    if base.__name__ == "object":
+                        continue
+                    base_name, base_import_path = _resolve_type_import_path(base, source_module_path)
+                    base_classes.append(base_name)
+                    if base_import_path:
+                        imports_map[base_name] = base_import_path
+                if base_classes:
+                    type_data["base_classes"] = base_classes
 
-        # Pydantic BaseModelの場合
-        if isinstance(typ, type) and issubclass(typ, BaseModel):
-            fields_info = _extract_pydantic_field_info_with_imports(typ, source_module_path, imports_map, file_imports)
-            if fields_info:
-                type_data["fields"] = CommentedMap(fields_info)
-            yaml_data[type_name] = type_data
+            # Pydantic BaseModelの場合
+            if isinstance(typ, type) and issubclass(typ, BaseModel):
+                fields_info = _extract_pydantic_field_info_with_imports(
+                    typ, source_module_path, imports_map, file_imports
+                )
+                if fields_info:
+                    type_data["fields"] = CommentedMap(fields_info)
+                yaml_data[type_name] = type_data
 
-        # dataclassの場合(型オブジェクト)
-        elif is_dataclass_type(typ):
-            type_data["type"] = "dataclass"
-            # TypeGuardによりtypはtype型として扱われる
-            # __dataclass_params__ への安全なアクセス
-            if hasattr(typ, "__dataclass_params__"):
-                dataclass_params = typ.__dataclass_params__
-                type_data["frozen"] = dataclass_params.frozen
-            else:
-                type_data["frozen"] = False
+            # dataclassの場合(型オブジェクト)
+            elif is_dataclass_type(typ):
+                type_data["type"] = "dataclass"
+                # TypeGuardによりtypはtype型として扱われる
+                # __dataclass_params__ への安全なアクセス
+                if hasattr(typ, "__dataclass_params__"):
+                    dataclass_params = typ.__dataclass_params__
+                    type_data["frozen"] = dataclass_params.frozen
+                else:
+                    type_data["frozen"] = False
 
-            fields_info = _extract_dataclass_field_info(typ)
-            if fields_info:
-                type_data["fields"] = CommentedMap(fields_info)
-            yaml_data[type_name] = type_data
+                fields_info = _extract_dataclass_field_info(typ)
+                if fields_info:
+                    type_data["fields"] = CommentedMap(fields_info)
+                yaml_data[type_name] = type_data
 
     # _importsセクションを先頭に追加
     if imports_map:

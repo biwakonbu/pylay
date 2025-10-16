@@ -536,7 +536,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             elif spec is not None:
                 # 単一型仕様
                 if isinstance(spec, str):
-                    # 参照文字列の場合はスキップ（未解決の参照）
+                    # 参照文字列の場合はスキップ(未解決の参照)
                     console.print("[yellow]Warning: Unresolved type reference, skipping code generation[/yellow]")
                 else:
                     code_lines.extend(generate_class_code("GeneratedType", spec.model_dump()))
