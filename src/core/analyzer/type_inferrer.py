@@ -312,6 +312,10 @@ def run_mypy_inference(file_path: Path, mypy_flags: list[str], timeout: int = 60
     inferred_types = _parse_mypy_output(result.stdout)
     mypy_result.inferred_types = inferred_types
 
+    # 統計情報をパース
+    stats = _parse_mypy_statistics(result.stdout)
+    mypy_result.statistics = stats
+
     return mypy_result
 
 
@@ -540,16 +544,5 @@ def _parse_mypy_output(output: str) -> dict[str, InferResult]:
                 # パースエラーは無視して次の行に進む
                 # ログ出力が必要な場合はここに追加可能
                 continue
-
-    # 統計情報をパース
-    stats = _parse_mypy_statistics(output)
-    if stats:
-        # 統計情報を特別なキー"__stats__"で保存
-        types["__stats__"] = InferResult(
-            variable_name="__stats__",
-            inferred_type=str(stats),
-            confidence=create_confidence_score(1.0),  # 統計情報は常に信頼度1.0
-            line_number=create_line_number(0),
-        )
 
     return types

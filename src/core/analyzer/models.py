@@ -236,6 +236,7 @@ class MypyResult(BaseModel):
         stderr: 標準エラー
         return_code: 終了コード
         inferred_types: 推論された型情報
+        statistics: mypy統計情報（オプション）
     """
 
     model_config = ConfigDict(frozen=False, extra="forbid")
@@ -244,6 +245,7 @@ class MypyResult(BaseModel):
     stderr: StdErr
     return_code: ReturnCode
     inferred_types: dict[str, InferResult] = Field(default_factory=dict)
+    statistics: dict[str, dict[str, int]] | None = None
 
     def is_success(self) -> bool:
         """実行成功か判定"""
