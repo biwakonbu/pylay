@@ -85,7 +85,7 @@ class UserService:
 
     def test_count_type_usage(self):
         """型使用回数カウントテスト"""
-        type_def = TypeDefinition(
+        user_id_def = TypeDefinition(
             name="UserId",
             level="level1",
             file_path="src/core/analyzer/types.py",
@@ -93,9 +93,17 @@ class UserService:
             definition="type UserId = str",
             category="type_alias",
         )
+        email_def = TypeDefinition(
+            name="Email",
+            level="level1",
+            file_path="src/core/analyzer/types.py",
+            line_number=11,
+            definition="type Email = str",
+            category="type_alias",
+        )
 
         locator = CodeLocator([Path("src")])
-        count = locator._count_type_usage("UserId", list({"UserId": type_def, "Email": type_def}.values()))
+        count = locator._count_type_usage("UserId", [user_id_def, email_def])
 
         # 簡易実装では他の定義内での使用をカウント
         assert isinstance(count, int)
