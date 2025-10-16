@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    pass  # type: ignore[unused-import]
+    pass
 
 import networkx as nx
 
