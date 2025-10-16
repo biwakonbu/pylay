@@ -5,10 +5,20 @@ docs/pylay/ 配下に出力パスを生成する機能を提供します。
 """
 
 from pathlib import Path
+from typing import Annotated
+
+from pydantic import Field, TypeAdapter
+
+# ドメイン型定義
+FileSuffix = Annotated[str, Field(pattern=r"^\..+")]
+
+
+# 型アダプター（再利用可能）
+_suffix_adapter = TypeAdapter(FileSuffix)
 
 
 def mirror_package_path(
-    input_path: Path, project_root: Path, output_base: Path, suffix: str = ".lay.yaml"
+    input_path: Path, project_root: Path, output_base: Path, suffix: FileSuffix = ".lay.yaml"
 ) -> Path:
     """入力パスを docs/pylay/ 配下にミラーリングした出力パスを生成
 
@@ -28,6 +38,9 @@ def mirror_package_path(
         >>> mirror_package_path(input_path, project_root, output_base, ".lay.yaml")
         PosixPath('docs/pylay/src/core/schemas/types.lay.yaml')
     """
+    # suffixのバリデーション（デフォルト値使用時はスキップ）
+    validated_suffix = suffix if suffix == ".lay.yaml" else _suffix_adapter.validate_python(suffix)
+
     # 絶対パスに変換
     input_abs = input_path.resolve()
     project_abs = project_root.resolve()
@@ -40,7 +53,7 @@ def mirror_package_path(
         rel_path = Path(input_path.name)
 
     # 拡張子を suffix に置き換え
-    output_rel_path = rel_path.with_suffix(suffix)
+    output_rel_path = rel_path.with_suffix(validated_suffix)
 
     # output_base 配下にミラーリング
     return output_base / output_rel_path
@@ -77,3 +90,6 @@ def find_project_root(start_path: Path) -> Path | None:
         current = parent
 
     return None
+
+
+__all__ = ["FileSuffix", "ensure_output_directory", "find_project_root", "mirror_package_path"]

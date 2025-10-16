@@ -39,9 +39,7 @@ class TypeIgnoreReporter:
             show_solutions: 解決策を表示するか
         """
         # ヘッダー
-        self.console.rule(
-            "[bold cyan]Type Ignore Diagnostics[/bold cyan]", style="cyan"
-        )
+        self.console.rule("[bold cyan]Type Ignore Diagnostics[/bold cyan]", style="cyan")
         self.console.print()
 
         # ファイルごとにグループ化
@@ -54,16 +52,14 @@ class TypeIgnoreReporter:
 
         # 各ファイルのレポート
         for file_path, file_issues in issues_by_file.items():
-            self._print_file_section(file_path, file_issues, show_solutions)
+            self._print_file_section(file_path, file_issues, show_solutions=show_solutions)
 
         # サマリー
         self._print_summary(summary)
 
         self.console.rule(style="cyan")
 
-    def _print_file_section(
-        self, file_path: str, issues: list[TypeIgnoreIssue], show_solutions: bool
-    ) -> None:
+    def _print_file_section(self, file_path: str, issues: list[TypeIgnoreIssue], *, show_solutions: bool) -> None:
         """
         ファイルセクションを表示
 
@@ -85,11 +81,11 @@ class TypeIgnoreReporter:
 
         # 各問題を表示
         for issue in sorted(issues, key=lambda i: i.line_number):
-            self._print_issue(issue, show_solutions)
+            self._print_issue(issue, show_solutions=show_solutions)
 
         self.console.rule(style="dim")
 
-    def _print_issue(self, issue: TypeIgnoreIssue, show_solutions: bool) -> None:
+    def _print_issue(self, issue: TypeIgnoreIssue, *, show_solutions: bool) -> None:
         """
         個別の問題を表示
 
@@ -101,24 +97,22 @@ class TypeIgnoreReporter:
         priority_color = self._get_priority_color(issue.priority)
         priority_text = Text(f"  {issue.priority}", style=f"bold {priority_color}")
         line_info = Text(f"    Line {issue.line_number}", style="dim")
-        ignore_type_info = Text(
-            f"    type: ignore[{issue.ignore_type}]", style="yellow"
-        )
+        ignore_type_info = Text(f"    type: ignore[{issue.ignore_type}]", style="yellow")
 
         self.console.print(priority_text, line_info, ignore_type_info)
         self.console.print()
 
-        # 原因
-        self.console.print(f"  [bold]Cause[/bold]     {issue.cause}")
-        self.console.print(f"  [bold]Detail[/bold]    {issue.detail}")
+        # Cause and Detail
+        self.console.print(f"  [bold]Cause[/bold]      {issue.cause}")
+        self.console.print(f"  [bold]Detail[/bold]     {issue.detail}")
         self.console.print()
 
-        # コードブロック
+        # Code block
         self.console.print("  [bold]Code[/bold]")
         self._print_code_context(issue)
         self.console.print()
 
-        # 解決策（オプション）
+        # Solutions (optional)
         if show_solutions and issue.solutions:
             self.console.print("  [bold]Solution[/bold]")
             for solution in issue.solutions:
@@ -140,7 +134,7 @@ class TypeIgnoreReporter:
         start_line = ctx.line_number - len(ctx.before_lines)
 
         # コード全体を構築
-        code_lines = ctx.before_lines + [ctx.target_line] + ctx.after_lines
+        code_lines = [*ctx.before_lines, ctx.target_line, *ctx.after_lines]
         code = "\n".join(code_lines)
 
         # Syntax highlight
@@ -169,9 +163,7 @@ class TypeIgnoreReporter:
         # Pydantic関連の提案
         if "BaseModel" in target_line and issue.ignore_type == "call-arg":
             suggested = (
-                target_line.replace("TypeSpec(", "TypeSpec.model_construct(")
-                .replace("# type: ignore", "")
-                .strip()
+                target_line.replace("TypeSpec(", "TypeSpec.model_construct(").replace("# type: ignore", "").strip()
             )
 
         if suggested != target_line.replace("# type: ignore", "").strip():
@@ -253,13 +245,9 @@ class TypeIgnoreReporter:
         Returns:
             色の文字列
         """
-        return {"HIGH": "red", "MEDIUM": "yellow", "LOW": "green"}.get(
-            priority, "white"
-        )
+        return {"HIGH": "red", "MEDIUM": "yellow", "LOW": "green"}.get(priority, "white")
 
-    def export_json_report(
-        self, issues: list[TypeIgnoreIssue], output_path: str
-    ) -> None:
+    def export_json_report(self, issues: list[TypeIgnoreIssue], output_path: Path | str) -> None:
         """
         JSON形式でレポートをエクスポート
 
@@ -269,9 +257,10 @@ class TypeIgnoreReporter:
         """
         import json
 
+        output_path = Path(output_path)
         data = [issue.model_dump() for issue in issues]
 
-        with open(output_path, "w", encoding="utf-8") as f:
+        with output_path.open("w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
         msg = f"[bold green]✅ JSONレポートをエクスポートしました: {output_path}"

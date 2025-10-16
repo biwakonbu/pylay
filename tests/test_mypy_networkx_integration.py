@@ -72,15 +72,9 @@ class TestNetworkXIntegration:
 
         nodes = [
             GraphNode(name="User", node_type="class"),
-            GraphNode(
-                name="str", node_type="type_alias", qualified_name="builtins.str"
-            ),
+            GraphNode(name="str", node_type="type_alias", qualified_name="builtins.str"),
         ]
-        edges = [
-            GraphEdge(
-                source="User", target="str", relation_type="references", weight=0.8
-            )
-        ]
+        edges = [GraphEdge(source="User", target="str", relation_type="references", weight=0.8)]
         graph = TypeDependencyGraph(nodes=nodes, edges=edges)
 
         adapter = NetworkXGraphAdapter(graph)
@@ -124,12 +118,8 @@ class TestNetworkXIntegration:
             GraphNode(name="User", node_type="class"),
         ]
         edges = [
-            GraphEdge(
-                source="Derived", target="Base", relation_type="inherits_from"
-            ),  # Derived -> Base
-            GraphEdge(
-                source="User", target="Derived", relation_type="references"
-            ),  # User -> Derived
+            GraphEdge(source="Derived", target="Base", relation_type="inherits_from"),  # Derived -> Base
+            GraphEdge(source="User", target="Derived", relation_type="references"),  # User -> Derived
         ]
         graph = TypeDependencyGraph(nodes=nodes, edges=edges)
 
@@ -174,12 +164,8 @@ class TestNetworkXIntegration:
             GraphNode(name="C", node_type="class"),
         ]
         edges = [
-            GraphEdge(
-                source="A", target="B", relation_type="inherits_from", weight=0.9
-            ),  # 強い
-            GraphEdge(
-                source="B", target="C", relation_type="references", weight=0.3
-            ),  # 弱い
+            GraphEdge(source="A", target="B", relation_type="inherits_from", weight=0.9),  # 強い
+            GraphEdge(source="B", target="C", relation_type="references", weight=0.3),  # 弱い
         ]
         graph = TypeDependencyGraph(nodes=nodes, edges=edges)
 

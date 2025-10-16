@@ -29,7 +29,7 @@ class AbsolutePathsDict(TypedDict):
     output_dir: Path
 
 
-# 品質チェック関連のクラス定義（先に定義が必要）
+# 品質チェック関連のクラス定義(先に定義が必要)
 class LevelThresholds(BaseModel):
     """型レベル閾値設定"""
 
@@ -56,9 +56,7 @@ class LevelThresholds(BaseModel):
 class ErrorCondition(BaseModel):
     """エラー条件設定"""
 
-    condition: str = Field(
-        description="エラー判定のための条件式（例: 'level1_ratio > 0.20'）"
-    )
+    condition: str = Field(description="エラー判定のための条件式（例: 'level1_ratio > 0.20'）")
     message: str = Field(description="エラー発生時のメッセージ")
 
 
@@ -66,12 +64,8 @@ class SeverityLevel(BaseModel):
     """深刻度レベル設定"""
 
     name: str = Field(description="深刻度レベルの名前（アドバイス、警告、エラー）")
-    color: Literal["blue", "yellow", "red"] = Field(
-        description="表示色（blue=アドバイス、yellow=警告、red=エラー）"
-    )
-    threshold: float = Field(
-        ge=0.0, le=1.0, description="このレベルに分類される閾値スコア"
-    )
+    color: Literal["blue", "yellow", "red"] = Field(description="表示色（blue=アドバイス、yellow=警告、red=エラー）")
+    threshold: float = Field(ge=0.0, le=1.0, description="このレベルに分類される閾値スコア")
 
 
 class ImprovementGuidance(BaseModel):
@@ -139,15 +133,11 @@ class ImportsConfig(BaseModel):
 class QualityCheckConfig(BaseModel):
     """品質チェック設定"""
 
-    # 型レベル閾値設定（厳格モード）
-    level_thresholds: LevelThresholds = Field(
-        default_factory=LevelThresholds, description="型レベルの閾値設定"
-    )
+    # 型レベル閾値設定(厳格モード)
+    level_thresholds: LevelThresholds = Field(default_factory=LevelThresholds, description="型レベルの閾値設定")
 
     # エラーレベル判定基準
-    error_conditions: list[ErrorCondition] = Field(
-        default_factory=list, description="エラー判定のための条件リスト"
-    )
+    error_conditions: list[ErrorCondition] = Field(default_factory=list, description="エラー判定のための条件リスト")
 
     # アドバイス・警告・エラーレベル設定
     severity_levels: list[SeverityLevel] = Field(
@@ -196,33 +186,26 @@ class PylayConfig(BaseModel):
 
     # 解析対象ディレクトリ
     target_dirs: list[str] = Field(
-        default=["src"],  # type: ignore[list-item]
+        default_factory=lambda: ["src"],
         description="解析対象のディレクトリパス（相対パス、末尾スラッシュは自動削除）",
     )
 
     # 出力ディレクトリ
-    output_dir: DirectoryPath = Field(  # type: ignore[assignment]
-        default="docs",
+    output_dir: DirectoryPath = Field(
+        default_factory=lambda: DirectoryPath("docs"),
         description="出力ファイルの保存先ディレクトリ（末尾スラッシュは自動削除）",
     )
 
     # ドキュメント生成フラグ
-    generate_markdown: GenerateMarkdownFlag = Field(
-        default=True, description="Markdownドキュメントを生成するかどうか"
-    )
+    generate_markdown: GenerateMarkdownFlag = Field(default=True, description="Markdownドキュメントを生成するかどうか")
 
     # 依存関係抽出フラグ
-    extract_deps: ExtractDepsFlag = Field(
-        default=True, description="依存関係を抽出するかどうか"
-    )
+    extract_deps: ExtractDepsFlag = Field(default=True, description="依存関係を抽出するかどうか")
 
     # 型推論レベル
     infer_level: InferLevel = Field(
         default="normal",
-        description=(
-            "型推論の厳密さ（strict, normal, loose, none）"
-            "- デフォルトは'normal'でバランス型"
-        ),
+        description=("型推論の厳密さ（strict, normal, loose, none）- デフォルトは'normal'でバランス型"),
     )
 
     # 出力ディレクトリクリーンアップフラグ
@@ -232,7 +215,7 @@ class PylayConfig(BaseModel):
 
     # 除外パターン
     exclude_patterns: list[GlobPattern] = Field(
-        default=[
+        default_factory=lambda: [
             "**/tests/**",
             "**/*_test.py",
             "**/__pycache__/**",
@@ -241,12 +224,10 @@ class PylayConfig(BaseModel):
     )
 
     # 最大解析深度
-    max_depth: MaxDepth = Field(default=10, description="再帰解析の最大深度")  # type: ignore[assignment]
+    max_depth: MaxDepth = Field(default=MaxDepth(10), description="再帰解析の最大深度")
 
-    # 新機能：品質チェック設定（オプション）
-    quality_check: "QualityCheckConfig | None" = Field(
-        default=None, description="型品質チェックの設定（オプション）"
-    )
+    # 新機能: 品質チェック設定（オプション）
+    quality_check: QualityCheckConfig | None = Field(default=None, description="型品質チェックの設定（オプション）")
 
     # Issue #51: .lay.py / .lay.yaml 方式の設定
     generation: GenerationConfig = Field(
@@ -300,16 +281,14 @@ class PylayConfig(BaseModel):
             pyproject_path = None
 
             # ルートディレクトリまで遡る
-            for parent in [current] + list(current.parents):
+            for parent in [current, *current.parents]:
                 candidate = parent / "pyproject.toml"
                 if candidate.exists():
                     pyproject_path = candidate
                     break
 
             if pyproject_path is None:
-                raise FileNotFoundError(
-                    f"pyproject.toml not found in {current} or any parent directory"
-                )
+                raise FileNotFoundError("pyproject.toml not found in current or parent directories")
         else:
             pyproject_path = project_root / "pyproject.toml"
             if not pyproject_path.exists():
@@ -388,9 +367,7 @@ class PylayConfig(BaseModel):
         Returns:
             絶対パスの辞書（target_dirs: list[Path], output_dir: Path）
         """
-        absolute_target_dirs = [
-            (project_root / target_dir).resolve() for target_dir in self.target_dirs
-        ]
+        absolute_target_dirs = [(project_root / target_dir).resolve() for target_dir in self.target_dirs]
 
         absolute_output_dir = (project_root / self.output_dir).resolve()
 
@@ -491,7 +468,7 @@ class PylayConfig(BaseModel):
         if self.quality_check and self.quality_check.severity_levels:
             return self.quality_check.severity_levels
 
-        # デフォルト値（error:0.0, warning:0.6, advice:0.8）
+        # デフォルト値(error:0.0, warning:0.6, advice:0.8)
         return [
             SeverityLevel(name="error", color="red", threshold=0.0),
             SeverityLevel(name="warning", color="yellow", threshold=0.6),

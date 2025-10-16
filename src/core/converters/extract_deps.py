@@ -6,14 +6,19 @@ NetworkX を使用して依存ツリーを作成し、視覚化を可能にし�
 """
 
 import ast
-import importlib
+import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    pass
 
 import networkx as nx
 
 from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.types import NodeId, ScopeStack, TypeParamList
+
+logger = logging.getLogger(__name__)
 
 
 class DependencyExtractor(ast.NodeVisitor):
@@ -76,9 +81,7 @@ class DependencyExtractor(ast.NodeVisitor):
         for base in node.bases:
             base_name = self._extract_type_annotation(base)
             if base_name:
-                self.graph.add_edge(
-                    base_name, class_name, relation_type="inherits_from"
-                )
+                self.graph.add_edge(base_name, class_name, relation_type="inherits_from")
 
         self.generic_visit(node)
 
@@ -92,9 +95,7 @@ class DependencyExtractor(ast.NodeVisitor):
         if isinstance(annotation_node, ast.Name):
             # シンプルな型名（例: int, str）
             return annotation_node.id
-        elif isinstance(annotation_node, ast.Constant) and isinstance(
-            annotation_node.value, str
-        ):
+        elif isinstance(annotation_node, ast.Constant) and isinstance(annotation_node.value, str):
             # ForwardRef（文字列リテラル、例: 'MyClass'）
             return annotation_node.value
         elif isinstance(annotation_node, ast.Subscript):
@@ -106,9 +107,7 @@ class DependencyExtractor(ast.NodeVisitor):
                 if param_types:
                     return f"{base_type}[{', '.join(param_types)}]"
             return base_type
-        elif isinstance(annotation_node, ast.BinOp) and isinstance(
-            annotation_node.op, ast.BitOr
-        ):
+        elif isinstance(annotation_node, ast.BinOp) and isinstance(annotation_node.op, ast.BitOr):
             # Union型（例: str | int、Python 3.10+）
             left_type = self._extract_type_annotation(annotation_node.left)
             right_type = self._extract_type_annotation(annotation_node.right)
@@ -232,10 +231,7 @@ def convert_graph_to_yaml_spec(
         YAML型仕様の辞書
     """
     # TypeDependencyGraphをNetworkX DiGraphに変換
-    if isinstance(graph, TypeDependencyGraph):
-        nx_graph = graph.to_networkx()
-    else:
-        nx_graph = graph
+    nx_graph = graph.to_networkx() if isinstance(graph, TypeDependencyGraph) else graph
 
     dependencies = {}
 
@@ -262,9 +258,7 @@ def convert_graph_to_yaml_spec(
     return {"dependencies": dependencies}
 
 
-def visualize_dependencies(
-    graph: TypeDependencyGraph | nx.DiGraph, output_path: str = "deps.png"
-) -> None:
+def visualize_dependencies(graph: TypeDependencyGraph | nx.DiGraph, output_path: str = "deps.png") -> None:
     """
     依存関係をGraphvizで視覚化します。
 
@@ -273,22 +267,16 @@ def visualize_dependencies(
         output_path: 出力画像のパス
     """
     # TypeDependencyGraphをNetworkX DiGraphに変換
-    if isinstance(graph, TypeDependencyGraph):
-        nx_graph = graph.to_networkx()
-    else:
-        nx_graph = graph
+    nx_graph = graph.to_networkx() if isinstance(graph, TypeDependencyGraph) else graph
 
     try:
-        # 動的importを使ってgraphviz_layoutをインポート
-        graphviz_layout = importlib.import_module(
-            "networkx.drawing.nx_pydot"
-        ).graphviz_layout
-
         # NetworkXグラフをpydotグラフに変換
-        pydot_graph = graphviz_layout(nx_graph)
+        import networkx.drawing.nx_pydot as nx_pydot
 
-        # ノードの色を設定（型によって異なる色）
-        for node in pydot_graph.get_nodes():
+        pydot_graph = nx_pydot.to_pydot(nx_graph)
+
+        # ノードの色を設定(型によって異なる色)
+        for node in pydot_graph.get_nodes():  # type: ignore[attr-defined]
             node_name = node.get_name().strip('"')
             node_data = nx_graph.nodes.get(node_name, {})
             node_type = node_data.get("type", "unknown")
@@ -303,16 +291,12 @@ def visualize_dependencies(
                 node.set_color("lightgray")
 
         # エッジの色を設定（関係によって異なる色）
-        for edge in pydot_graph.get_edges():
-            edge_data = nx_graph.edges.get(
-                (edge.get_source().strip('"'), edge.get_destination().strip('"'))
-            )
+        for edge in pydot_graph.get_edges():  # type: ignore[attr-defined]
+            edge_data = nx_graph.edges.get((edge.get_source().strip('"'), edge.get_destination().strip('"')))
             if edge_data:
                 # エッジ属性の正規化: relation_type を優先し、
                 # なければ relation にフォールバック
-                relation = edge_data.get("relation_type") or edge_data.get(
-                    "relation", ""
-                )
+                relation = edge_data.get("relation_type") or edge_data.get("relation", "")
                 if relation == "argument":
                     edge.set_color("blue")
                 elif relation in ("returns", "return"):
@@ -325,17 +309,14 @@ def visualize_dependencies(
                     edge.set_color("black")
 
         # レイアウトを設定
-        pydot_graph.set_rankdir("TB")  # 上から下
-        pydot_graph.set_size("8,6")  # サイズ設定
+        pydot_graph.set("rankdir", "TB")  # type: ignore[attr-defined] # 上から下
+        pydot_graph.set("size", "8,6")  # type: ignore[attr-defined] # サイズ設定
 
         # 画像を保存
         pydot_graph.write_png(output_path)
-        print(f"依存関係グラフを {output_path} に保存しました。")
+        logger.info("依存関係グラフを %s に保存しました", output_path)
 
     except ImportError as e:
-        print(
-            "Graphviz または pydot がインストールされていないため、"
-            f"視覚化をスキップします: {e}"
-        )
-    except Exception as e:
-        print(f"視覚化中にエラーが発生しました: {e}")
+        logger.warning("Graphviz/pydot が未インストールのため視覚化をスキップします: %s", e)
+    except Exception:
+        logger.exception("視覚化中にエラーが発生しました")

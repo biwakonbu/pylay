@@ -16,7 +16,7 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from src.core.schemas.graph import TypeDependencyGraph
-from src.core.schemas.yaml_spec import TypeSpec
+from src.core.schemas.yaml_spec import TypeRoot, TypeSpec
 
 from .types import (
     ConversionResult,
@@ -111,18 +111,20 @@ class YamlProcessingService(BaseModel):
     このクラスは、YAML関連の処理のビジネスロジックを実装します。
     """
 
-    def convert_yaml_to_spec(
-        self, yaml_str: YamlString, root_key: TypeName | None = None
-    ) -> TypeSpec | Any:
+    # TODO: 詳細設計はIssue #83で継続
+    def convert_yaml_to_spec(self, yaml_str: YamlString, root_key: TypeName | None = None) -> TypeSpec | TypeRoot:
         """
-        YAML文字列からTypeSpecを生成します。
+        YAML文字列からTypeSpecまたはTypeRootを生成します。
 
         Args:
             yaml_str: YAML形式の文字列
             root_key: ルートキーの名前（Noneの場合、自動検出）
 
         Returns:
-            TypeSpecまたはその他のオブジェクト
+            TypeSpecまたはTypeRoot
+
+        Raises:
+            ValueError: YAMLのトップレベルがdictでない場合
         """
         # 簡易的な実装（実際はより複雑な処理が必要）
         import ruamel.yaml
@@ -131,10 +133,15 @@ class YamlProcessingService(BaseModel):
         data = yaml_parser.load(yaml_str)
 
         if isinstance(data, dict):
-            if not root_key and len(data) == 1:
-                root_key = list(data.keys())[0]
-                data = data[root_key]
+            # TypeRoot構造
+            if "types" in data:
+                from src.core.schemas.yaml_spec import TypeRoot as TypeRootModel
 
+                return TypeRootModel.model_validate(data)
+            # 単一ルートのTypeSpec構造
+            if not root_key and len(data) == 1:
+                root_key = next(iter(data.keys()))
+                data = data[root_key]
             from src.core.schemas.yaml_spec import TypeSpec as TypeSpecModel
 
             return TypeSpecModel(
@@ -143,8 +150,7 @@ class YamlProcessingService(BaseModel):
                 description=data.get("description"),
                 required=data.get("required", True),
             )
-
-        return data
+        raise ValueError("YAMLのトップレベルはdict(TypeSpec/TypeRoot)である必要があります")
 
     def validate_with_spec(
         self,
@@ -266,9 +272,7 @@ class DependencyProcessingService(BaseModel):
     このクラスは、依存関係の抽出・処理・可視化のビジネスロジックを実装します。
     """
 
-    def extract_dependencies_from_file(
-        self, file_path: ModulePath
-    ) -> TypeDependencyGraph:
+    def extract_dependencies_from_file(self, file_path: ModulePath) -> TypeDependencyGraph:
         """
         ファイルから依存関係を抽出します。
 
@@ -301,9 +305,7 @@ class DependencyProcessingService(BaseModel):
 
         return convert_graph_to_yaml_spec(graph)
 
-    def visualize_dependencies(
-        self, graph: TypeDependencyGraph, output_path: OutputPath = "deps.png"
-    ) -> None:
+    def visualize_dependencies(self, graph: TypeDependencyGraph, output_path: OutputPath | None = "deps.png") -> None:
         """
         依存関係を視覚化します。
 
@@ -326,15 +328,9 @@ class ProcessingResult(BaseModel):
     このクラスは、複数の処理結果をまとめて管理します。
     """
 
-    conversion_results: list[ConversionResult] = Field(
-        default_factory=list, description="型変換結果のリスト"
-    )
-    extraction_results: list[ExtractionResult] = Field(
-        default_factory=list, description="抽出結果のリスト"
-    )
-    dependency_results: list[DependencyResult] = Field(
-        default_factory=list, description="依存関係結果のリスト"
-    )
+    conversion_results: list[ConversionResult] = Field(default_factory=list, description="型変換結果のリスト")
+    extraction_results: list[ExtractionResult] = Field(default_factory=list, description="抽出結果のリスト")
+    dependency_results: list[DependencyResult] = Field(default_factory=list, description="依存関係結果のリスト")
     total_processing_time_ms: float = Field(description="総処理時間（ミリ秒）")
     start_time: float = Field(description="処理開始時間")
 
@@ -360,19 +356,16 @@ class ProcessingResult(BaseModel):
 
     def get_success_rate(self) -> float:
         """成功率を計算します。"""
-        total = (
-            len(self.conversion_results)
-            + len(self.extraction_results)
-            + len(self.dependency_results)
+        from itertools import chain
+
+        all_results = chain(
+            self.conversion_results,
+            self.extraction_results,
+            self.dependency_results,
         )
+        total = len(self.conversion_results) + len(self.extraction_results) + len(self.dependency_results)
         if total == 0:
             return 0.0
 
-        successful = sum(
-            1
-            for result in self.conversion_results
-            + self.extraction_results
-            + self.dependency_results
-            if result.success
-        )
+        successful = len([result for result in all_results if result.success])
         return successful / total

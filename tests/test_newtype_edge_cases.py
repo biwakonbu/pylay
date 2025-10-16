@@ -27,9 +27,7 @@ class TestNewTypeEdgeCases:
         results = classifier.classify_file(test_file)
         assert len(results) == 0
 
-    def test_syntax_error_file(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_syntax_error_file(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """構文エラーのあるファイルでクラッシュしない"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -38,17 +36,15 @@ class TestNewTypeEdgeCases:
 
             # 構文エラー
             UserId = NewType('UserId' str)  # カンマ忘れ
-            """)
+            """),
         )
 
-        # エラーにならないこと（空のリストを返す）
+        # エラーにならないこと(空のリストを返す)
         results = classifier.classify_file(test_file)
         # 構文エラーがあってもregexパターンで検出される可能性がある
         assert isinstance(results, list)
 
-    def test_newtype_without_import(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_without_import(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """NewTypeのインポートなしでも検出される"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -58,7 +54,7 @@ class TestNewTypeEdgeCases:
 
             def create_user_id(value: str) -> UserId:
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -67,9 +63,7 @@ class TestNewTypeEdgeCases:
         types = [td for td in results if td.name == "UserId"]
         assert len(types) == 1
 
-    def test_newtype_with_multiple_factories(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_multiple_factories(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """同じ型に対して複数のファクトリ関数がある場合"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -83,7 +77,7 @@ class TestNewTypeEdgeCases:
 
             def create_user_id_from_int(value: int) -> UserId:
                 return UserId(str(value))
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -93,9 +87,7 @@ class TestNewTypeEdgeCases:
         assert len(types) == 1
         assert types[0].level == "level2"
 
-    def test_factory_without_newtype(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_factory_without_newtype(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """NewTypeなしでファクトリ関数だけがある場合"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -103,7 +95,7 @@ class TestNewTypeEdgeCases:
             def create_user_id(value: str) -> str:
                 '''ファクトリ関数だけ（NewTypeなし）'''
                 return value
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -125,7 +117,7 @@ class TestNewTypeEdgeCases:
                 @staticmethod
                 def create_user_id(value: str) -> UserId:
                     return UserModule.UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -136,9 +128,7 @@ class TestNewTypeEdgeCases:
         # このテストは現状の動作を確認するもの
         assert len(types) <= 1
 
-    def test_newtype_with_unicode_name(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_unicode_name(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """Unicode文字を含む型名（非推奨だが構文的には有効）"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -150,7 +140,7 @@ class TestNewTypeEdgeCases:
 
             def create_ユーザーid(value: str) -> ユーザーID:
                 return ユーザーID(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -159,9 +149,7 @@ class TestNewTypeEdgeCases:
         # このテストは現状の動作を確認
         assert isinstance(results, list)
 
-    def test_newtype_with_generic_base(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_generic_base(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """ジェネリック型をベースとするNewType"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -174,7 +162,7 @@ class TestNewTypeEdgeCases:
 
             # 単純な型のみ
             UserId = NewType('UserId', str)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -183,9 +171,7 @@ class TestNewTypeEdgeCases:
         types = [td for td in results if td.name == "UserId"]
         assert len(types) == 1
 
-    def test_newtype_with_comment_on_same_line(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_comment_on_same_line(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """同じ行にコメントがある場合"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -196,7 +182,7 @@ class TestNewTypeEdgeCases:
 
             def create_user_id(value: str) -> UserId:  # ファクトリ関数
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -205,9 +191,7 @@ class TestNewTypeEdgeCases:
         assert len(types) == 1
         assert types[0].level == "level2"
 
-    def test_validate_call_without_newline(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_validate_call_without_newline(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """@validate_callとdefが同じ行にある場合（非推奨だが有効）"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -219,7 +203,7 @@ class TestNewTypeEdgeCases:
 
             # 改行なし（非推奨パターン）
             @validate_call; def Email(v: str) -> Email: return Email(v)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -230,9 +214,7 @@ class TestNewTypeEdgeCases:
         # Level 1 として検出される（ファクトリとして認識されない）
         assert types[0].level == "level1"
 
-    def test_multiple_files_isolation(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_multiple_files_isolation(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """複数ファイルを処理しても状態が混ざらない"""
         file1 = tmp_path / "test1.py"
         file1.write_text(
@@ -243,7 +225,7 @@ class TestNewTypeEdgeCases:
 
             def create_user_id(value: str) -> UserId:
                 return UserId(value)
-            """)
+            """),
         )
 
         file2 = tmp_path / "test2.py"
@@ -252,7 +234,7 @@ class TestNewTypeEdgeCases:
             from typing import NewType
 
             Email = NewType('Email', str)
-            """)
+            """),
         )
 
         results1 = classifier.classify_file(file1)
@@ -268,9 +250,7 @@ class TestNewTypeEdgeCases:
         assert len(email_types) == 1
         assert email_types[0].level == "level1"
 
-    def test_newtype_with_type_comment(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_type_comment(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """type: ignore等のコメントがある場合"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -285,7 +265,7 @@ class TestNewTypeEdgeCases:
                 value: Annotated[str, Field(pattern=r'^.+@.+$')]
             ) -> Email:  # type: ignore[no-redef]
                 return NewType('Email', str)(value)  # type: ignore[misc]
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -294,9 +274,7 @@ class TestNewTypeEdgeCases:
         assert len(types) == 1
         assert types[0].level == "level2"
 
-    def test_newtype_with_wrong_capitalization_factory(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_wrong_capitalization_factory(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """ファクトリ関数名の大文字小文字が完全一致しない場合"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -308,7 +286,7 @@ class TestNewTypeEdgeCases:
             # userid != UserId
             def create_userid(value: str) -> UserId:
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)

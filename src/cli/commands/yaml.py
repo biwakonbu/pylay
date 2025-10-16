@@ -62,8 +62,7 @@ def _path_to_module_path(file_path: Path) -> str | None:
 
         # .pyを除去
         if module_parts[-1].endswith(".py"):
-            module_parts_list = list(module_parts[:-1]) + [module_parts[-1][:-3]]
-            module_parts = tuple(module_parts_list)
+            module_parts = (*module_parts[:-1], module_parts[-1][:-3])
 
         return ".".join(module_parts)
     except (ValueError, IndexError):
@@ -393,7 +392,7 @@ def _process_directory(
     """
     # 処理開始時のPanel表示
     start_panel = Panel(
-        f"[bold cyan]ディレクトリ:[/bold cyan] {directory}\n" f"[bold cyan]出力先:[/bold cyan] {output_path}",
+        f"[bold cyan]ディレクトリ:[/bold cyan] {directory}\n[bold cyan]出力先:[/bold cyan] {output_path}",
         title="[bold green]🚀 ディレクトリ型収集開始[/bold green]",
         border_style="green",
     )
@@ -403,7 +402,7 @@ def _process_directory(
     py_files = _find_python_files_in_directory_only(directory, config.exclude_patterns)
 
     if not py_files:
-        console.print(f"[yellow]警告: {directory} " "内に型定義を含むファイルが見つかりませんでした[/yellow]")
+        console.print(f"[yellow]警告: {directory} 内に型定義を含むファイルが見つかりませんでした[/yellow]")
         return
 
     # 全ファイルから型を収集
@@ -431,7 +430,7 @@ def _process_directory(
                 sys.path.insert(0, parent_path)
                 # 同名モジュールの再利用を防ぐため、インポート前にsys.modulesから削除
                 sys.modules.pop(module_name, None)
-                module = importlib.import_module(module_name)  # noqa: F823
+                module = importlib.import_module(module_name)
 
                 # 型を抽出
                 for name, obj in module.__dict__.items():
@@ -605,7 +604,7 @@ def _process_single_file(
                 types_dict[type_name] = type_info
 
     if not types_dict:
-        console.rule("[bold red]エラー[/bold red]")
+        console.rule("[bold red]Error[/bold red]")
         console.print("[red]変換可能な型がモジュール内に見つかりませんでした[/red]")
         console.print(
             "[dim]Pydantic/Enum/dataclass/type alias/NewType のいずれかが定義されていることを確認してください[/dim]"
@@ -713,7 +712,7 @@ def run_yaml(
         if input_file is None:
             console.print(
                 Panel(
-                    "[bold cyan]引数が指定されていません。\n" "pyproject.tomlのtarget_dirsを使用します。[/bold cyan]",
+                    "[bold cyan]引数が指定されていません。\npyproject.tomlのtarget_dirsを使用します。[/bold cyan]",
                     title="[bold green]📋 設定ファイル使用モード[/bold green]",
                     border_style="green",
                 )
@@ -728,7 +727,7 @@ def run_yaml(
             for target_dir_str in config.target_dirs:
                 target_dir = Path(target_dir_str).resolve()
                 if not target_dir.exists():
-                    console.print(f"[yellow]警告: ディレクトリが存在しません: " f"{target_dir}[/yellow]")
+                    console.print(f"[yellow]警告: ディレクトリが存在しません: {target_dir}[/yellow]")
                     continue
 
                 # 全サブディレクトリを取得（階層ごとに処理）

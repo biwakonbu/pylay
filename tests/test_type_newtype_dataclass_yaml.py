@@ -21,7 +21,7 @@ def test_extract_type_alias_from_ast(tmp_path: Path) -> None:
         """
 type UserId = str
 type Point = tuple[float, float]
-"""
+""",
     )
 
     # AST解析
@@ -47,7 +47,7 @@ from typing import NewType
 
 UserId = NewType('UserId', str)
 Count = NewType('Count', int)
-"""
+""",
     )
 
     # AST解析
@@ -79,7 +79,7 @@ Count = typing.NewType('Count', int)
 # t.NewType(...) 形式（エイリアス）
 Email = t.NewType('Email', str)
 Score = t.NewType('Score', float)
-"""
+""",
     )
 
     # AST解析
@@ -123,7 +123,7 @@ class User:
     """ユーザー情報"""
     name: str
     age: int
-'''
+''',
     )
 
     # AST解析
@@ -163,7 +163,7 @@ class Location:
     """位置情報"""
     latitude: float
     longitude: float
-'''
+''',
     )
 
     # AST解析
@@ -267,7 +267,7 @@ class Product:
     name: str
     price: float
     stock: int = 0
-'''
+''',
     )
 
     # AST解析

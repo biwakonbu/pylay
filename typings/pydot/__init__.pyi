@@ -4,7 +4,10 @@ from typing import Any
 
 class Dot:
     def __init__(
-        self, graph_type: str = ..., rankdir: str = ..., **kwargs: Any
+        self,
+        graph_type: str = ...,
+        rankdir: str = ...,
+        **kwargs: Any,
     ) -> None: ...
     def add_node(self, node: Node) -> None: ...
     def add_edge(self, edge: Edge) -> None: ...

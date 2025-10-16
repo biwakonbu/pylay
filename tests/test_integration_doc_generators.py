@@ -57,9 +57,7 @@ class TestDocGeneratorsIntegration:
         # 深くネストされた構造を作成
         deep_spec = TypeSpec(name="str", type="str")
         for i in range(15):  # 深さ15のネスト
-            deep_spec = DictTypeSpec(
-                name=f"Level{i}", type="dict", properties={"value": deep_spec}
-            )
+            deep_spec = DictTypeSpec(name=f"Level{i}", type="dict", properties={"value": deep_spec})
 
         generator = YamlDocGenerator()
         output_path = self.output_dir / "deep_test.md"

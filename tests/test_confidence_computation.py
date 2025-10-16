@@ -146,9 +146,7 @@ class TestComputeConfidence:
 
     def test_simple_type_no_error_high_coverage(self):
         """理想的な状況: 単純型、エラーなし、高カバレッジ"""
-        confidence = _compute_confidence(
-            type_info="int", mypy_output="", var_name="x", annotation_coverage=0.8
-        )
+        confidence = _compute_confidence(type_info="int", mypy_output="", var_name="x", annotation_coverage=0.8)
         # certainty=1.0, complexity=0.0, annotation=0.8^0.8
         # 0.5*1.0 + 0.3*1.0 + 0.2*(0.8^0.8) ≈ 0.96
         assert confidence >= 0.95
@@ -180,9 +178,7 @@ class TestComputeConfidence:
     def test_confidence_range(self):
         """信頼度は常に0.0-1.0の範囲"""
         # 極端な値でもクリップされる
-        confidence_high = _compute_confidence(
-            type_info="int", mypy_output="", var_name="x", annotation_coverage=1.0
-        )
+        confidence_high = _compute_confidence(type_info="int", mypy_output="", var_name="x", annotation_coverage=1.0)
         confidence_low = _compute_confidence(
             type_info="Any",
             mypy_output="error: x has issues",
@@ -207,9 +203,7 @@ class TestComputeConfidence:
 
     def test_generic_type_penalty(self):
         """ジェネリック型は信頼度を下げる"""
-        simple_confidence = _compute_confidence(
-            type_info="list", mypy_output="", var_name="x", annotation_coverage=0.5
-        )
+        simple_confidence = _compute_confidence(type_info="list", mypy_output="", var_name="x", annotation_coverage=0.5)
         generic_confidence = _compute_confidence(
             type_info="list[dict[str, Any]]",
             mypy_output="",
@@ -220,12 +214,8 @@ class TestComputeConfidence:
 
     def test_annotation_coverage_impact(self):
         """アノテーションカバレッジは信頼度に影響する"""
-        low_cov = _compute_confidence(
-            type_info="int", mypy_output="", var_name="x", annotation_coverage=0.2
-        )
-        high_cov = _compute_confidence(
-            type_info="int", mypy_output="", var_name="x", annotation_coverage=0.9
-        )
+        low_cov = _compute_confidence(type_info="int", mypy_output="", var_name="x", annotation_coverage=0.2)
+        high_cov = _compute_confidence(type_info="int", mypy_output="", var_name="x", annotation_coverage=0.9)
         assert high_cov > low_cov
 
 
@@ -234,16 +224,12 @@ class TestEdgeCases:
 
     def test_empty_type_info(self):
         """空の型情報"""
-        confidence = _compute_confidence(
-            type_info="", mypy_output="", var_name="x", annotation_coverage=0.5
-        )
+        confidence = _compute_confidence(type_info="", mypy_output="", var_name="x", annotation_coverage=0.5)
         assert 0.0 <= confidence <= 1.0
 
     def test_empty_mypy_output(self):
         """空のmypy出力"""
-        confidence = _compute_confidence(
-            type_info="int", mypy_output="", var_name="x", annotation_coverage=0.5
-        )
+        confidence = _compute_confidence(type_info="int", mypy_output="", var_name="x", annotation_coverage=0.5)
         # エラーなしとして扱われる
         assert confidence > 0.5
 

@@ -53,9 +53,7 @@ cli_instance = PylayCLI()
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.version_option(version=get_version())
 @click.option("--verbose", is_flag=True, help="詳細ログを出力")
-@click.option(
-    "--config", type=click.Path(exists=True), help="設定ファイルのパス (YAML)"
-)
+@click.option("--config", type=click.Path(exists=True), help="設定ファイルのパス (YAML)")
 @click.pass_context
 def cli(ctx: click.Context, verbose: bool, config: str | None) -> None:
     """pylay: 型解析、自動型生成、ドキュメント生成ツール
@@ -314,7 +312,7 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
 
             # 推論された型の情報を表示
             if graph.nodes:
-                table = Table(title="🔍 推論された型情報", show_header=True)
+                table = Table(title="🔍 Inferred Type Information", show_header=True)
                 table.add_column("モジュール", style="cyan", width=30)
                 table.add_column("型", style="white")
 
@@ -339,9 +337,7 @@ def analyze_infer_deps(ctx: click.Context, input_file: str, visualize: bool) -> 
                 output_image = f"{input_file}.deps.png"
                 processor = GraphProcessor()
                 processor.visualize_graph(graph, output_image)
-                cli_instance.console.print(
-                    f"📊 依存関係グラフを {output_image} に保存しました"
-                )
+                cli_instance.console.print(f"📊 依存関係グラフを {output_image} に保存しました")
 
         # 結果を表示
         cli_instance.show_success_message(

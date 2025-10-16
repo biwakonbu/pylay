@@ -35,13 +35,13 @@ class TestRefResolver:
             "A": {
                 "type": "dict",
                 "properties": {
-                    "b": "B"  # Bを参照
+                    "b": "B",  # Bを参照
                 },
             },
             "B": {
                 "type": "dict",
                 "properties": {
-                    "a": "A"  # Aを参照 -> 循環
+                    "a": "A",  # Aを参照 -> 循環
                 },
             },
         }
@@ -80,7 +80,9 @@ class TestRefResolver:
     def test_detect_cycles_types_no_cycles(self):
         """TypeSpecベースの循環参照検出（なし）のテスト"""
         user_spec = DictTypeSpec(
-            name="User", type="dict", properties={"id": TypeSpec(name="id", type="int")}
+            name="User",
+            type="dict",
+            properties={"id": TypeSpec(name="id", type="int")},
         )
         order_spec = DictTypeSpec(
             name="Order",
@@ -118,19 +120,25 @@ class TestRefResolver:
     def test_collect_refs_from_spec_nested(self):
         """TypeSpecからの参照収集（ネスト）のテスト"""
         user_spec = DictTypeSpec(
-            name="User", type="dict", properties={"id": TypeSpec(name="id", type="int")}
+            name="User",
+            type="dict",
+            properties={"id": TypeSpec(name="id", type="int")},
         )
         order_spec = DictTypeSpec(
-            name="Order", type="dict", properties={"user": user_spec}
+            name="Order",
+            type="dict",
+            properties={"user": user_spec},
         )
         refs = RefResolver._collect_refs_from_spec(order_spec)
-        # ネストされたTypeSpecからの参照は収集されない（str参照のみ）
+        # ネストされたTypeSpecからの参照は収集されない(str参照のみ)
         assert len(refs) == 0
 
     def test_resolve_all_basic(self):
         """基本的な参照解決のテスト"""
         user_spec = DictTypeSpec(
-            name="User", type="dict", properties={"id": TypeSpec(name="id", type="int")}
+            name="User",
+            type="dict",
+            properties={"id": TypeSpec(name="id", type="int")},
         )
         types = {"User": user_spec}
 
@@ -142,9 +150,7 @@ class TestRefResolver:
         """参照を含む参照解決のテスト"""
         # 実際のTypeContextが必要なので、簡易テスト
         # 詳細なテストは統合テストでカバー
-        user_spec = DictTypeSpec(
-            name="User", type="dict", properties={"id": TypeSpec(name="id", type="int")}
-        )
+        user_spec = DictTypeSpec(name="User", type="dict", properties={"id": TypeSpec(name="id", type="int")})
         types = {"User": user_spec}
 
         resolved = RefResolver.resolve_all(types)

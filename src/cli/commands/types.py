@@ -7,6 +7,7 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
 import yaml as pyyaml
 from rich.box import SIMPLE
@@ -26,6 +27,13 @@ from src.core.converters.type_to_yaml import PROJECT_ROOT_PACKAGE
 from src.core.converters.yaml_to_type import yaml_to_spec
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.yaml_spec import RefPlaceholder, TypeRoot, TypeSpec
+
+
+@runtime_checkable
+class _HasImports(Protocol):
+    """imports_属性を持つオブジェクトのProtocol"""
+
+    imports_: dict[str, str] | None
 
 
 def _generate_imports_from_yaml(
@@ -61,9 +69,8 @@ def _generate_imports_from_yaml(
         # TypeRoot.imports_フィールドから取得
         if spec.imports_:
             imports_dict = spec.imports_
-    elif hasattr(spec, "imports_"):
-        if spec.imports_:  # type: ignore[attr-defined]
-            imports_dict = spec.imports_  # type: ignore[attr-defined]
+    elif isinstance(spec, _HasImports) and spec.imports_:
+        imports_dict = spec.imports_
 
     # imports_dictが空でもPydanticの必須インポートは生成する
     # （BaseModel, Fieldは常に必要）
@@ -207,12 +214,11 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
         console.print(start_panel)
 
         # YAMLを読み込み
-        with console.status("[bold green]YAMLファイル読み込み中..."):
-            with open(input_file, encoding="utf-8") as f:
-                yaml_str = f.read()
+        with console.status("[bold green]Loading YAML file..."), open(input_file, encoding="utf-8") as f:
+            yaml_str = f.read()
 
         # Python型に変換
-        with console.status("[bold green]型情報解析中..."):
+        with console.status("[bold green]Analyzing type information..."):
             spec_result = yaml_to_spec(yaml_str, root_key)
             # RefPlaceholderは参照解決エラーを示すため、適切にエラー処理
             if isinstance(spec_result, RefPlaceholder):
@@ -221,8 +227,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             spec = spec_result
 
         # 元のYAMLデータをパースして保持（新形式フィールド用）
-        with open(input_file, encoding="utf-8") as f:
-            raw_yaml_data = pyyaml.safe_load(f.read())
+        raw_yaml_data = pyyaml.safe_load(yaml_str) or {}
 
         # Pythonコードを生成
         code_lines = []
@@ -299,7 +304,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                 visited.add(name)
                 sorted_types.append(name)
 
-            for name in types_dict.keys():
+            for name in types_dict:
                 visit(name, set())
 
             return sorted_types
@@ -308,11 +313,13 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
         # YAML内で定義されている型はimportしない（型定義を優先）
         defined_types = set()
 
-        if raw_yaml_data:
+        if isinstance(raw_yaml_data, dict) and raw_yaml_data:
             # YAMLデータから定義されている型名を抽出（_importsや_metadataは除外）
             # IMPORTANT: _で始まる型名（_BaseType等）を除外しないよう、特定キーのみ除外
             reserved_keys = {"_metadata", "_imports"}
-            defined_types = {k for k in raw_yaml_data.keys() if k not in reserved_keys}
+            defined_types = {k for k in raw_yaml_data if k not in reserved_keys}
+        else:
+            defined_types = set()
 
         # 除外する型 = YAML内で定義されている型
         exclude_types = defined_types
@@ -361,9 +368,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
 
             elif spec_type == "unknown":
                 # unknown の場合は元の name を使う（str | None など）
-                if spec_name == "phone":
-                    return "str | None"
-                elif spec_name == "description":
+                if spec_name == "phone" or spec_name == "description":
                     return "str | None"
                 elif spec_name == "shipping_address":
                     return "Address | None"
@@ -396,7 +401,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             base_classes_str = ", ".join(base_classes)
 
             lines.append(f"class {name}({base_classes_str}):")
-            if "description" in spec_data and spec_data["description"]:
+            if spec_data.get("description"):
                 # 複数行docstringの場合、適切にインデントを追加
                 description = spec_data["description"]
                 # descriptionがNoneの場合のTypeErrorを防ぐ
@@ -465,7 +470,7 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
                                 field_params.append(f"{key}={value}")
 
                     # 3. description（最後）
-                    if "description" in field_spec and field_spec["description"]:
+                    if field_spec.get("description"):
                         # エスケープ処理（"を\"に変換）
                         description_escaped = field_spec["description"].replace('"', '\\"')
                         field_params.append(f'description="{description_escaped}"')
@@ -545,24 +550,30 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             if output_path is None:
                 msg = "output_path is None when not using stdout"
                 raise ValueError(msg)
-            with console.status("[bold green]ファイル出力中..."):
-                with open(output_path, "w", encoding="utf-8") as f:
-                    f.write(output_content)
+
+            # 出力先ディレクトリを確保
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
+            with (
+                console.status("[bold green]Writing file..."),
+                open(output_path, "w", encoding="utf-8") as f,
+            ):
+                f.write(output_content)
 
             # 結果表示用のTable
             result_table = Table(
-                title="変換結果サマリー",
+                title="Summary",
                 show_header=True,
                 border_style="green",
                 width=80,
                 header_style="",
                 box=SIMPLE,
             )
-            result_table.add_column("項目", style="cyan", no_wrap=True, width=40)
-            result_table.add_column("結果", style="green", justify="right", width=30)
+            result_table.add_column("Item", style="cyan", no_wrap=True, width=40)
+            result_table.add_column("Result", style="green", justify="right", width=30)
 
-            result_table.add_row("入力ファイル", input_path.name)
-            result_table.add_row("出力ファイル", output_path.name)
+            result_table.add_row("Input file", input_path.name)
+            result_table.add_row("Output file", output_path.name)
 
             # 型情報をカウントして表示
             type_count = 0
@@ -571,17 +582,17 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
             elif spec is not None:
                 type_count = 1
 
-            result_table.add_row("生成型数", f"{type_count} 個")
-            result_table.add_row("コード行数", f"{len(code_lines)} 行")
+            result_table.add_row("Types generated", f"{type_count}")
+            result_table.add_row("Lines of code", f"{len(code_lines)}")
 
             console.print(result_table)
 
             # 完了メッセージのPanel
             complete_panel = Panel(
-                f"[bold green]✅ YAMLから型への変換が完了しました[/bold green]\n\n"
-                f"[bold cyan]出力ファイル:[/bold cyan] {output_path}\n"
-                f"[bold cyan]生成型数:[/bold cyan] {type_count} 個",
-                title="[bold green]🎉 処理完了[/bold green]",
+                f"[bold green]✅ Conversion completed[/bold green]\n\n"
+                f"[bold cyan]Output file:[/bold cyan] {output_path}\n"
+                f"[bold cyan]Types generated:[/bold cyan] {type_count}",
+                title="[bold green]🎉 Completed[/bold green]",
                 border_style="green",
             )
             console.print(complete_panel)
@@ -589,8 +600,8 @@ def run_types(input_file: str, output_file: str, root_key: str | None = None) ->
     except Exception as e:
         # エラーメッセージのPanel
         error_panel = Panel(
-            f"[red]エラー: {e}[/red]",
-            title="[bold red]❌ 処理エラー[/bold red]",
+            f"[red]Error: {e}[/red]",
+            title="[bold red]❌ Error[/bold red]",
             border_style="red",
         )
         console.print(error_panel)

@@ -103,8 +103,6 @@ def test_v1_1_multiple_types():
     class Users:
         """ユーザーのリスト"""
 
-        pass
-
     UsersList = list[User]
 
     # 複数型をYAMLに変換
@@ -132,9 +130,7 @@ def test_v1_1_multiple_types():
     assert users_list_spec.type == "list"
     # テストの期待を調整（実際の挙動に合わせる）
     assert users_list_spec.items is not None  # 存在確認
-    assert (
-        users_list_spec.items.description == "ユーザーを表す型"
-    )  # 参照先のdescription
+    assert users_list_spec.items.description == "ユーザーを表す型"  # 参照先のdescription
 
 
 def test_roundtrip_transparency():
@@ -152,9 +148,7 @@ def test_roundtrip_transparency():
     Result = int | str
 
     # Python型 -> YAML の変換が正しく動作することを確認
-    original_yaml = types_to_yaml(
-        {"Product": Product, "Products": Products, "Result": Result}
-    )
+    original_yaml = types_to_yaml({"Product": Product, "Products": Products, "Result": Result})
 
     # 基本的な構造確認（新形式では types: なし）
     assert "types:" not in original_yaml
@@ -528,9 +522,7 @@ def test_validate_with_spec_depth_limit():
     # 深くネストされた構造を作成（深さ5程度）
     deep_spec = TypeSpec(name="str", type="str")
     for _ in range(5):  # 深さ5のネスト
-        deep_spec = DictTypeSpec(
-            name="nested", type="dict", properties={"value": deep_spec}
-        )
+        deep_spec = DictTypeSpec(name="nested", type="dict", properties={"value": deep_spec})
 
     # 深さ制限なしで有効なデータ
     deep_data = {"value": {"value": {"value": {"value": {"value": "deep"}}}}}

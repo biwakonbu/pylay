@@ -41,7 +41,7 @@ UserId = NewType('UserId', str)
         result = runner.invoke(cli, ["check", "--focus", "types", str(test_file)])
         assert result.exit_code == 0
         # 型定義レベル統計が実行されることを確認
-        assert "型定義レベル統計" in result.stdout or "解析中" in result.stdout
+        assert "Type Definition Level Statistics" in result.stdout or "Analyzing" in result.stdout
 
     def test_check_focus_ignore(self, tmp_path):
         """check --focus ignoreオプションが動作することを確認"""
@@ -55,7 +55,7 @@ def test_func(x):  # type: ignore
         result = runner.invoke(cli, ["check", "--focus", "ignore", str(test_file)])
         assert result.exit_code == 0
         # type-ignore診断が実行されることを確認
-        assert "type-ignore" in result.stdout or "解析中" in result.stdout
+        assert "type-ignore" in result.stdout or "Analyzing" in result.stdout
 
     def test_check_focus_quality(self, tmp_path):
         """check --focus qualityオプションが動作することを確認"""
@@ -69,7 +69,7 @@ UserId = NewType('UserId', str)
         result = runner.invoke(cli, ["check", "--focus", "quality", str(test_file)])
         assert result.exit_code == 0
         # 品質チェックが実行されることを確認
-        assert "品質チェック" in result.stdout or "解析中" in result.stdout
+        assert "Quality Check" in result.stdout or "Analyzing" in result.stdout
 
     def test_yaml_help(self):
         """yamlコマンドのヘルプが表示されることを確認"""
@@ -140,7 +140,7 @@ UserId = NewType('UserId', str)
             """
 type UserId = str
 type Point = tuple[float, float]
-"""
+""",
         )
         # YAMLファイルの出力先を指定
         output_file = tmp_path / "test_types.lay.yaml"
@@ -171,7 +171,7 @@ from typing import NewType
 
 UserId = NewType('UserId', str)
 Count = NewType('Count', int)
-"""
+""",
         )
         # YAMLファイルの出力先を指定
         output_file = tmp_path / "test_newtypes.lay.yaml"
@@ -211,7 +211,7 @@ class User:
     """ユーザー情報"""
     name: str
     age: int
-'''
+''',
         )
         # YAMLファイルの出力先を指定
         output_file = tmp_path / "test_dataclasses.lay.yaml"

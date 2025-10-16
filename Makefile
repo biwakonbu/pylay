@@ -114,7 +114,8 @@ coverage: test ## カバレッジレポートを開く
 
 analyze: ## プロジェクト全体を解析
 	@echo "🔍 プロジェクトを解析中..."
-	uv run pylay project-analyze
+	uv run pylay check
+	@echo "✅ プロジェクト解析完了"
 
 analyze-yaml: ## srcディレクトリのPython型をYAMLに変換
 	@echo "🔍 srcディレクトリのPython型をYAMLに変換中..."

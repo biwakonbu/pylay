@@ -11,7 +11,12 @@ from collections.abc import Callable
 from pathlib import Path
 
 from src.core.analyzer.abc_base import Analyzer
-from src.core.analyzer.exceptions import AnalysisError
+from src.core.analyzer.exceptions import (
+    AnalysisError,
+    InputValidationError,
+    InvalidAnalysisModeError,
+    InvalidInputTypeError,
+)
 from src.core.schemas.graph import TypeDependencyGraph
 from src.core.schemas.pylay_config import PylayConfig
 from src.core.schemas.types import AnalyzerModeList
@@ -87,7 +92,7 @@ class FullAnalyzer(Analyzer):
             try:
                 temp_config = TempFileConfig(code=input_path, suffix=".py", mode="w")
             except ValidationError as e:
-                raise ValueError(f"無効な入力: {e}") from e
+                raise InputValidationError(e) from e
             temp_path = create_temp_file(temp_config)
 
             # クリーンアップ関数を返す
@@ -104,7 +109,7 @@ class FullAnalyzer(Analyzer):
 
             return input_path, noop_cleanup
         else:
-            raise ValueError("input_path は Path または str でなければなりません")
+            raise InvalidInputTypeError(type(input_path), parameter_name="input_path")
 
 
 def create_analyzer(config: PylayConfig, mode: str = "full") -> Analyzer:
@@ -134,10 +139,8 @@ def create_analyzer(config: PylayConfig, mode: str = "full") -> Analyzer:
     elif mode == "full":
         return FullAnalyzer(config)
     else:
-        raise ValueError(
-            f"無効な解析モード: {mode}. "
-            "'types_only', 'deps_only', 'full' のいずれかを指定してください。"
-        )
+        valid_modes = get_supported_modes()
+        raise InvalidAnalysisModeError(mode, valid_modes)
 
 
 def get_supported_modes() -> AnalyzerModeList:

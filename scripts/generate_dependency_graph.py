@@ -82,13 +82,9 @@ def generate_dependency_docs(
 
 def main() -> None:
     """メインエントリーポイント"""
-    parser = argparse.ArgumentParser(
-        description="Pythonファイルから型依存グラフを抽出し、Markdownドキュメントを生成"
-    )
+    parser = argparse.ArgumentParser(description="Pythonファイルから型依存グラフを抽出し、Markdownドキュメントを生成")
     parser.add_argument("input_file", help="依存を抽出するPythonファイルのパス")
-    parser.add_argument(
-        "--output", "-o", required=True, help="出力Markdownファイルのパス"
-    )
+    parser.add_argument("--output", "-o", required=True, help="出力Markdownファイルのパス")
     parser.add_argument(
         "--visualize",
         "-v",
@@ -98,9 +94,7 @@ def main() -> None:
     parser.add_argument("--dot-file", help="DOTファイルの出力パス（--visualize使用時）")
     parser.add_argument("--mypy", action="store_true", help="mypy型推論を含める")
     parser.add_argument("--analyze", action="store_true", help="NetworkX分析を実行")
-    parser.add_argument(
-        "--graphml", help="GraphMLファイルの出力パス（--analyze使用時）"
-    )
+    parser.add_argument("--graphml", help="GraphMLファイルの出力パス(--analyze使用時)")
 
     args = parser.parse_args()
 

@@ -16,7 +16,6 @@ from src.core.schemas.types import (
     NodeId,
     NodeType,
     QualifiedName,
-    Weight,
 )
 
 
@@ -96,7 +95,7 @@ class GraphEdge(BaseModel):
     source: NodeId
     target: NodeId
     relation_type: RelationType
-    weight: Weight = Field(default=1.0)  # type: ignore[assignment]  # 0.0から1.0の範囲
+    weight: float = Field(default=1.0)  # Weight型として扱われ、TypeAdapterで検証される
     attributes: NodeAttributes | None = None
     metadata: GraphMetadata | None = None
 
@@ -215,9 +214,7 @@ class TypeDependencyGraph(BaseModel):
 
     def add_edge(self, edge: GraphEdge) -> None:
         """エッジを追加"""
-        if not any(
-            e.source == edge.source and e.target == edge.target for e in self.edges
-        ):
+        if not any(e.source == edge.source and e.target == edge.target for e in self.edges):
             self.edges.append(edge)
 
     def get_node(self, node_id: NodeId) -> GraphNode | None:
@@ -275,12 +272,18 @@ class TypeDependencyGraph(BaseModel):
             graph.add_node(node.id, **node_attrs)
         for edge in self.edges:
             attrs = edge.attributes.custom_data if edge.attributes else {}
+            edge_data: dict[str, Any] = {
+                "relation_type": edge.relation_type.value,
+                "weight": edge.weight,
+                **attrs,
+            }
+            # metadataもNetworkXエッジデータに含める
+            if edge.metadata is not None:
+                edge_data["metadata"] = edge.metadata.model_dump()  # GraphMetadata を dict に変換
             graph.add_edge(
                 edge.source,
                 edge.target,
-                relation_type=edge.relation_type.value,
-                weight=edge.weight,
-                **attrs,
+                **edge_data,
             )
         return graph
 

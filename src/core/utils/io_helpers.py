@@ -4,6 +4,7 @@ IOヘルパーユーティリティ
 一時ファイル作成やコード処理の共通機能を管理します。
 """
 
+import fnmatch
 import os
 import tempfile
 from pathlib import Path
@@ -25,9 +26,7 @@ def create_temp_file(config: TempFileConfig) -> Path:
         OSError: ファイル作成に失敗した場合
     """
     try:
-        with tempfile.NamedTemporaryFile(
-            mode=config.mode, suffix=config.suffix, delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode=config.mode, suffix=config.suffix, delete=False) as f:
             f.write(config.code)
             temp_path = Path(f.name)
         return temp_path
@@ -71,5 +70,50 @@ def read_file_content(file_path: Path) -> str:
         raise FileNotFoundError(f"ファイルが見つかりません: {file_path}")
     except UnicodeDecodeError as e:
         raise UnicodeDecodeError(
-            e.encoding, e.object, e.start, e.end, f"エンコーディングエラー: {file_path}"
-        )
+            e.encoding,
+            e.object,
+            e.start,
+            e.end,
+            f"エンコーディングエラー: {file_path} - {e.reason}",
+        ) from e
+
+
+def collect_python_files(directory: Path, exclude_patterns: list[str] | None = None) -> list[Path]:
+    """
+    指定されたディレクトリからPythonファイルを収集します。
+
+    Args:
+        directory: 検索対象のディレクトリ
+        exclude_patterns: 除外するパターン(glob形式)
+
+    Returns:
+        収集されたPythonファイルのパスリスト
+    """
+    # すべての.pyファイルを収集
+    all_py_files = list(directory.rglob("*.py"))
+
+    # 除外パターンを適用
+    py_files = []
+    for py_file in all_py_files:
+        # ファイルパスをPOSIX形式に変換(Windows環境対応)
+        try:
+            relative_path = py_file.relative_to(directory).as_posix()
+        except ValueError:
+            # directoryの外のファイルの場合は絶対パスを使用
+            relative_path = py_file.as_posix()
+
+        # 両方の形式でチェック(POSIX形式パスと相対パスの両方を考慮)
+        posix_path = py_file.as_posix()
+
+        # 除外パターンにマッチするかチェック(相対パスとPOSIX形式パスの両方)
+        should_exclude = False
+        if exclude_patterns:
+            for pattern in exclude_patterns:
+                if fnmatch.fnmatch(relative_path, pattern) or fnmatch.fnmatch(posix_path, pattern):
+                    should_exclude = True
+                    break
+
+        if not should_exclude:
+            py_files.append(py_file)
+
+    return py_files

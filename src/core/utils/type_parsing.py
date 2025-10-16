@@ -12,6 +12,7 @@
 
 import ast
 import logging
+import re
 
 # 実行時の型解析処理に使用
 # - get_args, get_origin: ジェネリック型の解析
@@ -167,8 +168,8 @@ def extract_type_references(
             if origin is not None:
                 # originが型の場合、その名前を抽出
                 if hasattr(origin, "__name__"):
-                    name = getattr(origin, "__name__")
-                    if name not in excluded_types:
+                    name = getattr(origin, "__name__", None)
+                    if isinstance(name, str) and name not in excluded_types:
                         refs.add(name)
 
                 # 型引数を再帰的に処理
@@ -176,8 +177,8 @@ def extract_type_references(
                     extract_from_typing_obj(arg)
             # 通常の型オブジェクト
             elif hasattr(obj, "__name__"):
-                name = getattr(obj, "__name__")
-                if name not in excluded_types:
+                name = getattr(obj, "__name__", None)
+                if isinstance(name, str) and name not in excluded_types:
                     refs.add(name)
             # ForwardRef（文字列型参照）
             elif isinstance(obj, ForwardRef):
@@ -236,16 +237,15 @@ def extract_type_references(
         import typing
 
         # セキュリティ: allowlist方式で必要最小限の属性のみ許可
-        typing_ns = {
-            k: v for k, v in typing.__dict__.items() if k in ALLOWED_TYPING_ATTRS
-        }
+        typing_ns = {k: v for k, v in typing.__dict__.items() if k in ALLOWED_TYPING_ATTRS}
         typing_ns["__builtins__"] = {}
 
         # TODO: 将来的にはASTパースのみで処理を完結させる移行を検討
-        # 現在の多層防御（eval失敗→ASTフォールバック）は有効だが、
+        # 現在の多層防御(eval失敗→ASTフォールバック)は有効だが、
         # eval()によるセキュリティリスクを完全に排除するため、
         # ASTパーサーの精度向上とともにeval()の使用を段階的に削減する
-        obj = eval(type_str, typing_ns)  # noqa: S307
+        # 型式限定・builtins無効化済みの安全な eval 利用（S307 セキュリティ警告対応）
+        obj = eval(type_str, typing_ns)
         extract_from_typing_obj(obj)
         if refs:
             return sorted(refs) if deduplicate else list(refs)
@@ -260,13 +260,8 @@ def extract_type_references(
     except SyntaxError:
         # パース失敗時は単純な文字列分割にフォールバック
         logger.debug(f"型文字列のパースに失敗しました: {type_str}")
-        parts = (
-            type_str.replace("[", " ")
-            .replace("]", " ")
-            .replace(",", " ")
-            .replace("|", " ")
-            .split()
-        )
+        # 型区切り文字を空白に置換して分割
+        parts = re.sub(r"[\[\],|]", " ", type_str).split()
         for part in parts:
             part = part.strip()
             if part and part[0].isupper() and part not in excluded_types:
@@ -288,21 +283,20 @@ def validate_type_string(type_str: str) -> tuple[bool, str | None]:
     if not type_str or not isinstance(type_str, str):
         return False, "型文字列が空またはstr型ではありません"
 
+    # 先に AST 構文を検証（高速・安全）
     try:
-        import typing
-
-        typing_ns = {
-            k: v for k, v in typing.__dict__.items() if k in ALLOWED_TYPING_ATTRS
-        }
-        typing_ns["__builtins__"] = {}
-        eval(type_str, typing_ns)  # noqa: S307
+        ast.parse(type_str, mode="eval")
         return True, None
-    except (NameError, SyntaxError, AttributeError, TypeError):
-        # typing評価失敗の場合はASTパースを試みる
+    except SyntaxError as ast_err:
+        # 必要に応じて型名の整合を厳密に見る場合のみ eval を使用
         try:
-            ast.parse(type_str, mode="eval")
+            import typing
+
+            typing_ns = {k: v for k, v in typing.__dict__.items() if k in ALLOWED_TYPING_ATTRS}
+            typing_ns["__builtins__"] = {}
+            eval(type_str, typing_ns)
             return True, None
-        except SyntaxError as ast_err:
+        except (NameError, SyntaxError, AttributeError, TypeError):
             return False, f"型文字列のパースに失敗: {ast_err}"
     except Exception as e:
         return False, f"予期しないエラー: {e}"

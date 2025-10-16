@@ -89,9 +89,7 @@ class TestCatalogGenerator:
         # Should find test classes and methods
         assert "TestGenerateTestDocs" in content
         assert "test_generate_test_docs_with_valid_files" in content
-        assert (
-            "pytest tests/test_generate_test_docs.py::TestGenerateTestDocs" in content
-        )
+        assert "pytest tests/test_generate_test_docs.py::TestGenerateTestDocs" in content
 
     def test_generate_with_custom_output_path(self):
         """Test generation with custom output path override."""
@@ -134,9 +132,7 @@ class TestCatalogGenerator:
             filesystem=self.filesystem,
         )
 
-        test_functions = generator._extract_test_functions(
-            tests.test_generate_test_docs
-        )
+        test_functions = generator._extract_test_functions(tests.test_generate_test_docs)
 
         # Should find test methods from test classes
         assert len(test_functions) > 0
@@ -178,9 +174,7 @@ class TestCatalogGenerator:
         count = generator._count_test_modules()
 
         # Should count actual test modules in tests/scripts
-        assert (
-            count >= 2
-        )  # At least test_generate_test_docs and test_generate_type_docs
+        assert count >= 2  # At least test_generate_test_docs and test_generate_type_docs
 
     def test_format_generation_footer(self):
         """Test generation footer formatting."""
@@ -283,12 +277,7 @@ class TestMarkdownBuilder:
 
     def test_paragraph_and_line_break(self):
         """Test paragraph and line break generation."""
-        result = (
-            self.md.paragraph("First paragraph")
-            .line_break()
-            .paragraph("Second paragraph")
-            .build()
-        )
+        result = self.md.paragraph("First paragraph").line_break().paragraph("Second paragraph").build()
 
         expected = "First paragraph\n\nSecond paragraph\n"
         assert result == expected
@@ -314,22 +303,14 @@ class TestMarkdownBuilder:
 
     def test_table_generation(self):
         """Test table generation."""
-        result = (
-            self.md.table_header(["Col1", "Col2"]).table_row(["Data1", "Data2"]).build()
-        )
+        result = self.md.table_header(["Col1", "Col2"]).table_row(["Data1", "Data2"]).build()
 
         expected = "| Col1 | Col2 |\n| --- | --- |\n| Data1 | Data2 |\n"
         assert result == expected
 
     def test_fluent_api_chaining(self):
         """Test that all methods return self for chaining."""
-        result = (
-            self.md.heading(1, "Title")
-            .paragraph("Content")
-            .bullet_point("Item")
-            .line_break()
-            .horizontal_rule()
-        )
+        result = self.md.heading(1, "Title").paragraph("Content").bullet_point("Item").line_break().horizontal_rule()
 
         assert result is self.md
         content = result.build()

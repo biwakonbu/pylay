@@ -9,19 +9,19 @@ PYDANTIC_TYPES: dict[str, dict[str, str]] = {
     "email": {
         "type": "EmailStr",
         "import": "from pydantic import EmailStr",
-        "description": "メールアドレス（自動バリデーション）",
+        "description": "メールアドレス(自動バリデーション)",
         "example": "user_email: EmailStr",
     },
     "url": {
         "type": "HttpUrl",
         "import": "from pydantic import HttpUrl",
-        "description": "HTTP/HTTPS URL（自動バリデーション）",
+        "description": "HTTP/HTTPS URL(自動バリデーション)",
         "example": "website: HttpUrl",
     },
     "filepath": {
         "type": "FilePath",
         "import": "from pydantic import FilePath",
-        "description": "既存ファイルのパス（存在チェック）",
+        "description": "既存ファイルのパス(存在チェック)",
         "example": "config_file: FilePath",
     },
     "newpath": {
@@ -33,19 +33,19 @@ PYDANTIC_TYPES: dict[str, dict[str, str]] = {
     "dirpath": {
         "type": "DirectoryPath",
         "import": "from pydantic import DirectoryPath",
-        "description": "既存ディレクトリのパス（存在チェック）",
+        "description": "既存ディレクトリのパス(存在チェック)",
         "example": "data_dir: DirectoryPath",
     },
     "positive_int": {
         "type": "PositiveInt",
         "import": "from pydantic import PositiveInt",
-        "description": "正の整数（1以上）",
+        "description": "正の整数(1以上)",
         "example": "count: PositiveInt",
     },
     "non_negative_int": {
         "type": "NonNegativeInt",
         "import": "from pydantic import NonNegativeInt",
-        "description": "非負整数（0以上）",
+        "description": "非負整数(0以上)",
         "example": "index: NonNegativeInt",
     },
     "positive_float": {
@@ -69,7 +69,7 @@ PYDANTIC_TYPES: dict[str, dict[str, str]] = {
     "secret": {
         "type": "SecretStr",
         "import": "from pydantic import SecretStr",
-        "description": "機密文字列（ログに表示されない）",
+        "description": "機密文字列(ログに表示されない)",
         "example": "password: SecretStr",
     },
 }
@@ -194,18 +194,15 @@ def _is_excluded_variable_name(var_name: str) -> bool:
         "_description",
     ]
     # サフィックスで除外
-    if any(var_lower.endswith(suffix) for suffix in exclude_suffixes):
-        return True
-
-    return False
+    return any(var_lower.endswith(suffix) for suffix in exclude_suffixes)
 
 
 def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] | None:
     """変数名とprimitive型からPydantic提供の型を推奨
 
     Args:
-        var_name: 変数名（例: "user_email", "count"）
-        primitive_type: primitive型（例: "str", "int"）
+        var_name: 変数名(例: "user_email", "count")
+        primitive_type: primitive型(例: "str", "int")
 
     Returns:
         Pydantic型の情報（type, import, description）またはNone
@@ -218,69 +215,48 @@ def suggest_pydantic_type(var_name: str, primitive_type: str) -> dict[str, str] 
 
     # str型の場合
     if primitive_type == "str":
-        # メールアドレス（明確なパターンのみ）
+        # メールアドレス(明確なパターンのみ)
         if var_lower in ("email", "mail") or var_lower.endswith("_email"):
             return PYDANTIC_TYPES["email"]
-        # URL（明確なパターンのみ）
+        # URL(明確なパターンのみ)
         if var_lower in ("url", "link", "href") or var_lower.endswith("_url"):
             return PYDANTIC_TYPES["url"]
-        # output系のファイル（新規作成を想定）
-        if var_lower.startswith("output_") and (
-            "file" in var_lower or "path" in var_lower
-        ):
+        # output系のファイル(新規作成を想定)
+        if var_lower.startswith("output_") and ("file" in var_lower or "path" in var_lower):
             # output系は新規作成ファイルなのでNewPath、なければFilePath
             return PYDANTIC_TYPES.get("newpath", PYDANTIC_TYPES["filepath"])
-        # input系のファイル（既存ファイルを想定）
-        if var_lower.startswith("input_") and (
-            "file" in var_lower or "path" in var_lower
-        ):
+        # input系のファイル(既存ファイルを想定)
+        if var_lower.startswith("input_") and ("file" in var_lower or "path" in var_lower):
             # input系は既存ファイルなのでFilePath
             return PYDANTIC_TYPES["filepath"]
-        # ファイルパス（より厳密に）
+        # ファイルパス(より厳密に)
         if var_lower in ("file", "filename", "filepath"):
             return PYDANTIC_TYPES["filepath"]
         if var_lower.endswith(("_file", "_filename", "_filepath")):
             return PYDANTIC_TYPES["filepath"]
         # ディレクトリパス
-        if var_lower in ("dir", "directory", "dirpath") or var_lower.endswith(
-            ("_dir", "_directory", "_dirpath")
-        ):
+        if var_lower in ("dir", "directory", "dirpath") or var_lower.endswith(("_dir", "_directory", "_dirpath")):
             return PYDANTIC_TYPES["dirpath"]
         # 機密情報
-        if (
-            "password" in var_lower
-            or "secret" in var_lower
-            or "token" in var_lower
-            or "api_key" in var_lower
-        ):
+        if any(keyword in var_lower for keyword in ("password", "secret", "token", "api_key")):
             return PYDANTIC_TYPES["secret"]
-        # UUID（明確なパターンのみ）
+        # UUID(明確なパターンのみ)
         if var_lower in ("uuid", "guid") or var_lower.endswith(("_uuid", "_guid")):
             return PYDANTIC_TYPES["uuid"]
 
     # int型の場合
     elif primitive_type == "int":
         # 正の整数
-        if (
-            "count" in var_lower
-            or "num" in var_lower
-            or "size" in var_lower
-            or "length" in var_lower
-        ):
+        if any(keyword in var_lower for keyword in ("count", "num", "size", "length")):
             return PYDANTIC_TYPES["positive_int"]
-        # 非負整数（インデックス、深度等）
+        # 非負整数(インデックス、深度等)
         if "index" in var_lower or "depth" in var_lower or "level" in var_lower:
             return PYDANTIC_TYPES["non_negative_int"]
 
     # float型の場合
     elif primitive_type == "float":
         # 正の浮動小数点数
-        if (
-            "score" in var_lower
-            or "rate" in var_lower
-            or "ratio" in var_lower
-            or "percentage" in var_lower
-        ):
+        if any(keyword in var_lower for keyword in ("score", "rate", "ratio", "percentage")):
             return PYDANTIC_TYPES["positive_float"]
         # 非負浮動小数点数
         if "weight" in var_lower or "distance" in var_lower:
@@ -293,8 +269,8 @@ def suggest_type_name(var_name: str, primitive_type: str) -> list[str]:
     """変数名とprimitive型から型名候補を推測
 
     Args:
-        var_name: 変数名（例: "user_id", "email_address"）
-        primitive_type: primitive型（例: "str", "int"）
+        var_name: 変数名(例: "user_id", "email_address")
+        primitive_type: primitive型(例: "str", "int")
 
     Returns:
         型名候補のリスト（上位3候補）
@@ -403,7 +379,7 @@ def format_validation_checklist(primitive_type: str) -> str:
     """
     common_checks = [
         "[ ] 空文字チェック",
-        "[ ] 形式チェック（識別子、メール、URL など）",
+        "[ ] 形式チェック(識別子、メール、URL など)",
         "[ ] 長さ制限",
         "[ ] 許可リスト/拒否リスト",
         "[ ] 既存データとの整合性チェック",
@@ -411,7 +387,7 @@ def format_validation_checklist(primitive_type: str) -> str:
 
     if primitive_type == "int":
         int_checks = [
-            "[ ] 範囲チェック（最小値・最大値）",
+            "[ ] 範囲チェック(最小値・最大値)",
             "[ ] 正の整数チェック",
             "[ ] 非負整数チェック",
         ]
@@ -424,14 +400,14 @@ def extract_variable_name(code_line: str) -> str:
     """コード行から変数名を抽出
 
     Args:
-        code_line: コード行（例: "type_name: str = type_def.name"）
+        code_line: コード行(例: "type_name: str = type_def.name")
 
     Returns:
-        抽出された変数名（例: "type_name"）
+        抽出された変数名(例: "type_name")
     """
     import re
 
-    # パターン1: 関数パラメータ（def func(param: type）または (self, param: type)
+    # パターン1: 関数パラメータ(def func(param: type)または (self, param: type)
     if "def " in code_line or "(" in code_line:
         # 関数パラメータ部分を抽出
         # 例: "def func(self, filename: str = 'test.txt')" → "filename"
@@ -442,7 +418,7 @@ def extract_variable_name(code_line: str) -> str:
             if param_name not in ("self", "cls"):
                 return param_name
 
-    # パターン2: 変数アノテーション（var_name: type）
+    # パターン2: 変数アノテーション(var_name: type)
     if ":" in code_line and "def " not in code_line:
         parts = code_line.split(":")
         var_part = parts[0].strip()
@@ -453,7 +429,7 @@ def extract_variable_name(code_line: str) -> str:
         if var_name and var_name not in ("self", "cls"):
             return var_name
 
-    # パターン3: 代入文（var_name = value）
+    # パターン3: 代入文(var_name = value)
     if "=" in code_line and "def " not in code_line:
         parts = code_line.split("=")
         var_part = parts[0].strip()

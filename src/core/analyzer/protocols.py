@@ -34,10 +34,7 @@ class TypeAnalyzerProtocol(Protocol):
     このプロトコルは、型解析機能の基本的なインターフェースを定義します。
     """
 
-    @abstractmethod
-    def analyze_file(
-        self, file_path: str | Path, config: AnalysisConfig | None = None
-    ) -> FileAnalysisResult:
+    def analyze_file(self, file_path: str | Path, config: AnalysisConfig | None = None) -> FileAnalysisResult:
         """
         単一ファイルを解析します。
 
@@ -50,10 +47,7 @@ class TypeAnalyzerProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
-    def analyze_project(
-        self, project_path: str | Path, config: AnalysisConfig | None = None
-    ) -> ProjectAnalysisResult:
+    def analyze_project(self, project_path: str | Path, config: AnalysisConfig | None = None) -> ProjectAnalysisResult:
         """
         プロジェクト全体を解析します。
 
@@ -114,10 +108,7 @@ class DocstringAnalyzerProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
-    def generate_documentation_statistics(
-        self, type_definitions: list[TypeDefinition]
-    ) -> DocumentationStatistics:
+    def generate_documentation_statistics(self, type_definitions: list[TypeDefinition]) -> DocumentationStatistics:
         """
         ドキュメント統計情報を生成します。
 
@@ -163,10 +154,7 @@ class TypeClassifierProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
-    def suggest_type_improvements(
-        self, type_def: TypeDefinition
-    ) -> list[TypeUpgradeSuggestion]:
+    def suggest_type_improvements(self, type_def: TypeDefinition) -> list[TypeUpgradeSuggestion]:
         """
         型の改善提案を生成します。
 
@@ -186,10 +174,7 @@ class StatisticsCalculatorProtocol(Protocol):
     このプロトコルは、統計計算機能のインターフェースを定義します。
     """
 
-    @abstractmethod
-    def calculate_level_statistics(
-        self, type_definitions: list[TypeDefinition]
-    ) -> dict[str, TypeLevelInfo]:
+    def calculate_level_statistics(self, type_definitions: list[TypeDefinition]) -> dict[str, TypeLevelInfo]:
         """
         レベル別の統計情報を計算します。
 
@@ -201,10 +186,7 @@ class StatisticsCalculatorProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
-    def calculate_quality_metrics(
-        self, analysis_result: ProjectAnalysisResult
-    ) -> QualityMetrics:
+    def calculate_quality_metrics(self, analysis_result: ProjectAnalysisResult) -> QualityMetrics:
         """
         品質指標を計算します。
 

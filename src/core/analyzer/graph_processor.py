@@ -35,9 +35,7 @@ class GraphProcessor:
         """プロセッサを初期化"""
         self.nx_available = nx is not None
         if not self.nx_available:
-            print(
-                "警告: networkxがインストールされていません。一部の機能が制限されます。"
-            )
+            print("警告: networkxがインストールされていません。一部の機能が制限されます。")
 
     def analyze_cycles(self, graph: TypeDependencyGraph) -> list[list[str]]:
         """
@@ -80,12 +78,8 @@ class GraphProcessor:
             "is_directed": nx_graph.is_directed(),
         }
         if nx_graph.is_directed():
-            metrics["strongly_connected_components"] = list(
-                nx.strongly_connected_components(nx_graph)
-            )
-            metrics["weakly_connected_components"] = list(
-                nx.weakly_connected_components(nx_graph)
-            )
+            metrics["strongly_connected_components"] = list(nx.strongly_connected_components(nx_graph))
+            metrics["weakly_connected_components"] = list(nx.weakly_connected_components(nx_graph))
         else:
             metrics["connected_components"] = list(nx.connected_components(nx_graph))
         return metrics
@@ -130,9 +124,7 @@ class GraphProcessor:
                 node_id,
                 label=node_label,
                 shape="box" if node_data.get("node_type") == "class" else "ellipse",
-                color="red"
-                if node_data.get("node_type") == "inferred_variable"
-                else "black",
+                color="red" if node_data.get("node_type") == "inferred_variable" else "black",
             )
             dot_graph.add_node(dot_node)
 
@@ -141,9 +133,7 @@ class GraphProcessor:
             rel_type = edge_data.get("relation_type", "unknown")
             weight = edge_data.get("weight", 1.0)
             edge_label = f"{rel_type} ({weight})"
-            dot_edge = Edge(
-                source, target, label=edge_label, color="blue", fontcolor="blue"
-            )
+            dot_edge = Edge(source, target, label=edge_label, color="blue", fontcolor="blue")
             dot_graph.add_edge(dot_edge)
 
         # ファイル保存
@@ -186,9 +176,7 @@ class GraphProcessor:
 
         return {"dependencies": dependencies}
 
-    def export_graphml(
-        self, graph: TypeDependencyGraph, output_path: Path | str
-    ) -> None:
+    def export_graphml(self, graph: TypeDependencyGraph, output_path: Path | str) -> None:
         """
         グラフをGraphML形式でエクスポートします。
 

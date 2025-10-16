@@ -66,9 +66,7 @@ def validate_index_filename(v: str) -> str:
 IndexFilename = NewType("IndexFilename", str)
 """インデックスファイル名（.md拡張子必須）"""
 
-IndexFilenameValidator: TypeAdapter[str] = TypeAdapter(
-    Annotated[str, AfterValidator(validate_index_filename)]
-)
+IndexFilenameValidator: TypeAdapter[str] = TypeAdapter(Annotated[str, AfterValidator(validate_index_filename)])
 
 
 def create_index_filename(value: str) -> IndexFilename:
@@ -92,9 +90,7 @@ def validate_layer_filename_template(v: str) -> str:
     if not v.endswith(".md"):
         raise ValueError("レイヤーファイル名テンプレートは.mdで終わる必要があります")
     if "{layer}" not in v:
-        raise ValueError(
-            "レイヤーファイル名テンプレートには{layer}プレースホルダが必要です"
-        )
+        raise ValueError("レイヤーファイル名テンプレートには{layer}プレースホルダが必要です")
     return v
 
 
@@ -316,9 +312,7 @@ NonNegativeInt = NewType("NonNegativeInt", int)
 """非負の整数（>= 0）"""
 
 # TypeAdapter（バリデーション用）
-PositiveIntValidator: TypeAdapter[int] = TypeAdapter(
-    Annotated[int, Field(gt=0), AfterValidator(validate_positive_int)]
-)
+PositiveIntValidator: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(gt=0), AfterValidator(validate_positive_int)])
 NonNegativeIntValidator: TypeAdapter[int] = TypeAdapter(
     Annotated[int, Field(ge=0), AfterValidator(validate_non_negative_int)]
 )
@@ -397,9 +391,7 @@ DirectoryPath = NewType("DirectoryPath", str)
 - 存在チェックは get_absolute_paths() で実施
 """
 
-DirectoryPathValidator: TypeAdapter[str] = TypeAdapter(
-    Annotated[str, AfterValidator(validate_directory_path)]
-)
+DirectoryPathValidator: TypeAdapter[str] = TypeAdapter(Annotated[str, AfterValidator(validate_directory_path)])
 
 
 def create_directory_path(value: str) -> DirectoryPath:
@@ -514,9 +506,7 @@ def validate_line_number(v: int) -> int:
 LineNumber = NewType("LineNumber", int)
 """ソースコード行番号（1以上）"""
 
-LineNumberValidator: TypeAdapter[int] = TypeAdapter(
-    Annotated[int, Field(ge=1), AfterValidator(validate_line_number)]
-)
+LineNumberValidator: TypeAdapter[int] = TypeAdapter(Annotated[int, Field(ge=1), AfterValidator(validate_line_number)])
 
 
 def create_line_number(value: int) -> LineNumber:
@@ -552,9 +542,7 @@ class NodeAttributes(BaseModel):
 
     # NOTE: 設計上、汎用的なカスタムデータを格納するためドメイン型エイリアスを使用
     # ユーザーが自由にキーと値を追加できるよう、NodeCustomData型を使用
-    custom_data: NodeCustomData = Field(
-        default_factory=dict, description="カスタム属性データ"
-    )
+    custom_data: NodeCustomData = Field(default_factory=dict, description="カスタム属性データ")
 
     def get_string_value(self, key: str) -> str | None:
         """文字列値を取得"""
@@ -621,21 +609,13 @@ class GraphMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     version: Version = Field(default="1.0", description="グラフのバージョン")
-    created_at: Timestamp | None = Field(
-        default=None, description="作成日時（ISO 8601形式）"
-    )
-    cycles: list[list[NodeId]] = Field(
-        default_factory=list, description="検出された循環依存のリスト"
-    )
-    statistics: StatisticsMap = Field(
-        default_factory=dict, description="統計情報（ノード数、エッジ数など）"
-    )
+    created_at: Timestamp | None = Field(default=None, description="作成日時(ISO 8601形式)")
+    cycles: list[list[NodeId]] = Field(default_factory=list, description="検出された循環依存のリスト")
+    statistics: StatisticsMap = Field(default_factory=dict, description="統計情報(ノード数、エッジ数など)")
     # NOTE: 設計上、拡張用のカスタムフィールドを格納するためドメイン型エイリアスを使用
     # プラグインや将来の機能拡張で任意のメタデータを追加できるよう、
     # CustomFields型を使用
-    custom_fields: CustomFields = Field(
-        default_factory=dict, description="カスタムフィールド"
-    )
+    custom_fields: CustomFields = Field(default_factory=dict, description="カスタムフィールド")
 
     def has_cycles(self) -> bool:
         """循環依存が存在するか確認"""

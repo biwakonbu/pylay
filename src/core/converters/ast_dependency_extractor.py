@@ -47,9 +47,7 @@ class ASTDependencyExtractor:
         self._node_cache.clear()
         self._processing_stack.clear()
 
-    def extract_dependencies(
-        self, file_path: str, include_mypy: bool = False
-    ) -> TypeDependencyGraph:
+    def extract_dependencies(self, file_path: str, *, include_mypy: bool = False) -> TypeDependencyGraph:
         """
         指定されたPythonファイルから依存関係を抽出。
 
@@ -98,9 +96,7 @@ class ASTDependencyExtractor:
                 analyzer = TypeInferenceAnalyzer(config)
                 existing_annotations = analyzer.extract_existing_annotations(file_path)
                 inferred_types = analyzer.infer_types_from_file(file_path)
-                merged_types = analyzer.merge_inferred_types(
-                    existing_annotations, inferred_types
-                )
+                merged_types = analyzer.merge_inferred_types(existing_annotations, inferred_types)
 
                 # 推論結果をノードとして追加
                 for var_name, type_info in merged_types.items():
@@ -201,14 +197,12 @@ class ASTDependencyExtractor:
                 base_name = self._get_type_name_from_ast(base)
                 if base_name and base_name != class_name:
                     # 継承は強い依存
-                    self._add_edge(
-                        class_name, base_name, RelationType.INHERITS_FROM, weight=0.9
-                    )
+                    self._add_edge(class_name, base_name, RelationType.INHERITS_FROM, weight=0.9)
 
             # クラス内の型アノテーションとメソッド
             for item in node.body:
                 if isinstance(item, ast.AnnAssign):
-                    self._handle_annotation(item, class_name, file_path)
+                    self._handle_annotation(item, class_name)
                 elif isinstance(item, ast.FunctionDef):
                     self._handle_method_def(item, class_name, file_path)
         finally:
@@ -234,9 +228,7 @@ class ASTDependencyExtractor:
                 arg_type = self._get_type_name_from_ast(arg.annotation)
                 if arg_type:
                     # 引数参照は中程度の依存
-                    self._add_edge(
-                        func_name, arg_type, RelationType.REFERENCES, weight=0.6
-                    )
+                    self._add_edge(func_name, arg_type, RelationType.REFERENCES, weight=0.6)
 
         # 戻り値の型アノテーション
         if node.returns:
@@ -245,9 +237,7 @@ class ASTDependencyExtractor:
                 # 戻り値参照は強い依存
                 self._add_edge(func_name, return_type, RelationType.RETURNS, weight=0.8)
 
-    def _handle_method_def(
-        self, node: ast.FunctionDef, class_name: str, file_path: str
-    ) -> None:
+    def _handle_method_def(self, node: ast.FunctionDef, class_name: str, file_path: str) -> None:
         """メソッド定義から依存を抽出"""
         method_name = f"{class_name}.{node.name}"
         method_node = GraphNode(
@@ -267,16 +257,12 @@ class ASTDependencyExtractor:
             if arg.annotation:
                 arg_type = self._get_type_name_from_ast(arg.annotation)
                 if arg_type:
-                    self._add_edge(
-                        method_name, arg_type, RelationType.REFERENCES, weight=0.6
-                    )
+                    self._add_edge(method_name, arg_type, RelationType.REFERENCES, weight=0.6)
 
         if node.returns:
             return_type = self._get_type_name_from_ast(node.returns)
             if return_type:
-                self._add_edge(
-                    method_name, return_type, RelationType.RETURNS, weight=0.8
-                )
+                self._add_edge(method_name, return_type, RelationType.RETURNS, weight=0.8)
 
     def _handle_call(self, node: ast.Call, file_path: str) -> None:
         """関数呼び出しから依存を抽出"""
@@ -335,12 +321,8 @@ class ASTDependencyExtractor:
 
                 # 依存関係
                 current_module = Path(file_path).stem
-                self._add_edge(
-                    current_module, module_name, RelationType.USES, weight=0.9
-                )
-                self._add_edge(
-                    symbol_node.name, module_name, RelationType.DEPENDS_ON, weight=0.8
-                )
+                self._add_edge(current_module, module_name, RelationType.USES, weight=0.9)
+                self._add_edge(symbol_node.name, module_name, RelationType.DEPENDS_ON, weight=0.8)
 
     def _handle_attribute(self, node: ast.Attribute, file_path: str) -> None:
         """属性アクセスから依存を抽出"""
@@ -361,9 +343,7 @@ class ASTDependencyExtractor:
             self._add_node(attr_node)
 
             # オブジェクトへの依存
-            self._add_edge(
-                attr_node.name, obj_name, RelationType.REFERENCES, weight=0.7
-            )
+            self._add_edge(attr_node.name, obj_name, RelationType.REFERENCES, weight=0.7)
 
     def _handle_attribute_call(self, node: ast.Attribute, file_path: str) -> None:
         """属性を通じた関数呼び出しから依存を抽出"""
@@ -384,12 +364,8 @@ class ASTDependencyExtractor:
             self._add_node(method_call_node)
 
             # オブジェクトとメソッドへの依存
-            self._add_edge(
-                method_call_node.name, obj_name, RelationType.REFERENCES, weight=0.7
-            )
-            self._add_edge(
-                method_call_node.name, method_name, RelationType.CALLS, weight=0.8
-            )
+            self._add_edge(method_call_node.name, obj_name, RelationType.REFERENCES, weight=0.7)
+            self._add_edge(method_call_node.name, method_name, RelationType.CALLS, weight=0.8)
 
     def _handle_assign(self, node: ast.Assign, file_path: str) -> None:
         """変数代入から依存を抽出"""
@@ -408,9 +384,7 @@ class ASTDependencyExtractor:
                     self._add_node(var_node)
                     self._add_edge(var_name, func_name, RelationType.CALLS)
 
-    def _handle_annotation(
-        self, node: ast.AnnAssign, class_name: str, file_path: str
-    ) -> None:
+    def _handle_annotation(self, node: ast.AnnAssign, class_name: str) -> None:
         """型アノテーションから依存を抽出"""
         if node.annotation:
             annotated_type = self._get_type_name_from_ast(node.annotation)
@@ -431,9 +405,7 @@ class ASTDependencyExtractor:
             # ジェネリック型（例: List[User] → User）
             if isinstance(node.slice, ast.Name):  # Python 3.9+
                 return str(node.slice.id)
-            elif isinstance(node.slice, ast.Constant) and isinstance(
-                node.slice.value, str
-            ):
+            elif isinstance(node.slice, ast.Constant) and isinstance(node.slice.value, str):
                 return node.slice.value
         elif isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
             # Union型（例: str | int、Python 3.10+）
@@ -449,13 +421,7 @@ class ASTDependencyExtractor:
         """型文字列から型参照を抽出"""
         refs = []
         # 簡易的な分割（List[str] -> ['List', 'str']）
-        parts = (
-            type_str.replace("[", " ")
-            .replace("]", " ")
-            .replace(",", " ")
-            .replace("|", " ")
-            .split()
-        )
+        parts = type_str.replace("[", " ").replace("]", " ").replace(",", " ").replace("|", " ").split()
         for part in parts:
             part = part.strip()
             if part and part[0].isupper():  # クラス名らしきもの
@@ -468,9 +434,7 @@ class ASTDependencyExtractor:
             self.nodes[node.name] = node
             self._node_cache[node.name] = node
 
-    def _add_edge(
-        self, source: str, target: str, relation: RelationType, weight: float = 1.0
-    ) -> None:
+    def _add_edge(self, source: str, target: str, relation: RelationType, weight: float = 1.0) -> None:
         """エッジを追加（重み付き）"""
         if source != target and target not in self.visited_nodes:
             self.visited_nodes.add(target)
@@ -481,8 +445,6 @@ class ASTDependencyExtractor:
                 target=target,
                 relation_type=relation,
                 weight=create_weight(weight),
-                metadata=GraphMetadata(
-                    custom_fields={"extraction_method": self.extraction_method}
-                ),
+                metadata=GraphMetadata(custom_fields={"extraction_method": self.extraction_method}),
             )
             self.edges[edge_key] = edge

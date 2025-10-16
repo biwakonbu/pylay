@@ -5,11 +5,12 @@ Pythonソースコードから型定義を検出し、Level 1/2/3に分類しま
 """
 
 import ast
+import logging
 import re
 from pathlib import Path
 from typing import Literal
 
-from src.core.analyzer.type_level_models import TypeDefinition
+from src.core.analyzer.types import TypeDefinition
 
 
 class TypeClassifier:
@@ -17,32 +18,20 @@ class TypeClassifier:
 
     # 検出パターン
     LEVEL1_PATTERN = re.compile(r"^\s*type\s+(\w+)\s*=\s*(.+)$", re.MULTILINE)
-    LEVEL2_PATTERN = re.compile(
-        r"^\s*type\s+(\w+)\s*=\s*Annotated\[.*AfterValidator.*\]", re.MULTILINE
-    )
+    LEVEL2_PATTERN = re.compile(r"^\s*type\s+(\w+)\s*=\s*Annotated\[.*AfterValidator.*\]", re.MULTILINE)
     # 新パターン: NewType定義
-    NEWTYPE_PATTERN = re.compile(
-        r"^\s*(\w+)\s*=\s*NewType\(['\"](\w+)['\"]\s*,\s*(\w+)\)", re.MULTILINE
-    )
+    NEWTYPE_PATTERN = re.compile(r"^\s*(\w+)\s*=\s*NewType\(['\"](\w+)['\"]\s*,\s*(\w+)\)", re.MULTILINE)
     # ファクトリ関数パターン
-    FACTORY_PATTERN = re.compile(
-        r"^\s*def\s+(create_(\w+)|(\w+))\s*\([^)]*\)\s*->\s*(\w+):", re.MULTILINE
-    )
+    FACTORY_PATTERN = re.compile(r"^\s*def\s+(create_(\w+)|(\w+))\s*\([^)]*\)\s*->\s*(\w+):", re.MULTILINE)
     # @validate_call デコレータ + 関数定義（改行を許容、パラメータは.*?で非貪欲マッチ）
     VALIDATE_CALL_PATTERN = re.compile(
         r"@validate_call\s*\n\s*def\s+(\w+)\s*\(.*?\)\s*->\s*(\w+):",
         re.MULTILINE | re.DOTALL,
     )
     LEVEL3_PATTERN = re.compile(r"^\s*class\s+(\w+)\(.*BaseModel.*\):", re.MULTILINE)
-    OTHER_CLASS_PATTERN = re.compile(
-        r"^\s*class\s+(\w+)(?:\((?!.*BaseModel).*\))?:", re.MULTILINE
-    )
-    OTHER_DATACLASS_PATTERN = re.compile(
-        r"@dataclass.*\n\s*class\s+(\w+)", re.MULTILINE
-    )
-    OTHER_TYPEDDICT_PATTERN = re.compile(
-        r"^\s*class\s+(\w+)\(TypedDict\):", re.MULTILINE
-    )
+    OTHER_CLASS_PATTERN = re.compile(r"^\s*class\s+(\w+)(?:\((?!.*BaseModel).*\))?:", re.MULTILINE)
+    OTHER_DATACLASS_PATTERN = re.compile(r"@dataclass.*\n\s*class\s+(\w+)", re.MULTILINE)
+    OTHER_TYPEDDICT_PATTERN = re.compile(r"^\s*class\s+(\w+)\(TypedDict\):", re.MULTILINE)
 
     # docstring抽出パターン
     DOCSTRING_TRIPLE_PATTERN = re.compile(r'"""(.*?)"""', re.DOTALL)
@@ -71,9 +60,7 @@ class TypeClassifier:
         # AST解析とパターンマッチングを併用
         try:
             tree = ast.parse(source_code)
-            type_definitions.extend(
-                self._classify_with_ast(tree, file_path, source_code)
-            )
+            type_definitions.extend(self._classify_with_ast(tree, file_path, source_code))
         except SyntaxError:
             pass
 
@@ -91,9 +78,7 @@ class TypeClassifier:
 
         return unique_types
 
-    def _classify_with_ast(
-        self, tree: ast.AST, file_path: Path, source_code: str
-    ) -> list[TypeDefinition]:
+    def _classify_with_ast(self, tree: ast.AST, file_path: Path, source_code: str) -> list[TypeDefinition]:
         """ASTを使用した型定義の分類
 
         Args:
@@ -127,9 +112,7 @@ class TypeClassifier:
 
         return type_definitions
 
-    def _classify_class_def(
-        self, node: ast.ClassDef, file_path: Path, source_code: str
-    ) -> TypeDefinition | None:
+    def _classify_class_def(self, node: ast.ClassDef, file_path: Path, source_code: str) -> TypeDefinition | None:
         """ClassDefノードを分類
 
         Args:
@@ -144,9 +127,7 @@ class TypeClassifier:
         is_basemodel = any(self._is_basemodel_base(base) for base in node.bases)
 
         # dataclassデコレータがあるか確認
-        is_dataclass = any(
-            self._is_dataclass_decorator(dec) for dec in node.decorator_list
-        )
+        is_dataclass = any(self._is_dataclass_decorator(dec) for dec in node.decorator_list)
 
         # TypedDictを継承しているか確認
         is_typeddict = any(self._is_typeddict_base(base) for base in node.bases)
@@ -188,9 +169,7 @@ class TypeClassifier:
             keep_as_is=keep_as_is,
         )
 
-    def _classify_type_alias(
-        self, node: ast.TypeAlias, file_path: Path, source_code: str
-    ) -> TypeDefinition | None:
+    def _classify_type_alias(self, node: ast.TypeAlias, file_path: Path, source_code: str) -> TypeDefinition | None:
         """TypeAliasノードを分類
 
         Args:
@@ -241,9 +220,7 @@ class TypeClassifier:
             keep_as_is=keep_as_is,
         )
 
-    def _classify_assign_alias(
-        self, node: ast.Assign, file_path: Path, source_code: str
-    ) -> TypeDefinition | None:
+    def _classify_assign_alias(self, node: ast.Assign, file_path: Path, source_code: str) -> TypeDefinition | None:
         """代入形式の型エイリアスを分類
 
         Args:
@@ -265,9 +242,9 @@ class TypeClassifier:
 
         # NewType定義はスキップ（_detect_newtype_with_factoryで処理）
         if isinstance(node.value, ast.Call):
-            if (
-                isinstance(node.value.func, ast.Name)
-                and node.value.func.id == "NewType"
+            func = node.value.func
+            if (isinstance(func, ast.Name) and func.id == "NewType") or (
+                isinstance(func, ast.Attribute) and func.attr == "NewType"
             ):
                 return None
 
@@ -302,9 +279,7 @@ class TypeClassifier:
             keep_as_is=keep_as_is,
         )
 
-    def _classify_with_regex(
-        self, source_code: str, file_path: Path
-    ) -> list[TypeDefinition]:
+    def _classify_with_regex(self, source_code: str, file_path: Path) -> list[TypeDefinition]:
         """正規表現を使用した型定義の分類
 
         Args:
@@ -350,10 +325,7 @@ class TypeClassifier:
             definition = match.group(0).strip()
 
             # Level 2として既に検出されていないか確認
-            if not any(
-                td.name == type_name and td.line_number == line_number
-                for td in type_definitions
-            ):
+            if not any(td.name == type_name and td.line_number == line_number for td in type_definitions):
                 # docstringを抽出
                 docstring = self._extract_docstring_near_line(source_code, line_number)
 
@@ -381,25 +353,19 @@ class TypeClassifier:
         """BaseModelを継承しているか確認"""
         if isinstance(base, ast.Name) and base.id == "BaseModel":
             return True
-        if isinstance(base, ast.Attribute) and base.attr == "BaseModel":
-            return True
-        return False
+        return bool(isinstance(base, ast.Attribute) and base.attr == "BaseModel")
 
     def _is_dataclass_decorator(self, decorator: ast.expr) -> bool:
         """dataclassデコレータか確認"""
         if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
             return True
-        if isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass":
-            return True
-        return False
+        return bool(isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass")
 
     def _is_typeddict_base(self, base: ast.expr) -> bool:
         """TypedDictを継承しているか確認"""
         if isinstance(base, ast.Name) and base.id == "TypedDict":
             return True
-        if isinstance(base, ast.Attribute) and base.attr == "TypedDict":
-            return True
-        return False
+        return bool(isinstance(base, ast.Attribute) and base.attr == "TypedDict")
 
     def _is_annotated_with_validator(self, node: ast.expr) -> bool:
         """Annotated型かつAfterValidatorを含むか確認"""
@@ -415,41 +381,30 @@ class TypeClassifier:
 
     def _contains_after_validator(self, node: ast.expr) -> bool:
         """AfterValidatorを含むか確認"""
-        if isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name) and node.func.id == "AfterValidator":
-                return True
-        return False
+        return bool(isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "AfterValidator")
 
     def _extract_definition(self, node: ast.AST, source_code: str) -> str:
         """ノードから型定義のコードを抽出"""
         try:
             lines = source_code.splitlines()
-            if (
-                hasattr(node, "lineno")
-                and hasattr(node, "end_lineno")
-                and hasattr(node, "end_lineno")
-                and getattr(node, "end_lineno") is not None
-            ):
-                # hastattrで確認済みなので安全にアクセス可能
-                start = getattr(node, "lineno") - 1
-                end = getattr(node, "end_lineno")
+            lineno = getattr(node, "lineno", None)
+            end_lineno = getattr(node, "end_lineno", None)
+            if lineno is not None and end_lineno is not None:
+                start = lineno - 1
+                end = end_lineno
                 return "\n".join(lines[start:end])
-        except Exception:
-            pass
+        except Exception as e:
+            logging.getLogger(__name__).debug("definition抽出に失敗: %s", e)
         return ""
 
-    def _extract_type_alias_docstring(
-        self, node: ast.TypeAlias, source_code: str
-    ) -> str | None:
+    def _extract_type_alias_docstring(self, node: ast.TypeAlias, source_code: str) -> str | None:
         """type文のdocstringを抽出"""
         # type文の直後の行からdocstringを探す
         if hasattr(node, "end_lineno") and node.end_lineno is not None:
             return self._extract_docstring_near_line(source_code, node.end_lineno + 1)
         return None
 
-    def _extract_docstring_near_line(
-        self, source_code: str, line_number: int
-    ) -> str | None:
+    def _extract_docstring_near_line(self, source_code: str, line_number: int) -> str | None:
         """指定行の近くのdocstringを抽出
 
         Args:
@@ -487,9 +442,7 @@ class TypeClassifier:
 
         return None
 
-    def _extract_target_level(
-        self, docstring: str | None
-    ) -> Literal["level1", "level2", "level3"] | None:
+    def _extract_target_level(self, docstring: str | None) -> Literal["level1", "level2", "level3"] | None:
         """docstringから@target-levelを抽出
 
         Args:
@@ -505,13 +458,13 @@ class TypeClassifier:
         match = re.search(r"@target-level:\s*(level[123])", docstring)
         if match:
             level = match.group(1)
-            # 型ガードで検証
-            if level == "level1":
-                return "level1"
-            elif level == "level2":
-                return "level2"
-            elif level == "level3":
-                return "level3"
+            # 型ガードで検証(辞書で簡潔に)
+            level_map: dict[str, Literal["level1", "level2", "level3"]] = {
+                "level1": "level1",
+                "level2": "level2",
+                "level3": "level3",
+            }
+            return level_map.get(level)
 
         return None
 
@@ -531,9 +484,7 @@ class TypeClassifier:
         match = re.search(r"@keep-as-is:\s*(true|True|yes|Yes)", docstring)
         return match is not None
 
-    def _detect_newtype_with_factory(
-        self, source_code: str, file_path: Path
-    ) -> list[TypeDefinition]:
+    def _detect_newtype_with_factory(self, source_code: str, file_path: Path) -> list[TypeDefinition]:
         """NewType + ファクトリ関数パターンを検出（PEP 484準拠パターン）
 
         Args:
@@ -546,9 +497,7 @@ class TypeClassifier:
         type_definitions: list[TypeDefinition] = []
 
         # NewType定義を収集
-        newtype_defs: dict[
-            str, tuple[int, str, str]
-        ] = {}  # {type_name: (line, definition, base_type)}
+        newtype_defs: dict[str, tuple[int, str, str]] = {}  # {type_name: (line, definition, base_type)}
         for match in self.NEWTYPE_PATTERN.finditer(source_code):
             var_name = match.group(1)
             type_name = match.group(2)
@@ -570,9 +519,7 @@ class TypeClassifier:
             if full_func_name.startswith("create_"):
                 type_name_snake = full_func_name.replace("create_", "")
                 # snake_case -> PascalCase
-                type_name = "".join(
-                    word.capitalize() for word in type_name_snake.split("_")
-                )
+                type_name = "".join(word.capitalize() for word in type_name_snake.split("_"))
             else:
                 type_name = full_func_name
 
@@ -591,7 +538,7 @@ class TypeClassifier:
                 factory_funcs[func_name] = line_number
 
         # NewTypeとファクトリ関数のペアを検出
-        for type_name, (newtype_line, definition, base_type) in newtype_defs.items():
+        for type_name, (newtype_line, definition, _base_type) in newtype_defs.items():
             docstring = self._extract_docstring_near_line(source_code, newtype_line)
 
             if type_name in factory_funcs:

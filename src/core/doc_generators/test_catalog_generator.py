@@ -3,7 +3,7 @@
 import inspect
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from .base import DocumentGenerator
 from .config import CatalogConfig
@@ -27,22 +27,14 @@ class CatalogGenerator(DocumentGenerator):
         from .filesystem import FileSystemInterface
         from .markdown_builder import MarkdownBuilder
 
-        filesystem = kwargs.pop("filesystem", None)
-        markdown_builder = kwargs.pop("markdown_builder", None)
+        filesystem_raw = kwargs.pop("filesystem", None)
+        markdown_builder_raw = kwargs.pop("markdown_builder", None)
 
-        # Type assertions for dependency injection
-        fs_typed = (
-            filesystem
-            if isinstance(filesystem, FileSystemInterface) or filesystem is None
-            else None
-        )
-        md_typed = (
-            markdown_builder
-            if isinstance(markdown_builder, MarkdownBuilder) or markdown_builder is None
-            else None
-        )
+        # 型ヒントに基づくキャスト(実行時チェック不要)
+        filesystem = cast(FileSystemInterface | None, filesystem_raw)
+        markdown_builder = cast(MarkdownBuilder | None, markdown_builder_raw)
 
-        super().__init__(filesystem=fs_typed, markdown_builder=md_typed)
+        super().__init__(filesystem=filesystem, markdown_builder=markdown_builder)
         self.config = config or CatalogConfig()
 
     def generate(self, output_path: Path | None = None, **kwargs: object) -> None:
@@ -96,11 +88,9 @@ class CatalogGenerator(DocumentGenerator):
             for func_name, func in test_functions:
                 self._generate_test_function_entry(func_name, func, test_file)
 
-        except (ImportError, RecursionError, Exception) as e:
+        except Exception as e:
             error_type = type(e).__name__
-            self.md.paragraph(
-                f"⚠️ モジュールの処理に失敗 ({error_type}): {str(e)[:100]}..."
-            ).line_break()
+            self.md.paragraph(f"⚠️ モジュールの処理に失敗 ({error_type}): {str(e)[:100]}...").line_break()
 
     def _generate_test_function_entry(
         self,
@@ -153,16 +143,12 @@ class CatalogGenerator(DocumentGenerator):
         # Filter out excluded patterns
         filtered_files = []
         for test_file in test_files:
-            if not any(
-                pattern in str(test_file) for pattern in self.config.exclude_patterns
-            ):
+            if not any(test_file.match(pattern) for pattern in self.config.exclude_patterns):
                 filtered_files.append(test_file)
 
         return sorted(filtered_files)
 
-    def _extract_test_functions(
-        self, module: object
-    ) -> list[tuple[str, Callable[..., Any]]]:
+    def _extract_test_functions(self, module: object) -> list[tuple[str, Callable[..., None]]]:
         """モジュールからテスト関数とメソッドを抽出する。
 
         Args:

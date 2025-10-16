@@ -12,7 +12,7 @@
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -25,14 +25,27 @@ from .types import (
     GenerationResult,
     MarkdownGenerationConfig,
     MarkdownSectionInfo,
+    PydanticSchemaInfo,
     TemplateConfig,
     TypeInspectionConfig,
     TypeInspectionResult,
     TypeName,
+    create_empty_metadata,
 )
 
-# デフォルトの出力パス（成功時と例外時で一貫して使用）
+# デフォルトの出力パス(成功時と例外時で一貫して使用)
 DEFAULT_OUTPUT_PATH = "./docs"
+
+
+class DocumentGeneratorKwargs(TypedDict, total=False):
+    """
+    DocumentGeneratorService.generate_documentのキーワード引数型定義
+
+    将来の拡張機能で具体的なパラメータが追加される際に使用されます。
+    現在は空のTypedDictとして定義し、型安全性を確保します。
+    """
+
+    # 将来の拡張機能用のフィールドをここに定義
 
 
 class DocumentGeneratorService(BaseModel):
@@ -42,15 +55,14 @@ class DocumentGeneratorService(BaseModel):
     このクラスは、ドキュメント生成処理のビジネスロジックを実装します。
     """
 
-    def generate_document(
-        self, config: DocumentConfig, **kwargs: Any
-    ) -> GenerationResult:
+    # DocumentGeneratorProtocolとの互換性を確保（objectを使用）
+    def generate_document(self, config: DocumentConfig, **_kwargs: DocumentGeneratorKwargs) -> GenerationResult:
         """
         ドキュメントを生成します。
 
         Args:
             config: ドキュメント生成設定
-            **kwargs: 追加の設定パラメータ
+            **_kwargs: 追加の設定パラメータ (DocumentGeneratorProtocolとの互換性のため保持)
 
         Returns:
             生成結果
@@ -58,29 +70,24 @@ class DocumentGeneratorService(BaseModel):
         start_time = time.time()
 
         try:
-            # 簡易的な実装（実際はより複雑な処理が必要）
-            output_path = (
-                Path(config.output_path)
-                if config.output_path
-                else Path(DEFAULT_OUTPUT_PATH)
-            )
+            # 簡易的な実装(実際はより複雑な処理が必要)
+            output_path = Path(config.output_path) if config.output_path else Path(DEFAULT_OUTPUT_PATH)
 
             # 出力ディレクトリの作成
             output_path.mkdir(parents=True, exist_ok=True)
 
-            # ドキュメント構造の作成（簡易版）
+            # ドキュメント構造の作成(簡易版)
             structure = DocumentStructure(
                 title="Generated Documentation",
                 sections=[],
+                metadata=create_empty_metadata(),
                 generation_timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             )
 
-            # マークダウン生成（簡易版）
-            markdown_content = (
-                f"# {structure.title}\n\nGenerated at: {structure.generation_timestamp}"
-            )
+            # マークダウン生成 (簡易版)
+            markdown_content = f"# {structure.title}\n\nGenerated at: {structure.generation_timestamp}"
 
-            # ファイル出力（簡易版）
+            # ファイル出力(簡易版)
             output_file = output_path / "index.md"
             output_file.write_text(markdown_content, encoding=config.encoding)
 
@@ -98,11 +105,7 @@ class DocumentGeneratorService(BaseModel):
             processing_time = (time.time() - start_time) * 1000
             return GenerationResult(
                 success=False,
-                output_path=(
-                    str(config.output_path)
-                    if config.output_path
-                    else DEFAULT_OUTPUT_PATH
-                ),
+                output_path=(str(config.output_path) if config.output_path else DEFAULT_OUTPUT_PATH),
                 generation_time_ms=processing_time,
                 error_message=str(e),
                 files_count=0,
@@ -116,9 +119,7 @@ class TypeInspectorService(BaseModel):
     このクラスは、型検査処理のビジネスロジックを実装します。
     """
 
-    def inspect_type(
-        self, type_cls: type[Any], config: TypeInspectionConfig | None = None
-    ) -> TypeInspectionResult:
+    def inspect_type(self, type_cls: type[Any], config: TypeInspectionConfig | None = None) -> TypeInspectionResult:
         """
         指定された型を検査します。
 
@@ -178,7 +179,7 @@ class TypeInspectorService(BaseModel):
 
     def _extract_code_blocks(self, docstring: str) -> list[str]:
         """docstringからコードブロックを抽出する内部メソッド"""
-        # 簡易的な実装（実際はより複雑な処理が必要）
+        # 簡易的な実装(実際はより複雑な処理が必要)
         lines = docstring.split("\n")
         code_blocks: list[str] = []
 
@@ -211,11 +212,13 @@ class TypeInspectorService(BaseModel):
         except Exception:
             return False
 
-    def _get_pydantic_schema(self, type_cls: type[Any]) -> dict[str, Any] | None:
+    def _get_pydantic_schema(self, type_cls: type[Any]) -> PydanticSchemaInfo | None:
         """Pydanticモデルのスキーマ情報を取得する内部メソッド"""
         try:
             if self._is_pydantic_model(type_cls):
-                return type_cls.model_json_schema()
+                # Pydantic v2ではmodel_json_schema()がdict[str, Any]を返すと宣言されているため、
+                # 静的型システムではPydanticSchemaInfoとの一致を保証できない
+                return type_cls.model_json_schema()  # type: ignore[return-value]
         except Exception:
             pass
         return None
@@ -263,15 +266,13 @@ class MarkdownBuilderService(BaseModel):
             section_content = self._build_section_recursive(section, config)
             lines.append(section_content)
 
-        # 目次（設定されている場合）
+        # 目次(設定されている場合)
         if config.include_toc and structure.toc:
             lines.append("## Table of Contents")
             lines.append("")
             for item in structure.toc:
-                title = item.get("title", "")
-                level = item.get("level", 1)
-                anchor = title.lower().replace(" ", "-")
-                lines.append(f"{'  ' * (level - 1)}* [{title}](#{anchor})")
+                anchor = item.title.lower().replace(" ", "-")
+                lines.append(f"{'  ' * (item.level - 1)}* [{item.title}](#{anchor})")
             lines.append("")
 
         return "\n".join(lines)
@@ -304,9 +305,7 @@ class MarkdownBuilderService(BaseModel):
 
         # サブセクション
         for subsection in section.subsections:
-            subsection_content = self._build_section_recursive(
-                subsection, config, current_level + 1
-            )
+            subsection_content = self._build_section_recursive(subsection, config, current_level + 1)
             lines.append(subsection_content)
 
         return "\n".join(lines)
@@ -321,9 +320,7 @@ class FileSystemService(BaseModel):
 
     config: FileSystemConfig = Field(default_factory=FileSystemConfig)
 
-    def mkdir(
-        self, path: str | Path, parents: bool = True, exist_ok: bool = True
-    ) -> None:
+    def mkdir(self, path: str | Path, *, parents: bool = True, exist_ok: bool = True) -> None:
         """
         ディレクトリを作成します。
 
@@ -334,9 +331,7 @@ class FileSystemService(BaseModel):
         """
         Path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
-    def write_text(
-        self, path: str | Path, content: str, encoding: str = "utf-8"
-    ) -> None:
+    def write_text(self, path: str | Path, content: str, encoding: str = "utf-8") -> None:
         """
         テキストファイルに書き込みます。
 
@@ -347,14 +342,14 @@ class FileSystemService(BaseModel):
         """
         path_obj = Path(path)
 
-        # バックアップ処理（設定されている場合）
+        # バックアップ処理(設定されている場合)
         if self.config.backup_existing and path_obj.exists():
             backup_path = path_obj.with_suffix(f"{path_obj.suffix}.backup")
             import shutil
 
             shutil.copy2(path_obj, backup_path)
 
-        # 上書き確認（設定されている場合）
+        # 上書き確認(設定されている場合)
         if not self.config.overwrite_existing and path_obj.exists():
             raise FileExistsError(f"ファイルが既に存在します: {path}")
 
@@ -420,7 +415,7 @@ class TemplateProcessorService(BaseModel):
         Returns:
             テンプレートの内容
         """
-        # 簡易的な実装（実際はテンプレートファイルから読み込む）
+        # 簡易的な実装(実際はテンプレートファイルから読み込む)
         templates = {
             "default": "# {{title}}\n\n{{content}}",
             "api": "# API Documentation\n\n## {{type_name}}\n\n{{description}}",
@@ -431,7 +426,7 @@ class TemplateProcessorService(BaseModel):
     def process_template(
         self,
         template_content: str,
-        variables: dict[str, Any],
+        variables: dict[str, Any],  # TODO: Any required for TemplateProcessorProtocol
         config: TemplateConfig | None = None,
     ) -> str:
         """
@@ -445,7 +440,7 @@ class TemplateProcessorService(BaseModel):
         Returns:
             処理されたテンプレート文字列
         """
-        # 簡易的なテンプレート処理（実際はより高度なテンプレートエンジンを使用）
+        # 簡易的なテンプレート処理(実際はより高度なテンプレートエンジンを使用)
         result = template_content
 
         for key, value in variables.items():
@@ -457,7 +452,7 @@ class TemplateProcessorService(BaseModel):
     def render_document(
         self,
         template_name: str,
-        variables: dict[str, Any],
+        variables: dict[str, Any],  # TODO: Any required for TemplateProcessorProtocol
         output_path: str | Path,
         config: DocumentConfig | None = None,
     ) -> None:
@@ -473,7 +468,7 @@ class TemplateProcessorService(BaseModel):
         # テンプレートの読み込み
         template_content = self.load_template(template_name)
 
-        # テンプレートの処理（DocumentConfigからTemplateConfigを作成）
+        # テンプレートの処理(DocumentConfigからTemplateConfigを作成)
         template_config = (
             TemplateConfig(
                 template_name=config.template_name or "default",
@@ -482,14 +477,10 @@ class TemplateProcessorService(BaseModel):
             if config
             else None
         )
-        processed_content = self.process_template(
-            template_content, variables, template_config
-        )
+        processed_content = self.process_template(template_content, variables, template_config)
 
         # ファイル出力
-        Path(output_path).write_text(
-            processed_content, encoding=config.encoding if config else "utf-8"
-        )
+        Path(output_path).write_text(processed_content, encoding=config.encoding if config else "utf-8")
 
 
 class BatchProcessorService(BaseModel):
@@ -517,10 +508,7 @@ class BatchProcessorService(BaseModel):
 
         try:
             # 出力ディレクトリの作成
-            output_dir_path = (
-                str(config.output_directory) if config.output_directory else "."
-            )
-            output_dir = Path(output_dir_path)
+            output_dir = Path(config.output_path or DEFAULT_OUTPUT_PATH)
             output_dir.mkdir(parents=True, exist_ok=True)
 
             # 各入力ファイルの処理
@@ -529,12 +517,12 @@ class BatchProcessorService(BaseModel):
                     input_file_path = str(input_path) if input_path else ""
                     input_file = Path(input_file_path)
 
-                    # 基本的なファイル処理（簡易版）
+                    # 基本的なファイル処理(簡易版)
                     # 実際の実装では各ファイルの種類に応じた処理が必要
                     content = input_file.read_text(encoding="utf-8")
                     output_file = output_dir / f"{input_file.stem}_processed.md"
 
-                    # 簡易的な処理（実際はより複雑な処理が必要）
+                    # 簡易的な処理(実際はより複雑な処理が必要)
                     processed_content = f"# Processed: {input_file.name}\n\n{content}"
                     output_file.write_text(processed_content, encoding="utf-8")
 
@@ -592,22 +580,22 @@ class BatchProcessorService(BaseModel):
     def process_directory(
         self,
         input_directory: str | Path,
-        output_directory: str | Path,
-        config: DocumentConfig | None = None,
+        output_path: str | Path,
+        _config: DocumentConfig | None = None,  # 将来の拡張機能用に予約済みパラメータ
     ) -> BatchGenerationResult:
         """
         ディレクトリ内のファイルを一括処理します。
 
         Args:
             input_directory: 入力ディレクトリ
-            output_directory: 出力ディレクトリ
-            config: ドキュメント設定（Noneの場合、デフォルト設定を使用）
+            output_path: 出力ディレクトリ
+            _config: ドキュメント設定 (将来の拡張機能用に予約済み、現在未使用)
 
         Returns:
             バッチ処理結果
         """
         input_dir = Path(input_directory)
-        output_dir = Path(output_directory)
+        output_dir = Path(output_path)
 
         # 入力ディレクトリ内のPythonファイルを取得
         if not input_dir.exists():
@@ -626,7 +614,7 @@ class BatchProcessorService(BaseModel):
         # バッチ処理設定を作成
         batch_config = BatchGenerationConfig(
             input_paths=[str(f) for f in input_files],
-            output_directory=str(output_dir),
+            output_path=str(output_dir),
             parallel_processing=False,  # 簡易版では並列処理なし
             continue_on_error=True,
         )
@@ -641,26 +629,18 @@ class DocumentationOrchestrator(BaseModel):
     このクラスは、複数のサービスを統合してドキュメント生成を統制します。
     """
 
-    document_generator: DocumentGeneratorService = Field(
-        default_factory=DocumentGeneratorService
-    )
+    document_generator: DocumentGeneratorService = Field(default_factory=DocumentGeneratorService)
     type_inspector: TypeInspectorService = Field(default_factory=TypeInspectorService)
-    markdown_builder: MarkdownBuilderService = Field(
-        default_factory=MarkdownBuilderService
-    )
+    markdown_builder: MarkdownBuilderService = Field(default_factory=MarkdownBuilderService)
     file_system: FileSystemService = Field(default_factory=FileSystemService)
-    template_processor: TemplateProcessorService = Field(
-        default_factory=TemplateProcessorService
-    )
-    batch_processor: BatchProcessorService = Field(
-        default_factory=BatchProcessorService
-    )
+    template_processor: TemplateProcessorService = Field(default_factory=TemplateProcessorService)
+    batch_processor: BatchProcessorService = Field(default_factory=BatchProcessorService)
 
     def generate_comprehensive_documentation(
         self,
         types: dict[TypeName, type[Any]],
         output_path: str | Path,
-        config: DocumentConfig | None = None,
+        _config: DocumentConfig | None = None,  # 将来の拡張機能用に予約済みパラメータ
     ) -> GenerationResult:
         """
         包括的なドキュメントを生成します。
@@ -697,6 +677,7 @@ class DocumentationOrchestrator(BaseModel):
             structure = DocumentStructure(
                 title="Type Documentation",
                 sections=sections,
+                metadata=create_empty_metadata(),
                 generation_timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ"),
             )
 

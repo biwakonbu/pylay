@@ -5,7 +5,8 @@ TypeDependencyGraphからMarkdownドキュメントを生成。
 """
 
 from pathlib import Path
-from typing import Any
+
+from pydantic import TypeAdapter
 
 from src.core.schemas.graph import GraphEdge, GraphNode, TypeDependencyGraph
 from src.core.schemas.types import GraphMetadata
@@ -20,18 +21,22 @@ class GraphDocGenerator(DocumentGenerator):
     テキストベースのMarkdown出力（テーブルとリスト形式）。
     """
 
-    def generate(self, output_path: Path, **kwargs: Any) -> None:
+    def generate(self, output_path: Path, **kwargs: object) -> None:
         """
         依存グラフからMarkdownドキュメントを生成。
 
         Args:
             output_path: 出力ファイルパス
-            graph: TypeDependencyGraphインスタンス
-            **kwargs: 追加オプション（例: include_visualization）
+            **kwargs: 追加オプション
+                - graph (TypeDependencyGraph): 必須。依存グラフインスタンス
         """
-        graph = kwargs.get("graph")
-        if not graph:
+        graph_value = kwargs.get("graph")
+        if graph_value is None:
             raise ValueError("graph parameter is required")
+
+        # 実行時型検証
+        graph_adapter = TypeAdapter(TypeDependencyGraph)
+        graph = graph_adapter.validate_python(graph_value)
 
         self.md.clear()
         self.md = MarkdownBuilder()
@@ -66,9 +71,7 @@ class GraphDocGenerator(DocumentGenerator):
         self.md.paragraph(f"**ソースファイル**: {source_file}")
         self.md.paragraph(f"**ノード数**: {node_count}")
         self.md.paragraph(f"**エッジ数**: {edge_count}")
-        self.md.paragraph(
-            "このドキュメントはPython AST解析による型依存関係を自動生成したものです。"
-        )
+        self.md.paragraph("このドキュメントはPython AST解析による型依存関係を自動生成したものです。")
 
     def _generate_graph_details(self, graph: TypeDependencyGraph) -> None:
         """グラフの詳細セクションを生成"""
@@ -109,16 +112,10 @@ class GraphDocGenerator(DocumentGenerator):
         self.md.paragraph("|------|--------|------|------|")
 
         for node in nodes:
-            location = (
-                f"{node.source_file}:{node.line_number}"
-                if node.source_file and node.line_number
-                else "不明"
-            )
+            location = f"{node.source_file}:{node.line_number}" if node.source_file and node.line_number else "不明"
             is_external = "✓" if node.is_external() else ""
             display_name = node.get_display_name()
-            self.md.paragraph(
-                f"| {display_name} | {node.node_type} | {location} | {is_external} |"
-            )
+            self.md.paragraph(f"| {display_name} | {node.node_type} | {location} | {is_external} |")
 
     def _generate_edge_table(self, edges: list[GraphEdge]) -> None:
         """エッジ一覧テーブルを生成"""
@@ -134,16 +131,13 @@ class GraphDocGenerator(DocumentGenerator):
             strength = edge.get_dependency_strength()
             is_strong = "✓" if edge.is_strong_dependency() else ""
             self.md.paragraph(
-                f"| {edge.source} | {edge.target} | {edge.relation_type} | "
-                f"{edge.weight} | {strength} {is_strong} |"
+                f"| {edge.source} | {edge.target} | {edge.relation_type} | {edge.weight} | {strength} {is_strong} |"
             )
 
     def _generate_footer(self) -> None:
         """フッターセクションを生成"""
         self.md.paragraph("---")
-        self.md.paragraph(
-            "このドキュメントはpylayの依存関係抽出機能により自動生成されました。"
-        )
+        self.md.paragraph("このドキュメントはpylayの依存関係抽出機能により自動生成されました。")
         self.md.paragraph("更新日時: 自動生成")  # 実際にはdatetimeを使用
 
     def generate_with_visualization(
@@ -175,15 +169,11 @@ class GraphDocGenerator(DocumentGenerator):
         # ノード定義
         for node in graph.nodes:
             node_type = node.node_type
-            lines.append(
-                f'  "{node.name}" [label="{node.name}\\n({node_type})", shape=box];'
-            )
+            lines.append(f'  "{node.name}" [label="{node.name}\\n({node_type})", shape=box];')
 
         # エッジ定義
         for edge in graph.edges:
-            lines.append(
-                f'  "{edge.source}" -> "{edge.target}" [label="{edge.relation_type}"];'
-            )
+            lines.append(f'  "{edge.source}" -> "{edge.target}" [label="{edge.relation_type}"];')
 
         lines.append("}")
 

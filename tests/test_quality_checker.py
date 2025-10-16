@@ -4,39 +4,33 @@
 QualityCheckerクラスの機能をテストします。
 """
 
-from collections.abc import Generator
-
 import pytest
 
 from src.core.analyzer.quality_checker import QualityChecker
 from src.core.analyzer.type_level_analyzer import TypeLevelAnalyzer
-from src.core.schemas.pylay_config import PylayConfig
+from src.core.schemas.pylay_config import PylayConfig, QualityCheckConfig
+
+
+@pytest.fixture
+def config() -> PylayConfig:
+    """テスト用の設定オブジェクト"""
+    return PylayConfig(target_dirs=["src"])
+
+
+@pytest.fixture
+def type_analyzer() -> TypeLevelAnalyzer:
+    """テスト用のTypeLevelAnalyzerインスタンス"""
+    return TypeLevelAnalyzer()
+
+
+@pytest.fixture
+def quality_checker(config: PylayConfig) -> QualityChecker:
+    """テスト用のQualityCheckerインスタンス"""
+    return QualityChecker(config)
 
 
 class TestQualityChecker:
     """QualityCheckerクラスのテスト"""
-
-    @pytest.fixture  # type: ignore[misc]
-    def config(self) -> Generator[PylayConfig, None, None]:
-        """テスト用の設定オブジェクト"""
-        yield PylayConfig(
-            target_dirs=["src"],
-            quality_thresholds=None,
-        )
-
-    @pytest.fixture  # type: ignore[misc]
-    def type_analyzer(
-        self, config: PylayConfig
-    ) -> Generator[TypeLevelAnalyzer, None, None]:
-        """テスト用のTypeLevelAnalyzerインスタンス"""
-        yield TypeLevelAnalyzer()
-
-    @pytest.fixture  # type: ignore[misc]
-    def quality_checker(
-        self, config: PylayConfig
-    ) -> Generator[QualityChecker, None, None]:
-        """テスト用のQualityCheckerインスタンス"""
-        yield QualityChecker(config)
 
     def test_init(self, quality_checker: QualityChecker) -> None:
         """初期化テスト"""
@@ -44,9 +38,7 @@ class TestQualityChecker:
         assert quality_checker.thresholds is not None
         assert quality_checker.code_locator is not None
 
-    def test_check_quality_basic(
-        self, quality_checker: QualityChecker, type_analyzer: TypeLevelAnalyzer
-    ) -> None:
+    def test_check_quality_basic(self, quality_checker: QualityChecker, type_analyzer: TypeLevelAnalyzer) -> None:
         """基本的な品質チェックテスト"""
         from pathlib import Path
 
@@ -113,9 +105,7 @@ class TestQualityChecker:
             improvement_plan="基準を満たすよう修正してください",
         )
         severity1 = quality_checker._calculate_severity(issue1, test_stats)
-        assert (
-            severity1 == "error"
-        ), f"custom_error_condition (score=1.0): 期待=error, 実際={severity1}"
+        assert severity1 == "error", f"custom_error_condition (score=1.0): 期待=error, 実際={severity1}"
 
         # テストケース2: primitive_usage (base_score=0.7) → warning
         issue2 = QualityIssue(
@@ -125,9 +115,7 @@ class TestQualityChecker:
             improvement_plan="ドメイン型を定義して置き換えてください",
         )
         severity2 = quality_checker._calculate_severity(issue2, test_stats)
-        assert (
-            severity2 == "warning"
-        ), f"primitive_usage (score=0.7): 期待=warning, 実際={severity2}"
+        assert severity2 == "warning", f"primitive_usage (score=0.7): 期待=warning, 実際={severity2}"
 
         # テストケース3: primitive_usage_excluded (base_score=0.85) → advice
         issue3 = QualityIssue(
@@ -137,9 +125,7 @@ class TestQualityChecker:
             improvement_plan="現状維持（変更不要）",
         )
         severity3 = quality_checker._calculate_severity(issue3, test_stats)
-        assert (
-            severity3 == "advice"
-        ), f"primitive_usage_excluded (score=0.85): 期待=advice, 実際={severity3}"
+        assert severity3 == "advice", f"primitive_usage_excluded (score=0.85): 期待=advice, 実際={severity3}"
 
         # テストケース4: level1_ratio_high (base_score=0.3) → error
         issue4 = QualityIssue(
@@ -149,9 +135,7 @@ class TestQualityChecker:
             improvement_plan="制約が必要な型をLevel 2に昇格してください",
         )
         severity4 = quality_checker._calculate_severity(issue4, test_stats)
-        assert (
-            severity4 == "error"
-        ), f"level1_ratio_high (score=0.3): 期待=error, 実際={severity4}"
+        assert severity4 == "error", f"level1_ratio_high (score=0.3): 期待=error, 実際={severity4}"
 
     def test_priority_calculation(self, quality_checker: QualityChecker) -> None:
         """優先度計算のテスト"""
@@ -191,9 +175,7 @@ class TestQualityChecker:
         sorted_issues = quality_checker._prioritize_issues(issues)
         assert sorted_issues[0].issue_type == "primitive_usage"  # 優先度高が先
 
-    def test_impact_calculation(
-        self, quality_checker: QualityChecker, type_analyzer: TypeLevelAnalyzer
-    ) -> None:
+    def test_impact_calculation(self, quality_checker: QualityChecker, type_analyzer: TypeLevelAnalyzer) -> None:
         """影響度計算のテスト"""
         from pathlib import Path
 
@@ -356,9 +338,7 @@ class TestQualityChecker:
         assert isinstance(result.total_issues, int)
         assert result.overall_score >= 0.0
 
-    def test_no_type_definitions(
-        self, quality_checker: QualityChecker, type_analyzer: TypeLevelAnalyzer
-    ) -> None:
+    def test_no_type_definitions(self, quality_checker: QualityChecker, type_analyzer: TypeLevelAnalyzer) -> None:
         """型定義が全くないプロジェクトの処理テスト"""
         from pathlib import Path
         from tempfile import TemporaryDirectory
@@ -372,7 +352,7 @@ def foo():
     return 42
 
 x = foo()
-"""
+""",
             )
 
             # 解析を実行
@@ -385,17 +365,19 @@ x = foo()
             assert result is not None
             assert isinstance(result.total_issues, int)
 
-    def test_invalid_threshold_config(self, config: PylayConfig) -> None:
+    def test_invalid_threshold_config(self) -> None:
         """不正な閾値設定の処理テスト"""
         from src.core.schemas.pylay_config import LevelThresholds
 
-        # 不正な閾値（合計が1.0を超える）を設定
+        # 不正な閾値(合計が1.0を超える)を設定
         invalid_config = PylayConfig(
             target_dirs=["src"],
-            quality_thresholds=LevelThresholds(
-                level1_max=0.5,
-                level2_min=0.6,  # level1_max + level2_min > 1.0
-                level3_min=0.3,
+            quality_check=QualityCheckConfig(
+                level_thresholds=LevelThresholds(
+                    level1_max=0.5,
+                    level2_min=0.6,  # level1_max + level2_min > 1.0
+                    level3_min=0.3,
+                ),
             ),
         )
 

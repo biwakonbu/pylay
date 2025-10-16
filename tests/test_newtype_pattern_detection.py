@@ -11,17 +11,16 @@ import pytest
 from src.core.analyzer.type_classifier import TypeClassifier
 
 
+@pytest.fixture
+def classifier() -> TypeClassifier:
+    """TypeClassifierインスタンスを作成"""
+    return TypeClassifier()
+
+
 class TestNewTypePatternDetection:
     """NewType + ファクトリ関数パターンの検出テスト"""
 
-    @pytest.fixture  # type: ignore[misc]
-    def classifier(self) -> TypeClassifier:
-        """TypeClassifierインスタンスを作成"""
-        return TypeClassifier()
-
-    def test_newtype_with_create_factory(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_create_factory(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """NewType + create_*ファクトリ関数のパターンを検出（Level 2）"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -35,7 +34,7 @@ class TestNewTypePatternDetection:
                 if len(value) < 8:
                     raise ValueError("UserId must be at least 8 characters")
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -46,9 +45,7 @@ class TestNewTypePatternDetection:
         assert user_id_types[0].level == "level2"
         assert user_id_types[0].category == "newtype_with_factory"
 
-    def test_newtype_with_validate_call(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_validate_call(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """NewType + @validate_callファクトリ関数のパターンを検出（Level 2）"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -62,7 +59,7 @@ class TestNewTypePatternDetection:
             def Email(value: Annotated[str, Field(pattern=r'^[^@]+@[^@]+$')]) -> Email:
                 '''Emailを作成する検証付きファクトリ関数'''
                 return NewType('Email', str)(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -73,17 +70,15 @@ class TestNewTypePatternDetection:
         assert email_types[0].level == "level2"
         assert email_types[0].category == "newtype_with_factory"
 
-    def test_newtype_without_factory(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
-        """ファクトリ関数なしのNewTypeパターンを検出（Level 1）"""
+    def test_newtype_without_factory(self, classifier: TypeClassifier, tmp_path: Path) -> None:
+        """ファクトリ関数なしのNewTypeパターンを検出 (Level 1)"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
             dedent("""
             from typing import NewType
 
             StatusCode = NewType('StatusCode', int)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -94,9 +89,7 @@ class TestNewTypePatternDetection:
         assert status_types[0].level == "level1"
         assert status_types[0].category == "newtype_plain"
 
-    def test_multiple_newtype_patterns(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_multiple_newtype_patterns(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """複数のNewTypeパターンが混在する場合の検出"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -123,7 +116,7 @@ class TestNewTypePatternDetection:
 
             # Pattern 4: type alias (Level 1)
             type Timestamp = float
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -140,9 +133,7 @@ class TestNewTypePatternDetection:
         level1_names = {td.name for td in level1_types}
         assert level1_names == {"StatusCode", "ErrorCode", "Timestamp"}
 
-    def test_newtype_with_snake_case_factory(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_snake_case_factory(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """snake_case → PascalCaseの変換が正しく動作する"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -154,7 +145,7 @@ class TestNewTypePatternDetection:
             def create_user_profile_id(value: str) -> UserProfileId:
                 '''UserProfileIdを作成'''
                 return UserProfileId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -165,9 +156,7 @@ class TestNewTypePatternDetection:
         assert types[0].level == "level2"
         assert types[0].category == "newtype_with_factory"
 
-    def test_newtype_factory_mismatch(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_factory_mismatch(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """NewTypeとファクトリ関数の名前が一致しない場合はLevel 1"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -179,7 +168,7 @@ class TestNewTypePatternDetection:
             # ファクトリ関数の返り値型が異なる
             def create_user_id(value: str) -> str:
                 return value
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -190,9 +179,7 @@ class TestNewTypePatternDetection:
         assert types[0].level == "level1"
         assert types[0].category == "newtype_plain"
 
-    def test_newtype_with_docstring(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_with_docstring(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """docstringが正しく抽出される"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -205,7 +192,7 @@ class TestNewTypePatternDetection:
             def create_user_id(value: str) -> UserId:
                 '''UserIdを作成するファクトリ関数'''
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -215,9 +202,7 @@ class TestNewTypePatternDetection:
         # docstringはコメント形式では抽出されないが、エラーにはならない
         assert types[0].level == "level2"
 
-    def test_no_duplicate_detection(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_no_duplicate_detection(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """同じ型定義が重複して検出されないことを確認"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -228,7 +213,7 @@ class TestNewTypePatternDetection:
 
             def create_user_id(value: str) -> UserId:
                 return UserId(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -237,9 +222,7 @@ class TestNewTypePatternDetection:
         user_id_types = [td for td in results if td.name == "UserId"]
         assert len(user_id_types) == 1
 
-    def test_newtype_variable_name_mismatch(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_newtype_variable_name_mismatch(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """変数名と型名が一致しないNewTypeは検出しない"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -248,7 +231,7 @@ class TestNewTypePatternDetection:
 
             # 変数名と型名が異なる（非推奨パターン）
             user_id_type = NewType('UserId', str)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -257,9 +240,7 @@ class TestNewTypePatternDetection:
         types = [td for td in results if td.name == "UserId"]
         assert len(types) == 0
 
-    def test_validate_call_with_complex_parameters(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_validate_call_with_complex_parameters(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """@validate_callの複雑なパラメータ定義が正しく処理される"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -282,7 +263,7 @@ class TestNewTypePatternDetection:
             ) -> Email:
                 '''複雑なバリデーション付きEmail作成'''
                 return NewType('Email', str)(value)
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)
@@ -292,9 +273,7 @@ class TestNewTypePatternDetection:
         assert email_types[0].level == "level2"
         assert email_types[0].category == "newtype_with_factory"
 
-    def test_mixed_type_definitions(
-        self, classifier: TypeClassifier, tmp_path: Path
-    ) -> None:
+    def test_mixed_type_definitions(self, classifier: TypeClassifier, tmp_path: Path) -> None:
         """様々な型定義パターンが混在する実践的なケース"""
         test_file = tmp_path / "test.py"
         test_file.write_text(
@@ -332,7 +311,7 @@ class TestNewTypePatternDetection:
             @dataclass
             class Config:
                 timeout: int
-            """)
+            """),
         )
 
         results = classifier.classify_file(test_file)

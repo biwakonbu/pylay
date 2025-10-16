@@ -19,6 +19,8 @@ from src.core.analyzer.type_level_models import (
 from src.core.analyzer.type_reporter import TypeReporter
 from src.core.analyzer.type_statistics import TypeStatisticsCalculator
 from src.core.analyzer.type_upgrade_analyzer import TypeUpgradeAnalyzer
+from src.core.analyzer.types import ValidatedFilePath
+from src.core.utils.io_helpers import collect_python_files
 
 
 class TypeLevelAnalyzer:
@@ -46,19 +48,24 @@ class TypeLevelAnalyzer:
         }
 
     def analyze_directory(
-        self, directory: Path, include_upgrade_recommendations: bool = True
+        self,
+        directory: Path,
+        *,
+        include_upgrade_recommendations: bool = True,
+        exclude_patterns: list[str] | None = None,
     ) -> TypeAnalysisReport:
         """ディレクトリ内の型定義を分析
 
         Args:
             directory: 解析対象のディレクトリ
             include_upgrade_recommendations: 型レベルアップ推奨を含めるか
+            exclude_patterns: 除外するパターン（glob形式）
 
         Returns:
             TypeAnalysisReport
         """
-        # すべての.pyファイルを収集
-        py_files = list(directory.rglob("*.py"))
+        # Pythonファイルを収集（共通ヘルパー関数を使用）
+        py_files = collect_python_files(directory, exclude_patterns)
 
         # 型定義を収集
         all_type_definitions: list[TypeDefinition] = []
@@ -67,9 +74,7 @@ class TypeLevelAnalyzer:
             all_type_definitions.extend(type_defs)
 
         # 重複を除去（同じファイル・型名・行番号の組み合わせで重複判定）
-        unique_type_definitions = self._deduplicate_type_definitions(
-            all_type_definitions
-        )
+        unique_type_definitions = self._deduplicate_type_definitions(all_type_definitions)
 
         # 統計情報を計算
         statistics = self.statistics_calculator.calculate(unique_type_definitions)
@@ -77,22 +82,16 @@ class TypeLevelAnalyzer:
         # ドキュメント推奨を生成
         # 注: unique_type_definitionsを使用して、同一型の重複推奨を防ぐ
         # ユーザーに表示する推奨事項は重複除去後のデータを使用する
-        docstring_recommendations = self._generate_docstring_recommendations(
-            unique_type_definitions
-        )
+        docstring_recommendations = self._generate_docstring_recommendations(unique_type_definitions)
 
         # 型レベルアップ推奨を生成
         # 注: all_type_definitionsを使用して、型の使用回数を正確にカウント
         # 使用回数のカウントには全ての定義が必要（重複を含む）
         upgrade_recommendations: list[UpgradeRecommendation] = []
         if include_upgrade_recommendations:
-            upgrade_recommendations = self._generate_upgrade_recommendations(
-                all_type_definitions
-            )
+            upgrade_recommendations = self._generate_upgrade_recommendations(all_type_definitions)
             # 重複除去
-            upgrade_recommendations = self._deduplicate_upgrade_recommendations(
-                upgrade_recommendations
-            )
+            upgrade_recommendations = self._deduplicate_upgrade_recommendations(upgrade_recommendations)
 
         # 一般的な推奨事項を生成
         recommendations = self._generate_general_recommendations(statistics)
@@ -126,14 +125,10 @@ class TypeLevelAnalyzer:
         statistics = self.statistics_calculator.calculate(type_definitions)
 
         # ドキュメント推奨を生成
-        docstring_recommendations = self._generate_docstring_recommendations(
-            type_definitions
-        )
+        docstring_recommendations = self._generate_docstring_recommendations(type_definitions)
 
         # 型レベルアップ推奨を生成
-        upgrade_recommendations = self._generate_upgrade_recommendations(
-            type_definitions
-        )
+        upgrade_recommendations = self._generate_upgrade_recommendations(type_definitions)
 
         # 一般的な推奨事項を生成
         recommendations = self._generate_general_recommendations(statistics)
@@ -169,9 +164,7 @@ class TypeLevelAnalyzer:
             detail = self.docstring_analyzer.analyze_docstring(type_def.docstring)
 
             # 推奨事項を生成
-            rec = self.docstring_analyzer.recommend_docstring_improvements(
-                type_def, detail
-            )
+            rec = self.docstring_analyzer.recommend_docstring_improvements(type_def, detail)
 
             # "none"以外の推奨事項を追加
             if rec.recommended_action != "none":
@@ -183,9 +176,7 @@ class TypeLevelAnalyzer:
 
         return recommendations
 
-    def _generate_upgrade_recommendations(
-        self, type_definitions: list[TypeDefinition]
-    ) -> list[UpgradeRecommendation]:
+    def _generate_upgrade_recommendations(self, type_definitions: list[TypeDefinition]) -> list[UpgradeRecommendation]:
         """型レベルアップ推奨を生成
 
         Args:
@@ -209,15 +200,11 @@ class TypeLevelAnalyzer:
 
         # 優先度と確信度順にソート
         priority_order = {"high": 0, "medium": 1, "low": 2}
-        recommendations.sort(
-            key=lambda r: (priority_order.get(r.priority, 3), -r.confidence)
-        )
+        recommendations.sort(key=lambda r: (priority_order.get(r.priority, 3), -r.confidence))
 
         return recommendations
 
-    def _generate_general_recommendations(
-        self, statistics: "TypeStatistics"
-    ) -> list[str]:
+    def _generate_general_recommendations(self, statistics: TypeStatistics) -> list[str]:
         """一般的な推奨事項を生成
 
         Args:
@@ -276,7 +263,7 @@ class TypeLevelAnalyzer:
 
         return recommendations
 
-    def _calculate_deviation(self, statistics: "TypeStatistics") -> dict[str, float]:
+    def _calculate_deviation(self, statistics: TypeStatistics) -> dict[str, float]:
         """警告閾値との乖離を計算
 
         Args:
@@ -286,17 +273,12 @@ class TypeLevelAnalyzer:
             乖離の辞書（正の値 = 閾値を超えている、負の値 = 閾値を下回っている）
         """
         return {
-            "level1_max": statistics.level1_ratio
-            - self.threshold_ratios["level1_max"],  # 正 = 上限超過（警告）
-            "level2_min": statistics.level2_ratio
-            - self.threshold_ratios["level2_min"],  # 負 = 下限未満（警告）
-            "level3_min": statistics.level3_ratio
-            - self.threshold_ratios["level3_min"],  # 負 = 下限未満（警告）
+            "level1_max": statistics.level1_ratio - self.threshold_ratios["level1_max"],  # 正 = 上限超過（警告）
+            "level2_min": statistics.level2_ratio - self.threshold_ratios["level2_min"],  # 負 = 下限未満（警告）
+            "level3_min": statistics.level3_ratio - self.threshold_ratios["level3_min"],  # 負 = 下限未満（警告）
         }
 
-    def _count_type_usage(
-        self, type_definitions: list[TypeDefinition]
-    ) -> dict[str, int]:
+    def _count_type_usage(self, type_definitions: list[TypeDefinition]) -> dict[str, int]:
         """型の使用回数をカウント
 
         AST解析を使用して、実際の型参照箇所をカウントします。
@@ -317,7 +299,7 @@ class TypeLevelAnalyzer:
         type_names = {td.name for td in type_definitions}
 
         # ファイルパスごとにグループ化
-        files_to_analyze: dict[str, list[str]] = {}
+        files_to_analyze: dict[ValidatedFilePath, list[str]] = {}
         for td in type_definitions:
             if td.file_path not in files_to_analyze:
                 files_to_analyze[td.file_path] = []
@@ -350,9 +332,7 @@ class TypeLevelAnalyzer:
 
         return usage_counts
 
-    def _deduplicate_type_definitions(
-        self, type_definitions: list[TypeDefinition]
-    ) -> list[TypeDefinition]:
+    def _deduplicate_type_definitions(self, type_definitions: list[TypeDefinition]) -> list[TypeDefinition]:
         """型定義の重複を除去
 
         ファイルパス、型名、行番号の組み合わせで重複判定を行います。
@@ -365,7 +345,7 @@ class TypeLevelAnalyzer:
         Returns:
             重複除去後の型定義リスト
         """
-        seen_keys: set[tuple[str, str, int]] = set()
+        seen_keys: set[tuple[ValidatedFilePath, str, int]] = set()
         unique_types: list[TypeDefinition] = []
 
         for td in type_definitions:
@@ -390,7 +370,7 @@ class TypeLevelAnalyzer:
         Returns:
             重複除去後の推奨事項リスト
         """
-        seen_keys: set[tuple[str, str, int]] = set()
+        seen_keys: set[tuple[ValidatedFilePath, str, int]] = set()
         unique_recs: list[UpgradeRecommendation] = []
 
         for rec in recommendations:
@@ -486,9 +466,12 @@ class _TypeReferenceCounter(ast.NodeVisitor):
         # Subscript ノード (例: list[UserId], Annotated[str, ...])
         elif isinstance(annotation, ast.Subscript):
             # ベース型をチェック (例: list, Annotated)
-            if isinstance(annotation.value, ast.Name):
-                if annotation.value.id in self.type_names:
-                    self.reference_counts[annotation.value.id] += 1
+            if isinstance(annotation.value, ast.Name) and annotation.value.id in self.type_names:
+                self.reference_counts[annotation.value.id] += 1
+            # 修飾名 (例: models.User)
+            elif isinstance(annotation.value, ast.Attribute):
+                if annotation.value.attr in self.type_names:
+                    self.reference_counts[annotation.value.attr] += 1
 
             # インデックス部分を再帰的にチェック
             self._count_annotation_recursive(annotation.slice)
@@ -508,16 +491,14 @@ class _TypeReferenceCounter(ast.NodeVisitor):
                 self.reference_counts[node.id] += 1
 
         elif isinstance(node, ast.Subscript):
-            if isinstance(node.value, ast.Name):
-                if node.value.id in self.type_names:
-                    self.reference_counts[node.value.id] += 1
+            if isinstance(node.value, ast.Name) and node.value.id in self.type_names:
+                self.reference_counts[node.value.id] += 1
+            elif isinstance(node.value, ast.Attribute):
+                if node.value.attr in self.type_names:
+                    self.reference_counts[node.value.attr] += 1
             self._count_annotation_recursive(node.slice)
 
-        elif isinstance(node, ast.Tuple):
-            for elt in node.elts:
-                self._count_annotation_recursive(elt)
-
-        elif isinstance(node, ast.List):
+        elif isinstance(node, (ast.Tuple, ast.List)):
             for elt in node.elts:
                 self._count_annotation_recursive(elt)
 

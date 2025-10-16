@@ -13,15 +13,13 @@
 from pathlib import Path
 from typing import Annotated, Literal, NewType
 
-from pydantic import AfterValidator, BaseModel, Field, TypeAdapter
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, TypeAdapter
 
 
 def _validate_percentage(v: float) -> float:
     """パーセンテージ値が適切な範囲内であることを検証するバリデーター"""
     if v < 0.0 or v > 1.0:
-        raise ValueError(
-            f"パーセンテージは0.0〜1.0の範囲である必要がありますが、{v}が指定されました"
-        )
+        raise ValueError(f"パーセンテージは0.0〜1.0の範囲である必要がありますが、{v}が指定されました")
     return v
 
 
@@ -80,21 +78,14 @@ class TypeDefinition(BaseModel):
     file_path: ValidatedFilePath = Field(description="ファイルパス")
     line_number: int = Field(gt=0, description="行番号")
     definition: str = Field(description="型定義のコード")
-    category: CategoryName = Field(
-        description="型のカテゴリ（type_alias/annotated/basemodel/class/dataclass等）"
-    )
+    category: CategoryName = Field(description="型のカテゴリ（type_alias/annotated/basemodel/class/dataclass等）")
     docstring: str | None = Field(default=None, description="docstring（存在する場合）")
     has_docstring: bool = Field(default=False, description="docstringが存在するか")
     docstring_lines: int = Field(default=0, ge=0, description="docstringの行数")
-    target_level: TargetLevel = Field(
-        default=None, description="docstringで指定された目標レベル"
-    )
+    target_level: TargetLevel = Field(default=None, description="docstringで指定された目標レベル")
     keep_as_is: bool = Field(default=False, description="現状維持フラグ")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class DocstringDetail(BaseModel):
@@ -114,10 +105,7 @@ class DocstringDetail(BaseModel):
     line_count: int = Field(ge=0, description="docstringの行数")
     detail_score: float = Field(ge=0.0, le=1.0, description="詳細度スコア（0.0-1.0）")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class DocumentationStatistics(BaseModel):
@@ -131,27 +119,16 @@ class DocumentationStatistics(BaseModel):
     documented_types: int = Field(ge=0, description="docstringが存在する型の数")
     undocumented_types: int = Field(ge=0, description="docstringが存在しない型の数")
     implementation_rate: float = Field(ge=0.0, le=1.0, description="実装率（0.0-1.0）")
-    minimal_docstrings: int = Field(
-        ge=0, description="最低限のdocstring（1行のみ）の数"
-    )
+    minimal_docstrings: int = Field(ge=0, description="最低限のdocstring（1行のみ）の数")
     detailed_docstrings: int = Field(ge=0, description="詳細なdocstringの数")
     detail_rate: float = Field(ge=0.0, le=1.0, description="詳細度率（0.0-1.0）")
     avg_docstring_lines: float = Field(description="平均docstring行数")
-    quality_score: float = Field(
-        ge=0.0, le=1.0, description="総合品質スコア（実装率 × 詳細度）"
-    )
-    by_level: dict[TypeLevel, dict[str, int]] = Field(
-        description="レベル別のdocstring統計（カウント値のみ）"
-    )
-    by_level_avg_lines: dict[TypeLevel, float] = Field(
-        description="レベル別の平均docstring行数"
-    )
+    quality_score: float = Field(ge=0.0, le=1.0, description="総合品質スコア（実装率 × 詳細度）")
+    by_level: dict[TypeLevel, dict[str, int]] = Field(description="レベル別のdocstring統計（カウント値のみ）")
+    by_level_avg_lines: dict[TypeLevel, float] = Field(description="レベル別の平均docstring行数")
     by_format: dict[FormatStyle, int] = Field(description="フォーマット別のdocstring数")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class TypeLevelInfo(BaseModel):
@@ -168,10 +145,7 @@ class TypeLevelInfo(BaseModel):
     upgrade_candidates: int = Field(ge=0, description="レベルアップ候補の数")
     keep_as_is_count: int = Field(ge=0, description="現状維持指定の数")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class FileAnalysisResult(BaseModel):
@@ -182,21 +156,14 @@ class FileAnalysisResult(BaseModel):
     """
 
     file_path: ValidatedFilePath = Field(description="解析対象のファイルパス")
-    type_definitions: list[TypeDefinition] = Field(
-        default_factory=list, description="検出された型定義のリスト"
-    )
+    type_definitions: list[TypeDefinition] = Field(default_factory=list, description="検出された型定義のリスト")
     total_types: int = Field(ge=0, description="型定義の総数")
     documented_types: int = Field(ge=0, description="ドキュメント付き型定義数")
     analysis_time_ms: float = Field(description="解析時間（ミリ秒）")
     has_errors: bool = Field(description="解析エラーがあるかどうか")
-    error_messages: list[str] = Field(
-        default_factory=list, description="エラーメッセージのリスト"
-    )
+    error_messages: list[str] = Field(default_factory=list, description="エラーメッセージのリスト")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class ProjectAnalysisResult(BaseModel):
@@ -210,22 +177,13 @@ class ProjectAnalysisResult(BaseModel):
     total_files: int = Field(gt=0, description="解析対象のファイル総数")
     analyzed_files: int = Field(gt=0, description="解析完了したファイル数")
     failed_files: int = Field(gt=0, description="解析失敗したファイル数")
-    all_type_definitions: list[TypeDefinition] = Field(
-        default_factory=list, description="全型定義のリスト"
-    )
-    documentation_stats: DocumentationStatistics = Field(
-        description="ドキュメント統計情報"
-    )
-    level_stats: dict[TypeLevel, TypeLevelInfo] = Field(
-        description="レベル別の統計情報"
-    )
+    all_type_definitions: list[TypeDefinition] = Field(default_factory=list, description="全型定義のリスト")
+    documentation_stats: DocumentationStatistics = Field(description="ドキュメント統計情報")
+    level_stats: dict[TypeLevel, TypeLevelInfo] = Field(description="レベル別の統計情報")
     total_analysis_time_ms: float = Field(description="総解析時間（ミリ秒）")
     analysis_timestamp: str = Field(description="解析実行時刻（ISO形式）")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class AnalysisConfig(BaseModel):
@@ -235,29 +193,21 @@ class AnalysisConfig(BaseModel):
     このクラスは、型解析処理の設定を管理します。
     """
 
-    include_patterns: list[str] = Field(
-        default_factory=lambda: ["*.py"], description="解析対象のファイルパターン"
-    )
+    include_patterns: list[str] = Field(default_factory=lambda: ["*.py"], description="解析対象のファイルパターン")
     exclude_patterns: list[str] = Field(
-        default_factory=lambda: ["test_*", "__pycache__", "*.pyc"],
+        default_factory=lambda: ["test_*", "__pycache__", "*.pyc", "**/node_modules/**", "**/.venv/**", "**/dist/**"],
         description="除外対象のパターン",
     )
-    max_file_size: int = Field(
-        gt=0,  # type: ignore[assignment]
+    max_file_size: Annotated[int, Field(gt=0)] = Field(
         default=10 * 1024 * 1024,
         description="処理可能な最大ファイルサイズ（バイト）",
     )
-    max_files: int | None = Field(
-        default=None, gt=0, description="最大処理ファイル数（Noneで無制限）"
-    )
+    max_files: int | None = Field(default=None, gt=0, description="最大処理ファイル数（Noneで無制限）")
     analyze_docstrings: bool = Field(default=True, description="docstringも解析するか")
     analyze_dependencies: bool = Field(default=True, description="依存関係も解析するか")
     detect_type_levels: bool = Field(default=True, description="型レベルを検出するか")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class QualityMetrics(BaseModel):
@@ -269,19 +219,12 @@ class QualityMetrics(BaseModel):
 
     overall_score: float = Field(ge=0.0, le=1.0, description="総合スコア（0.0-1.0）")
     type_coverage: float = Field(ge=0.0, le=1.0, description="型定義カバー率")
-    documentation_coverage: float = Field(
-        ge=0.0, le=1.0, description="ドキュメントカバー率"
-    )
-    type_level_balance: float = Field(
-        ge=0.0, le=1.0, description="型レベルバランススコア"
-    )
+    documentation_coverage: float = Field(ge=0.0, le=1.0, description="ドキュメントカバー率")
+    type_level_balance: float = Field(ge=0.0, le=1.0, description="型レベルバランススコア")
     maintainability_score: float = Field(ge=0.0, le=1.0, description="保守性スコア")
     complexity_score: float = Field(ge=0.0, le=1.0, description="複雑度スコア")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class TypeUpgradeSuggestion(BaseModel):
@@ -296,11 +239,6 @@ class TypeUpgradeSuggestion(BaseModel):
     suggested_level: TypeLevel = Field(description="提案レベル")
     reason: str = Field(description="提案理由")
     priority: Literal["high", "medium", "low"] = Field(description="優先度")
-    effort_estimate: Literal["small", "medium", "large"] = Field(
-        description="実装工数の見積もり"
-    )
+    effort_estimate: Literal["small", "medium", "large"] = Field(description="実装工数の見積もり")
 
-    class Config:
-        """Pydantic設定"""
-
-        frozen = True
+    model_config = ConfigDict(frozen=True, extra="forbid")

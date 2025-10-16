@@ -45,7 +45,7 @@ def _load_config() -> PylayConfig:
     "--focus",
     type=click.Choice(["types", "ignore", "quality"], case_sensitive=False),
     default=None,
-    help="特定のチェックのみ実行（未指定の場合は全チェック）",
+    help="特定のチェックのみ実行(未指定の場合は全チェック)",
 )
 @click.option("-v", "--verbose", is_flag=True, help="詳細なログを出力")
 def check(
@@ -84,79 +84,100 @@ def check(
         # 詳細情報を表示
         uv run pylay check -v
     """
-    target_path = Path(target) if target else Path.cwd()
     config = _load_config()
 
-    if focus is None:
-        # 全てのチェックを実行
-        console.print()
-        console.rule("[bold cyan]🔍 プロジェクト品質チェック[/bold cyan]")
-        console.print()
+    # 引数が指定されていない場合はconfig.target_dirsを使用
+    target_paths: list[Path]
+    if target:
+        target_paths = [Path(target)]
+    else:
+        # config.target_dirsが複数ある場合は、すべてのディレクトリを処理
+        target_paths = [Path(d) for d in config.target_dirs] if config.target_dirs else [Path.cwd()]
 
-        # 1. 型定義レベル統計
-        console.print("[bold blue]1/3: 型定義レベル統計[/bold blue]")
-        console.print()
-        _run_type_analysis(target_path, verbose)
+    # 除外パターンをconfigから取得(空リストの場合は None に変換)
+    exclude_patterns = config.exclude_patterns or None
 
-        console.print()
-        console.rule()
-        console.print()
-
-        # 2. type-ignore 診断
-        console.print("[bold yellow]2/3: type-ignore 診断[/bold yellow]")
-        console.print()
-        _run_type_ignore_analysis(target_path, verbose)
-
-        console.print()
-        console.rule()
+    # 複数のターゲットディレクトリがある場合は通知
+    if len(target_paths) > 1:
+        console.print(f"[cyan]INFO: Processing {len(target_paths)} target directories[/cyan]")
         console.print()
 
-        # 3. 品質チェック
-        console.print("[bold green]3/3: 品質チェック[/bold green]")
-        console.print()
-        _run_quality_check(target_path, config, verbose)
+    # 各ターゲットディレクトリに対してチェックを実行
+    for idx, target_path in enumerate(target_paths, 1):
+        if len(target_paths) > 1:
+            console.print(f"[bold cyan]📁 Target {idx}/{len(target_paths)}: {target_path}[/bold cyan]")
+            console.print()
 
-        console.print()
-        console.rule("[bold cyan]✅ チェック完了[/bold cyan]")
-        console.print()
+        if focus is None:
+            # 全てのチェックを実行
+            console.print()
+            console.rule("[bold cyan]🔍 Project Quality Check[/bold cyan]")
+            console.print()
 
-    elif focus == "types":
-        _run_type_analysis(target_path, verbose)
+            # 1. 型定義レベル統計
+            console.print("[bold blue]1/3: Type Definition Level Statistics[/bold blue]")
+            console.print()
+            _run_type_analysis(target_path, verbose=verbose, exclude_patterns=exclude_patterns)
 
-    elif focus == "ignore":
-        _run_type_ignore_analysis(target_path, verbose)
+            console.print()
+            console.rule()
+            console.print()
 
-    elif focus == "quality":
-        _run_quality_check(target_path, config, verbose)
+            # 2. type-ignore 診断
+            console.print("[bold yellow]2/3: Type Ignore Diagnostics[/bold yellow]")
+            console.print()
+            _run_type_ignore_analysis(target_path, verbose=verbose, exclude_patterns=exclude_patterns)
+
+            console.print()
+            console.rule()
+            console.print()
+
+            # 3. 品質チェック
+            console.print("[bold green]3/3: Quality Check[/bold green]")
+            console.print()
+            _run_quality_check(target_path, config, verbose=verbose, exclude_patterns=exclude_patterns)
+
+            console.print()
+            console.rule("[bold cyan]✅ Check Complete[/bold cyan]")
+            console.print()
+
+        elif focus == "types":
+            _run_type_analysis(target_path, verbose=verbose, exclude_patterns=exclude_patterns)
+
+        elif focus == "ignore":
+            _run_type_ignore_analysis(target_path, verbose=verbose, exclude_patterns=exclude_patterns)
+
+        elif focus == "quality":
+            _run_quality_check(target_path, config, verbose=verbose, exclude_patterns=exclude_patterns)
 
 
-def _run_type_analysis(target_path: Path, verbose: bool) -> None:
+def _run_type_analysis(target_path: Path, *, verbose: bool, exclude_patterns: list[str] | None = None) -> None:
     """型定義レベル統計を実行
 
     Args:
         target_path: 解析対象のパス
         verbose: 詳細情報を表示するかどうか
+        exclude_patterns: 除外するパターン(glob形式)
 
     Returns:
         None
     """
     from ...core.analyzer.type_reporter import TypeReporter
 
-    console.print(f"🔍 解析中: {target_path}")
+    console.print(f"🔍 Analyzing: {target_path}")
 
     analyzer: TypeLevelAnalyzer = TypeLevelAnalyzer()
 
     if target_path.is_file():
         report = analyzer.analyze_file(target_path)
     else:
-        report = analyzer.analyze_directory(target_path, include_upgrade_recommendations=verbose)
+        report = analyzer.analyze_directory(
+            target_path, include_upgrade_recommendations=verbose, exclude_patterns=exclude_patterns
+        )
 
     # 対象ディレクトリを決定（詳細表示用）
     target_dirs: list[str]
-    if target_path.is_file():
-        target_dirs = [str(target_path.parent)]
-    else:
-        target_dirs = [str(target_path)]
+    target_dirs = [str(target_path.parent)] if target_path.is_file() else [str(target_path)]
 
     reporter: TypeReporter = TypeReporter(target_dirs=target_dirs)
     reporter.generate_detailed_report(report, show_details=verbose, show_stats=True)
@@ -171,26 +192,27 @@ def _run_type_analysis(target_path: Path, verbose: bool) -> None:
         console.print(reporter.generate_docstring_recommendations_report(report.docstring_recommendations))
 
 
-def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
+def _run_type_ignore_analysis(target_path: Path, *, verbose: bool, exclude_patterns: list[str] | None = None) -> None:
     """type-ignore 診断を実行
 
     Args:
         target_path: 解析対象のパス
         verbose: 詳細情報（解決策）を表示するかどうか
+        exclude_patterns: 除外パターンのリスト（省略時はpyproject.tomlから読み込み）
 
     Returns:
         None
     """
     from ...core.analyzer.type_ignore_reporter import TypeIgnoreReporter
 
-    console.print(f"🔍 解析中: {target_path}")
+    console.print(f"🔍 Analyzing: {target_path}")
 
     analyzer: TypeIgnoreAnalyzer = TypeIgnoreAnalyzer()
 
     if target_path.is_file():
         issues = analyzer.analyze_file(str(target_path))
     else:
-        issues = analyzer.analyze_project(target_path)
+        issues = analyzer.analyze_project(target_path, exclude_patterns=exclude_patterns)
 
     # サマリー情報を生成
     summary = analyzer.generate_summary(issues)
@@ -199,13 +221,16 @@ def _run_type_ignore_analysis(target_path: Path, verbose: bool) -> None:
     reporter.generate_console_report(issues, summary, show_solutions=verbose)
 
 
-def _run_quality_check(target_path: Path, config: PylayConfig, verbose: bool) -> None:
+def _run_quality_check(
+    target_path: Path, config: PylayConfig, *, verbose: bool, exclude_patterns: list[str] | None = None
+) -> None:
     """品質チェックを実行
 
     Args:
         target_path: 解析対象のパス
         config: プロジェクト設定
         verbose: 詳細情報を表示するかどうか
+        exclude_patterns: 除外するパターン（glob形式）
 
     Returns:
         None
@@ -213,7 +238,7 @@ def _run_quality_check(target_path: Path, config: PylayConfig, verbose: bool) ->
     from ...core.analyzer.code_locator import CodeLocator
     from ...core.analyzer.quality_reporter import QualityReporter
 
-    console.print(f"🔍 解析中: {target_path}")
+    console.print(f"🔍 Analyzing: {target_path}")
 
     # 型レベル解析を実行
     analyzer: TypeLevelAnalyzer = TypeLevelAnalyzer()
@@ -223,7 +248,7 @@ def _run_quality_check(target_path: Path, config: PylayConfig, verbose: bool) ->
         report = analyzer.analyze_file(target_path)
         target_dirs = [str(target_path.parent)]
     else:
-        report = analyzer.analyze_directory(target_path)
+        report = analyzer.analyze_directory(target_path, exclude_patterns=exclude_patterns)
         target_dirs = [str(target_path)]
 
     # 品質チェッカーを初期化

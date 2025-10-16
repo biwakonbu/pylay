@@ -158,9 +158,7 @@ class FactoryUsageChecker:
             return
 
         # NewType(...) のパターンを検出
-        if not (
-            isinstance(node.value.func, ast.Name) and node.value.func.id == "NewType"
-        ):
+        if not (isinstance(node.value.func, ast.Name) and node.value.func.id == "NewType"):
             return
 
         if len(node.value.args) < 2:
@@ -217,9 +215,7 @@ class FactoryUsageChecker:
                 factory_name=node.name,
             )
 
-    def _detect_direct_usage(
-        self, tree: ast.AST, file_path: Path, source_code: str
-    ) -> list[DirectUsageIssue]:
+    def _detect_direct_usage(self, tree: ast.AST, file_path: Path, source_code: str) -> list[DirectUsageIssue]:
         """NewType直接使用を検出
 
         Args:
@@ -273,16 +269,15 @@ class FactoryUsageChecker:
                 continue
 
             # 問題として記録
-            code_snippet = (
-                source_lines[node.lineno - 1].strip()
-                if node.lineno <= len(source_lines)
-                else ""
-            )
+            code_snippet = source_lines[node.lineno - 1].strip() if node.lineno <= len(source_lines) else ""
 
+            # node.lineno は int だが、LineNumber (NewType) として扱う
+            # AST の lineno は常に 1 以上なので安全
+            line_num = LineNumber(node.lineno)
             issues.append(
                 DirectUsageIssue(
                     file_path=str(file_path),
-                    line_number=LineNumber(node.lineno),  # type: ignore[arg-type]
+                    line_number=line_num,
                     type_name=type_name,
                     factory_name=factory_name,
                     code_snippet=code_snippet,
@@ -291,9 +286,7 @@ class FactoryUsageChecker:
 
         return issues
 
-    def _is_in_factory_function(
-        self, node: ast.AST, tree: ast.AST, factory_name: str | None
-    ) -> bool:
+    def _is_in_factory_function(self, node: ast.AST, tree: ast.AST, factory_name: str | None) -> bool:
         """ノードがファクトリ関数内に存在するかチェック
 
         Args:
@@ -308,10 +301,7 @@ class FactoryUsageChecker:
             return False
 
         for func_node in ast.walk(tree):
-            if (
-                isinstance(func_node, ast.FunctionDef)
-                and func_node.name == factory_name
-            ):
+            if isinstance(func_node, ast.FunctionDef) and func_node.name == factory_name:
                 # ノードが関数内に存在するかチェック
                 for child in ast.walk(func_node):
                     if child is node:
@@ -347,9 +337,7 @@ class FactoryUsageChecker:
         return "".join(x.capitalize() for x in components)
 
 
-def check_directory(
-    directory: Path, pattern: str = "**/*.py"
-) -> dict[str, list[DirectUsageIssue]]:
+def check_directory(directory: Path, pattern: str = "**/*.py") -> dict[str, list[DirectUsageIssue]]:
     """ディレクトリ内のファイルをチェック
 
     Args:

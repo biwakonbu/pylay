@@ -23,7 +23,7 @@ class TestIsLayGeneratedFile:
             "====================================\n"
             "pylay自動生成ファイル\n"
             "このファイルを直接編集しないでください\n"
-            '====================================\n"""'
+            '====================================\n"""',
         )
 
         assert is_lay_generated_file(lay_file) is True
@@ -35,7 +35,7 @@ class TestIsLayGeneratedFile:
             "# ====================================\n"
             "# pylay自動生成ファイル\n"
             "# このファイルを直接編集しないでください\n"
-            "# ===================================="
+            "# ====================================",
         )
 
         assert is_lay_generated_file(lay_file) is True
@@ -64,9 +64,7 @@ class TestCleanLayFiles:
         lay_file2 = tmp_path / "types2.lay.py"
 
         for lay_file in [lay_file1, lay_file2]:
-            lay_file.write_text(
-                '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""'
-            )
+            lay_file.write_text('"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""')
 
         # 削除実行
         deleted = clean_lay_files(tmp_path, ".lay.py")
@@ -79,9 +77,7 @@ class TestCleanLayFiles:
         """手動実装ファイルは削除されないことを確認"""
         # .lay.pyファイルと手動ファイルを作成
         lay_file = tmp_path / "types.lay.py"
-        lay_file.write_text(
-            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""'
-        )
+        lay_file.write_text('"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""')
 
         manual_file = tmp_path / "models.py"
         manual_file.write_text("# Manual implementation")
@@ -100,9 +96,7 @@ class TestCleanLayFiles:
         lay_file2 = tmp_path / "types2.lay.yaml"
 
         for lay_file in [lay_file1, lay_file2]:
-            lay_file.write_text(
-                "# pylay自動生成ファイル\n# このファイルを直接編集しないでください"
-            )
+            lay_file.write_text("# pylay自動生成ファイル\n# このファイルを直接編集しないでください")
 
         # 削除実行
         deleted = clean_lay_files(tmp_path, ".lay.yaml")
@@ -137,9 +131,7 @@ class TestCleanLayFilesRecursive:
         lay_file3 = subdir2 / "types3.lay.py"
 
         for lay_file in [lay_file1, lay_file2, lay_file3]:
-            lay_file.write_text(
-                '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""'
-            )
+            lay_file.write_text('"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""')
 
         # 削除実行
         deleted = clean_lay_files_recursive(tmp_path, ".lay.py")
@@ -156,9 +148,7 @@ class TestCleanLayFilesRecursive:
 
         # .lay.pyファイルと手動ファイルを作成
         lay_file = subdir / "types.lay.py"
-        lay_file.write_text(
-            '"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""'
-        )
+        lay_file.write_text('"""\npylay自動生成ファイル\nこのファイルを直接編集しないでください\n"""')
 
         manual_file1 = tmp_path / "models.py"
         manual_file2 = subdir / "api.py"

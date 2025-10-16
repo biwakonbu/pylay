@@ -29,7 +29,7 @@ from pydantic import BaseModel
 class User(BaseModel):
     id: int
     name: str
-"""
+""",
         )
         assert _has_type_definitions(test_file)
 
@@ -40,7 +40,7 @@ class User(BaseModel):
             """
 type UserId = str
 type Point = tuple[float, float]
-"""
+""",
         )
         assert _has_type_definitions(test_file)
 
@@ -52,7 +52,7 @@ type Point = tuple[float, float]
 from typing import NewType
 
 UserId = NewType('UserId', str)
-"""
+""",
         )
         assert _has_type_definitions(test_file)
 
@@ -67,7 +67,7 @@ from dataclasses import dataclass
 class Point:
     x: float
     y: float
-"""
+""",
         )
         assert _has_type_definitions(test_file)
 
@@ -81,7 +81,7 @@ from enum import Enum
 class Status(Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
-"""
+""",
         )
         assert _has_type_definitions(test_file)
 
@@ -96,7 +96,7 @@ def process_data(data):
 class Helper:
     def __init__(self):
         pass
-"""
+""",
         )
         assert not _has_type_definitions(test_file)
 
@@ -113,18 +113,18 @@ from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
-"""
+""",
         )
         (tmp_path / "types.py").write_text(
             """
 type UserId = str
-"""
+""",
         )
         (tmp_path / "utils.py").write_text(
             """
 def helper():
     pass
-"""
+""",
         )
 
         # 検索実行
@@ -144,7 +144,7 @@ from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
-"""
+""",
         )
 
         files = find_python_files_with_type_definitions(tmp_path)
@@ -158,7 +158,7 @@ from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
-"""
+""",
         )
 
         files = find_python_files_with_type_definitions(tmp_path)
@@ -176,7 +176,7 @@ from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
-"""
+""",
         )
 
         files = find_python_files_with_type_definitions(tmp_path)
@@ -199,7 +199,7 @@ from pydantic import BaseModel
 class User(BaseModel):
     id: int
     name: str
-"""
+""",
         )
 
         # 出力ファイルパス
@@ -225,12 +225,12 @@ from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
-"""
+""",
         )
         (tmp_path / "core" / "types.py").write_text(
             """
 type UserId = str
-"""
+""",
         )
 
         # 出力先ディレクトリ
@@ -267,7 +267,7 @@ from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
-"""
+""",
         )
 
         # 出力先
@@ -314,7 +314,7 @@ from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
-"""
+""",
         )
 
         (tmp_path / "src" / "core" / "converters" / "models.py").write_text(
@@ -323,7 +323,7 @@ from pydantic import BaseModel
 
 class Converter(BaseModel):
     name: str
-"""
+""",
         )
 
         # 出力先
@@ -449,7 +449,7 @@ from pydantic import BaseModel
 
 class User(BaseModel):
     id: int
-"""
+""",
         )
 
         # 出力ファイルパス

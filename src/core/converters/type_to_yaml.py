@@ -844,7 +844,7 @@ def type_to_yaml(
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(yaml_str)
 
-    return yaml_str if as_root else yaml_str
+    return yaml_str
 
 
 def types_to_yaml_simple(
@@ -1100,19 +1100,17 @@ def extract_type_definitions_from_ast(module_path: Path) -> dict[str, ASTEntry]:
 
                 for decorator in node.decorator_list:
                     # @dataclass
-                    if isinstance(decorator, ast.Name) and decorator.id == "dataclass":
-                        is_dataclass = True
-                    # @dataclasses.dataclass, @dc.dataclass などの属性参照
-                    elif isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass":
+                    if (isinstance(decorator, ast.Name) and decorator.id == "dataclass") or (
+                        isinstance(decorator, ast.Attribute) and decorator.attr == "dataclass"
+                    ):
                         is_dataclass = True
                     # @dataclass(frozen=True)
                     elif isinstance(decorator, ast.Call):
                         func = decorator.func
                         # 関数名が "dataclass" の場合
-                        if isinstance(func, ast.Name) and func.id == "dataclass":
-                            is_dataclass = True
-                        # @dataclasses.dataclass(frozen=True) などの属性参照
-                        elif isinstance(func, ast.Attribute) and func.attr == "dataclass":
+                        if (isinstance(func, ast.Name) and func.id == "dataclass") or (
+                            isinstance(func, ast.Attribute) and func.attr == "dataclass"
+                        ):
                             is_dataclass = True
 
                         # frozen引数をチェック
@@ -1152,11 +1150,9 @@ def extract_type_definitions_from_ast(module_path: Path) -> dict[str, ASTEntry]:
 
                         # NewType の検出
                         # 1. from typing import NewType → NewType(...)
-                        if isinstance(func, ast.Name) and func.id == "NewType":
-                            is_newtype = True
-                        # 2. import typing → typing.NewType(...)
-                        # 3. import typing as t → t.NewType(...)
-                        elif isinstance(func, ast.Attribute) and func.attr == "NewType":
+                        if (isinstance(func, ast.Name) and func.id == "NewType") or (
+                            isinstance(func, ast.Attribute) and func.attr == "NewType"
+                        ):
                             is_newtype = True
 
                         if is_newtype and len(node.value.args) >= 2:

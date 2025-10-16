@@ -106,8 +106,22 @@ User:
         # 既存の.lay.pyファイルを作成（警告ヘッダー付き）
         old_file1 = output_dir / "old1.lay.py"
         old_file2 = output_dir / "old2.lay.py"
-        old_file1.write_text('"""\n' "pylay自動生成ファイル\n" "このファイルを直接編集しないでください\n" '"""')
-        old_file2.write_text('"""\n' "pylay自動生成ファイル\n" "このファイルを直接編集しないでください\n" '"""')
+        old_file1.write_text(
+            """"""
+            """
+pylay自動生成ファイル
+このファイルを直接編集しないでください
+次回の pylay types 実行時に削除・再生成されます
+"""
+        )
+        old_file2.write_text(
+            """"""
+            """
+pylay自動生成ファイル
+このファイルを直接編集しないでください
+次回の pylay types 実行時に削除・再生成されます
+"""
+        )
 
         # クリーン再生成前に削除
         deleted = clean_lay_files(output_dir, ".lay.py")
@@ -147,7 +161,13 @@ NewType:
 
         # .lay.pyファイルも作成
         lay_file = output_dir / "types.lay.py"
-        lay_file.write_text('"""\n' "pylay自動生成ファイル\n" "このファイルを直接編集しないでください\n" '"""')
+        lay_file.write_text(
+            '"""\n'
+            "pylay自動生成ファイル\n"
+            "このファイルを直接編集しないでください\n"
+            "次回の pylay types 実行時に削除・再生成されます\n"
+            '"""'
+        )
 
         # クリーン再生成実行
         deleted = clean_lay_files(output_dir, ".lay.py")
@@ -211,7 +231,7 @@ class User(BaseModel):
             """
 [tool.pylay.output]
 include_metadata = true
-"""
+""",
         )
 
         # テスト用Pythonファイルを作成
@@ -322,7 +342,7 @@ class TestConfigIntegration:
 lay_suffix = ".lay.py"
 add_generation_header = true
 include_source_path = true
-"""
+""",
         )
 
         # テスト用YAMLファイルを作成
@@ -364,7 +384,7 @@ yaml_output_dir = "docs/pylay"
 mirror_package_structure = true
 include_metadata = true
 preserve_docstrings = true
-"""
+""",
         )
 
         # 設定を読み込み
@@ -400,7 +420,7 @@ preserve_docstrings = true
 [project]
 name = "test-project"
 version = "0.1.0"
-"""
+""",
         )
 
         # pylay initコマンドを実行

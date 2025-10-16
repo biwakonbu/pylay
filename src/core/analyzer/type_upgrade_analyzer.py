@@ -7,7 +7,8 @@
 import re
 from typing import Any
 
-from src.core.analyzer.type_level_models import TypeDefinition, UpgradeRecommendation
+from src.core.analyzer.type_level_models import UpgradeRecommendation
+from src.core.analyzer.types import TypeDefinition
 
 
 class TypeUpgradeAnalyzer:
@@ -31,9 +32,7 @@ class TypeUpgradeAnalyzer:
         r".*Rate$",
     ]
 
-    def analyze(
-        self, type_def: TypeDefinition, usage_count: int = 0
-    ) -> UpgradeRecommendation | None:
+    def analyze(self, type_def: TypeDefinition, usage_count: int = 0) -> UpgradeRecommendation | None:
         """型定義を分析し、レベルアップ・ダウンの推奨を返す
 
         Args:
@@ -66,9 +65,7 @@ class TypeUpgradeAnalyzer:
 
         return None
 
-    def _analyze_level1(
-        self, type_def: TypeDefinition, usage_count: int
-    ) -> UpgradeRecommendation | None:
+    def _analyze_level1(self, type_def: TypeDefinition, usage_count: int) -> UpgradeRecommendation | None:
         """Level 1の型定義を分析
 
         Args:
@@ -112,9 +109,7 @@ class TypeUpgradeAnalyzer:
 
         return None
 
-    def _analyze_level2(
-        self, type_def: TypeDefinition, usage_count: int
-    ) -> UpgradeRecommendation | None:
+    def _analyze_level2(self, type_def: TypeDefinition, usage_count: int) -> UpgradeRecommendation | None:
         """Level 2の型定義を分析
 
         Args:
@@ -146,9 +141,7 @@ class TypeUpgradeAnalyzer:
     # docstringベースの制御
     # ========================================
 
-    def _create_target_level_recommendation(
-        self, type_def: TypeDefinition
-    ) -> UpgradeRecommendation:
+    def _create_target_level_recommendation(self, type_def: TypeDefinition) -> UpgradeRecommendation:
         """docstringで指定された目標レベルへの推奨を生成
 
         Args:
@@ -218,9 +211,7 @@ class TypeUpgradeAnalyzer:
     # Level 1 の判定ロジック
     # ========================================
 
-    def _should_delete_level1(
-        self, type_def: TypeDefinition, usage_count: int
-    ) -> dict[str, Any]:
+    def _should_delete_level1(self, type_def: TypeDefinition, usage_count: int) -> dict[str, Any]:
         """Level 1の型定義を調査すべきか判定
 
         このプロジェクトでは個別型の定義を推奨しているため、
@@ -238,9 +229,7 @@ class TypeUpgradeAnalyzer:
 
         # 被参照0の型は調査対象（削除ではない）
         if usage_count == 0:
-            reasons.append(
-                "定義されているが使用されていません。以下を確認してください："
-            )
+            reasons.append("定義されているが使用されていません。以下を確認してください:")
             reasons.append("  1. 実装途中か？")
             reasons.append("  2. 既存のprimitive型使用箇所を置き換えるべきか？")
             reasons.append("  3. 設計意図（将来の拡張性等）を確認")
@@ -272,9 +261,7 @@ class TypeUpgradeAnalyzer:
             "priority": "low",
         }
 
-    def _should_upgrade_to_level2(
-        self, type_def: TypeDefinition, usage_count: int
-    ) -> dict[str, Any]:
+    def _should_upgrade_to_level2(self, type_def: TypeDefinition, usage_count: int) -> dict[str, Any]:
         """Level 1からLevel 2への昇格判定
 
         Args:
@@ -326,9 +313,7 @@ class TypeUpgradeAnalyzer:
     # Level 2 → Level 1 ダウングレード判定
     # ========================================
 
-    def _analyze_level2_downgrade(
-        self, type_def: TypeDefinition, usage_count: int
-    ) -> UpgradeRecommendation | None:
+    def _analyze_level2_downgrade(self, type_def: TypeDefinition, usage_count: int) -> UpgradeRecommendation | None:
         """Level 2からLevel 1へのダウングレード判定
 
         Args:
@@ -374,9 +359,7 @@ class TypeUpgradeAnalyzer:
     # Level 3 → Level 2 ダウングレード判定
     # ========================================
 
-    def _analyze_level3_downgrade(
-        self, type_def: TypeDefinition, usage_count: int
-    ) -> UpgradeRecommendation | None:
+    def _analyze_level3_downgrade(self, type_def: TypeDefinition, usage_count: int) -> UpgradeRecommendation | None:
         """Level 3からLevel 2へのダウングレード判定
 
         Args:
@@ -423,9 +406,7 @@ class TypeUpgradeAnalyzer:
     # Level 2 → Level 3 の判定ロジック
     # ========================================
 
-    def _should_upgrade_to_level3(
-        self, type_def: TypeDefinition, usage_count: int
-    ) -> dict[str, Any]:
+    def _should_upgrade_to_level3(self, type_def: TypeDefinition, usage_count: int) -> dict[str, Any]:
         """Level 2からLevel 3への昇格判定
 
         Args:
@@ -441,9 +422,7 @@ class TypeUpgradeAnalyzer:
         # バリデータの複雑度チェック（10行以上）
         validator_complexity = self._estimate_validator_complexity(type_def)
         if validator_complexity >= 10:
-            reasons.append(
-                f"バリデータが{validator_complexity}行と複雑で、BaseModelにカプセル化すべき"
-            )
+            reasons.append(f"バリデータが{validator_complexity}行と複雑で、BaseModelにカプセル化すべき")
             confidence += 0.5
 
         # 関連する操作が複数存在する（仮定：3つ以上）

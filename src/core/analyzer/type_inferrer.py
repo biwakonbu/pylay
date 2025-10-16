@@ -1,7 +1,7 @@
 """
 型推論モジュール
 
-mypy の --infer フラグを活用して、未アノテーションのコードから型を自動推測します。
+mypy の統計フラグを活用して、型推論情報を抽出します。
 推論結果を既存の型アノテーションとマージし、TypeDependencyGraph を構築します。
 
 信頼度計算
@@ -142,15 +142,12 @@ class TypeInferenceAnalyzer(Analyzer):
 
         return graph
 
-    def infer_types_from_code(
-        self, code: str, module_name: str = "temp_module"
-    ) -> dict[str, InferResult]:
+    def infer_types_from_code(self, code: str) -> dict[str, InferResult]:
         """
         与えられたPythonコードから型を推論します。
 
         Args:
             code: 推論対象のPythonコード
-            module_name: 一時的なモジュール名
 
         Returns:
             推論された型情報の辞書
@@ -165,10 +162,10 @@ class TypeInferenceAnalyzer(Analyzer):
 
         try:
             # mypy コマンドの構築（config_fileは後で追加可能）
-            cmd = ["uv", "run", "mypy", "--infer", "--dump-type-stats"]
+            cmd = ["uv", "run", "mypy", "--inferstats", "--timing-stats"]
             cmd.append(temp_file_path)
 
-            # mypy --infer を実行
+            # mypy --inferstats --timing-stats を実行
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -239,8 +236,7 @@ class TypeInferenceAnalyzer(Analyzer):
         with open(file_path, encoding="utf-8") as f:
             code = f.read()
 
-        module_name = Path(file_path).stem
-        return self.infer_types_from_code(code, module_name)
+        return self.infer_types_from_code(code)
 
     def extract_existing_annotations(self, file_path: str) -> dict[str, str]:
         """
@@ -265,17 +261,13 @@ class TypeInferenceAnalyzer(Analyzer):
             elif isinstance(node, ast.FunctionDef):
                 # 関数引数の型
                 for arg in node.args.args:
-                    if arg.arg not in annotations:  # 重複を避ける
-                        annotations[arg.arg] = (
-                            ast.unparse(arg.annotation) if arg.annotation else "Any"
-                        )
+                    if arg.annotation and arg.arg not in annotations:  # アノテーションがある場合のみ追加
+                        annotations[arg.arg] = ast.unparse(arg.annotation)
 
         return annotations
 
 
-def run_mypy_inference(
-    file_path: Path, mypy_flags: list[str], timeout: int = 60
-) -> MypyResult:
+def run_mypy_inference(file_path: Path, mypy_flags: list[str], timeout: int = 60) -> MypyResult:
     """
     mypyを実行して型推論を行うユーティリティ関数
 
@@ -290,7 +282,7 @@ def run_mypy_inference(
     Raises:
         MypyExecutionError: mypy実行に失敗した場合
     """
-    cmd = ["uv", "run", "mypy"] + mypy_flags + [str(file_path)]
+    cmd = ["uv", "run", "mypy", *mypy_flags, str(file_path)]
 
     try:
         result = subprocess.run(
@@ -314,13 +306,15 @@ def run_mypy_inference(
         )
 
     # 結果を解析
-    mypy_result = MypyResult(
-        stdout=result.stdout, stderr=result.stderr, return_code=result.returncode
-    )
+    mypy_result = MypyResult(stdout=result.stdout, stderr=result.stderr, return_code=result.returncode)
 
     # 推論結果をパース
     inferred_types = _parse_mypy_output(result.stdout)
     mypy_result.inferred_types = inferred_types
+
+    # 統計情報をパース
+    stats = _parse_mypy_statistics(result.stdout)
+    mypy_result.statistics = stats
 
     return mypy_result
 
@@ -381,9 +375,7 @@ def _compute_confidence(
 
     # 重み付き平均で最終スコアを計算
     confidence = (
-        W_CERTAINTY * base_certainty
-        + W_COMPLEXITY * (1.0 - complexity_penalty)
-        + W_ANNOTATION * annotation_bonus
+        W_CERTAINTY * base_certainty + W_COMPLEXITY * (1.0 - complexity_penalty) + W_ANNOTATION * annotation_bonus
     )
 
     # 0.0-1.0の範囲にクリップ
@@ -403,9 +395,7 @@ def _compute_base_certainty(mypy_output: str, var_name: str) -> float:
     """
     # 変数名を含むエラー/警告メッセージを検索
     error_pattern = re.compile(rf"\berror\b.*\b{re.escape(var_name)}\b", re.IGNORECASE)
-    warning_pattern = re.compile(
-        rf"\bwarning\b.*\b{re.escape(var_name)}\b", re.IGNORECASE
-    )
+    warning_pattern = re.compile(rf"\bwarning\b.*\b{re.escape(var_name)}\b", re.IGNORECASE)
 
     has_error = bool(error_pattern.search(mypy_output))
     has_warning = bool(warning_pattern.search(mypy_output))
@@ -462,6 +452,44 @@ def _compute_annotation_bonus(annotation_coverage: float) -> float:
     """
     # カバレッジが高いほど高いボーナス（非線形に強調）
     return annotation_coverage**0.8
+
+
+def _parse_mypy_statistics(output: str) -> dict[str, dict[str, int]] | None:
+    """
+    mypyの統計情報を解析します。
+
+    Args:
+        output: mypyの標準出力
+
+    Returns:
+        パースされた統計情報の辞書、またはNone（統計情報が見つからない場合）
+    """
+    lines = output.split("\n")
+    stats: dict[str, dict[str, int]] = {}
+    current_section = None
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # セクションヘッダーを検出
+        if line.startswith("** ") and line.endswith(" **"):
+            section_name = line[3:-3]  # "** " と " **" を除去
+            current_section = section_name
+            stats[current_section] = {}
+        elif current_section and len(line.split()) >= 2:
+            # 統計データ行をパース
+            parts = line.split()
+            if len(parts) >= 2:
+                try:
+                    key = parts[0]
+                    value = int(parts[1])
+                    stats[current_section][key] = value
+                except (ValueError, IndexError):
+                    continue
+
+    return stats if stats else None
 
 
 def _parse_mypy_output(output: str) -> dict[str, InferResult]:

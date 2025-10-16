@@ -6,7 +6,7 @@ CodeLocatorのテスト
 
 import ast
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, mock_open, patch
 
 from src.core.analyzer.code_locator import (
     CodeLocator,
@@ -51,11 +51,7 @@ class UserService:
         pass
 '''
 
-        with patch("builtins.open", create=True) as mock_open:
-            mock_open.return_value.__enter__.return_value.read.return_value = (
-                mock_source
-            )
-
+        with patch("builtins.open", mock_open(read_data=mock_source)):
             locator = CodeLocator([Path("src")])
             results = locator.find_primitive_usages()
 
@@ -89,19 +85,25 @@ class UserService:
 
     def test_count_type_usage(self):
         """型使用回数カウントテスト"""
-        type_def = TypeDefinition(
+        user_id_def = TypeDefinition(
             name="UserId",
             level="level1",
-            file_path="src/types.py",
+            file_path="src/core/analyzer/types.py",
             line_number=10,
             definition="type UserId = str",
             category="type_alias",
         )
+        email_def = TypeDefinition(
+            name="Email",
+            level="level1",
+            file_path="src/core/analyzer/types.py",
+            line_number=11,
+            definition="type Email = str",
+            category="type_alias",
+        )
 
         locator = CodeLocator([Path("src")])
-        count = locator._count_type_usage(
-            "UserId", {"UserId": type_def, "Email": type_def}
-        )
+        count = locator._count_type_usage("UserId", [user_id_def, email_def])
 
         # 簡易実装では他の定義内での使用をカウント
         assert isinstance(count, int)

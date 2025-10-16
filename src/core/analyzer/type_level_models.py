@@ -9,42 +9,14 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .types import DocumentationStatistics, TypeDefinition, ValidatedFilePath
+
 # ========================================
 # 型定義情報
 # ========================================
 
 
-class TypeDefinition(BaseModel):
-    """型定義の情報
-
-    Attributes:
-        name: 型の名前
-        level: 型定義レベル（level1/level2/level3/other）
-        file_path: ファイルパス
-        line_number: 行番号
-        definition: 型定義のコード
-        category: 型のカテゴリ（type_alias/annotated/basemodel/class/dataclass等）
-        docstring: docstring（存在する場合）
-        has_docstring: docstringが存在するか
-        docstring_lines: docstringの行数
-        target_level: docstringで指定された目標レベル
-            （@target-level: level1/level2/level3）
-        keep_as_is: 現状維持フラグ（@keep-as-is: trueの場合はレベルアップ推奨しない）
-    """
-
-    model_config = ConfigDict(frozen=False, extra="forbid")
-
-    name: str
-    level: Literal["level1", "level2", "level3", "other"]
-    file_path: str
-    line_number: int
-    definition: str
-    category: str
-    docstring: str | None = None
-    has_docstring: bool = False
-    docstring_lines: int = 0
-    target_level: Literal["level1", "level2", "level3"] | None = None
-    keep_as_is: bool = False
+# TypeDefinitionクラスはtypes.pyで定義されているため、ここでは削除済み
 
 
 # ========================================
@@ -80,41 +52,7 @@ class DocstringDetail(BaseModel):
     detail_score: float = Field(ge=0.0, le=1.0)
 
 
-class DocumentationStatistics(BaseModel):
-    """ドキュメント統計情報
-
-    Attributes:
-        total_types: 型定義の総数
-        documented_types: docstringが存在する型の数
-        undocumented_types: docstringが存在しない型の数
-        implementation_rate: 実装率（0.0-1.0）
-        minimal_docstrings: 最低限のdocstring（1行のみ）の数
-        detailed_docstrings: 詳細なdocstringの数
-        detail_rate: 詳細度率（0.0-1.0）
-        avg_docstring_lines: 平均docstring行数
-        quality_score: 総合品質スコア（実装率 × 詳細度）
-        by_level: レベル別のdocstring統計（カウント値のみ）
-        by_level_avg_lines: レベル別の平均docstring行数
-        by_format: フォーマット別のdocstring数
-    """
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    total_types: int = Field(ge=0)
-    documented_types: int = Field(ge=0)
-    undocumented_types: int = Field(ge=0)
-    implementation_rate: float = Field(ge=0.0, le=1.0)
-
-    minimal_docstrings: int = Field(ge=0)
-    detailed_docstrings: int = Field(ge=0)
-    detail_rate: float = Field(ge=0.0, le=1.0)
-
-    avg_docstring_lines: float
-    quality_score: float = Field(ge=0.0, le=1.0)
-
-    by_level: dict[str, dict[str, int]]
-    by_level_avg_lines: dict[str, float]
-    by_format: dict[str, int]
+# DocumentationStatistics は .types からインポート済み
 
 
 class DocstringRecommendation(BaseModel):
@@ -135,7 +73,7 @@ class DocstringRecommendation(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     type_name: str
-    file_path: str
+    file_path: ValidatedFilePath
     line_number: int
     current_status: Literal["missing", "minimal", "partial", "complete"]
     recommended_action: Literal["add", "expand", "reformat", "none"]
@@ -217,7 +155,7 @@ class UpgradeRecommendation(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     type_name: str
-    file_path: str
+    file_path: ValidatedFilePath
     line_number: int
     current_level: Literal["level1", "level2", "level3", "other"]
     recommended_level: Literal["level1", "level2", "level3", "investigate"]

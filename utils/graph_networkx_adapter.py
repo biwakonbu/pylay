@@ -106,20 +106,14 @@ class NetworkXGraphAdapter:
     def get_subgraph_by_type(self, node_type: str) -> nx.DiGraph:
         """指定されたノードタイプのサブグラフを取得"""
         assert self.nx_graph is not None
-        nodes_of_type = [
-            node.name for node in self.graph.nodes if node.node_type == node_type
-        ]
-        return self.nx_graph.subgraph(nodes_of_type)
+        nodes_of_type = [n.name for n in self.graph.nodes if n.node_type == node_type]
+        return self.nx_graph.subgraph(nodes_of_type).copy()
 
     def get_strong_dependency_subgraph(self) -> nx.DiGraph:
         """強い依存関係のみのサブグラフを取得"""
         assert self.nx_graph is not None
-        strong_edges = [
-            (edge.source, edge.target)
-            for edge in self.graph.edges
-            if edge.is_strong_dependency()
-        ]
-        return self.nx_graph.edge_subgraph(strong_edges)
+        strong_edges = [(e.source, e.target) for e in self.graph.edges if e.is_strong_dependency()]
+        return self.nx_graph.edge_subgraph(strong_edges).copy()
 
     def export_to_graphml(self, output_path: Path) -> None:
         """GraphML形式でエクスポート"""
@@ -149,10 +143,7 @@ class NetworkXGraphAdapter:
             else:
                 print(f"✅ SVGファイルを生成: {svg_path}")
         except FileNotFoundError:
-            print(
-                "⚠️  Graphvizのdotコマンドが見つかりません。"
-                "sudo apt install graphviz を実行してください。"
-            )
+            print("⚠️  Graphviz 'dot' command not found. Please run: sudo apt install graphviz")
         except subprocess.TimeoutExpired:
             print("⚠️  SVG生成がタイムアウトしました。")
         except Exception as e:
@@ -191,7 +182,7 @@ class NetworkXGraphAdapter:
                 node_data["fillcolor"] = "white"
 
         # エッジのスタイル設定
-        for source, target, edge_data in vis_graph.edges(data=True):
+        for _source, _target, edge_data in vis_graph.edges(data=True):
             relation_type = edge_data.get("relation_type", "unknown")
             weight = edge_data.get("weight", 1.0)
 
@@ -214,9 +205,7 @@ class NetworkXGraphAdapter:
 
         return vis_graph
 
-    def export_visualization(
-        self, dot_path: Path, svg_path: Path | None = None
-    ) -> None:
+    def export_visualization(self, dot_path: Path, svg_path: Path | None = None) -> None:
         """視覚化用グラフをDOTとSVGでエクスポート"""
         vis_graph = self.create_visualization_graph()
 
@@ -240,8 +229,7 @@ class NetworkXGraphAdapter:
             "is_dag": nx.is_directed_acyclic_graph(self.nx_graph),
             "cycles_count": len(self.detect_cycles()),
             "components_count": nx.number_strongly_connected_components(self.nx_graph),
-            "average_degree": sum(dict(self.nx_graph.degree()).values())
-            / max(1, self.nx_graph.number_of_nodes()),
+            "average_degree": sum(dict(self.nx_graph.degree()).values()) / max(1, self.nx_graph.number_of_nodes()),
         }
 
     def get_node_statistics(self) -> dict[str, dict[str, Any]]:
@@ -270,16 +258,15 @@ class NetworkXGraphAdapter:
         assert self.nx_graph is not None
         stats = {}
 
-        for source, target, data in self.nx_graph.edges(data=True):
-            edge = self.graph.get_edges_by_source(source)[
-                0
-            ]  # 簡易的に最初のエッジを取得
-            if edge:
+        for source, target, _data in self.nx_graph.edges(data=True):
+            # source-targetペアに対応するエッジを検索
+            matching_edge = next((e for e in self.graph.edges if e.source == source and e.target == target), None)
+            if matching_edge:
                 stats[f"{source}->{target}"] = {
-                    "relation_type": edge.relation_type,
-                    "weight": edge.weight,
-                    "is_strong": edge.is_strong_dependency(),
-                    "strength": edge.get_dependency_strength(),
+                    "relation_type": matching_edge.relation_type,
+                    "weight": matching_edge.weight,
+                    "is_strong": matching_edge.is_strong_dependency(),
+                    "strength": matching_edge.get_dependency_strength(),
                 }
 
         return stats

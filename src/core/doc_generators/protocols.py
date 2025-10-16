@@ -10,9 +10,8 @@
 4. ファイルシステム関連のプロトコル
 """
 
-from abc import abstractmethod
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Protocol, runtime_checkable
 
 from src.core.schemas.graph import TypeDependencyGraph
 
@@ -38,10 +37,7 @@ class DocumentGeneratorProtocol(Protocol):
     このプロトコルは、ドキュメント生成機能の基本的なインターフェースを定義します。
     """
 
-    @abstractmethod
-    def generate_document(
-        self, config: DocumentConfig, **kwargs: Any
-    ) -> GenerationResult:
+    def generate_document(self, config: DocumentConfig, **kwargs: object) -> GenerationResult:
         """
         ドキュメントを生成します。
 
@@ -54,9 +50,8 @@ class DocumentGeneratorProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def generate_from_types(
-        self, types: dict[TypeName, type[Any]], output_path: str | Path, **kwargs: Any
+        self, types: dict[TypeName, type[Any]], output_path: str | Path, **kwargs: object
     ) -> GenerationResult:
         """
         型定義からドキュメントを生成します。
@@ -71,9 +66,8 @@ class DocumentGeneratorProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def generate_from_graph(
-        self, graph: TypeDependencyGraph, output_path: str | Path, **kwargs: Any
+        self, graph: TypeDependencyGraph, output_path: str | Path, **kwargs: object
     ) -> GenerationResult:
         """
         依存関係グラフからドキュメントを生成します。
@@ -96,10 +90,7 @@ class TypeInspectorProtocol(Protocol):
     このプロトコルは、型検査機能のインターフェースを定義します。
     """
 
-    @abstractmethod
-    def inspect_type(
-        self, type_cls: type[Any], config: TypeInspectionConfig | None = None
-    ) -> TypeInspectionResult:
+    def inspect_type(self, type_cls: type[Any], config: TypeInspectionConfig | None = None) -> TypeInspectionResult:
         """
         指定された型を検査します。
 
@@ -112,7 +103,6 @@ class TypeInspectorProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def inspect_types_batch(
         self, type_classes: list[type[Any]], config: TypeInspectionConfig | None = None
     ) -> list[TypeInspectionResult]:
@@ -128,7 +118,6 @@ class TypeInspectorProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def extract_code_blocks(self, docstring: str) -> tuple[list[str], list[str]]:
         """
         docstringからコードブロックを抽出します。
@@ -142,6 +131,7 @@ class TypeInspectorProtocol(Protocol):
         ...
 
 
+@runtime_checkable
 class MarkdownBuilderProtocol(Protocol):
     """
     マークダウン生成機能のプロトコル
@@ -149,7 +139,6 @@ class MarkdownBuilderProtocol(Protocol):
     このプロトコルは、マークダウン生成機能のインターフェースを定義します。
     """
 
-    @abstractmethod
     def build_document(
         self,
         structure: DocumentStructure,
@@ -167,7 +156,6 @@ class MarkdownBuilderProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def build_section(
         self,
         section_info: MarkdownSectionInfo,
@@ -185,7 +173,6 @@ class MarkdownBuilderProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def build_type_documentation(
         self,
         type_name: TypeName,
@@ -206,6 +193,7 @@ class MarkdownBuilderProtocol(Protocol):
         ...
 
 
+@runtime_checkable
 class FileSystemInterfaceProtocol(Protocol):
     """
     ファイルシステム操作機能のプロトコル
@@ -213,10 +201,7 @@ class FileSystemInterfaceProtocol(Protocol):
     このプロトコルは、ファイルシステム操作機能のインターフェースを定義します。
     """
 
-    @abstractmethod
-    def mkdir(
-        self, path: str | Path, parents: bool = True, exist_ok: bool = True
-    ) -> None:
+    def mkdir(self, path: str | Path, *, parents: bool = True, exist_ok: bool = True) -> None:
         """
         ディレクトリを作成します。
 
@@ -227,10 +212,7 @@ class FileSystemInterfaceProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
-    def write_text(
-        self, path: str | Path, content: str, encoding: str = "utf-8"
-    ) -> None:
+    def write_text(self, path: str | Path, content: str, encoding: str = "utf-8") -> None:
         """
         テキストファイルに書き込みます。
 
@@ -241,7 +223,6 @@ class FileSystemInterfaceProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def read_text(self, path: str | Path, encoding: str = "utf-8") -> str:
         """
         テキストファイルを読み込みます。
@@ -255,7 +236,6 @@ class FileSystemInterfaceProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def exists(self, path: str | Path) -> bool:
         """
         パスが存在するかどうかを確認します。
@@ -268,7 +248,6 @@ class FileSystemInterfaceProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def is_file(self, path: str | Path) -> bool:
         """
         パスがファイルかどうかを確認します。
@@ -289,7 +268,6 @@ class TemplateProcessorProtocol(Protocol):
     このプロトコルは、テンプレート処理機能のインターフェースを定義します。
     """
 
-    @abstractmethod
     def load_template(self, template_name: str) -> str:
         """
         テンプレートを読み込みます。
@@ -302,7 +280,6 @@ class TemplateProcessorProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def process_template(
         self,
         template_content: str,
@@ -322,7 +299,6 @@ class TemplateProcessorProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def render_document(
         self,
         template_name: str,
@@ -349,7 +325,6 @@ class BatchProcessorProtocol(Protocol):
     このプロトコルは、バッチ処理機能のインターフェースを定義します。
     """
 
-    @abstractmethod
     def process_batch(self, config: BatchGenerationConfig) -> BatchGenerationResult:
         """
         バッチ処理を実行します。
@@ -362,11 +337,10 @@ class BatchProcessorProtocol(Protocol):
         """
         ...
 
-    @abstractmethod
     def process_directory(
         self,
         input_directory: str | Path,
-        output_directory: str | Path,
+        output_path: str | Path,
         config: DocumentConfig | None = None,
     ) -> BatchGenerationResult:
         """
@@ -374,7 +348,7 @@ class BatchProcessorProtocol(Protocol):
 
         Args:
             input_directory: 入力ディレクトリ
-            output_directory: 出力ディレクトリ
+            output_path: 出力ディレクトリ
             config: ドキュメント設定（Noneの場合、デフォルト設定を使用）
 
         Returns:

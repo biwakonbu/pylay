@@ -20,7 +20,7 @@ class AnalysisError(Exception):
 
         Args:
             message: エラーメッセージ
-            file_path: エラーが発生したファイルパス（オプション）
+            file_path: エラーが発生したファイルパス(オプション)
         """
         self.message = message
         self.file_path = file_path
@@ -56,7 +56,7 @@ class MypyExecutionError(AnalysisError):
             return_code: mypy終了コード
             stdout: 標準出力
             stderr: 標準エラー
-            file_path: エラーが発生したファイルパス（オプション）
+            file_path: エラーが発生したファイルパス(オプション)
         """
         self.return_code = return_code
         self.stdout = stdout
@@ -83,16 +83,14 @@ class ASTParseError(AnalysisError):
     Pythonコードの構文解析に失敗した場合に発生します。
     """
 
-    def __init__(
-        self, message: str, line_number: int | None = None, file_path: str | None = None
-    ) -> None:
+    def __init__(self, message: str, line_number: int | None = None, file_path: str | None = None) -> None:
         """
         AST解析エラーを初期化します。
 
         Args:
             message: エラーメッセージ
-            line_number: エラーが発生した行番号（オプション）
-            file_path: エラーが発生したファイルパス（オプション）
+            line_number: エラーが発生した行番号(オプション)
+            file_path: エラーが発生したファイルパス(オプション)
         """
         self.line_number = line_number
         super().__init__(message, file_path)
@@ -112,7 +110,15 @@ class DependencyExtractionError(AnalysisError):
     依存関係の抽出処理に失敗した場合に発生します。
     """
 
-    pass
+    def __init__(self, message: Message, file_path: FilePath | None = None) -> None:
+        """
+        依存関係抽出エラーを初期化します。
+
+        Args:
+            message: エラーメッセージ
+            file_path: エラーが発生したファイルパス(オプション)
+        """
+        super().__init__(message, file_path)
 
 
 class TypeInferenceError(AnalysisError):
@@ -133,8 +139,8 @@ class TypeInferenceError(AnalysisError):
 
         Args:
             message: エラーメッセージ
-            variable_name: エラーが発生した変数名（オプション）
-            file_path: エラーが発生したファイルパス（オプション）
+            variable_name: エラーが発生した変数名(オプション)
+            file_path: エラーが発生したファイルパス(オプション)
         """
         self.variable_name = variable_name
         super().__init__(message, file_path)
@@ -151,19 +157,17 @@ class CircularDependencyError(AnalysisError):
     """
     循環依存エラー
 
-    循環依存が検出された場合に発生します（厳密モードのみ）。
+    循環依存が検出された場合に発生します(厳密モードのみ)。
     """
 
-    def __init__(
-        self, message: Message, cycle: CyclePath, file_path: FilePath | None = None
-    ) -> None:
+    def __init__(self, message: Message, cycle: CyclePath, file_path: FilePath | None = None) -> None:
         """
         循環依存エラーを初期化します。
 
         Args:
             message: エラーメッセージ
-            cycle: 循環パス（ノード名のリスト）
-            file_path: エラーが発生したファイルパス（オプション）
+            cycle: 循環パス(ノード名のリスト)
+            file_path: エラーが発生したファイルパス(オプション)
         """
         self.cycle = cycle
         super().__init__(message, file_path)
@@ -183,3 +187,94 @@ class ConfigurationError(AnalysisError):
     """
 
     pass
+
+
+class InputValidationError(ValueError):
+    """
+    入力検証エラー
+
+    Pydanticによる入力データの検証に失敗した場合に発生します。
+    型の不一致やバリデーションルール違反時に使用されます。
+
+    発生状況:
+        - analyze_fileまたはanalyze_directoryの入力パラメータが
+          Pydanticスキーマの検証に失敗した場合
+        - ファイルシステム操作で無効な設定が指定された場合
+
+    処理方法:
+        - 入力データの型と形式を確認し、修正してください
+        - validation_error属性から元のエラー詳細を取得できます
+
+    ValueError を継承してPythonの標準エラーハイアラキーに統合し、
+    入力値の型や形式が不正な場合にキャッチされるようにします。
+    """
+
+    def __init__(self, validation_error: Exception) -> None:
+        """
+        InputValidationErrorを初期化します。
+
+        Args:
+            validation_error: 元のバリデーションエラー
+        """
+        self.validation_error = validation_error
+        super().__init__(f"入力の検証に失敗しました: {validation_error}")
+
+
+class InvalidAnalysisModeError(ValueError):
+    """
+    無効な解析モードエラー
+
+    指定された解析モードが無効な場合に発生します。
+    サポートされているモードは "types_only", "deps_only", "full" です。
+
+    発生状況:
+        - create_analyzerまたは同等の関数で無効なmodeが指定された場合
+        - 設定ファイルで無効な解析モードが指定された場合
+
+    処理方法:
+        - サポートされているモードを確認し、正しいモードを指定してください
+        - エラーメッセージに有効なモードのリストが含まれています
+
+    ValueError を継承してPythonの標準エラーハイアラキーに統合し、
+    指定された解析モードが無効な場合にキャッチされるようにします。
+    """
+
+    def __init__(self, mode: str, valid_modes: list[str]) -> None:
+        """
+        InvalidAnalysisModeErrorを初期化します。
+
+        Args:
+            mode: 指定された無効なモード
+            valid_modes: 有効なモードのリスト
+        """
+        super().__init__(f"無効な解析モード: {mode}. {', '.join(valid_modes)} のいずれかを指定してください。")
+
+
+class InvalidInputTypeError(TypeError):
+    """
+    無効な入力型エラー
+
+    入力値の型が予期されない場合に発生します。
+    Pathまたはstrでなければならない入力に別の型が渡された場合に使用されます。
+
+    発生状況:
+        - ファイルパス入力が Path または str ではない型の場合
+        - 予期されない型のパラメータが渡された場合
+
+    処理方法:
+        - 入力パラメータの型を確認し、Path または str に変換してください
+        - エラーメッセージから受け取った型を確認できます
+
+    TypeError を継承してPythonの標準エラーハイアラキーに統合し、
+    入力値の型が予期されない場合にキャッチされるようにします。
+    """
+
+    def __init__(self, received_type: type, parameter_name: str = "input") -> None:
+        """
+        InvalidInputTypeErrorを初期化します。
+
+        Args:
+            received_type: 受け取った型
+            parameter_name: パラメータ名（デフォルト: "input"）
+        """
+        super().__init__(f"{parameter_name}はPathまたはstrである必要があります。受け取った型: {received_type.__name__}")

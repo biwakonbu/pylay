@@ -45,6 +45,7 @@
 ### CLIコマンド
 
 #### 基本的な使い方
+
 ```bash
 # プロジェクト全体を診断
 pylay check --focus ignore
@@ -179,6 +180,7 @@ Summary by Priority
 ### データモデル
 
 #### TypeIgnoreIssue
+
 ```python
 class TypeIgnoreIssue(BaseModel):
     file_path: FilePath
@@ -192,6 +194,7 @@ class TypeIgnoreIssue(BaseModel):
 ```
 
 #### TypeIgnoreSummary
+
 ```python
 class TypeIgnoreSummary(BaseModel):
     total_count: int
@@ -227,6 +230,7 @@ def _determine_priority(
 ## ユースケース
 
 ### 1. 技術的負債の可視化
+
 ```bash
 # プロジェクト全体のtype: ignoreを診断
 make diagnose-ignore
@@ -236,6 +240,7 @@ pylay check --focus ignore --format json --output tech-debt.json
 ```
 
 ### 2. 優先的な修正対象の特定
+
 ```bash
 # 高優先度の問題のみ表示
 make diagnose-ignore-high
@@ -244,6 +249,7 @@ make diagnose-ignore-high
 ```
 
 ### 3. コードレビューでの活用
+
 ```bash
 # PRで追加されたtype: ignoreを診断
 pylay check --focus ignore path/to/changed_file.py -v
@@ -252,6 +258,7 @@ pylay check --focus ignore path/to/changed_file.py -v
 ```
 
 ### 4. CI/CDパイプラインへの統合
+
 ```yaml
 # .github/workflows/type-check.yml
 - name: Diagnose type: ignore

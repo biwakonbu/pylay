@@ -83,10 +83,8 @@ class TestProjectAnalyzer:
         with patch.object(analyzer, "run_command") as mock_run:
             # 各チェックが1回呼ばれることを確認
             mock_run.side_effect = [
-                CheckResult(
-                    name="Test", success=True, output="", error_output="", return_code=0
-                )
-            ] * 7
+                CheckResult(name="Test", success=True, output="", error_output="", return_code=0) for _ in range(7)
+            ]
 
             summary = analyzer.run_all_checks()
 

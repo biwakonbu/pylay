@@ -44,12 +44,8 @@ z = True
         analyzer = TypeInferenceAnalyzer(config)
         existing = {"a": "int"}
         inferred = {
-            "b": InferResult(
-                variable_name="b", inferred_type="str", confidence=0.9, line_number=1
-            ),
-            "c": InferResult(
-                variable_name="c", inferred_type="bool", confidence=0.85, line_number=2
-            ),
+            "b": InferResult(variable_name="b", inferred_type="str", confidence=0.9, line_number=1),
+            "c": InferResult(variable_name="c", inferred_type="bool", confidence=0.85, line_number=2),
         }
         merged = analyzer.merge_inferred_types(existing, inferred)
 
@@ -72,6 +68,33 @@ def func(y: str) -> bool:
             annotations = analyzer.extract_existing_annotations(str(test_file))
             assert "x" in annotations
             assert "y" in annotations
+        finally:
+            test_file.unlink()
+
+    def test_extract_existing_annotations_skip_untyped_args(self):
+        """アノテーションがない引数はスキップされることを確認"""
+        test_file = Path(__file__).parent / "test_untyped_args.py"
+        test_file.write_text("""
+def func_with_untyped_args(a, b: int, c):
+    return a + b + c
+
+def func_with_typed_args(x: str, y: int) -> bool:
+    return len(x) > y
+""")
+
+        try:
+            config = self._get_test_config()
+            analyzer = TypeInferenceAnalyzer(config)
+            annotations = analyzer.extract_existing_annotations(str(test_file))
+
+            # アノテーション付きの引数のみが含まれる
+            assert "b" in annotations  # b: int
+            assert "x" in annotations  # x: str
+            assert "y" in annotations  # y: int
+
+            # アノテーションなしの引数は含まれない
+            assert "a" not in annotations
+            assert "c" not in annotations
         finally:
             test_file.unlink()
 

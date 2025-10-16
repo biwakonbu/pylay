@@ -105,12 +105,7 @@ class DocstringAnalyzer:
             current_status = "partial"
             recommended_action = "expand"
             priority = "low"
-            reasons = [
-                (
-                    "docstringの詳細度が不足しています"
-                    f"（スコア: {detail.detail_score:.2f}）"
-                )
-            ]
+            reasons = [f"docstringの詳細度が不足しています (スコア: {detail.detail_score:.2f})"]
             detail_gaps = []
             if not detail.has_attributes and type_def.level == "level3":
                 detail_gaps.append("Attributes")
@@ -202,9 +197,7 @@ Examples
     # ヘルパーメソッド
     # ========================================
 
-    def _detect_format(
-        self, docstring: str
-    ) -> Literal["google", "numpy", "restructured", "unknown"]:
+    def _detect_format(self, docstring: str) -> Literal["google", "numpy", "restructured", "unknown"]:
         """docstringフォーマットを検出
 
         Args:
@@ -219,9 +212,7 @@ Examples
             return "google"
 
         # NumPy形式: "Parameters\n----------", "Returns\n-------"
-        numpy_pattern = re.compile(
-            r"(Parameters|Returns|Attributes|Examples)\n\s*-{3,}"
-        )
+        numpy_pattern = re.compile(r"(Parameters|Returns|Attributes|Examples)\n\s*-{3,}")
         if numpy_pattern.search(docstring):
             return "numpy"
 
@@ -282,10 +273,7 @@ Examples
             "Returns": ":returns:",
             "Attributes": ":ivar",
         }
-        if section in rst_mapping and rst_mapping[section] in docstring:
-            return True
-
-        return False
+        return bool(section in rst_mapping and rst_mapping[section] in docstring)
 
     def _calculate_detail_score(
         self,

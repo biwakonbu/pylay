@@ -14,6 +14,7 @@ from src.core.analyzer.type_level_models import (
     TypeDefinition,
     TypeStatistics,
 )
+from src.core.analyzer.types import FormatStyle, TypeLevel
 
 
 class TypeStatisticsCalculator:
@@ -60,15 +61,11 @@ class TypeStatisticsCalculator:
 
         # primitive型使用統計
         primitive_usage_count = self._count_primitive_usage(type_definitions)
-        primitive_usage_ratio = (
-            primitive_usage_count / total_count if total_count > 0 else 0.0
-        )
+        primitive_usage_ratio = primitive_usage_count / total_count if total_count > 0 else 0.0
 
         # 非推奨typing使用統計
         deprecated_typing_count = self._count_deprecated_typing(type_definitions)
-        deprecated_typing_ratio = (
-            deprecated_typing_count / total_count if total_count > 0 else 0.0
-        )
+        deprecated_typing_ratio = deprecated_typing_count / total_count if total_count > 0 else 0.0
 
         return TypeStatistics(
             total_count=total_count,
@@ -119,9 +116,7 @@ class TypeStatisticsCalculator:
             ),
         )
 
-    def _calculate_by_directory(
-        self, type_definitions: list[TypeDefinition]
-    ) -> dict[str, dict[str, int]]:
+    def _calculate_by_directory(self, type_definitions: list[TypeDefinition]) -> dict[str, dict[str, int]]:
         """ディレクトリ別の統計を計算"""
         by_directory: dict[str, dict[str, int]] = defaultdict(
             lambda: {"level1": 0, "level2": 0, "level3": 0, "other": 0}
@@ -133,9 +128,7 @@ class TypeStatisticsCalculator:
 
         return dict(by_directory)
 
-    def _calculate_by_category(
-        self, type_definitions: list[TypeDefinition]
-    ) -> dict[str, int]:
+    def _calculate_by_category(self, type_definitions: list[TypeDefinition]) -> dict[str, int]:
         """カテゴリ別の統計を計算"""
         by_category: dict[str, int] = defaultdict(int)
 
@@ -144,9 +137,7 @@ class TypeStatisticsCalculator:
 
         return dict(by_category)
 
-    def _calculate_documentation_statistics(
-        self, type_definitions: list[TypeDefinition]
-    ) -> DocumentationStatistics:
+    def _calculate_documentation_statistics(self, type_definitions: list[TypeDefinition]) -> DocumentationStatistics:
         """ドキュメント統計を計算"""
         total_types = len(type_definitions)
         documented_types = sum(1 for td in type_definitions if td.has_docstring)
@@ -155,18 +146,10 @@ class TypeStatisticsCalculator:
         implementation_rate = documented_types / total_types if total_types > 0 else 0.0
 
         # 最低限のdocstring（1-2行）と詳細なdocstring（3行以上）
-        minimal_docstrings = sum(
-            1
-            for td in type_definitions
-            if td.has_docstring and 1 <= td.docstring_lines <= 2
-        )
-        detailed_docstrings = sum(
-            1 for td in type_definitions if td.has_docstring and td.docstring_lines >= 3
-        )
+        minimal_docstrings = sum(1 for td in type_definitions if td.has_docstring and 1 <= td.docstring_lines <= 2)
+        detailed_docstrings = sum(1 for td in type_definitions if td.has_docstring and td.docstring_lines >= 3)
 
-        detail_rate = (
-            detailed_docstrings / documented_types if documented_types > 0 else 0.0
-        )
+        detail_rate = detailed_docstrings / documented_types if documented_types > 0 else 0.0
 
         # 平均docstring行数
         total_lines = sum(td.docstring_lines for td in type_definitions)
@@ -176,16 +159,16 @@ class TypeStatisticsCalculator:
         quality_score = implementation_rate * detail_rate
 
         # レベル別のdocstring統計とレベル別平均行数を計算
-        by_level, by_level_avg_lines = self._calculate_documentation_by_level(
-            type_definitions
-        )
+        by_level: dict[TypeLevel, dict[str, int]]
+        by_level_avg_lines: dict[TypeLevel, float]
+        by_level, by_level_avg_lines = self._calculate_documentation_by_level(type_definitions)
 
         # フォーマット別のdocstring数を計算
-        by_format: dict[str, int] = {
-            "google": 0,
-            "numpy": 0,
-            "restructured": 0,
-            "unknown": 0,
+        by_format: dict[FormatStyle, int] = {
+            "google": 0,  # type: ignore[assignment]
+            "numpy": 0,  # type: ignore[assignment]
+            "restructured": 0,  # type: ignore[assignment]
+            "unknown": 0,  # type: ignore[assignment]
         }
         for td in type_definitions:
             if not td.has_docstring or not td.docstring:
@@ -203,23 +186,23 @@ class TypeStatisticsCalculator:
             detail_rate=detail_rate,
             avg_docstring_lines=avg_docstring_lines,
             quality_score=quality_score,
-            by_level=by_level,
-            by_level_avg_lines=by_level_avg_lines,
-            by_format=by_format,
+            by_level=by_level,  # type: ignore[assignment]
+            by_level_avg_lines=by_level_avg_lines,  # type: ignore[assignment]
+            by_format=by_format,  # type: ignore[assignment]
         )
 
     def _calculate_documentation_by_level(
         self, type_definitions: list[TypeDefinition]
-    ) -> tuple[dict[str, dict[str, int]], dict[str, float]]:
+    ) -> tuple[dict[TypeLevel, dict[str, int]], dict[TypeLevel, float]]:
         """レベル別のドキュメント統計を計算
 
         Returns:
-            tuple[dict[str, dict[str, int]], dict[str, float]]:
+            tuple[dict[TypeLevel, dict[str, int]], dict[TypeLevel, float]]:
                 - by_level: レベル別のカウント値
                 - by_level_avg_lines: レベル別の平均行数
         """
-        by_level: dict[str, dict[str, int]] = {}
-        by_level_avg_lines: dict[str, float] = {}
+        by_level: dict[TypeLevel, dict[str, int]] = {}
+        by_level_avg_lines: dict[TypeLevel, float] = {}
 
         for level in ["level1", "level2", "level3", "other"]:
             level_types = [td for td in type_definitions if td.level == level]
@@ -227,29 +210,23 @@ class TypeStatisticsCalculator:
 
             if total > 0:
                 documented = sum(1 for td in level_types if td.has_docstring)
-                detailed = sum(
-                    1
-                    for td in level_types
-                    if td.has_docstring and td.docstring_lines >= 3
-                )
-                total_lines = sum(
-                    td.docstring_lines for td in level_types if td.has_docstring
-                )
+                detailed = sum(1 for td in level_types if td.has_docstring and td.docstring_lines >= 3)
+                total_lines = sum(td.docstring_lines for td in level_types if td.has_docstring)
                 avg_lines = total_lines / documented if documented > 0 else 0.0
 
-                by_level[level] = {
+                by_level[level] = {  # type: ignore[assignment]
                     "total": total,
                     "documented": documented,
                     "detailed": detailed,
                 }
-                by_level_avg_lines[level] = avg_lines
+                by_level_avg_lines[level] = avg_lines  # type: ignore[assignment]
             else:
-                by_level[level] = {
+                by_level[level] = {  # type: ignore[assignment]
                     "total": 0,
                     "documented": 0,
                     "detailed": 0,
                 }
-                by_level_avg_lines[level] = 0.0
+                by_level_avg_lines[level] = 0.0  # type: ignore[assignment]
 
         return by_level, by_level_avg_lines
 
