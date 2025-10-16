@@ -59,7 +59,7 @@ type TypeSpecOrRef = RefPlaceholder | str | TypeSpec
 class ListTypeSpec(TypeSpec):
     """リスト型の仕様"""
 
-    type: Literal["list"] = "list"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
+    type: Literal["list"] = "list"
     items: Any = Field(..., description="リストの要素型 (参照文字列またはTypeSpec)")
 
     @field_validator("items", mode="before")
@@ -74,7 +74,7 @@ class ListTypeSpec(TypeSpec):
 class DictTypeSpec(TypeSpec):
     """辞書型の仕様(プロパティの型をTypeSpecOrRefに統一)"""
 
-    type: Literal["dict"] = "dict"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
+    type: Literal["dict"] = "dict"
     # NOTE: 設計上、YAML仕様から動的にプロパティを読み込むため Any型を使用
     # TODO(Issue #18, Target: v2.0): TypeSpecOrRefに狭める移行計画
     #   - 現状: Pydanticバリデーション前の段階でdictが渡されるためAnyが必要
@@ -111,7 +111,7 @@ class UnionTypeSpec(TypeSpec):
     Union型の型仕様を定義します。参照型はTypeSpecOrRefに統一されています。
     """
 
-    type: Literal["union"] = "union"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
+    type: Literal["union"] = "union"
     variants: list[Any] = Field(..., description="Unionのバリアント (参照文字列またはTypeSpec)")
 
     @field_validator("variants", mode="before")
@@ -137,7 +137,7 @@ class GenericTypeSpec(TypeSpec):
     参照型はTypeSpecOrRefに統一されています。
     """
 
-    type: Literal["generic"] = "generic"  # type: ignore[assignment]  # Literal型でTypeSpecのtypeを特殊化
+    type: Literal["generic"] = "generic"
     params: list[Any] = Field(..., description="Genericのパラメータ (参照文字列またはTypeSpec)")
 
     @field_validator("params", mode="before")
@@ -184,7 +184,7 @@ class TypeAliasSpec(TypeSpec):
         type Point = tuple[float, float]
     """
 
-    type: Literal["type_alias"] = "type_alias"  # type: ignore[assignment]
+    type: Literal["type_alias"] = "type_alias"
     target: str = Field(..., description="エイリアス先の型(例: str, tuple[float, float])")
 
 
@@ -195,7 +195,7 @@ class NewTypeSpec(TypeSpec):
     例: UserId = NewType('UserId', str)
     """
 
-    type: Literal["newtype"] = "newtype"  # type: ignore[assignment]
+    type: Literal["newtype"] = "newtype"
     base_type: str = Field(..., description="基底型(例: str, int)")
 
 
@@ -209,7 +209,7 @@ class DataclassSpec(TypeSpec):
             y: float
     """
 
-    type: Literal["dataclass"] = "dataclass"  # type: ignore[assignment]
+    type: Literal["dataclass"] = "dataclass"
     frozen: bool = Field(default=False, description="不変(frozen)フラグ")
     fields: dict[str, Any] = Field(default_factory=dict, description="フィールド定義")
 
@@ -519,11 +519,11 @@ class TypeContext:
     def _add_builtin_types(self) -> None:
         """組み込み型をコンテキストに追加"""
         builtin_types = {
-            "str": TypeSpec(name="str", type="str", description="String type"),  # type: ignore[call-arg]  # Pydantic BaseModel動的属性
-            "int": TypeSpec(name="int", type="int", description="Integer type"),  # type: ignore[call-arg]
-            "float": TypeSpec(name="float", type="float", description="Float type"),  # type: ignore[call-arg]
-            "bool": TypeSpec(name="bool", type="bool", description="Boolean type"),  # type: ignore[call-arg]
-            "Any": TypeSpec(name="Any", type="any", description="Any type"),  # type: ignore[call-arg]
+            "str": TypeSpec.model_construct(name="str", type="str", description="String type"),
+            "int": TypeSpec.model_construct(name="int", type="int", description="Integer type"),
+            "float": TypeSpec.model_construct(name="float", type="float", description="Float type"),
+            "bool": TypeSpec.model_construct(name="bool", type="bool", description="Boolean type"),
+            "Any": TypeSpec.model_construct(name="Any", type="any", description="Any type"),
         }
         for name, spec in builtin_types.items():
             self.type_map[name] = spec
@@ -532,8 +532,8 @@ class TypeContext:
         """型をコンテキストに追加"""
         self.type_map[name] = spec
 
-    def resolve_ref(self, ref: TypeSpecOrRef) -> TypeSpec | RefPlaceholder:  # 循環時はValueErrorを発生
-        """参照を解決してTypeSpecを返す(Annotated型対応)"""
+    def resolve_ref(self, ref: TypeSpecOrRef) -> TypeSpec | RefPlaceholder | str:
+        """参照を解決してTypeSpecを返す(未定義参照は文字列として返す)"""
         if isinstance(ref, RefPlaceholder):
             ref_name = ref.ref_name
             if ref_name in self.resolving:
@@ -547,7 +547,7 @@ class TypeContext:
                 "Any",
             ]:
                 # 未定義の型参照は文字列として残す(型エイリアスなど)
-                return ref_name  # type: ignore[return-value]
+                return ref_name
 
             self.resolving.add(ref_name)
             try:
@@ -568,7 +568,7 @@ class TypeContext:
                 "Any",
             ]:
                 # 未定義の型参照は文字列として残す(型エイリアスなど)
-                return ref  # type: ignore[return-value]
+                return ref
 
             self.resolving.add(ref)
             try:

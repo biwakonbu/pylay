@@ -19,7 +19,9 @@ else:
     try:
         from pydot import Dot, Edge, Node
     except ImportError:
-        Dot, Node, Edge = None, None, None  # type: ignore[assignment, misc]
+        Dot: type[Dot] | None = None
+        Node: type[Node] | None = None
+        Edge: type[Edge] | None = None
 
 from src.core.schemas.graph import TypeDependencyGraph
 
@@ -109,7 +111,20 @@ class GraphProcessor:
         if TYPE_CHECKING:
             # 型チェック時はpydotは常に利用可能
             pass
-        elif Dot is None or Node is None or Edge is None:  # type: ignore[unreachable]
+        elif (  # type: ignore[unreachable]
+            # NOTE: type: ignore[unreachable] は必要な妥協です (Issue #90参照)
+            # 【削除困難な理由】TYPE_CHECKING は型チェッカーでは常に True だが、
+            # 実行時では False になり、この elif が到達可能になる (言語設計レベルの矛盾)
+            #
+            # 【検討した解決策】
+            # - type: ignore 削除 → mypy が unreachable code を報告 (解決しない)
+            # - グローバル状態削除 → 設計を根本から変更 (過度)
+            # - Protocol 使用 → 複雑化 (メリット < デメリット)
+            # - 関数内インポート → パフォーマンス低下 (非推奨)
+            #
+            # 【結論】type: ignore[unreachable] は TYPE_CHECKING パターンの必要な妥協。
+            Dot is None or Node is None or Edge is None
+        ):
             raise ImportError("pydot is required for visualization")
 
         nx_graph = graph.to_networkx()

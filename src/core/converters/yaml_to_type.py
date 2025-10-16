@@ -16,8 +16,11 @@ from src.core.schemas.yaml_spec import (
 )
 
 
-def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeRoot | RefPlaceholder | None:
-    """YAML文字列からTypeSpecまたはTypeRootを生成 (v1.1対応、参照解決付き)"""
+def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeRoot | RefPlaceholder | str | None:
+    """YAML文字列からTypeSpecまたはTypeRootを生成 (v1.1対応、参照解決付き)
+
+    未解決の参照がある場合、文字列として返される可能性があります。
+    """
     yaml_parser = YAML()
     data = yaml_parser.load(yaml_str)
 
