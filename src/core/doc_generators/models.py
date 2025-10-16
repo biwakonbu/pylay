@@ -511,7 +511,7 @@ class BatchProcessorService(BaseModel):
 
         try:
             # 出力ディレクトリの作成
-            output_dir_path = str(config.output_path)
+            output_dir_path = config.output_path
             output_dir = Path(output_dir_path)
             output_dir.mkdir(parents=True, exist_ok=True)
 
