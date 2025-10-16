@@ -4,6 +4,7 @@
 コンソール形式で品質チェックレポートを生成します。
 """
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, Literal
 
@@ -164,7 +165,7 @@ class QualityReporter:
                 "advice": "ADVICE",
             }[severity]
 
-            rule_text = f"[bold {color}]{severity_label}({len(severity_issues)} items)[/bold {color}]"
+            rule_text = f"[bold {color}]{severity_label} ({len(severity_issues)} items)[/bold {color}]"
             self.console.rule(rule_text, style=color)
             self.console.print()
 
@@ -186,7 +187,7 @@ class QualityReporter:
 
             self.console.print()
 
-    def _show_grouped_primitive_issues(self, issues: list[QualityIssue], *, show_details: bool, color: str) -> None:
+    def _show_grouped_primitive_issues(self, issues: Sequence[QualityIssue], *, show_details: bool, color: str) -> None:
         """primitive型問題をグルーピング表示"""
         from collections import defaultdict
 
@@ -200,8 +201,8 @@ class QualityReporter:
         pydantic_groups = {k: v for k, v in grouped.items() if k not in ("custom", "excluded")}
         if pydantic_groups:
             self.console.print(
-                f"[bold {color}]Pydantic型で置き換え可能 "
-                f"({sum(len(v) for v in pydantic_groups.values())}items)[/bold {color}]"
+                f"[bold {color}]Replaceable with Pydantic types "
+                f"({sum(len(v) for v in pydantic_groups.values())} items)[/bold {color}]"
             )
             for rec_type, type_issues in sorted(pydantic_groups.items()):
                 self.console.print(f"  {rec_type}推奨: {len(type_issues)}箇所")
@@ -263,7 +264,7 @@ class QualityReporter:
 
         # 詳細表示が有効で、位置情報がある場合
         if show_details and issue.location:
-            # Location information
+            # 位置情報
             self.console.print(f"[dim]Location: {issue.location.file}:{issue.location.line}[/dim]")
             self.console.print()
 
