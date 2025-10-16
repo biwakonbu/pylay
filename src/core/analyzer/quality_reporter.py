@@ -96,9 +96,9 @@ class QualityReporter:
     def _show_statistics_table(self, check_result: QualityCheckResult) -> None:
         """統計情報テーブルを表示"""
         table = Table(title="Statistics", show_header=True, header_style="bold magenta")
-        table.add_column("項目", style="cyan", width=30)
-        table.add_column("値", style="white", justify="right")
-        table.add_column("状態", style="green")
+        table.add_column("Item", style="cyan", width=30)
+        table.add_column("Value", style="white", justify="right")
+        table.add_column("Status", style="green")
 
         # 型レベル統計
         level1_color = "red" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "green"
@@ -209,7 +209,7 @@ class QualityReporter:
                     for issue in type_issues[:3]:  # 最大3件表示
                         loc = issue.location
                         if loc:
-                            self.console.print(f"    [dim]位置:[/dim] {loc.file}:{loc.line}")
+                            self.console.print(f"    [dim]Location:[/dim] {loc.file}:{loc.line}")
                             # コードコンテキストを表示
                             if loc.code:
                                 self._print_code_context(issue)
@@ -226,7 +226,7 @@ class QualityReporter:
                 for issue in custom_issues[:5]:  # 最大5件表示
                     loc = issue.location
                     if loc:
-                        self.console.print(f"  [dim]位置:[/dim] {loc.file}:{loc.line}")
+                        self.console.print(f"  [dim]Location:[/dim] {loc.file}:{loc.line}")
                         # コードコンテキストを表示
                         if loc.code:
                             self._print_code_context(issue)
@@ -259,8 +259,8 @@ class QualityReporter:
 
         # 詳細表示が有効で、位置情報がある場合
         if show_details and issue.location:
-            # 位置情報
-            self.console.print(f"[dim]位置: {issue.location.file}:{issue.location.line}[/dim]")
+            # Location information
+            self.console.print(f"[dim]Location: {issue.location.file}:{issue.location.line}[/dim]")
             self.console.print()
 
             # コードコンテキスト表示

@@ -112,9 +112,9 @@ class TypeIgnoreReporter:
         self._print_code_context(issue)
         self.console.print()
 
-        # 解決策（オプション）
+        # Solutions (optional)
         if show_solutions and issue.solutions:
-            self.console.print("  [bold]解決策[/bold]")
+            self.console.print("  [bold]Solution[/bold]")
             for solution in issue.solutions:
                 self.console.print(f"    • {solution}")
             self.console.print()
@@ -167,7 +167,7 @@ class TypeIgnoreReporter:
             )
 
         if suggested != target_line.replace("# type: ignore", "").strip():
-            self.console.print("  [bold]提案[/bold]")
+            self.console.print("  [bold]Suggested[/bold]")
             syntax = Syntax(
                 suggested,
                 "python",

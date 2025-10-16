@@ -20,7 +20,7 @@ class AnalysisError(Exception):
 
         Args:
             message: エラーメッセージ
-            file_path: エラーが発生したファイルパス（オプション）
+            file_path: エラーが発生したファイルパス(オプション)
         """
         self.message = message
         self.file_path = file_path
@@ -56,7 +56,7 @@ class MypyExecutionError(AnalysisError):
             return_code: mypy終了コード
             stdout: 標準出力
             stderr: 標準エラー
-            file_path: エラーが発生したファイルパス（オプション）
+            file_path: エラーが発生したファイルパス(オプション)
         """
         self.return_code = return_code
         self.stdout = stdout
@@ -89,8 +89,8 @@ class ASTParseError(AnalysisError):
 
         Args:
             message: エラーメッセージ
-            line_number: エラーが発生した行番号（オプション）
-            file_path: エラーが発生したファイルパス（オプション）
+            line_number: エラーが発生した行番号(オプション)
+            file_path: エラーが発生したファイルパス(オプション)
         """
         self.line_number = line_number
         super().__init__(message, file_path)
@@ -139,8 +139,8 @@ class TypeInferenceError(AnalysisError):
 
         Args:
             message: エラーメッセージ
-            variable_name: エラーが発生した変数名（オプション）
-            file_path: エラーが発生したファイルパス（オプション）
+            variable_name: エラーが発生した変数名(オプション)
+            file_path: エラーが発生したファイルパス(オプション)
         """
         self.variable_name = variable_name
         super().__init__(message, file_path)
@@ -157,7 +157,7 @@ class CircularDependencyError(AnalysisError):
     """
     循環依存エラー
 
-    循環依存が検出された場合に発生します（厳密モードのみ）。
+    循環依存が検出された場合に発生します(厳密モードのみ)。
     """
 
     def __init__(self, message: Message, cycle: CyclePath, file_path: FilePath | None = None) -> None:
@@ -166,8 +166,8 @@ class CircularDependencyError(AnalysisError):
 
         Args:
             message: エラーメッセージ
-            cycle: 循環パス（ノード名のリスト）
-            file_path: エラーが発生したファイルパス（オプション）
+            cycle: 循環パス(ノード名のリスト)
+            file_path: エラーが発生したファイルパス(オプション)
         """
         self.cycle = cycle
         super().__init__(message, file_path)
@@ -190,7 +190,12 @@ class ConfigurationError(AnalysisError):
 
 
 class InputValidationError(ValueError):
-    """入力検証エラー"""
+    """
+    入力検証エラー
+
+    ValueError を継承してPythonの標準エラーハイアラキーに統合し、
+    入力値の型や形式が不正な場合にキャッチされるようにします。
+    """
 
     def __init__(self, validation_error: Exception) -> None:
         """
@@ -203,7 +208,12 @@ class InputValidationError(ValueError):
 
 
 class InvalidAnalysisModeError(ValueError):
-    """無効な解析モードエラー"""
+    """
+    無効な解析モードエラー
+
+    ValueError を継承してPythonの標準エラーハイアラキーに統合し、
+    指定された解析モードが無効な場合にキャッチされるようにします。
+    """
 
     def __init__(self, mode: str, valid_modes: list[str]) -> None:
         """
@@ -217,7 +227,12 @@ class InvalidAnalysisModeError(ValueError):
 
 
 class InvalidInputTypeError(TypeError):
-    """無効な入力型エラー"""
+    """
+    無効な入力型エラー
+
+    TypeError を継承してPythonの標準エラーハイアラキーに統合し、
+    入力値の型が予期されない場合にキャッチされるようにします。
+    """
 
     def __init__(self, received_type: type) -> None:
         """

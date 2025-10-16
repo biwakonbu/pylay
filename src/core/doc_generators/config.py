@@ -37,7 +37,14 @@ class CatalogConfig(GeneratorConfig):
 
 @dataclass(init=False)
 class TypeDocConfig:
-    """型ドキュメントジェネレーターの設定。"""
+    """
+    型ドキュメントジェネレーターの設定。
+
+    設計注記: @dataclass(init=False) で手動 __init__ を実装することで、
+    後方互換性（output_directory パラメータ）と柔軟なデフォルト値設定を
+    実現しています。InitVar の代替として custom __init__ を使用することで、
+    複雑な初期化ロジックを制御可能にしています。
+    """
 
     # 基本設定(GeneratorConfigから継承せず、独自に定義)
     output_path: Path
@@ -103,7 +110,7 @@ class TypeDocConfig:
             type_alias_descriptions
             if type_alias_descriptions is not None
             else {
-                "JSONValue": "JSON値: 制約なしのJSON互換データ型（Anyのエイリアス）",
+                "JSONValue": "JSON値: 制約なしのJSON互換データ型(Anyのエイリアス)",
                 "JSONObject": "JSONオブジェクト: 文字列キーと任意の値を持つ辞書型",
                 "RestrictedJSONValue": "制限付きJSON値: 深さ3制限付きのJSONデータ",
                 "RestrictedJSONObject": "制限付きJSONオブジェクト: 制限付きのJSON値を持つ辞書型",
