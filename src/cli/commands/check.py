@@ -99,13 +99,13 @@ def check(
 
     # 複数のターゲットディレクトリがある場合は通知
     if len(target_paths) > 1:
-        console.print(f"[cyan]INFO: {len(target_paths)} target directories to process[/cyan]")
+        console.print(f"[cyan]INFO: Processing {len(target_paths)} target directories[/cyan]")
         console.print()
 
     # 各ターゲットディレクトリに対してチェックを実行
     for idx, target_path in enumerate(target_paths, 1):
         if len(target_paths) > 1:
-            console.print(f"[bold cyan]📁 ターゲット {idx}/{len(target_paths)}: {target_path}[/bold cyan]")
+            console.print(f"[bold cyan]📁 Target {idx}/{len(target_paths)}: {target_path}[/bold cyan]")
             console.print()
 
         if focus is None:
