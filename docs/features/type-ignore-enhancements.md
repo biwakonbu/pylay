@@ -33,7 +33,7 @@ LOW: src/example.py:45 - Type ignore for complex generic type
 
 **検出条件**:
 
-```python
+```text
 # AST解析で以下を検出
 1. ClassDefノード（BaseModelを継承）
 2. フィールドアノテーションが Literal[...]
@@ -168,7 +168,7 @@ patterns:
 [tool.pylay.ignore_checker]
 # 許容するパターン
 allowed_patterns = [
-  "pydantic_dynamic_attribute",  # Pydantic動的属性は許容
+  "pydantic_dynamic",  # Pydantic動的属性は許容
 ]
 
 # 警告レベルのカスタマイズ

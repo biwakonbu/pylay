@@ -102,7 +102,7 @@ class QualityReporter:
 
         # 型レベル統計
         level1_color = "red" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "green"
-        l1_status = "超過" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "正常"
+        l1_status = "Over" if check_result.statistics.level1_ratio > check_result.thresholds.level1_max else "Normal"
         table.add_row(
             "Level 1 Ratio",
             f"{check_result.statistics.level1_ratio * 100:.1f}%",
@@ -164,7 +164,7 @@ class QualityReporter:
                 "advice": "ADVICE",
             }[severity]
 
-            rule_text = f"[bold {color}]{severity_label}({len(severity_issues)}件)[/bold {color}]"
+            rule_text = f"[bold {color}]{severity_label}({len(severity_issues)} items)[/bold {color}]"
             self.console.rule(rule_text, style=color)
             self.console.print()
 
@@ -201,12 +201,12 @@ class QualityReporter:
         if pydantic_groups:
             self.console.print(
                 f"[bold {color}]Pydantic型で置き換え可能 "
-                f"({sum(len(v) for v in pydantic_groups.values())}件)[/bold {color}]"
+                f"({sum(len(v) for v in pydantic_groups.values())}items)[/bold {color}]"
             )
             for rec_type, type_issues in sorted(pydantic_groups.items()):
                 self.console.print(f"  {rec_type}推奨: {len(type_issues)}箇所")
                 if show_details:
-                    for issue in type_issues[:3]:  # 最大3件表示
+                    for issue in type_issues[:3]:  # 最大3items表示
                         loc = issue.location
                         if loc:
                             self.console.print(f"    [dim]Location:[/dim] {loc.file}:{loc.line}")
@@ -215,7 +215,7 @@ class QualityReporter:
                                 self._print_code_context(issue)
                                 self.console.print()
                     if len(type_issues) > 3:
-                        self.console.print(f"    ... 他{len(type_issues) - 3}件")
+                        self.console.print(f"    ... 他{len(type_issues) - 3}items")
             self.console.print()
 
         # カスタム型定義が必要なグループ
@@ -225,7 +225,7 @@ class QualityReporter:
                 f"[bold {color}]Custom Type Definition Required ({len(custom_issues)} items)[/bold {color}]"
             )
             if show_details:
-                for issue in custom_issues[:5]:  # 最大5件表示
+                for issue in custom_issues[:5]:  # 最大5items表示
                     loc = issue.location
                     if loc:
                         self.console.print(f"  [dim]Location:[/dim] {loc.file}:{loc.line}")
@@ -234,13 +234,15 @@ class QualityReporter:
                             self._print_code_context(issue)
                             self.console.print()
                 if len(custom_issues) > 5:
-                    self.console.print(f"  ... 他{len(custom_issues) - 5}件")
+                    self.console.print(f"  ... 他{len(custom_issues) - 5}items")
             self.console.print()
 
         # 除外グループ(汎用変数名)
         if "excluded" in grouped:
             excluded_issues = grouped["excluded"]
-            self.console.print(f"[bold {color}]汎用変数名(型定義不要) ({len(excluded_issues)}件)[/bold {color}]")
+            self.console.print(
+                f"[bold {color}]Generic Variable Names (Type Definition Not Required) ({len(excluded_issues)} items)[/bold {color}]"
+            )
             if show_details:
                 # primitive型ごとにカウント
                 type_counts: dict[str, int] = defaultdict(int)
