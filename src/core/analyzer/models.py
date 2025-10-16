@@ -269,7 +269,7 @@ class TempFileConfig(BaseModel):
 
     code: Code = Field(..., description="一時ファイルに書き込むコード内容", min_length=1)
     suffix: FileSuffix = Field(default=".py", description="ファイルの拡張子")
-    mode: FileOpenMode = Field(default="w", description="ファイルオープンモード", pattern="^[wab]\\+?$")
+    mode: FileOpenMode = Field(default="w", description="ファイルオープンモード")
 
 
 class AnalyzerConfig(BaseModel):
