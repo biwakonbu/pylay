@@ -17,7 +17,7 @@ from src.core.analyzer.quality_models import QualityCheckResult, QualityIssue
 if TYPE_CHECKING:
     from src.core.analyzer.type_level_models import TypeAnalysisReport
 
-# 深刻度の型付き定数（Literal型との互換性を確保）
+# 深刻度の型付き定数(Literal型との互換性を確保)
 SEVERITIES: Final[tuple[Literal["error", "warning", "advice"], ...]] = (
     "error",
     "warning",
@@ -32,7 +32,7 @@ class QualityReporter:
         """初期化
 
         Args:
-            target_dirs: 解析対象ディレクトリ（詳細レポート生成時に使用）
+            target_dirs: 解析対象ディレクトリ(詳細レポート生成時に使用)
         """
         self.console = Console()
         self.target_dirs = [Path(d) for d in (target_dirs or ["."])]
@@ -47,7 +47,7 @@ class QualityReporter:
 
         Args:
             check_result: 品質チェック結果
-            _report: 型定義分析レポート（現在未使用、将来の拡張用）
+            _report: 型定義分析レポート(現在未使用、将来の拡張用)
             show_details: 詳細情報を表示するか
         """
         # ヘッダー
@@ -66,7 +66,7 @@ class QualityReporter:
         else:
             self.console.print("[green]品質問題は検出されませんでした[/green]")
 
-        # 推奨事項（問題がある場合のみ）
+        # 推奨事項(問題がある場合のみ)
         if check_result.issues:
             self._show_recommendations(check_result)
 
@@ -164,7 +164,7 @@ class QualityReporter:
                 "advice": "ADVICE",
             }[severity]
 
-            rule_text = f"[bold {color}]{severity_label}（{len(severity_issues)}件）[/bold {color}]"
+            rule_text = f"[bold {color}]{severity_label}({len(severity_issues)}件)[/bold {color}]"
             self.console.rule(rule_text, style=color)
             self.console.print()
 
@@ -237,10 +237,10 @@ class QualityReporter:
                     self.console.print(f"  ... 他{len(custom_issues) - 5}件")
             self.console.print()
 
-        # 除外グループ（汎用変数名）
+        # 除外グループ(汎用変数名)
         if "excluded" in grouped:
             excluded_issues = grouped["excluded"]
-            self.console.print(f"[bold {color}]汎用変数名（型定義不要） ({len(excluded_issues)}件)[/bold {color}]")
+            self.console.print(f"[bold {color}]汎用変数名(型定義不要) ({len(excluded_issues)}件)[/bold {color}]")
             if show_details:
                 # primitive型ごとにカウント
                 type_counts: dict[str, int] = defaultdict(int)
@@ -254,9 +254,9 @@ class QualityReporter:
     def _show_issue_detail(self, issue: QualityIssue, *, show_details: bool, color: str) -> None:
         """個別の問題を詳細表示"""
         # 問題の種類とメッセージ
-        self.console.print(f"[bold {color}]問題種別:[/bold {color}] {issue.issue_type}")
-        self.console.print(f"[bold]メッセージ:[/bold] {issue.message}")
-        self.console.print(f"[bold]提案:[/bold] {issue.suggestion}")
+        self.console.print(f"[bold {color}]Issue Type:[/bold {color}] {issue.issue_type}")
+        self.console.print(f"[bold]Message:[/bold] {issue.message}")
+        self.console.print(f"[bold]Suggestion:[/bold] {issue.suggestion}")
         self.console.print()
 
         # 詳細表示が有効で、位置情報がある場合
@@ -276,11 +276,11 @@ class QualityReporter:
             self.console.print(issue.improvement_plan)
             self.console.print()
 
-        # 修正チェックリスト（詳細表示時）
+        # 修正チェックリスト(詳細表示時)
         if show_details:
             from src.core.analyzer.quality_checker import QualityChecker
 
-            # チェックリストを生成（仮のQualityCheckerインスタンスを使用）
+            # チェックリストを生成(仮のQualityCheckerインスタンスを使用)
             from src.core.schemas.pylay_config import PylayConfig
 
             temp_checker = QualityChecker(PylayConfig())
