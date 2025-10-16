@@ -46,7 +46,6 @@ class DocumentGeneratorKwargs(TypedDict, total=False):
     """
 
     # 将来の拡張機能用のフィールドをここに定義
-    pass
 
 
 class DocumentGeneratorService(BaseModel):
