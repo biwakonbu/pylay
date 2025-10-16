@@ -259,15 +259,14 @@ class NetworkXGraphAdapter:
         stats = {}
 
         for source, target, _data in self.nx_graph.edges(data=True):
-            edges_from_source = self.graph.get_edges_by_source(source)
-            if not edges_from_source:
-                continue
-            edge = edges_from_source[0]  # 空リストチェック済みのため安全にアクセス
-            stats[f"{source}->{target}"] = {
-                "relation_type": edge.relation_type,
-                "weight": edge.weight,
-                "is_strong": edge.is_strong_dependency(),
-                "strength": edge.get_dependency_strength(),
-            }
+            # source-targetペアに対応するエッジを検索
+            matching_edge = next((e for e in self.graph.edges if e.source == source and e.target == target), None)
+            if matching_edge:
+                stats[f"{source}->{target}"] = {
+                    "relation_type": matching_edge.relation_type,
+                    "weight": matching_edge.weight,
+                    "is_strong": matching_edge.is_strong_dependency(),
+                    "strength": matching_edge.get_dependency_strength(),
+                }
 
         return stats
