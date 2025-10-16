@@ -88,7 +88,7 @@ auto_fix: true  # 自動修正可能
 
 ### 2. インタラクティブモード
 
-```bash
+```console
 $ uv run pylay check --focus ignore --interactive
 
 Found 3 type:ignore issues with refactoring suggestions:
@@ -108,7 +108,7 @@ Found 3 type:ignore issues with refactoring suggestions:
 
 ### 3. 自動修正機能
 
-```bash
+```console
 $ uv run pylay check --focus ignore --auto-fix
 
 Analyzing type:ignore issues...
@@ -182,7 +182,7 @@ custom_templates = "docs/custom-refactoring-patterns.md"
 
 ### 5. レポート生成
 
-```bash
+```console
 $ uv run pylay check --focus ignore --report
 
 Generating type:ignore analysis report...
