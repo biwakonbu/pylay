@@ -221,7 +221,9 @@ class QualityReporter:
         # カスタム型定義が必要なグループ
         if "custom" in grouped:
             custom_issues = grouped["custom"]
-            self.console.print(f"[bold {color}]プロジェクト型定義の検討が必要 ({len(custom_issues)}件)[/bold {color}]")
+            self.console.print(
+                f"[bold {color}]Custom Type Definition Required ({len(custom_issues)} items)[/bold {color}]"
+            )
             if show_details:
                 for issue in custom_issues[:5]:  # 最大5件表示
                     loc = issue.location

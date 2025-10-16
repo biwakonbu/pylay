@@ -75,7 +75,7 @@ references:
 **提案内容**:
 
 ```yaml
-pattern: "newtype_field_default"
+pattern: "newtype_field"
 severity: "low"
 message: "NewType使用時はデフォルト値を型キャストしてください"
 suggestion:

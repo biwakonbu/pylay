@@ -331,7 +331,7 @@ class FileSystemService(BaseModel):
         """
         Path(path).mkdir(parents=parents, exist_ok=exist_ok)
 
-    def write_text(self, path: str | Path, content: str, *, encoding: str = "utf-8") -> None:
+    def write_text(self, path: str | Path, content: str, encoding: str = "utf-8") -> None:
         """
         テキストファイルに書き込みます。
 
@@ -508,10 +508,7 @@ class BatchProcessorService(BaseModel):
 
         try:
             # 出力ディレクトリの作成
-            output_dir_path = config.output_path
-            if output_dir_path is None:
-                output_dir_path = DEFAULT_OUTPUT_PATH
-            output_dir = Path(output_dir_path)
+            output_dir = Path(config.output_path or DEFAULT_OUTPUT_PATH)
             output_dir.mkdir(parents=True, exist_ok=True)
 
             # 各入力ファイルの処理

@@ -44,6 +44,8 @@ class RealFileSystem:
 class InMemoryFileSystem:
     """テスト用のインメモリファイルシステム。"""
 
+    DIRECTORY_EXISTS_ERROR = "Directory {path} already exists"
+
     def __init__(self) -> None:
         """インメモリファイルシステムを初期化する。"""
         self.files: dict[Path, str] = {}
@@ -62,7 +64,7 @@ class InMemoryFileSystem:
         """メモリ内にディレクトリを作成する。"""
         path_obj = Path(path)
         if path_obj in self.directories and not exist_ok:
-            raise FileExistsError(f"Directory {path_obj} already exists")
+            raise FileExistsError(self.DIRECTORY_EXISTS_ERROR.format(path=path_obj))
 
         if parents:
             # Create all parent directories
