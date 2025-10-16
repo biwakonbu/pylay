@@ -16,7 +16,7 @@ from src.core.schemas.yaml_spec import (
 )
 
 
-def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeRoot | RefPlaceholder | None:
+def yaml_to_spec(yaml_str: str, root_key: str | None = None) -> TypeSpec | TypeRoot | RefPlaceholder | str | None:
     """YAML文字列からTypeSpecまたはTypeRootを生成 (v1.1対応、参照解決付き)"""
     yaml_parser = YAML()
     data = yaml_parser.load(yaml_str)
